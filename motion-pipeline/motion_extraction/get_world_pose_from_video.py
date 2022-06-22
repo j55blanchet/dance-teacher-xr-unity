@@ -13,6 +13,9 @@ from .utils import throttle
 PoseLandmark: mp.solutions.mediapipe.python.solutions.holistic.PoseLandmark = mp.solutions.holistic.PoseLandmark
 HandLandmark: mp.solutions.mediapipe.python.solutions.holistic.HandLandmark = mp.solutions.holistic.HandLandmark
 
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+
 T = TypeVar('T')
 
 def _perform_by_frame(video_path: Path, on_frame: Callable[[cv2.Mat, int], T]) -> Generator[T, None, None]:
@@ -34,12 +37,18 @@ def _perform_by_frame(video_path: Path, on_frame: Callable[[cv2.Mat, int], T]) -
             image.flags.writeable = False
             # percent_done = int(i * 100 / frame_count)
             # print(f'{percent_done}% ', end='')
-            yield i, frame_count, on_frame(image)
+            yield i, frame_count, on_frame(image), image
+
             # i += 1
     finally:
         cap.release()
 
-def process_video(video_path: Path, output_root: Path, holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic):
+def process_video(
+    video_path: Path, 
+    output_root: Path, 
+    holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic,
+    frame_output_folder: bool,
+):
 
     # Reset graph for this new file
     holistic_solution.reset()
@@ -65,7 +74,22 @@ def process_video(video_path: Path, output_root: Path, holistic_solution: mp.sol
         pose_csv = csv.writer(pose_file)
         righthand_csv = csv.writer(righthand_file)
         lefthand_csv = csv.writer(lefthand_file)
-        for frame_i, (_, frame_count, frame_data) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
+        for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
+
+            image.flags.writeable = True
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            mp_drawing.draw_landmarks(
+                image,
+                frame_data.pose_landmarks,
+                mp.solutions.holistic.POSE_CONNECTIONS,
+                landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
+            )
+            # cv2.imshow(f'Frame {frame_i}', image)
+            # cv2.waitKey(500)
+            if frame_output_folder is not None:
+                frame_output_folder.mkdir(parents=True, exist_ok=True)
+                cv2.imwrite(f'{frame_output_folder}/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.jpg', image)
+
             print_progress(frame_i, frame_count)
             if frame_i == 0:
                 pose_csv.writerow(
@@ -96,7 +120,7 @@ def process_video(video_path: Path, output_root: Path, holistic_solution: mp.sol
                     list(reduce(
                         lambda x, y: x + y,
                         [
-                            [lm.x, lm.y, lm.z]
+                            [lm.x, lm.y, lm.z, lm.visibility]
                             for lm in 
                             [frame_data.pose_world_landmarks.landmark[landmark_i]
                                 for landmark_i in range(len(frame_data.pose_world_landmarks.landmark))
@@ -143,6 +167,7 @@ def main():
     parser.add_argument('--output_folder', type=Path, required=True)
     parser.add_argument('--log_level', type=str, default='INFO')
     parser.add_argument('--model-complexity', type=int, default=2)
+    parser.add_argument('--frame_output_folder', type=Path, default=None)
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -161,7 +186,11 @@ def main():
 
     video_folder = Path(args.video_folder)
     for video_path in video_folder.glob('*.mp4'):
-        process_video(video_path, holistic_solution=holistic_solution, output_root=args.output_folder)
+        process_video(
+            video_path, 
+            holistic_solution=holistic_solution, 
+            output_root=args.output_folder,
+            frame_output_folder=args.frame_output_folder)
 
 
 if __name__ == "__main__":
