@@ -4,15 +4,29 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "Extract 3D Motion",
+            "name": "Extract Full World Pose",
             "type": "python",
             "request": "launch",
-            "module": "motion_extraction.extract_motion",
+            "module": "motion_extraction.get_world_pose_from_video",
             "justMyCode": true,
             "args": [
-                "--video_folder=${workspaceFolder}/temp",
-                "--output_folder=${workspaceFolder}/3d_info",
+                "--video_folder=${workspaceFolder}/data/source_videos",
+                "--output_folder=${workspaceFolder}/data/world_poses",
+                "--log_level=INFO",
+                "--model-complexity=2",
+                "--frame_output_folder=${workspaceFolder}/temp/frames"
+            ],
+        },
+        {
+            "name": "Visualize Pose",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.pose_visualization",
+            "justMyCode": true,
+            "args": [
+                "--pose_file=${workspaceFolder}/data/world_poses/supalonely_worldpose.csv",
             ],
         }
     ]
