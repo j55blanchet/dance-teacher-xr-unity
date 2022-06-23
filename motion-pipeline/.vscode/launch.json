@@ -6,27 +6,41 @@
     "configurations": [
 
         {
-            "name": "Extract Full World Pose",
+            "name": "VideoPipeline (1): Extract Pose Data",
             "type": "python",
             "request": "launch",
-            "module": "motion_extraction.get_world_pose_from_video",
+            "module": "motion_extraction.stepone_get_rawskeleton_from_video",
             "justMyCode": true,
             "args": [
                 "--video_folder=${workspaceFolder}/data/source_videos",
-                "--output_folder=${workspaceFolder}/data/world_poses",
+                "--output_folder=${workspaceFolder}/data/raw_skeleton_data",
                 "--log_level=INFO",
                 "--model-complexity=2",
                 "--frame_output_folder=${workspaceFolder}/temp/frames"
             ],
         },
         {
-            "name": "Visualize Pose",
+            "name": "VideoPipeline (2): Merge Into 3D Skeleton",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.steptwo_merge_into_3dskeleton",
+            "justMyCode": true,
+            "args": [
+                "--worldpose_file=${workspaceFolder}/data/raw_skeleton_data/supalonely_worldpose.csv",
+                "--righthand_file=${workspaceFolder}/data/raw_skeleton_data/supalonely_righthand.csv",
+                "--lefthand_file=${workspaceFolder}/data/raw_skeleton_data/supalonely_lefthand.csv",
+                "--output_file=${workspaceFolder}/data/processed_skeleton/supalonely_skeleton.csv",
+                "--log_level=INFO",
+            ],
+        },
+        {
+            "name": "Test: Visualize Pose",
             "type": "python",
             "request": "launch",
             "module": "motion_extraction.pose_visualization",
             "justMyCode": true,
             "args": [
-                "--pose_file=${workspaceFolder}/data/world_poses/supalonely_worldpose.csv",
+                "--pose_file=${workspaceFolder}/data/raw_skeleton_data/supalonely_worldpose.csv",
             ],
         }
     ]
