@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 import matplotlib.pyplot as plt
 from numpy import isnan
 import pandas as pd
@@ -14,7 +15,6 @@ lm_pose_connections = [
 def visualize_pose(pose_row: pd.Series):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    
 
     xyz_tuples = [
         (pose_row[f'{i.name}_x'], pose_row[f'{i.name}_y'], pose_row[f'{i.name}_z'], i.name)
@@ -49,6 +49,12 @@ def visualize_pose(pose_row: pd.Series):
     plt.show(block=True)
 
 
+def visualize_hand(hand_row: pd.Series, prefix: Literal["RIGHT", "LEFT", ""] = ""):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+
+def visualize_skeleton(skeleton_row: pd.Series):
+    pass
 
 
 if __name__ == '__main__':
