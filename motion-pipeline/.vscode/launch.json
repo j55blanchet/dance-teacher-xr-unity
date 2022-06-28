@@ -41,6 +41,7 @@
             "justMyCode": true,
             "args": [
                 "--pose_file=${workspaceFolder}/data/raw_skeleton_data/supalonely_worldpose.csv",
+                "--hand_file=${workspaceFolder}/data/raw_skeleton_data/supalonely_righthand.csv",
             ],
         }
     ]
