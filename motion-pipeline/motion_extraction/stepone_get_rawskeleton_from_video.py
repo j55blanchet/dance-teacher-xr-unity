@@ -63,17 +63,11 @@ def process_video(
         percent_done = int(i * 100 / frame_count)
         logging.info(f'{video_path.stem}: {percent_done}%')
 
-    pose_landmark_filepath = output_root / (video_path.stem + "_worldpose.csv")
-    righthand_landmark_filepath = output_root / (video_path.stem + "_righthand.csv")
-    lefthand_landmark_filepath = output_root / (video_path.stem + "_lefthand.csv")
+    holistic_data_filepath = output_root / (video_path.stem + "_holistic_data.csv")
     with(
-        open(str(pose_landmark_filepath), 'w', encoding='utf-8') as pose_file,
-        open(str(righthand_landmark_filepath), 'w', encoding='utf-8') as righthand_file,
-        open(str(lefthand_landmark_filepath), 'w', encoding='utf-8') as lefthand_file
+        open(str(holistic_data_filepath), 'w', encoding='utf-8') as merged_data_file,
     ):
-        pose_csv = csv.writer(pose_file)
-        righthand_csv = csv.writer(righthand_file)
-        lefthand_csv = csv.writer(lefthand_file)
+        merged_data_csv = csv.writer(merged_data_file)
         for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
 
             image.flags.writeable = True
@@ -92,73 +86,59 @@ def process_video(
 
             print_progress(frame_i, frame_count)
             if frame_i == 0:
-                pose_csv.writerow(
+                merged_data_csv.writerow(
                     ['frame'] + 
                     [f'{PoseLandmark(landmark_i).name}_{field}' 
                         for landmark_i in np.array(sorted(PoseLandmark))
                         for field in ('x', 'y', 'z', 'vis')
-                    ]
-                )
-                righthand_csv.writerow(
-                    ['frame'] +
-                    [f'{HandLandmark(landmark_i).name}_{field}'
+                    ] + 
+                    [f'LEFT_{HandLandmark(landmark_i).name}_{field}'
+                        for landmark_i in np.array(sorted(HandLandmark))
+                        for field in ('x', 'y', 'z')
+                    ] +
+                    [f'RIGHT_{HandLandmark(landmark_i).name}_{field}'
                         for landmark_i in np.array(sorted(HandLandmark))
                         for field in ('x', 'y', 'z')
                     ]
                 )
-                lefthand_csv.writerow(
-                    ['frame'] +
-                    [f'{HandLandmark(landmark_i).name}_{field}'
-                        for landmark_i in np.array(sorted(HandLandmark))
-                        for field in ('x', 'y', 'z')
+            
+            row = [frame_i]
+            
+            row += list(reduce(
+                    lambda x, y: x + y,
+                    [
+                        [lm.x, lm.y, lm.z, lm.visibility] if lm is not None else [None, None, None, None]
+                        for lm in 
+                        [(frame_data.pose_world_landmarks.landmark[landmark_i] if frame_data.pose_world_landmarks else None)
+                            for landmark_i in range(len(frame_data.pose_world_landmarks.landmark))
+                        ]
                     ]
-                )  
-            
-            if frame_data.pose_world_landmarks:
-                pose_csv.writerow(
-                    [frame_i] + 
-                    list(reduce(
-                        lambda x, y: x + y,
-                        [
-                            [lm.x, lm.y, lm.z, lm.visibility]
-                            for lm in 
-                            [frame_data.pose_world_landmarks.landmark[landmark_i]
-                                for landmark_i in range(len(frame_data.pose_world_landmarks.landmark))
-                            ]
+                ))
+                
+            row += list(reduce(
+                    lambda x, y: x + y,
+                    [
+                        ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
+                        for lm in 
+                        [(frame_data.right_hand_landmarks.landmark[landmark_i] if frame_data.right_hand_landmarks else None)
+                            for landmark_i in range(len(frame_data.right_hand_landmarks.landmark))
                         ]
-                    ))
-                )
+                    ]
+                ))
 
-            if frame_data.right_hand_landmarks:
-                righthand_csv.writerow(
-                    [frame_i] +
-                    list(reduce(
-                        lambda x, y: x + y,
-                        [
-                            [lm.x, lm.y, lm.z]
-                            for lm in 
-                            [frame_data.right_hand_landmarks.landmark[landmark_i]
-                                for landmark_i in range(len(frame_data.right_hand_landmarks.landmark))
-                            ]
+            row += list(reduce(
+                    lambda x, y: x + y,
+                    [
+                        ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
+                        for lm in 
+                        [(frame_data.left_hand_landmarks.landmark[landmark_i] if frame_data.left_hand_landmarks is not None else None)
+                            for landmark_i in range(len(frame_data.left_hand_landmarks.landmark))
                         ]
-                    ))
-                )
-            
-            if frame_data.left_hand_landmarks:
-                lefthand_csv.writerow(
-                    [frame_i] +
-                    list(reduce(
-                        lambda x, y: x + y,
-                        [
-                            [lm.x, lm.y, lm.z]
-                            for lm in 
-                            [frame_data.left_hand_landmarks.landmark[landmark_i]
-                                for landmark_i in range(len(frame_data.left_hand_landmarks.landmark))
-                            ]
-                        ]
-                    ))
-                )
+                    ]
+                ))
 
+            merged_data_csv.writerow(row)
+            
 def main():
     import argparse
 
