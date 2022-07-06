@@ -55,6 +55,7 @@ MUSCLES = {
     52: "Right Forearm Twist In-Out",
     53: "Right Hand Down-Up",
     54: "Right Hand In-Out",
+    
     55: "Left Thumb 1 Stretched",
     56: "Left Thumb Spread",
     57: "Left Thumb 2 Stretched",

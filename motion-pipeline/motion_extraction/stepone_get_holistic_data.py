@@ -63,7 +63,7 @@ def process_video(
         percent_done = int(i * 100 / frame_count)
         logging.info(f'{video_path.stem}: {percent_done}%')
 
-    holistic_data_filepath = output_root / (video_path.stem + "_holistic_data.csv")
+    holistic_data_filepath = output_root / (video_path.stem + ".holisticdata.csv")
     with(
         open(str(holistic_data_filepath), 'w', encoding='utf-8') as merged_data_file,
     ):
@@ -92,11 +92,11 @@ def process_video(
                         for landmark_i in np.array(sorted(PoseLandmark))
                         for field in ('x', 'y', 'z', 'vis')
                     ] + 
-                    [f'LEFT_{HandLandmark(landmark_i).name}_{field}'
+                    [f'LEFTHAND_{HandLandmark(landmark_i).name}_{field}'
                         for landmark_i in np.array(sorted(HandLandmark))
                         for field in ('x', 'y', 'z')
                     ] +
-                    [f'RIGHT_{HandLandmark(landmark_i).name}_{field}'
+                    [f'RIGHTHAND_{HandLandmark(landmark_i).name}_{field}'
                         for landmark_i in np.array(sorted(HandLandmark))
                         for field in ('x', 'y', 'z')
                     ]
@@ -110,7 +110,7 @@ def process_video(
                         [lm.x, lm.y, lm.z, lm.visibility] if lm is not None else [None, None, None, None]
                         for lm in 
                         [(frame_data.pose_world_landmarks.landmark[landmark_i] if frame_data.pose_world_landmarks else None)
-                            for landmark_i in range(len(frame_data.pose_world_landmarks.landmark))
+                            for landmark_i in range(len(PoseLandmark))
                         ]
                     ]
                 ))
@@ -120,8 +120,8 @@ def process_video(
                     [
                         ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
                         for lm in 
-                        [(frame_data.right_hand_landmarks.landmark[landmark_i] if frame_data.right_hand_landmarks else None)
-                            for landmark_i in range(len(frame_data.right_hand_landmarks.landmark))
+                        [(frame_data.right_hand_landmarks.landmark[landmark_i] if frame_data.right_hand_landmarks is not None else None)
+                            for landmark_i in range(len(HandLandmark))
                         ]
                     ]
                 ))
@@ -132,7 +132,7 @@ def process_video(
                         ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
                         for lm in 
                         [(frame_data.left_hand_landmarks.landmark[landmark_i] if frame_data.left_hand_landmarks is not None else None)
-                            for landmark_i in range(len(frame_data.left_hand_landmarks.landmark))
+                            for landmark_i in range(len(HandLandmark))
                         ]
                     ]
                 ))
