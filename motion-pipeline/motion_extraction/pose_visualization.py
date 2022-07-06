@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from numpy import isnan
 import pandas as pd
 import mediapipe as mp
+from .mp_utils import PoseLandmark, HandLandmark
 
 PoseLandmark = mp.solutions.holistic.PoseLandmark
 HandLandmark = mp.solutions.holistic.HandLandmark
@@ -55,14 +56,14 @@ def visualize_pose(pose_row: pd.Series):
     plt.show(block=True)
 
 
-def visualize_hand(hand_row: pd.Series, prefix: Literal["RIGHT", "LEFT", ""] = ""):
+def visualize_hand(hand_row: pd.Series, prefix: Literal["RIGHTHAND_", "LEFTHAND_", ""] = "RIGHTHAND_"):
     
     fig = plt.figure("Hand Visualization")
     ax = fig.add_subplot(projection='3d')
 
 
     xyz_tuples = [
-        (hand_row[f'{i.name}_x'], hand_row[f'{i.name}_y'], hand_row[f'{i.name}_z'], i.name)
+        (hand_row[f'{prefix}{i.name}_x'], hand_row[f'{prefix}{i.name}_y'], hand_row[f'{prefix}{i.name}_z'], i.name)
         for i in HandLandmark
     ]
     xyz_tuples = [
@@ -78,8 +79,8 @@ def visualize_hand(hand_row: pd.Series, prefix: Literal["RIGHT", "LEFT", ""] = "
     ax.scatter(xs, ys, zs,c='red')
 
     for i, j in lm_hand_connections:
-        x1, y1, z1 = hand_row[f'{i.name}_x'], hand_row[f'{i.name}_y'], hand_row[f'{i.name}_z']
-        x2, y2, z2 = hand_row[f'{j.name}_x'], hand_row[f'{j.name}_y'], hand_row[f'{j.name}_z']
+        x1, y1, z1 = hand_row[f'{prefix}{i.name}_x'], hand_row[f'{prefix}{i.name}_y'], hand_row[f'{prefix}{i.name}_z']
+        x2, y2, z2 = hand_row[f'{prefix}{j.name}_x'], hand_row[f'{prefix}{j.name}_y'], hand_row[f'{prefix}{j.name}_z']
 
         if isnan(x1) or isnan(y1) or isnan(z1) or isnan(x2) or isnan(y2) or isnan(z2):
             continue

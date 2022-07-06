@@ -1,8 +1,9 @@
 
+from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import auto, Enum
-from typing import Dict, Final
-from typing_extensions import Self
+from functools import reduce
+from typing import Dict, Final, Optional
 import pandas as pd
 from .mp_utils import PoseLandmark
 import numpy as np
@@ -26,9 +27,12 @@ class MecanimBone(Enum):
     RightToes = auto()
     Head = auto()
 
-    
+    @classmethod
+    def root_bone(cls):
+        # cls here is the enumeration
+        return cls.Hips
+
     @staticmethod
-    @property
     def required_bones():
         required_bones: Final = frozenset((
             MecanimBone.Hips,
@@ -49,7 +53,8 @@ class MecanimBone(Enum):
         )) 
         return required_bones
     
-    def parent(self) -> Self:
+    @property
+    def parent(self):
         match self:
             case MecanimBone.Hips:
                 return None
@@ -85,6 +90,12 @@ class MecanimBone(Enum):
                 return MecanimBone.RightFoot
             case MecanimBone.Head:
                 return MecanimBone.Spine
+            case _:
+                raise ValueError(f'{self} is not a valid MecanimBone')
+
+    @property
+    def children(self):
+        return [b for b in MecanimBone if b.parent is not None and b.parent.value == self.value]
 
     @staticmethod
     def position_from_mp_pose(bone: Self, poseRow: pd.Series):
@@ -175,7 +186,6 @@ class MecanimBone(Enum):
             case _:
                 raise Exception(f'Unknown PoseBone {bone}')
             
-
 @dataclass
 class HumanoidPositionSkeleton:
     bones: Dict[MecanimBone, np.ndarray] = field(default_factory=dict)
@@ -183,26 +193,81 @@ class HumanoidPositionSkeleton:
     @property
     def root(self):
         return self.bones[MecanimBone.Hips]
-    
+
+    def world_position(self, bone: MecanimBone):
+        if bone.parent is None:
+            return self.bones[bone]
+        
+        return reduce(np.add, [self.bones[bone], self.world_position(bone.parent)])
+
     @staticmethod
     def from_mp_pose(poseRow: pd.Series):
         # TODO: Adjust to each bone is relative to parent bone
         skeleton = HumanoidPositionSkeleton()
         for bone in MecanimBone:
             skeleton.bones[bone] = MecanimBone.position_from_mp_pose(bone, poseRow)
+
+
+        print("Before Adjustment:")
+        skeleton.print_subtree()
+        import matplotlib.pyplot as plt
+        fig = plt.figure("Pre-Adjustment Visualization")
+        ax = fig.add_subplot(projection='3d')
+        xs, ys, zs = list(zip(*skeleton.bones.values()))
+        
+        ax.scatter(xs, ys, zs)
+        def draw_line(bone: MecanimBone):
+            if bone.parent is not None:
+                xs, ys, zs = list(zip(skeleton.bones[bone], skeleton.bones[bone.parent]))
+                ax.plot(xs, ys, zs, color='red')
+            for child in bone.children:
+                draw_line(child)
+        draw_line(MecanimBone.Hips)
+
+        def make_position_relative(skel: HumanoidPositionSkeleton, bone: MecanimBone, relativeTo: np.ndarray):
+            skel.bones[bone] = skel.bones[bone] - relativeTo
+            for child in bone.children:
+                make_position_relative(skel, child, skel.bones[bone])
+        
+        make_position_relative(skeleton, MecanimBone.Hips, skeleton.bones[MecanimBone.Hips])
+
+        fig2 = plt.figure("Relative Visualization")
+        ax2 = fig2.add_subplot(projection='3d')
+        
+        # x2s, y2s, z2s = [], [], []
+        def draw_connection_relative(bone: MecanimBone):
+            if bone.parent is not None:
+                xs, ys, zs = list(zip(skeleton.world_position(bone), skeleton.world_position(bone.parent)))
+                ax2.plot(xs, ys, zs, color='red')
+            for child in bone.children:
+                draw_connection_relative(child)
+        draw_connection_relative(MecanimBone.Hips)
+
+        print("\nAfter Adjustment:")
+        skeleton.print_subtree()
+
         return skeleton
 
+    def print_subtree(self, bone: MecanimBone = MecanimBone.root_bone(), indent: int = 0):
+        boneStr = "(" + ",".join([f"{v:.02}" for v in self.bones[bone]]) + ")"
+        indentStr = " " * indent
+        print(f'{indentStr}{bone.name}: {boneStr}')
+        for child in bone.children:
+            self.print_subtree(child, indent + 2)
 
 if __name__ == "__main__":
     import argparse
     from pathlib import Path
     parser = argparse.ArgumentParser()
-    parser.add_argument('skeleton_file', type=Path)
+    parser.add_argument('--skeleton_file', type=Path)
 
     args = parser.parse_args()
 
-    pose_rows = None
-    with args.pose_file as worldpose_file:
-        pose_rows = pd.read_csv(worldpose_file, index_col='frame')
+    holistic_data = None
+    with args.skeleton_file as worldpose_file:
+        holistic_data = pd.read_csv(worldpose_file, index_col='frame')
 
-    pose_rows
+    middle_row = holistic_data.iloc[len(holistic_data) // 2]
+    skel = HumanoidPositionSkeleton.from_mp_pose(middle_row)
+    # skel.print_subtree()
+    pass
