@@ -267,7 +267,16 @@ if __name__ == "__main__":
     with args.skeleton_file as worldpose_file:
         holistic_data = pd.read_csv(worldpose_file, index_col='frame')
 
+    
+    
+
     middle_row = holistic_data.iloc[len(holistic_data) // 2]
+
+    from .pose_visualization import visualize_pose
+    visualize_pose(middle_row, block=False)
+
     skel = HumanoidPositionSkeleton.from_mp_pose(middle_row)
     # skel.print_subtree()
+    import matplotlib.pyplot as plt
+    plt.show(block=True)
     pass
