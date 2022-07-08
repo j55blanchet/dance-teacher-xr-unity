@@ -19,7 +19,7 @@ lm_hand_connections = [
 ]
 # Useful tutorial: https://matplotlib.org/stable/tutorials/toolkits/mplot3d.html
 
-def visualize_pose(pose_row: pd.Series):
+def visualize_pose(pose_row: pd.Series, block=True):
     fig = plt.figure("Pose Visualization")
     ax = fig.add_subplot(projection='3d')
 
@@ -53,7 +53,7 @@ def visualize_pose(pose_row: pd.Series):
             continue
 
         ax.plot([x1, x2], [y1, y2], zs=[z1, z2], color='black')
-    plt.show(block=True)
+    plt.show(block=block)
 
 
 def visualize_hand(hand_row: pd.Series, prefix: Literal["RIGHTHAND_", "LEFTHAND_", ""] = "RIGHTHAND_"):
