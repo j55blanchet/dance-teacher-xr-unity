@@ -225,35 +225,44 @@ class HumanoidPositionSkeleton:
         draw_line(MecanimBone.Hips)
 
         def make_position_relative(skel: HumanoidPositionSkeleton, bone: MecanimBone, relativeTo: np.ndarray):
+            ogPos = skel.bones[bone]
             skel.bones[bone] = skel.bones[bone] - relativeTo
             for child in bone.children:
-                make_position_relative(skel, child, skel.bones[bone])
+                make_position_relative(skel, child, ogPos)
         
-        make_position_relative(skeleton, MecanimBone.Hips, skeleton.bones[MecanimBone.Hips])
+        # hipPos = skeleton.bones[MecanimBone.Hips]
+        # for bone in MecanimBone:
+            # skeleton.bones[bone] -= hipPos
+        make_position_relative(skeleton, MecanimBone.Hips, np.zeros(3))
 
         fig2 = plt.figure("Relative Visualization")
         ax2 = fig2.add_subplot(projection='3d')
         
-        # x2s, y2s, z2s = [], [], []
+        x2s, y2s, z2s = [], [], []
         def draw_connection_relative(bone: MecanimBone):
+            world_pos = skeleton.world_position(bone)
+            x, y, z = world_pos
+            x2s.append(x); y2s.append(y); z2s.append(z)
             if bone.parent is not None:
-                xs, ys, zs = list(zip(skeleton.world_position(bone), skeleton.world_position(bone.parent)))
+                xs, ys, zs = list(zip(world_pos, skeleton.world_position(bone.parent)))
                 ax2.plot(xs, ys, zs, color='red')
             for child in bone.children:
                 draw_connection_relative(child)
         draw_connection_relative(MecanimBone.Hips)
+        ax2.scatter(x2s, y2s, z2s)
 
         print("\nAfter Adjustment:")
-        skeleton.print_subtree()
+        skeleton.print_subtree(print_world_position=True)
 
         return skeleton
 
-    def print_subtree(self, bone: MecanimBone = MecanimBone.root_bone(), indent: int = 0):
+    def print_subtree(self, bone: MecanimBone = MecanimBone.root_bone(), indent: int = 0, print_world_position: bool = False):
         boneStr = "(" + ",".join([f"{v:.02}" for v in self.bones[bone]]) + ")"
         indentStr = " " * indent
-        print(f'{indentStr}{bone.name}: {boneStr}')
+        worldPosStr = "" if not print_world_position else "(" + ",".join([f"{v:.02}" for v in self.world_position(bone)]) + ")  rel:"
+        print(f'{indentStr}{bone.name}: {worldPosStr}{boneStr}')
         for child in bone.children:
-            self.print_subtree(child, indent + 2)
+            self.print_subtree(child, indent + 2, print_world_position)
 
 if __name__ == "__main__":
     import argparse
@@ -266,9 +275,6 @@ if __name__ == "__main__":
     holistic_data = None
     with args.skeleton_file as worldpose_file:
         holistic_data = pd.read_csv(worldpose_file, index_col='frame')
-
-    
-    
 
     middle_row = holistic_data.iloc[len(holistic_data) // 2]
 
