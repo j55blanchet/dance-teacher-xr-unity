@@ -13,6 +13,14 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "name": "Quick Script",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.quickscript",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "VideoPipeline (1): Get MP Holistic Data",
             "type": "python",
             "request": "launch",
