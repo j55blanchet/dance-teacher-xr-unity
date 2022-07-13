@@ -200,29 +200,45 @@ class HumanoidPositionSkeleton:
         
         return reduce(np.add, [self.bones[bone], self.world_position(bone.parent)])
 
+    def bone_length_to_parent(self, bone: MecanimBone):
+        if bone.parent is None:
+            return 0
+        return np.linalg.norm(self.bones[bone] - self.bones[bone.parent])
+
+    @property
+    def armspan(self):
+        return self.bone_length_to_parent(MecanimBone.LeftHand) + \
+               self.bone_length_to_parent(MecanimBone.LeftUpperArm) + \
+               self.bone_length_to_parent(MecanimBone.RightHand) + \
+               self.bone_length_to_parent(MecanimBone.RightUpperArm) + \
+               np.linalg.norm(self.bones[MecanimBone.LeftUpperArm] - self.bones[MecanimBone.RightUpperArm])
+
     @staticmethod
-    def from_mp_pose(poseRow: pd.Series):
+    def from_mp_pose(poseRow: pd.Series, enable_plotting=False):
         # TODO: Adjust to each bone is relative to parent bone
         skeleton = HumanoidPositionSkeleton()
         for bone in MecanimBone:
             skeleton.bones[bone] = MecanimBone.position_from_mp_pose(bone, poseRow)
 
 
-        print("Before Adjustment:")
-        skeleton.print_subtree()
-        import matplotlib.pyplot as plt
-        fig = plt.figure("Pre-Adjustment Visualization")
-        ax = fig.add_subplot(projection='3d')
-        xs, ys, zs = list(zip(*skeleton.bones.values()))
-        
-        ax.scatter(xs, ys, zs)
-        def draw_line(bone: MecanimBone):
-            if bone.parent is not None:
-                xs, ys, zs = list(zip(skeleton.bones[bone], skeleton.bones[bone.parent]))
-                ax.plot(xs, ys, zs, color='red')
-            for child in bone.children:
-                draw_line(child)
-        draw_line(MecanimBone.Hips)
+        if enable_plotting:
+            print("Before Adjustment:")
+            skeleton.print_subtree()
+            import matplotlib.pyplot as plt
+            fig = plt.figure("Pre-Adjustment Visualization")
+            ax = fig.add_subplot(projection='3d')
+            xs, ys, zs = list(zip(*skeleton.bones.values()))
+            ax.xaxis.set_label_text('X')
+            ax.yaxis.set_label_text('Y')
+            ax.zaxis.set_label_text('Z')
+            ax.scatter(xs, ys, zs)
+            def draw_line(bone: MecanimBone):
+                if bone.parent is not None:
+                    xs, ys, zs = list(zip(skeleton.bones[bone], skeleton.bones[bone.parent]))
+                    ax.plot(xs, ys, zs, color='red')
+                for child in bone.children:
+                    draw_line(child)
+            draw_line(MecanimBone.Hips)
 
         def make_position_relative(skel: HumanoidPositionSkeleton, bone: MecanimBone, relativeTo: np.ndarray):
             ogPos = skel.bones[bone]
@@ -235,24 +251,32 @@ class HumanoidPositionSkeleton:
             # skeleton.bones[bone] -= hipPos
         make_position_relative(skeleton, MecanimBone.Hips, np.zeros(3))
 
-        fig2 = plt.figure("Relative Visualization")
-        ax2 = fig2.add_subplot(projection='3d')
-        
-        x2s, y2s, z2s = [], [], []
-        def draw_connection_relative(bone: MecanimBone):
-            world_pos = skeleton.world_position(bone)
-            x, y, z = world_pos
-            x2s.append(x); y2s.append(y); z2s.append(z)
-            if bone.parent is not None:
-                xs, ys, zs = list(zip(world_pos, skeleton.world_position(bone.parent)))
-                ax2.plot(xs, ys, zs, color='red')
-            for child in bone.children:
-                draw_connection_relative(child)
-        draw_connection_relative(MecanimBone.Hips)
-        ax2.scatter(x2s, y2s, z2s)
+        if enable_plotting:
+            fig2 = plt.figure("Relative Visualization")
+            ax2 = fig2.add_subplot(projection='3d')
+            
+            x2s, y2s, z2s = [], [], []
+            def draw_connection_relative(bone: MecanimBone):
+                world_pos = skeleton.world_position(bone)
+                x, y, z = world_pos
+                x2s.append(x); y2s.append(y); z2s.append(z)
+                if bone.parent is not None:
+                    xs, ys, zs = list(zip(world_pos, skeleton.world_position(bone.parent)))
+                    ax2.plot(xs, ys, zs, color='red')
+                for child in bone.children:
+                    draw_connection_relative(child)
+            draw_connection_relative(MecanimBone.Hips)
+            ax2.scatter(x2s, y2s, z2s)
+            ax2.xaxis.set_label_text('X')
+            ax2.yaxis.set_label_text('Y')
+            ax2.zaxis.set_label_text('Z')
 
-        print("\nAfter Adjustment:")
-        skeleton.print_subtree(print_world_position=True)
+            for impt_bone in [MecanimBone.LeftHand, MecanimBone.RightHand, MecanimBone.Hips]:
+                x, y, z = skeleton.world_position(impt_bone)
+                ax2.scatter(x, y, z, label=impt_bone.name)
+            ax2.legend()
+            print("\nAfter Adjustment:")
+            skeleton.print_subtree(print_world_position=True)
 
         return skeleton
 
@@ -281,7 +305,8 @@ if __name__ == "__main__":
     from .pose_visualization import visualize_pose
     visualize_pose(middle_row, block=False)
 
-    skel = HumanoidPositionSkeleton.from_mp_pose(middle_row)
+    skel = HumanoidPositionSkeleton.from_mp_pose(middle_row, enable_plotting=True)
+
     # skel.print_subtree()
     import matplotlib.pyplot as plt
     plt.show(block=True)
