@@ -33,7 +33,7 @@ scale_factor = armspan_nao_in_meters / armspan
 bunches = []
 xs, ys, zs = [], [], []
 rows_to_take = 600
-
+print("[")
 for i, row in itertools.islice(data.iterrows(), 2, rows_to_take):
     
     # all_cols = [c for c in  data.columns]
@@ -49,11 +49,12 @@ for i, row in itertools.islice(data.iterrows(), 2, rows_to_take):
     xs.append(x)
     ys.append(y)
     zs.append(z)
-    print(f"[{x:.2f}, {y:.2f}, {z:.2f}],")
+    print(f"    [{x:.4f}, {y:.4f}, {z:.4f}],")
     if i % 30 == 0:
         bunches.append([xs, ys, zs])
         xs, ys, zs = [], [], []
 
+print("]")
 import matplotlib.pyplot as plt
 fig = plt.figure("Nao-Scaled Target Left Hand Trajectory")
 ax = fig.add_subplot(projection='3d')
