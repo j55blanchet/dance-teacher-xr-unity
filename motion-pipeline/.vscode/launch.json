@@ -58,6 +58,18 @@
             ],
         },
         {
+            "name": "VideoPipeline (2): Convert to Joint Space",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.steptwo_convert_to_jointspace",
+            "justMyCode": true,
+            "args": [
+                "--output_folder=${workspaceFolder}/data/jointspace_data",
+                "--log_level=INFO",
+                "${workspaceFolder}/data/holistic_data/tpose.holisticdata.csv"
+            ],
+        },
+        {
             "name": "Test: Visualize Pose",
             "type": "python",
             "request": "launch",

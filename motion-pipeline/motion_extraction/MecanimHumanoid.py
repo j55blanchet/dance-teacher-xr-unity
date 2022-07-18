@@ -597,7 +597,9 @@ class HumanoidPositionSkeleton:
             ax = tm.plot_frames_in('world', s=0.1)
             self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
 
-        self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
+        if plot:
+            ax = tm.plot_frames_in('world', s=0.1)
+            self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
 
         return tm
         # plt.show()
