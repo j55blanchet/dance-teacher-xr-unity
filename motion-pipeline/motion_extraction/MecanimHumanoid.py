@@ -23,13 +23,26 @@ class MecanimBone(Enum):
     RightHand = auto()
     LeftUpperLeg = auto()
     LeftLowerLeg = auto()
-    LeftFoot = auto()
+    LeftFootAnkle = auto()
     LeftToes = auto()
     RightUpperLeg = auto()
     RightLowerLeg = auto()
-    RightFoot = auto()
+    RightFootAnkle = auto()
     RightToes = auto()
     Head = auto()
+
+    # "Alignment" points
+    LeftHandPinkyRoot = auto()
+    LeftHandIndexRoot = auto()
+    LeftHandThumbRoot = auto()
+    RightHandPinkyRoot = auto()
+    RightHandIndexRoot = auto()
+    RightHandThumbRoot = auto()
+    LeftHeel = auto()
+    RightHeel = auto()
+    LeftEye = auto()
+    RightEye = auto()
+    Nose = auto()
 
     @classmethod
     def root_bone(cls):
@@ -49,10 +62,10 @@ class MecanimBone(Enum):
             MecanimBone.RightHand,
             MecanimBone.LeftUpperLeg,
             MecanimBone.LeftLowerLeg,
-            MecanimBone.LeftFoot,
+            MecanimBone.LeftFootAnkle,
             MecanimBone.RightUpperLeg,
             MecanimBone.RightLowerLeg,
-            MecanimBone.RightFoot,
+            MecanimBone.RightFootAnkle,
             MecanimBone.Head,
         )) 
         return required_bones
@@ -80,20 +93,42 @@ class MecanimBone(Enum):
                 return MecanimBone.Hips
             case MecanimBone.LeftLowerLeg:
                 return MecanimBone.LeftUpperLeg
-            case MecanimBone.LeftFoot:
+            case MecanimBone.LeftFootAnkle:
                 return MecanimBone.LeftLowerLeg
             case MecanimBone.LeftToes:
-                return MecanimBone.LeftFoot
+                return MecanimBone.LeftFootAnkle
             case MecanimBone.RightUpperLeg:
                 return MecanimBone.Hips
             case MecanimBone.RightLowerLeg:
                 return MecanimBone.RightUpperLeg
-            case MecanimBone.RightFoot:
+            case MecanimBone.RightFootAnkle:
                 return MecanimBone.RightLowerLeg
             case MecanimBone.RightToes:
-                return MecanimBone.RightFoot
+                return MecanimBone.RightFootAnkle
             case MecanimBone.Head:
                 return MecanimBone.Spine
+            case MecanimBone.LeftHandPinkyRoot:
+                return MecanimBone.LeftHand
+            case MecanimBone.LeftHandIndexRoot:
+                return MecanimBone.LeftHand
+            case MecanimBone.LeftHandThumbRoot:
+                return MecanimBone.LeftHand
+            case MecanimBone.RightHandPinkyRoot:
+                return MecanimBone.RightHand
+            case MecanimBone.RightHandIndexRoot:
+                return MecanimBone.RightHand
+            case MecanimBone.RightHandThumbRoot:
+                return MecanimBone.RightHand
+            case MecanimBone.LeftHeel:
+                return MecanimBone.LeftFootAnkle
+            case MecanimBone.RightHeel:
+                return MecanimBone.RightFootAnkle
+            case MecanimBone.LeftEye:
+                return MecanimBone.Nose
+            case MecanimBone.RightEye:
+                return MecanimBone.Nose
+            case MecanimBone.Nose:
+                return MecanimBone.Head
             case _:
                 raise ValueError(f'{self} is not a valid MecanimBone')
 
@@ -104,8 +139,10 @@ class MecanimBone(Enum):
     @staticmethod
     def position_from_mp_pose(bone: Self, poseRow: pd.Series):
         
-        def get_pose_bone_position(lm: PoseLandmark):
-            return np.array([poseRow[f'{lm.name}_x'], poseRow[f'{lm.name}_y'], poseRow[f'{lm.name}_z']])
+        def get_pose_bone_position(lm: PoseLandmark | str):
+            if isinstance(lm, PoseLandmark):
+                lm = lm.name
+            return np.array([poseRow[f'{lm}_x'], poseRow[f'{lm}_y'], poseRow[f'{lm}_z']])
 
         match bone:
             case MecanimBone.Hips:
@@ -155,7 +192,7 @@ class MecanimBone(Enum):
                 # Return left knee
                 return get_pose_bone_position(PoseLandmark.LEFT_KNEE)
 
-            case MecanimBone.LeftFoot:
+            case MecanimBone.LeftFootAnkle:
                 # Return left ankle
                 return get_pose_bone_position(PoseLandmark.LEFT_ANKLE)
             
@@ -171,7 +208,7 @@ class MecanimBone(Enum):
                 # Return right knee
                 return get_pose_bone_position(PoseLandmark.RIGHT_KNEE)
             
-            case MecanimBone.RightFoot:
+            case MecanimBone.RightFootAnkle:
                 # Return right ankle
                 return get_pose_bone_position(PoseLandmark.RIGHT_ANKLE)
             
@@ -186,6 +223,31 @@ class MecanimBone(Enum):
                 leftEar = get_pose_bone_position(PoseLandmark.LEFT_EAR)
                 rightEar = get_pose_bone_position(PoseLandmark.RIGHT_EAR)
                 return (leftShoulder + rightShoulder + leftEar + rightEar) / 4
+
+            case MecanimBone.LeftHandPinkyRoot:
+                return get_pose_bone_position(PoseLandmark.LEFT_PINKY)
+            case MecanimBone.LeftHandIndexRoot:
+                return get_pose_bone_position(PoseLandmark.LEFT_INDEX)
+            case MecanimBone.LeftHandThumbRoot:
+                return get_pose_bone_position(PoseLandmark.LEFT_THUMB)
+            case MecanimBone.RightHandPinkyRoot:
+                return get_pose_bone_position(PoseLandmark.RIGHT_PINKY)
+            case MecanimBone.RightHandIndexRoot:
+                return get_pose_bone_position(PoseLandmark.RIGHT_INDEX)
+            case MecanimBone.RightHandThumbRoot:
+                return get_pose_bone_position(PoseLandmark.RIGHT_THUMB)
+
+            case MecanimBone.LeftHeel:
+                return get_pose_bone_position(PoseLandmark.LEFT_HEEL)
+            case MecanimBone.RightHeel:
+                return get_pose_bone_position(PoseLandmark.RIGHT_HEEL)
+
+            case MecanimBone.LeftEye:
+                return get_pose_bone_position(PoseLandmark.LEFT_EYE)
+            case MecanimBone.RightEye:
+                return get_pose_bone_position(PoseLandmark.RIGHT_EYE)
+            case MecanimBone.Nose:
+                return get_pose_bone_position(PoseLandmark.NOSE)
 
             case _:
                 raise Exception(f'Unknown PoseBone {bone}')
@@ -283,6 +345,28 @@ class HumanoidPositionSkeleton:
             skeleton.print_subtree(print_world_position=True)
 
         return skeleton
+    
+    def plt_skeleton(self, ax=None, color='red', dotcolor=None):
+        if ax is None:
+            ax = plt.figure('Skeleton Visualization').add_subplot(projection='3d')
+            ax.xaxis.set_label_text('X')
+            ax.yaxis.set_label_text('Y')
+            ax.zaxis.set_label_text('Z')
+
+        x2s, y2s, z2s = [], [], []
+        def draw_connection_relative(bone: MecanimBone):
+            world_pos = self.world_position(bone)
+            x, y, z = world_pos
+            x2s.append(x); y2s.append(y); z2s.append(z)
+            if bone.parent is not None:
+                xs, ys, zs = list(zip(world_pos, self.world_position(bone.parent)))
+                ax.plot(xs, ys, zs, color=color)
+            for child in bone.children:
+                draw_connection_relative(child)            
+
+        draw_connection_relative(MecanimBone.Hips)
+        if dotcolor is not None:
+            ax.scatter(x2s, y2s, z2s, color=dotcolor)
 
     def plt_transform(self):
         tm = TransformManager()
@@ -306,6 +390,30 @@ class HumanoidPositionSkeleton:
         left_shoulder_tf = pt.transform_from(left_shoulder_rot_matrix, self.world_position(MecanimBone.LeftUpperArm))
         tm.add_transform(MecanimBone.LeftUpperArm.name, 'world', left_shoulder_tf)
 
+        # Create transform for left elbow - pointing towards the hand, on the plane formed by the hand (for the twist axis).
+        left_hand_lateral = self.world_position(MecanimBone.LeftHandPinkyRoot) - self.world_position(MecanimBone.LeftHandThumbRoot)
+        left_elbow_rot_matrix = pr.matrix_from_two_vectors(
+            self.bones[MecanimBone.LeftHand], 
+            left_hand_lateral
+        )
+        left_elbow_tf = pt.transform_from(left_elbow_rot_matrix, self.world_position(MecanimBone.LeftLowerArm))
+        tm.add_transform(MecanimBone.LeftLowerArm.name, 'world', left_elbow_tf)
+
+        # Create transform for left wrist - pointing towards midpoint of index & pinky, with twist aligned with elbow
+        left_hand_knuckle_midpoint = (self.bones[MecanimBone.LeftHandIndexRoot] + self.bones[MecanimBone.LeftHandPinkyRoot]) / 2
+        left_wrist_rot_matrix = pr.matrix_from_two_vectors(
+            left_hand_knuckle_midpoint,
+            left_hand_lateral,
+        )
+        left_wrist_tf = pt.transform_from(left_wrist_rot_matrix, self.world_position(MecanimBone.LeftHand))
+        tm.add_transform(MecanimBone.LeftHand.name, 'world', left_wrist_tf)
+
+        # Create transform for right shoulder - pointing to elbow, with twist axis pointing to wrist.
+        # right_shoulder_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.RightLowerArm], self.bones[MecanimBone.RightHand])
+        # right_shoulder_tf = pt.transform_from(right_shoulder_rot_matrix, self.world_position(MecanimBone.RightUpperArm))
+        # tm.add_transform(MecanimBone.RightUpperArm.name, 'world', right_shoulder_tf)
+
+        # Create transform for 
         # Todo: repeat for other bones!
 
         # for bone in MecanimBone:
@@ -313,6 +421,8 @@ class HumanoidPositionSkeleton:
         #         transform = pt.transform_from(np.eye(3), self.bones[bone])
         #         tm.add_transform(bone.name, bone.parent.name, transform)
         ax = tm.plot_frames_in('world', s=0.1)
+
+        self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
 
         return tm
         # plt.show()
@@ -382,7 +492,8 @@ if __name__ == "__main__":
     with args.skeleton_file as worldpose_file:
         holistic_data = pd.read_csv(worldpose_file, index_col='frame')
 
-    middle_row = holistic_data.iloc[len(holistic_data) // 2]
+    frame_i = len(holistic_data) // 2
+    middle_row = holistic_data.iloc[frame_i]
 
     # from .pose_visualization import visualize_pose
     # visualize_pose(middle_row, block=False)
