@@ -48,6 +48,7 @@ def process_video(
     output_root: Path, 
     holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic,
     frame_output_folder: bool,
+    rewrite_existing: bool = False,
 ):
 
     # Reset graph for this new file
@@ -64,6 +65,11 @@ def process_video(
         logging.info(f'{video_path.stem}: {percent_done}%')
 
     holistic_data_filepath = output_root / (video_path.stem + ".holisticdata.csv")
+
+    if holistic_data_filepath.exists() and not rewrite_existing:
+        logging.info(f'Skipping {video_path} - already exists')
+        return
+
     with(
         open(str(holistic_data_filepath), 'w', encoding='utf-8') as merged_data_file,
     ):
@@ -148,6 +154,7 @@ def main():
     parser.add_argument('--log_level', type=str, default='INFO')
     parser.add_argument('--model-complexity', type=int, default=2)
     parser.add_argument('--frame_output_folder', type=Path, default=None)
+    parser.add_argument('--rewrite_existing', action='store_true')
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -170,7 +177,8 @@ def main():
             video_path, 
             holistic_solution=holistic_solution, 
             output_root=args.output_folder,
-            frame_output_folder=args.frame_output_folder)
+            frame_output_folder=args.frame_output_folder,
+            rewrite_existing=args.rewrite_existing)
 
 
 if __name__ == "__main__":
