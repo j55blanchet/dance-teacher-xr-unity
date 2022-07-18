@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import auto, Enum
 from functools import reduce
-from typing import Dict, Final, Optional
+from typing import Dict, Final, Optional, Set
 import pandas as pd
 from .mp_utils import PoseLandmark
 import numpy as np
@@ -346,7 +346,7 @@ class HumanoidPositionSkeleton:
 
         return skeleton
     
-    def plt_skeleton(self, ax=None, color='red', dotcolor=None):
+    def plt_skeleton(self, ax=None, color='red', dotcolor=None, whitelist_bones: Set[MecanimBone] = None):
         if ax is None:
             ax = plt.figure('Skeleton Visualization').add_subplot(projection='3d')
             ax.xaxis.set_label_text('X')
@@ -358,7 +358,7 @@ class HumanoidPositionSkeleton:
             world_pos = self.world_position(bone)
             x, y, z = world_pos
             x2s.append(x); y2s.append(y); z2s.append(z)
-            if bone.parent is not None:
+            if bone.parent is not None and (whitelist_bones is None or bone in whitelist_bones):
                 xs, ys, zs = list(zip(world_pos, self.world_position(bone.parent)))
                 ax.plot(xs, ys, zs, color=color)
             for child in bone.children:
@@ -368,22 +368,22 @@ class HumanoidPositionSkeleton:
         if dotcolor is not None:
             ax.scatter(x2s, y2s, z2s, color=dotcolor)
 
-    def plt_transform(self):
+    def get_transforms(self, plot=False):
         tm = TransformManager()
 
         # Getting a matrix from two vectors:
         # https://dfki-ric.github.io/pytransform3d/_auto_examples/plots/plot_matrix_from_two_vectors.html#sphx-glr-auto-examples-plots-plot-matrix-from-two-vectors-py
 
-        # Create transform for hips - pointing laterally, with y pointing up, located at hip root
-        hips_lateral = self.world_position(MecanimBone.LeftUpperLeg) - self.world_position(MecanimBone.RightUpperLeg)
-        hips_rot_matrix = pr.matrix_from_two_vectors(hips_lateral, self.bones[MecanimBone.Spine])
-        hips_tf = pt.transform_from(hips_rot_matrix, self.world_position(MecanimBone.Hips))
-        tm.add_transform(MecanimBone.Hips.name, 'world', hips_tf)
+        # # Create transform for hips - pointing laterally, with y pointing up, located at hip root
+        # hips_lateral = self.world_position(MecanimBone.LeftUpperLeg) - self.world_position(MecanimBone.RightUpperLeg)
+        # hips_rot_matrix = pr.matrix_from_two_vectors(hips_lateral, self.bones[MecanimBone.Spine])
+        # hips_tf = pt.transform_from(hips_rot_matrix, self.world_position(MecanimBone.Hips))
+        # tm.add_transform(MecanimBone.Hips.name, 'world', hips_tf)
 
-        # Create transform for spine - pointing laterally, with y pointing up, located at spine root
-        spine_rot_matrix = hips_rot_matrix
-        spine_tf = pt.transform_from(spine_rot_matrix, self.world_position(MecanimBone.Spine))
-        tm.add_transform(MecanimBone.Spine.name, 'world', spine_tf)
+        # # Create transform for spine - pointing laterally, with y pointing up, located at spine root
+        # spine_rot_matrix = hips_rot_matrix
+        # spine_tf = pt.transform_from(spine_rot_matrix, self.world_position(MecanimBone.Spine))
+        # tm.add_transform(MecanimBone.Spine.name, 'world', spine_tf)
 
         # Create transform for left shoulder - pointing to elbow, with twist axis pointing to wrist.
         left_shoulder_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.LeftLowerArm], self.bones[MecanimBone.LeftHand])
@@ -420,9 +420,10 @@ class HumanoidPositionSkeleton:
         #     if bone.parent is not None:
         #         transform = pt.transform_from(np.eye(3), self.bones[bone])
         #         tm.add_transform(bone.name, bone.parent.name, transform)
-        ax = tm.plot_frames_in('world', s=0.1)
 
-        self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
+        if plot:
+            ax = tm.plot_frames_in('world', s=0.1)
+            self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
 
         return tm
         # plt.show()
@@ -503,7 +504,7 @@ if __name__ == "__main__":
     # skel.print_subtree()
     import matplotlib.pyplot as plt
 
-    skel.plt_transform()
+    skel.get_transforms(plot=True)
 
     plt.show(block=True)
     pass
