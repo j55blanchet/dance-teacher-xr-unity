@@ -289,6 +289,31 @@ class MecanimBone(Enum):
             case MecanimBone.ChestRightward:
                 return MecanimBone.position_from_mp_pose(MecanimBone.Chest, poseRow)
 
+            case MecanimBone.LeftHandPinkyRoot:
+                return get_pose_bone_position(PoseLandmark.LEFT_PINKY)
+            case MecanimBone.LeftHandIndexRoot:
+                return get_pose_bone_position(PoseLandmark.LEFT_INDEX)
+            case MecanimBone.LeftHandThumbRoot:
+                return get_pose_bone_position(PoseLandmark.LEFT_THUMB)
+            case MecanimBone.RightHandPinkyRoot:
+                return get_pose_bone_position(PoseLandmark.RIGHT_PINKY)
+            case MecanimBone.RightHandIndexRoot:
+                return get_pose_bone_position(PoseLandmark.RIGHT_INDEX)
+            case MecanimBone.RightHandThumbRoot:
+                return get_pose_bone_position(PoseLandmark.RIGHT_THUMB)
+
+            case MecanimBone.LeftHeel:
+                return get_pose_bone_position(PoseLandmark.LEFT_HEEL)
+            case MecanimBone.RightHeel:
+                return get_pose_bone_position(PoseLandmark.RIGHT_HEEL)
+
+            case MecanimBone.LeftEye:
+                return get_pose_bone_position(PoseLandmark.LEFT_EYE)
+            case MecanimBone.RightEye:
+                return get_pose_bone_position(PoseLandmark.RIGHT_EYE)
+            case MecanimBone.Nose:
+                return get_pose_bone_position(PoseLandmark.NOSE)
+
             case _:
                 raise Exception(f'Unknown PoseBone {bone}')
 @dataclass
@@ -571,6 +596,8 @@ class HumanoidPositionSkeleton:
         if plot:
             ax = tm.plot_frames_in('world', s=0.1)
             self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
+
+        self.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
 
         return tm
         # plt.show()
