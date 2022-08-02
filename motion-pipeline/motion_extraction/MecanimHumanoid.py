@@ -390,6 +390,15 @@ class HumanoidPositionSkeleton:
         left_shoulder_tf = pt.transform_from(left_shoulder_rot_matrix, self.world_position(MecanimBone.LeftUpperArm))
         tm.add_transform(MecanimBone.LeftUpperArm.name, 'world', left_shoulder_tf)
 
+
+        # Create tpose transform for left shoulder - use to reference the "Standard" rotation
+        right_to_left_shoulder_vector = self.world_position(MecanimBone.LeftUpperArm) - self.world_position(MecanimBone.Hips)
+        spine_up = self.bones[MecanimBone.Spine]
+        forward = np.cross(right_to_left_shoulder_vector, spine_up)
+        rot_matrix_shoulder_default = pr.matrix_from_two_vectors(right_to_left_shoulder_vector, forward)
+        shoulder_typical_transform = pt.transform_from(rot_matrix_shoulder_default, self.world_position(MecanimBone.LeftUpperArm) + np.array([0.0, 0.1, 0.0]))
+        tm.add_transform(MecanimBone.LeftUpperArm.name + '-tpose', 'world', shoulder_typical_transform)
+
         # Create transform for left elbow - pointing towards the hand, on the plane formed by the hand (for the twist axis).
         left_hand_lateral = self.world_position(MecanimBone.LeftHandPinkyRoot) - self.world_position(MecanimBone.LeftHandThumbRoot)
         left_elbow_rot_matrix = pr.matrix_from_two_vectors(
@@ -493,7 +502,7 @@ if __name__ == "__main__":
     with args.skeleton_file as worldpose_file:
         holistic_data = pd.read_csv(worldpose_file, index_col='frame')
 
-    frame_i = len(holistic_data) // 2
+    frame_i = 0 # len(holistic_data) // 2
     middle_row = holistic_data.iloc[frame_i]
 
     # from .pose_visualization import visualize_pose
