@@ -64,7 +64,7 @@
             "module": "motion_extraction.MecanimHumanoid",
             "justMyCode": true,
             "args": [
-                "--skeleton_file=${workspaceFolder}/data/holistic_data/arm_simple.holisticdata.csv",
+                "--skeleton_file=${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv",
             ],
         }
     ]

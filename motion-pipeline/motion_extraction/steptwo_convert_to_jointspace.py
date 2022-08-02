@@ -1,6 +1,9 @@
 
 import pandas as pd
 from pytransform3d import rotations as pr
+from pytransform3d import transformations as pt
+from pytransform3d.editor import TransformEditor
+import numpy as np
 
 from .MecanimHumanoid import HumanoidPositionSkeleton, MecanimBone
 
@@ -15,9 +18,30 @@ def convert_to_jointspace(holistic_data: pd.DataFrame) -> pd.DataFrame:
         tm = row_skel.get_transforms(plot=True)
 
         shoulder = tm.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.LeftLowerArm.name)
-        z,y,x = pr.euler_zyx_from_matrix(shoulder[:3, :3])
 
+
+        tposetf = tm.get_transform('world', MecanimBone.LeftUpperArm.name + '-tpose')
+        relative_coordinates = pt.transform(tposetf, np.append(row_skel.world_position(MecanimBone.LeftLowerArm), [1]))
+
+        actualtf = tm.get_transform('world', MecanimBone.LeftUpperArm.name)
+        actual_coordinates = pt.transform(actualtf, np.append(row_skel.world_position(MecanimBone.LeftLowerArm), [1]))
         
+        z,y,x = pr.euler_zyx_from_matrix(shoulder[:3, :3])
+        print(f"Std:  {i:3d}: {x:.4f}, {y:.4f}, {z:.4f}")
+
+        shoulder_delta = tm.get_transform(MecanimBone.LeftUpperArm.name + '-tpose', MecanimBone.LeftLowerArm.name)
+        z_delta, y_delta, x_delta = pr.euler_zyx_from_matrix(shoulder_delta[:3, :3])
+        print(f"Dlta: {i:3d}: {x_delta:.4f}, {y_delta:.4f}, {z_delta:.4f}")
+
+        editor = TransformEditor(tm, 'world')
+        editor.show()
+        pass
+        # right_to_left_shoulder_vector = row_skel.world_position(MecanimBone.LeftUpperArm) - row_skel.world_position(MecanimBone.Hips)
+        # spine_up = row_skel.bones[MecanimBone.Spine]
+        # forward = np.cross(right_to_left_shoulder_vector, spine_up)
+        # rot_matrix_shoulder_default = pr.matrix_from_two_vectors(right_to_left_shoulder_vector, forward)
+        # shoulder_typical_transform = pt.transform_from(rot_matrix_shoulder_default, row_skel.world_position(MecanimBone.LeftUpperArm))
+        # tm.add_transform(MecanimBone.LeftUpperArm.name + '-tpose', 'world', shoulder_typical_transform)
         # elbow = tm.get_transform(MecanimBone.LeftLowerArm.name, MecanimBone.LeftHand.name)
 
         # row_skel.to_jointspace()
