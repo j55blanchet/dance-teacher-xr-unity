@@ -43,7 +43,7 @@
             "args": [
                 "--output_folder=${workspaceFolder}/data/jointspace_data",
                 "--log_level=INFO",
-                "${workspaceFolder}/data/holistic_data/tpose.holisticdata.csv"
+                "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
             ],
         },
         {
@@ -66,6 +66,18 @@
             "args": [
                 "--skeleton_file=${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv",
             ],
+        },
+        {
+            "name": "Encode Videos HEVC",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/motion_extraction/reencode_videos_hevc.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--source_glob=C:/Users/julie/Desktop/standalone-video-uploads/*.webm",
+                "--target_folder=C:/Users/julie/Desktop/vids_reencoded",
+            ]
         }
     ]
 }
