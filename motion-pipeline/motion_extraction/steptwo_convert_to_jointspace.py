@@ -4,6 +4,7 @@ from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
 from pytransform3d.editor import TransformEditor
 import numpy as np
+from itertools import islice
 
 from .MecanimHumanoid import HumanoidPositionSkeleton, MecanimBone
 
@@ -12,8 +13,14 @@ def convert_to_jointspace(holistic_data: pd.DataFrame) -> pd.DataFrame:
     """
     Convert a holistic dataframe (in cartesian coordinates) to human-skeleton jointspace (angular coordinates).
     """
-    print(holistic_data)
-    for i, row in holistic_data.iterrows():
+
+    # Create a new dataframe to store the jointspace data
+    # todo: decide what the columns will be like. Something like (jx, jy, jz)?
+    out_frame = pd.DataFrame()
+
+    # print(holistic_data)
+    print("[")
+    for i, row in islice(holistic_data.iterrows(), 30 * 5):
         row_skel = HumanoidPositionSkeleton.from_mp_pose(row)
         tm = row_skel.get_transforms(plot=True)
 
@@ -26,16 +33,27 @@ def convert_to_jointspace(holistic_data: pd.DataFrame) -> pd.DataFrame:
         actualtf = tm.get_transform('world', MecanimBone.LeftUpperArm.name)
         actual_coordinates = pt.transform(actualtf, np.append(row_skel.world_position(MecanimBone.LeftLowerArm), [1]))
         
-        z,y,x = pr.euler_zyx_from_matrix(shoulder[:3, :3])
-        print(f"Std:  {i:3d}: {x:.4f}, {y:.4f}, {z:.4f}")
+        z,y,x = pr.extrinsic_euler_zyx_from_active_matrix(shoulder[:3, :3])
+        # print(f"Std:  {i:3d}: {x:.4f}, {y:.4f}, {z:.4f}")
 
         shoulder_delta = tm.get_transform(MecanimBone.LeftUpperArm.name + '-tpose', MecanimBone.LeftLowerArm.name)
-        z_delta, y_delta, x_delta = pr.euler_zyx_from_matrix(shoulder_delta[:3, :3])
-        print(f"Dlta: {i:3d}: {x_delta:.4f}, {y_delta:.4f}, {z_delta:.4f}")
+        shoulder_delta_euler = pr.extrinsic_euler_zyx_from_active_matrix(shoulder_delta[:3, :3])
 
-        editor = TransformEditor(tm, 'world')
-        editor.show()
-        pass
+        shoulder_delta_euler = (shoulder_delta_euler + 2 * np.pi) % (np.pi) # noramlize -180 to 180
+        z_delta, y_delta, x_delta = np.degrees(shoulder_delta_euler)
+        # print(f"Dlta: {i:3d}: {x_delta:.4f}º, {y_delta:.4f}º, {z_delta:.4f}º")
+        # print(f"  [{x:.4f}, {y:.4f}, {z:.4f}],")
+        print(f"  [{x_delta:.4f}, {y_delta:.4f}, {z_delta:.4f}],")
+
+
+
+
+        # import matplotlib.pyplot as plt 
+        # plt.show(block=False)
+
+        # editor = TransformEditor(tm, 'world', s=0.1)
+        # editor.show()
+        # pass
         # right_to_left_shoulder_vector = row_skel.world_position(MecanimBone.LeftUpperArm) - row_skel.world_position(MecanimBone.Hips)
         # spine_up = row_skel.bones[MecanimBone.Spine]
         # forward = np.cross(right_to_left_shoulder_vector, spine_up)
@@ -47,6 +65,7 @@ def convert_to_jointspace(holistic_data: pd.DataFrame) -> pd.DataFrame:
         # row_skel.to_jointspace()
         # row_skel.to_mp_pose()
         # row_skel.to_holistic_data()
+    print("]")
 
 if __name__ == "__main__":
     import argparse

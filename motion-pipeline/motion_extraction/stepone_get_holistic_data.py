@@ -113,7 +113,18 @@ def process_video(
             row += list(reduce(
                     lambda x, y: x + y,
                     [
-                        [lm.x, lm.y, lm.z, lm.visibility] if lm is not None else [None, None, None, None]
+                        # We want to remap x, y, z. 
+                        #   > The default has negative y being up, positive x being right, and pozitive z being away from the camera.
+                        #   > We want z being up, x being forward, and y being right.
+                        #   So x <- -z
+                        #      y <- x
+                        #      z <- -y
+                        [ 
+                            -lm.z, 
+                            lm.x, 
+                            -lm.y,
+                            lm.visibility
+                        ] if lm is not None else [None, None, None, None]
                         for lm in 
                         [(frame_data.pose_world_landmarks.landmark[landmark_i] if frame_data.pose_world_landmarks else None)
                             for landmark_i in range(len(PoseLandmark))

@@ -392,11 +392,14 @@ class HumanoidPositionSkeleton:
 
 
         # Create tpose transform for left shoulder - use to reference the "Standard" rotation
-        right_to_left_shoulder_vector = self.world_position(MecanimBone.LeftUpperArm) - self.world_position(MecanimBone.Hips)
+        # x: point to elbow in tpose (follow shoulder-line)
+        # y: twist-axis (forward)
+        right_to_left_shoulder_vector = self.world_position(MecanimBone.LeftUpperArm) - self.world_position(MecanimBone.RightUpperArm)
         spine_up = self.bones[MecanimBone.Spine]
         forward = np.cross(right_to_left_shoulder_vector, spine_up)
         rot_matrix_shoulder_default = pr.matrix_from_two_vectors(right_to_left_shoulder_vector, forward)
-        shoulder_typical_transform = pt.transform_from(rot_matrix_shoulder_default, self.world_position(MecanimBone.LeftUpperArm) + np.array([0.0, 0.1, 0.0]))
+        tpose_offset = np.array([0.0, 0.0, 0.1])
+        shoulder_typical_transform = pt.transform_from(rot_matrix_shoulder_default, self.world_position(MecanimBone.LeftUpperArm) + tpose_offset)
         tm.add_transform(MecanimBone.LeftUpperArm.name + '-tpose', 'world', shoulder_typical_transform)
 
         # Create transform for left elbow - pointing towards the hand, on the plane formed by the hand (for the twist axis).
@@ -415,7 +418,7 @@ class HumanoidPositionSkeleton:
             left_hand_lateral,
         )
         left_wrist_tf = pt.transform_from(left_wrist_rot_matrix, self.world_position(MecanimBone.LeftHand))
-        tm.add_transform(MecanimBone.LeftHand.name, 'world', left_wrist_tf)
+        # tm.add_transform(MecanimBone.LeftHand.name, 'world', left_wrist_tf)
 
         # Create transform for right shoulder - pointing to elbow, with twist axis pointing to wrist.
         # right_shoulder_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.RightLowerArm], self.bones[MecanimBone.RightHand])
