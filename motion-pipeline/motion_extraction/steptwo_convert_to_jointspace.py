@@ -1,4 +1,6 @@
 
+from io import FileIO
+import csv
 import pandas as pd
 from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
@@ -9,20 +11,28 @@ from itertools import islice
 from .MecanimHumanoid import HumanoidPositionSkeleton, MecanimBone
 
 
-def convert_to_jointspace(holistic_data: pd.DataFrame) -> pd.DataFrame:
+def convert_to_jointspace(holistic_data: pd.DataFrame, csv_file) -> pd.DataFrame:
     """
     Convert a holistic dataframe (in cartesian coordinates) to human-skeleton jointspace (angular coordinates).
     """
 
     # Create a new dataframe to store the jointspace data
     # todo: decide what the columns will be like. Something like (jx, jy, jz)?
-    out_frame = pd.DataFrame()
+    
+    col_names = ['frame'] + [
+        col_name for bone in MecanimBone 
+        for col_name in 
+        (f"{bone.name}_rx", f"{bone.name}_ry", f"{bone.name}_rz")
+    ]
+    csvwriter = csv.DictWriter(csv_file, fieldnames=col_names)
+    csvwriter.writeheader()
+    
 
     # print(holistic_data)
     print("[")
     for i, row in islice(holistic_data.iterrows(), 30 * 5):
         row_skel = HumanoidPositionSkeleton.from_mp_pose(row)
-        tm = row_skel.get_transforms(plot=True)
+        tm = row_skel.get_transforms(plot=False)
 
         shoulder = tm.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.LeftLowerArm.name)
 
@@ -45,7 +55,12 @@ def convert_to_jointspace(holistic_data: pd.DataFrame) -> pd.DataFrame:
         # print(f"  [{x:.4f}, {y:.4f}, {z:.4f}],")
         print(f"  [{x_delta:.4f}, {y_delta:.4f}, {z_delta:.4f}],")
 
-
+        csvwriter.writerow({
+            'frame': i,
+            f"{MecanimBone.LeftUpperArm.name}_rx": x_delta,
+            f"{MecanimBone.LeftUpperArm.name}_ry": y_delta,
+            f"{MecanimBone.LeftUpperArm.name}_rz": z_delta,
+        })
 
 
         # import matplotlib.pyplot as plt 
@@ -77,12 +92,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    args.output_folder.mkdir(exist_ok=True, parents=True)
+
     for holistic_data in args.holistic_data:
         glob_data = holistic_data.parent.glob(holistic_data.name)
         for data_file in glob_data:
             with data_file.open('r') as f:
                 data = pd.read_csv(f, index_col='frame')
-                joint_data = convert_to_jointspace(data)
-                print(joint_data)
+                out_path = args.output_folder / data_file.name.replace('.holisticdata', '.jointspace')
+                with out_path.open('w') as out_file:
+                    convert_to_jointspace(data, out_file)
+                    print(f"Converted {data_file} to {out_path}")
 
 
