@@ -2,11 +2,13 @@
 
 Copied from https://github.com/TemugeB/Python_BVH_viewer
 """
+import argparse
 from .parser import Bvh
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from mpl_toolkits.mplot3d import Axes3D
+import pandas as pd
 
 def _separate_angles(frames, joints, joints_saved_channels):
 
@@ -57,7 +59,7 @@ def _separate_positions(frames, joints, joints_saved_channels):
 
     pass
 
-def ProcessBVH(filename):
+def ProcessBVH(filename, csv_output_path = None):
 
     with open(filename) as f:
         mocap = Bvh(f.read())
@@ -99,7 +101,19 @@ def ProcessBVH(filename):
     #root positions are always saved
     root_positions = frames[:, 0:3]
 
-    return [joints, joints_offsets, joints_hierarchy, root_positions, joints_rotations, joints_saved_angles, joints_positions, joints_saved_positions]
+    if csv_output_path is not None:
+        from pathlib import Path
+        Path(csv_output_path).parent.mkdir(parents=True, exist_ok=True)
+        cols = [
+            joint + channel.replace("position", "").replace("rotation", "rot")
+            for joint in joints
+            for channel in mocap.joint_channels(joint)
+        ]
+        frames_df = pd.DataFrame(frames, columns=cols)
+        frames_df.to_csv(csv_output_path)
+
+    frame_time = mocap.frame_time
+    return [joints, joints_offsets, joints_hierarchy, root_positions, joints_rotations, joints_saved_angles, joints_positions, joints_saved_positions, frame_time]
 
 #rotation matrices
 def Rx(ang, in_radians = False):
@@ -204,7 +218,7 @@ def _calculate_frame_joint_positions_in_world_space(local_positions, root_positi
     return world_pos
 
 
-def Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_rotations, joints_saved_angles):
+def Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_rotations, joints_saved_angles, frame_time):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -214,14 +228,14 @@ def Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_ro
     """
     Number of frames skipped is controlled with this variable below. If you want all frames, set to 1.
     """
-    frame_skips = 5
+    frame_skips = 1
 
     figure_limit = None #used to set figure axis limits
 
     for i in range(0,len(joints_rotations), frame_skips):
 
         frame_data = joints_rotations[i]
-
+        
         #fill in the rotations dict
         joint_index = 0
         for joint in joints:
@@ -259,20 +273,22 @@ def Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_ro
         ax.set_ylim(-0.6*figure_limit, 0.6*figure_limit)
         ax.set_zlim(-0.2*figure_limit, 1.*figure_limit)
         plt.title('frame: ' + str(i))
-        plt.pause(0.001)
-        ax.cla()
+        plt.pause(frame_time)
+        ax.cla()    
 
     pass
 
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2:
-        print('Call the function with the BVH file')
-        quit()
-
-    filename = sys.argv[1]
-    skeleton_data = ProcessBVH(filename)
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument("filename", help="input file", metavar="FILE")
+    parser.add_argument("-joint_angle_output", "--joint_angle_output", dest="joint_angle_output", help="joint angle output csv file", metavar="JOINT_ANGLE_CSV_FILE")
+    parser.add_argument("-frame_time", type=float, dest="frame_time", help="time between frames", metavar="FRAME_TIME", required=False, default=None)
+    args = parser.parse_args()
+    
+    skeleton_data = ProcessBVH(args.filename, args.joint_angle_output)
 
     joints = skeleton_data[0]
     joints_offsets = skeleton_data[1]
@@ -282,5 +298,13 @@ if __name__ == "__main__":
     joints_saved_angles = skeleton_data[5] #this contains channel information. E.g ['Xrotation', 'Yrotation', 'Zrotation']
     joints_positions = skeleton_data[6]
     joints_saved_positions = skeleton_data[7]
+    frame_time = skeleton_data[8]
 
-    Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_rotations, joints_saved_angles)
+    Draw_bvh(
+        joints=joints, 
+        joints_offsets=joints_offsets, 
+        joints_hierarchy=joints_hierarchy, 
+        root_positions=root_positions, 
+        joints_rotations=joints_rotations, 
+        joints_saved_angles=joints_saved_angles, 
+        frame_time=args.frame_time if args.frame_time is not None else frame_time)

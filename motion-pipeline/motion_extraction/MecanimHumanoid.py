@@ -381,7 +381,7 @@ class HumanoidPositionSkeleton:
         if dotcolor is not None:
             ax.scatter(x2s, y2s, z2s, color=dotcolor)
 
-    def get_transforms(self, plot=False):
+    def get_transforms(self, plot=False) -> TransformManager:
         tm = TransformManager()
 
         # Getting a matrix from two vectors:
