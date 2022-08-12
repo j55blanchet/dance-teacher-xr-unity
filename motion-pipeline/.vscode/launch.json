@@ -86,7 +86,11 @@
             "request": "launch",
             "module": "motion_extraction.bvh.view_bvh",
             "args": [
-                "${workspaceFolder}/docs/walk_sample.bvh"
+                "${workspaceFolder}/docs/walk_sample.bvh",
+                "-joint_angle_output=${workspaceFolder}/docs/walk_sample_joint_angles.csv",
+                // "${workspaceFolder}/docs/minimal_bvh.bvh",
+                // "-joint_angle_output=${workspaceFolder}/docs/minimal_bvh_joint_angles.csv",
+                "-frame_time=0.5",
             ]
         }
     ]

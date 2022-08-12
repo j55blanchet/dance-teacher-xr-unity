@@ -78,7 +78,7 @@ class Bvh:
             else:
                 node = BvhNode(item)
                 node_stack[-1].add_child(node)
-            if item[0] == 'Frame' and item[1] == 'Time:':
+            if item[0].lower() == 'frame' and item[1].lower() == 'time:':
                 frame_time_found = True
 
     def search(self, *items):

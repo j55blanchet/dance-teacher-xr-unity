@@ -1,6 +1,8 @@
 
+from asyncore import write
 from io import FileIO
 import csv
+from matplotlib.pyplot import get
 import pandas as pd
 from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
@@ -10,6 +12,26 @@ from itertools import islice
 
 from .MecanimHumanoid import HumanoidPositionSkeleton, MecanimBone
 
+def _get_bone_offsets(holstic_row: pd.Series) -> pd.Series:
+    skel = HumanoidPositionSkeleton.from_mp_pose(holstic_row)
+    return pd.Series({ bone.name:skel.bone_length_to_parent(bone) for bone in MecanimBone})
+
+def get_link_lengths(holistic_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Get the lengths of the links between the joints.
+    """
+    return holistic_data.apply(_get_bone_offsets, axis=1)
+
+
+def write_bvh(holstic_data: pd.DataFrame, bvh_out_file) -> None:
+    """
+    Write a bvh file from a holistic dataframe.
+    """
+    link_lengths = get_link_lengths(holstic_data)
+    bone_avg_offsets = link_lengths.mean(axis=0)
+    print(offsets)
+
+    pass
 
 def convert_to_jointspace(holistic_data: pd.DataFrame, csv_file) -> pd.DataFrame:
     """
@@ -33,7 +55,9 @@ def convert_to_jointspace(holistic_data: pd.DataFrame, csv_file) -> pd.DataFrame
     for i, row in islice(holistic_data.iterrows(), 30 * 5):
         row_skel = HumanoidPositionSkeleton.from_mp_pose(row)
         tm = row_skel.get_transforms(plot=True)
-
+        import matplotlib.pyplot as plt
+        plt.show(block=False)
+        pass
         shoulder = tm.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.LeftLowerArm.name)
 
 
@@ -99,9 +123,10 @@ if __name__ == "__main__":
         for data_file in glob_data:
             with data_file.open('r') as f:
                 data = pd.read_csv(f, index_col='frame')
-                out_path = args.output_folder / data_file.name.replace('.holisticdata', '.jointspace')
-                with out_path.open('w') as out_file:
-                    convert_to_jointspace(data, out_file)
-                    print(f"Converted {data_file} to {out_path}")
+                bvh_out_path = args.output_folder / data_file.stem.replace('.holisticdata', '.bvh')
+                # out_path = args.output_folder / data_file.name.replace('.holisticdata', '.jointspace')
+                with bvh_out_path.open('w') as out_file:
+                    write_bvh(data, bvh_out_path)
+                    print(f"Converted {data_file} to {bvh_out_path}")
 
 
