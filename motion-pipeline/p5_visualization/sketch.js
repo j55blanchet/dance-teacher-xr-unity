@@ -1,5 +1,7 @@
 
-const [rx, ry, rz] = [0, 0, 45];
+var [rx, ry, rz] = [0, 0, 45];
+var [orderX, orderY, orderZ] = [3, 2, 1];
+let gui;
 
 function preload() {
 }
@@ -10,21 +12,32 @@ function setup() {
   let canvas = createCanvas(windowWidth, windowHeight, WEBGL);
   document.oncontextmenu = () => false;
   createEasyCam();
+
+  gui = createGui('p5.gui')
+
+  sliderRange(-180, 180, 1);
+  gui.addGlobals('rx', 'ry', 'rz');
+
+  sliderRange(1, 3, 1);
+  gui.addGlobals('orderX', 'orderY', 'orderZ');
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
-function drawCoordinates(s) {
+function drawCoordinates(s, colx, coly, colz) {
   push();
-  stroke(190, 40, 40);
+  if (colx === undefined) colx = color(190, 40, 40);
+  stroke(colx);
   line(0, 0, 0, s, 0, 0);
 
-  stroke(40, 190, 40);
+  if (coly === undefined) coly = color(40, 190, 40);
+  stroke(coly);
   line(0, 0, 0, 0, s, 0);
 
-  stroke(40, 40, 190);
+  if (colz === undefined) colz = color(40, 40, 190);
+  stroke(colz);
   line(0, 0, 0, 0, 0, s);
   pop();
 }
@@ -40,15 +53,37 @@ function draw() {
   push();
   
 
-  drawCoordinates(ll / 2);
+  let col_component_major_base = 230;
+  let col_component_minor_base = 190;
+  drawCoordinates(ll / 3, 
+    color(col_component_major_base, col_component_minor_base, col_component_minor_base), 
+    color(col_component_minor_base, col_component_major_base, col_component_minor_base), 
+    color(col_component_minor_base, col_component_minor_base, col_component_major_base)
+  );
   
-
-  rotateZ(rz);
-  rotateY(ry);
-  rotateX(rx);
+  objs = [{
+    val: rx,
+    order: orderX,
+    fn: rotateX
+  }, {
+    val: ry,
+    order: orderY,
+    fn: rotateY
+  }, {
+    val: rz,
+    order: orderZ,
+    fn: rotateZ
+  }].sort((a, b) => a.order - b.order);
   
-  stroke(255,80, 80);
-  line(0, 0, 0, ll, 0, 0)
+  for (let obj of objs) {
+    obj.fn(obj.val);
+  }
+  drawCoordinates(ll / 4);
+  stroke(128, 80);
+  line(0, 0, 0, ll / 2, 0, 0)
+  translate(ll / 2, 0, 0);
+  drawCoordinates(ll / 6);
+  // line(0, 0, 0, 0, ll / 2, 0)
   pop();
   translate(0, 0, -50);
   noStroke(128);

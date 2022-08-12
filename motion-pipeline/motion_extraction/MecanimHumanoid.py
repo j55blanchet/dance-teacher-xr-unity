@@ -251,7 +251,20 @@ class MecanimBone(Enum):
 
             case _:
                 raise Exception(f'Unknown PoseBone {bone}')
-            
+    
+    def offset_from_parent(self):
+        match self:
+            case MecanimBone.Hips:
+                return np.array([0.0, 0.0, 0.0])
+            case MecanimBone.Spine:
+                return np.array([0.0, 11., 0.0])
+            case MecanimBone.LeftUpperArm:
+                return np.array([19., 21., 0.])
+            case MecanimBone.RightUpperArm:
+                return np.array([-19., 21., 0.])
+            case _:
+                return np.array([5.0, 0.0, 0.0])
+
 @dataclass
 class HumanoidPositionSkeleton:
     bones: Dict[MecanimBone, np.ndarray] = field(default_factory=dict)
@@ -399,8 +412,8 @@ class HumanoidPositionSkeleton:
         forward = np.cross(right_to_left_shoulder_vector, spine_up)
         rot_matrix_shoulder_default = pr.matrix_from_two_vectors(right_to_left_shoulder_vector, forward)
         tpose_offset = np.array([0.0, 0.0, 0.1])
-        shoulder_typical_transform = pt.transform_from(rot_matrix_shoulder_default, self.world_position(MecanimBone.LeftUpperArm) + tpose_offset)
-        tm.add_transform(MecanimBone.LeftUpperArm.name + '-tpose', 'world', shoulder_typical_transform)
+        shoulder_tpose_transform = pt.transform_from(rot_matrix_shoulder_default, self.world_position(MecanimBone.LeftUpperArm) + tpose_offset)
+        tm.add_transform(MecanimBone.LeftUpperArm.name + '-tpose', 'world', shoulder_tpose_transform)
 
         # Create transform for left elbow - pointing towards the hand, on the plane formed by the hand (for the twist axis).
         left_hand_lateral = self.world_position(MecanimBone.LeftHandPinkyRoot) - self.world_position(MecanimBone.LeftHandThumbRoot)

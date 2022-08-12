@@ -78,6 +78,16 @@
                 "--source_glob=C:/Users/julie/Desktop/standalone-video-uploads/*.webm",
                 "--target_folder=C:/Users/julie/Desktop/vids_reencoded",
             ]
+        },
+        {
+
+            "name": "View BVH",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.bvh.view_bvh",
+            "args": [
+                "${workspaceFolder}/docs/walk_sample.bvh"
+            ]
         }
     ]
 }
