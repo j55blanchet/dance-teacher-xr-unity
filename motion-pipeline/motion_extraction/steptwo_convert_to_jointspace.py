@@ -32,7 +32,7 @@ def convert_to_jointspace(holistic_data: pd.DataFrame, csv_file) -> pd.DataFrame
     print("[")
     for i, row in islice(holistic_data.iterrows(), 30 * 5):
         row_skel = HumanoidPositionSkeleton.from_mp_pose(row)
-        tm = row_skel.get_transforms(plot=False)
+        tm = row_skel.get_transforms(plot=True)
 
         shoulder = tm.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.LeftLowerArm.name)
 
