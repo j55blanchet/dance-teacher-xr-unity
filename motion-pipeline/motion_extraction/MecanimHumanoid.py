@@ -12,6 +12,10 @@ from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
 from pytransform3d.transform_manager import TransformManager
 
+class MecanimMeasurement(Enum):
+    ShoulderWidth = auto()
+    SpineLength = auto()
+    
 class MecanimBone(Enum):
     Hips = auto()
     Spine = auto()
@@ -251,20 +255,6 @@ class MecanimBone(Enum):
 
             case _:
                 raise Exception(f'Unknown PoseBone {bone}')
-    
-    def offset_from_parent(self):
-        match self:
-            case MecanimBone.Hips:
-                return np.array([0.0, 0.0, 0.0])
-            case MecanimBone.Spine:
-                return np.array([0.0, 11., 0.0])
-            case MecanimBone.LeftUpperArm:
-                return np.array([19., 21., 0.])
-            case MecanimBone.RightUpperArm:
-                return np.array([-19., 21., 0.])
-            case _:
-                return np.array([5.0, 0.0, 0.0])
-
 @dataclass
 class HumanoidPositionSkeleton:
     bones: Dict[MecanimBone, np.ndarray] = field(default_factory=dict)
@@ -283,6 +273,24 @@ class HumanoidPositionSkeleton:
         if bone.parent is None:
             return 0
         return np.linalg.norm(self.bones[bone] - self.bones[bone.parent])
+
+    def get_measurement(self, measurement: MecanimMeasurement):
+        match measurement:
+            case MecanimMeasurement.ShoulderWidth:
+                return np.linalg.norm(
+                    self.world_position(MecanimBone.LeftUpperArm) - 
+                    self.world_position(MecanimBone.RightUpperArm)
+                )
+            case MecanimMeasurement.SpineLength:
+                arm_ctr = self.world_position(MecanimBone.LeftUpperArm) + self.world_position(MecanimBone.RightUpperArm)
+                arm_ctr /= 2.0
+
+                return np.linalg.norm(
+                    arm_ctr - self.world_position(MecanimBone.Spine)
+                )
+
+        raise NotImplementedError(f'Unknown measurement {measurement}')
+        
 
     @property
     def armspan(self):
@@ -380,6 +388,9 @@ class HumanoidPositionSkeleton:
         draw_connection_relative(MecanimBone.Hips)
         if dotcolor is not None:
             ax.scatter(x2s, y2s, z2s, color=dotcolor)
+
+    def to_jointspace(self, pose: np.ndarray):
+        return pose[:self.num_joints]
 
     def get_transforms(self, plot=False) -> TransformManager:
         tm = TransformManager()
