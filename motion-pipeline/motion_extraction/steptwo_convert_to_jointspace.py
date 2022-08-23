@@ -3,6 +3,7 @@ from asyncore import write
 from enum import Enum
 from io import FileIO, TextIOBase
 import csv
+from typing import List
 from matplotlib.pyplot import get
 import pandas as pd
 from pytransform3d import rotations as pr
@@ -15,8 +16,7 @@ from motion_extraction.bvh_writer import BVHWriteNode, write_bvh
 
 from .MecanimHumanoid import HumanoidPositionSkeleton, MecanimBone, MecanimMeasurement
 
-def _get_bone_offsets(holstic_row: pd.Series) -> pd.Series:
-    skel = HumanoidPositionSkeleton.from_mp_pose(holstic_row)
+def _get_bone_offsets(skel: HumanoidPositionSkeleton) -> pd.Series:    
     
     # Get all parent-child offsets.
     offsets = { 
@@ -30,18 +30,31 @@ def _get_bone_offsets(holstic_row: pd.Series) -> pd.Series:
         offsets
     )
 
-def convert_to_jointspace(holistic_row: pd.Series) -> pd.Series:
+def convert_row_to_jointspace(
+    skel: HumanoidPositionSkeleton, 
+    bvh_root: BVHWriteNode, 
+    col_names: List[str]
+) -> dict:
     """
     Convert the holistic data to jointspace.
-    """
-    skel = HumanoidPositionSkeleton.from_mp_pose(holistic_row)
-    return skel.to_jointspace()
+    """    
 
-def get_link_lengths(holistic_data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Get the lengths of the links between the joints.
-    """
-    return holistic_data.apply(_get_bone_offsets, axis=1)
+    tfs = skel.get_transforms(plot=False)    
+    
+    def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
+        try:
+            tf = tfs.get_transform(parent_frame, node.name)
+        except KeyError:
+            tf = np.eye(4)
+        data.update(node.get_channel_info(tf))
+        for child in node.children:
+            data.update(get_data(child, node.name))
+        return data
+
+    data = get_data(bvh_root)
+
+    return pd.Series(data)    
+
 
 def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
     """
@@ -75,27 +88,27 @@ def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
     avg_upperleg_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftUpperLeg.name] + bone_avg_offsets[MecanimBone.RightUpperLeg.name])
     leftUpperLeg = make_node(MecanimBone.LeftUpperLeg, offset_channel=Channel.X, override_offset_val=avg_upperleg_offset)
     rightUpperLeg = make_node(MecanimBone.RightUpperLeg, offset_channel=Channel.X, override_offset_val=avg_upperleg_offset, negate_offset=True)
-    hips.children.append(spine)
-    hips.children.append(leftUpperLeg)
-    hips.children.append(rightUpperLeg)
+    hips.add_child(spine)
+    hips.add_child(leftUpperLeg)
+    hips.add_child(rightUpperLeg)
 
     leftUpperArm = make_node(MecanimBone.LeftUpperArm, offset_channel=Channel.X)
     rightUpperArm = make_node(MecanimBone.RightUpperArm, offset_channel=Channel.X)
-    avg_shoulder_link = 0.5 * (bone_avg_offsets[MecanimBone.LeftUpperArm.name] + bone_avg_offsets[MecanimBone.RightUpperArm.name])
+    # avg_shoulder_link = 0.5 * (bone_avg_offsets[MecanimBone.LeftUpperArm.name] + bone_avg_offsets[MecanimBone.RightUpperArm.name])
     shoulderWidth = bone_avg_offsets[MecanimMeasurement.ShoulderWidth.name]
     spineLength = bone_avg_offsets[MecanimMeasurement.SpineLength.name]
     shoudler_y = spineLength
     shoulder_x = shoulderWidth / 2.
     leftUpperArm.offset = (shoulder_x, shoudler_y, 0.)
     rightUpperArm.offset = (-shoulder_x, shoudler_y, 0.)
-    spine.children.append(leftUpperArm)
-    spine.children.append(rightUpperArm)
+    spine.add_child(leftUpperArm)
+    spine.add_child(rightUpperArm)
 
     avg_lowerarm_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftLowerArm.name] + bone_avg_offsets[MecanimBone.RightLowerArm.name])
     leftLowerArm = make_node(MecanimBone.LeftLowerArm, offset_channel=Channel.X, override_offset_val=avg_lowerarm_offset)
     rightLowerArm = make_node(MecanimBone.RightLowerArm, offset_channel=Channel.X, override_offset_val=avg_lowerarm_offset, negate_offset=True)
-    leftUpperArm.children.append(leftLowerArm)
-    rightUpperArm.children.append(rightLowerArm)
+    leftUpperArm.add_child(leftLowerArm)
+    rightUpperArm.add_child(rightLowerArm)
 
     # Add end sites for the lower arms.
     avg_hand_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftHand.name] + bone_avg_offsets[MecanimBone.RightHand.name])
@@ -109,21 +122,30 @@ def write_jointspace_bvh(holistic_data: pd.DataFrame, bvh_out_file: TextIOBase) 
     """
     Write a bvh file from a holistic dataframe.
     """
-    link_lengths = get_link_lengths(holistic_data)
+    max_frames = 30
+    skels = [HumanoidPositionSkeleton.from_mp_pose(row) for _, row in holistic_data.iloc[:max_frames].iterrows()]
+
+    link_lengths = pd.DataFrame((_get_bone_offsets(s) for s in skels))    
     bone_avg_offsets = link_lengths.mean(axis=0)
     print(bone_avg_offsets)
 
     bvh_root_node = get_bvh_hierarchy(bone_avg_offsets)
-    frame_count = holistic_data.shape[0]
+    
+    frame_count = min(holistic_data.shape[0], max_frames)
     fps = 30.0
 
     col_names = list(bvh_root_node.get_channel_column_names())
-    zero_row = [0.0] * len(col_names)
 
-    write_bvh(bvh_out_file, bvh_root_node, fps, frame_count,  [zero_row] * frame_count)
+    df = pd.DataFrame(columns = col_names)
+    for i, skel in enumerate(skels[:max_frames]):        
+        row_data = convert_row_to_jointspace(skel, bvh_root_node, col_names)
+        df.loc[i] = row_data
+    frames = df.to_numpy()
+
+    write_bvh(bvh_out_file, bvh_root_node, fps, frame_count,  frames)
     
 
-def convert_to_jointspace(holistic_data: pd.DataFrame, csv_file) -> pd.DataFrame:
+def convert_to_jointspace(skel: HumanoidPositionSkeleton, csv_file) -> pd.DataFrame:
     """
     Convert a holistic dataframe (in cartesian coordinates) to human-skeleton jointspace (angular coordinates).
     """

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import auto, Enum
 from functools import reduce
-from typing import Dict, Final, Optional, Set
+from typing import Dict, Final, List, Optional, Set
 import pandas as pd
 from .mp_utils import PoseLandmark
 import numpy as np
@@ -399,10 +399,10 @@ class HumanoidPositionSkeleton:
         # https://dfki-ric.github.io/pytransform3d/_auto_examples/plots/plot_matrix_from_two_vectors.html#sphx-glr-auto-examples-plots-plot-matrix-from-two-vectors-py
 
         # # Create transform for hips - pointing laterally, with y pointing up, located at hip root
-        # hips_lateral = self.world_position(MecanimBone.LeftUpperLeg) - self.world_position(MecanimBone.RightUpperLeg)
-        # hips_rot_matrix = pr.matrix_from_two_vectors(hips_lateral, self.bones[MecanimBone.Spine])
-        # hips_tf = pt.transform_from(hips_rot_matrix, self.world_position(MecanimBone.Hips))
-        # tm.add_transform(MecanimBone.Hips.name, 'world', hips_tf)
+        hips_lateral = self.world_position(MecanimBone.LeftUpperLeg) - self.world_position(MecanimBone.RightUpperLeg)
+        hips_rot_matrix: np.ndarray = pr.matrix_from_two_vectors(hips_lateral, self.bones[MecanimBone.Spine])
+        hips_tf = pt.transform_from(hips_rot_matrix, self.world_position(MecanimBone.Hips))
+        tm.add_transform(MecanimBone.Hips.name, 'world', hips_tf)
 
         # # Create transform for spine - pointing laterally, with y pointing up, located at spine root
         # spine_rot_matrix = hips_rot_matrix
