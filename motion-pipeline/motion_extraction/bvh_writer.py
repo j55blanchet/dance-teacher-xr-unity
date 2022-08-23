@@ -2,18 +2,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from io import StringIO, TextIOBase
 from typing import *
-
-
 import numpy as np
-
-from .MecanimHumanoid import HumanoidPositionSkeleton, MecanimBone
-
+import math
+from pytransform3d import rotations as pr
+from pytransform3d import transformations as pt
+from pytransform3d.transform_manager import TransformManager
 
 @dataclass
 class BVHWriteNode:
     name: str
     offset: Tuple[float, float, float]
-    channels: Union[Tuple[float, float, float], Tuple[float, float, float, float, float, float]]
+    rotation_order: str = 'xyz' 
+    has_position_channels: bool = False   
+    parent: BVHWriteNode = field(default=None)
     children: List[BVHWriteNode] = field(default_factory=list)
     end_site_offset: Optional[Tuple[float, float, float]] = None
 
@@ -24,19 +25,29 @@ class BVHWriteNode:
         offset: Tuple[float, float, float] = (0., 0., 0.)
     ) -> BVHWriteNode:
         
-        channels = []
-        if include_position_channels:
-            channels.append('Xposition')
-            channels.append('Yposition')
-            channels.append('Zposition')
-        channels.extend([f"{c.upper()}rotation" for c in rotation_order])
         return BVHWriteNode(
             name, 
             offset, 
-            channels, 
+            rotation_order=rotation_order,
+            has_position_channels = include_position_channels,
+            parent=None, 
             children=[], 
             end_site_offset=None
         )
+    
+    @property
+    def channels(self):
+        channels = []
+        if self.has_position_channels:
+            channels.append('Xposition')
+            channels.append('Yposition')
+            channels.append('Zposition')
+        channels.extend([f"{c.upper()}rotation" for c in self.rotation_order])
+        return channels
+
+    def add_child(self, child: BVHWriteNode) -> None:
+        self.children.append(child)
+        child.parent = self
 
     def write_hierarchy(self, file: TextIOBase, indent: int = 0) -> None:
 
@@ -72,6 +83,34 @@ class BVHWriteNode:
         for child in self.children:
             yield from child.get_channel_column_names()
 
+    def get_channel_info(self, transform):
+        data = {}
+        if len(self.channels) == 6:
+            x, y, z = transform[:3,3]
+            data.update({
+                f'{self.name}.Xposition': x,
+                f'{self.name}.Yposition': y,
+                f'{self.name}.Zposition': z
+            })
+
+        rx, rx, rz = 0., 0., 0.
+        R = transform[:3,:3]
+        match self.rotation_order.lower():
+            case 'xyz': rx, ry, rz = pr.extrinsic_euler_xyz_from_active_matrix(R)
+            case 'xzy': rx, ry, rz = pr.extrinsic_euler_xzy_from_active_matrix(R)
+            case 'yxz': rx, ry, rz = pr.extrinsic_euler_yxz_from_active_matrix(R)
+            case 'yzx': rx, ry, rz = pr.extrinsic_euler_yzx_from_active_matrix(R)
+            case 'zxy': rx, ry, rz = pr.extrinsic_euler_zxy_from_active_matrix(R)
+            case 'zyx': rx, ry, rz = pr.extrinsic_euler_zyx_from_active_matrix(R)
+            case _:
+                raise ValueError(f'Unsupported rotation order: {self.rotation_order}')
+            
+        data.update({
+            f'{self.name}.Xrotation': math.degrees(rx),
+            f'{self.name}.Yrotation': math.degrees(ry),
+            f'{self.name}.Zrotation': math.degrees(rz)
+        })
+        return data
 
 def write_bvh(file: TextIOBase, root_node: BVHWriteNode, fps: int, frame_count: int, frames: Iterable[Sequence[float]]) -> None:
     file.write(f'HIERARCHY\n')
