@@ -218,7 +218,7 @@ def _calculate_frame_joint_positions_in_world_space(local_positions, root_positi
     return world_pos
 
 
-def Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_rotations, joints_saved_angles, frame_time):
+def Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_rotations, joints_saved_angles, frame_time, repititions):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -232,50 +232,56 @@ def Draw_bvh(joints, joints_offsets, joints_hierarchy, root_positions, joints_ro
 
     figure_limit = None #used to set figure axis limits
 
-    for i in range(0,len(joints_rotations), frame_skips):
+    for _ in range(repititions):
+        for i in range(0,len(joints_rotations), frame_skips):
 
-        frame_data = joints_rotations[i]
+            frame_data = joints_rotations[i]
+            
+            #fill in the rotations dict
+            joint_index = 0
+            for joint in joints:
+                frame_joints_rotations[joint] = frame_data[joint_index:joint_index+3]
+                joint_index += 3
+
+            #this returns a dictionary of joint positions in local space. This can be saved to file to get the joint positions.
+            local_pos = _calculate_frame_joint_positions_in_local_space(joints, joints_offsets, frame_joints_rotations, joints_saved_angles, joints_hierarchy)
+
+            #calculate world positions
+            world_pos = _calculate_frame_joint_positions_in_world_space(local_pos, root_positions[i], frame_joints_rotations[joints[0]], joints_saved_angles[joints[0]])
+
+            #calculate the limits of the figure. Usually the last joint in the dictionary is one of the feet.
+            if figure_limit == None:
+                lim_min = np.abs(np.min(local_pos[list(local_pos)[-1]]))
+                lim_max = np.abs(np.max(local_pos[list(local_pos)[-1]]))
+                lim = lim_min if lim_min > lim_max else lim_max
+                figure_limit = lim
+
+            for joint in joints:
+                if joint == joints[0]: continue #skip root joint
+                parent_joint = joints_hierarchy[joint][0]
+                plt.plot(xs = [local_pos[parent_joint][0], local_pos[joint][0]],
+                        zs = [local_pos[parent_joint][1], local_pos[joint][1]],
+                        ys = [local_pos[parent_joint][2], local_pos[joint][2]], c = 'blue', lw = 2.5)
+
+                #uncomment here if you want to see the world coords. If nothing appears on screen, change the axis limits below!
+                # plt.plot(xs = [world_pos[parent_joint][0], world_pos[joint][0]],
+                #          zs = [world_pos[parent_joint][1], world_pos[joint][1]],
+                #          ys = [world_pos[parent_joint][2], world_pos[joint][2]], c = 'red', lw = 2.5)
+
+            #Depending on the file, the axis limits might be too small or too big. Change accordingly.
+            ax.set_axis_off()
+            lim_size = 10.2
+            xy_lim = lim_size * figure_limit
+            zlim = xy_lim / 3
+            ax.set_xlim(-xy_lim, xy_lim)
+            ax.set_ylim(-xy_lim, xy_lim)
+            ax.set_zlim(-zlim, zlim)
+            plt.title('frame: ' + str(i))
+            plt.pause(frame_time)
+            ax.cla()
+            # Frame Loop
         
-        #fill in the rotations dict
-        joint_index = 0
-        for joint in joints:
-            frame_joints_rotations[joint] = frame_data[joint_index:joint_index+3]
-            joint_index += 3
-
-        #this returns a dictionary of joint positions in local space. This can be saved to file to get the joint positions.
-        local_pos = _calculate_frame_joint_positions_in_local_space(joints, joints_offsets, frame_joints_rotations, joints_saved_angles, joints_hierarchy)
-
-        #calculate world positions
-        world_pos = _calculate_frame_joint_positions_in_world_space(local_pos, root_positions[i], frame_joints_rotations[joints[0]], joints_saved_angles[joints[0]])
-
-        #calculate the limits of the figure. Usually the last joint in the dictionary is one of the feet.
-        if figure_limit == None:
-            lim_min = np.abs(np.min(local_pos[list(local_pos)[-1]]))
-            lim_max = np.abs(np.max(local_pos[list(local_pos)[-1]]))
-            lim = lim_min if lim_min > lim_max else lim_max
-            figure_limit = lim
-
-        for joint in joints:
-            if joint == joints[0]: continue #skip root joint
-            parent_joint = joints_hierarchy[joint][0]
-            plt.plot(xs = [local_pos[parent_joint][0], local_pos[joint][0]],
-                     zs = [local_pos[parent_joint][1], local_pos[joint][1]],
-                     ys = [local_pos[parent_joint][2], local_pos[joint][2]], c = 'blue', lw = 2.5)
-
-            #uncomment here if you want to see the world coords. If nothing appears on screen, change the axis limits below!
-            # plt.plot(xs = [world_pos[parent_joint][0], world_pos[joint][0]],
-            #          zs = [world_pos[parent_joint][1], world_pos[joint][1]],
-            #          ys = [world_pos[parent_joint][2], world_pos[joint][2]], c = 'red', lw = 2.5)
-
-        #Depending on the file, the axis limits might be too small or too big. Change accordingly.
-        ax.set_axis_off()
-        ax.set_xlim(-0.6*figure_limit, 0.6*figure_limit)
-        ax.set_ylim(-0.6*figure_limit, 0.6*figure_limit)
-        ax.set_zlim(-0.2*figure_limit, 1.*figure_limit)
-        plt.title('frame: ' + str(i))
-        plt.pause(frame_time)
-        ax.cla()    
-
+        pass # Repetitions Loop
     pass
 
 
@@ -286,6 +292,7 @@ if __name__ == "__main__":
     parser.add_argument("filename", help="input file", metavar="FILE")
     parser.add_argument("-joint_angle_output", "--joint_angle_output", dest="joint_angle_output", help="joint angle output csv file", metavar="JOINT_ANGLE_CSV_FILE")
     parser.add_argument("-frame_time", type=float, dest="frame_time", help="time between frames", metavar="FRAME_TIME", required=False, default=None)
+    parser.add_argument("-repeat", type=int, dest="repeat", help="number of repetitions", metavar="REPETITIONS", required=False, default=1)
     args = parser.parse_args()
     
     skeleton_data = ProcessBVH(args.filename, args.joint_angle_output)
@@ -307,4 +314,5 @@ if __name__ == "__main__":
         root_positions=root_positions, 
         joints_rotations=joints_rotations, 
         joints_saved_angles=joints_saved_angles, 
-        frame_time=args.frame_time if args.frame_time is not None else frame_time)
+        frame_time=args.frame_time if args.frame_time is not None else frame_time,
+        repititions=args.repeat)

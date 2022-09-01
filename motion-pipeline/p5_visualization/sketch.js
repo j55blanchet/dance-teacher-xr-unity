@@ -51,7 +51,9 @@ function draw() {
   
   translate(0, 0, 50);
   push();
-  
+
+  // Switch to left handed coordinate system
+  scale(1, -1, 1);
 
   let col_component_major_base = 230;
   let col_component_minor_base = 190;
@@ -85,6 +87,7 @@ function draw() {
   drawCoordinates(ll / 6);
   // line(0, 0, 0, 0, ll / 2, 0)
   pop();
+
   translate(0, 0, -50);
   noStroke(128);
   fill(255, 255, 255, 128);

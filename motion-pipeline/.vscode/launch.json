@@ -41,7 +41,7 @@
             "module": "motion_extraction.steptwo_convert_to_jointspace",
             "justMyCode": true,
             "args": [
-                "--output_folder=${workspaceFolder}/data/jointspace_data",
+                "--output_folder=${workspaceFolder}/data/jointspace_data2",
                 "--log_level=INFO",
                 "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
             ],
@@ -92,7 +92,8 @@
                 // "-joint_angle_output=${workspaceFolder}/docs/minimal_bvh_joint_angles.csv",
                 "${workspaceFolder}/data/jointspace_data/tpose2.bvh",
                 "-joint_angle_output=${workspaceFolder}/data/jointspace_data/tpose2_bvhjointangles.csv",
-                "-frame_time=0.5",
+                "-frame_time=4.5",
+                "-repeat=1"
             ]
         }
     ]
