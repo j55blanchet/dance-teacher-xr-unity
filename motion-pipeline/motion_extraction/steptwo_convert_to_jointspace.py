@@ -11,6 +11,7 @@ from pytransform3d import transformations as pt
 from pytransform3d.editor import TransformEditor
 import numpy as np
 from itertools import islice
+import matplotlib.pyplot as plt
 
 from motion_extraction.bvh_writer import BVHWriteNode, write_bvh
 
@@ -33,20 +34,26 @@ def _get_bone_offsets(skel: HumanoidPositionSkeleton) -> pd.Series:
 def convert_row_to_jointspace(
     skel: HumanoidPositionSkeleton, 
     bvh_root: BVHWriteNode, 
-    col_names: List[str]
+    position_multiplier: float = 1.,
 ) -> dict:
     """
     Convert the holistic data to jointspace.
     """    
 
     tfs = skel.get_transforms(plot=False)    
-    
+
+    # plot code - uncomment to plot tf hierarchy.
+    # ax = tfs.plot_frames_in('world', s=0.1)
+    # skel.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
+    # plt.show(block=True)
+    # plt.savefig('tf_hierarchy.png')
+
     def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
         try:
             tf = tfs.get_transform(parent_frame, node.name)
         except KeyError:
             tf = np.eye(4)
-        data.update(node.get_channel_info(tf))
+        data.update(node.get_channel_info(tf, position_multiplier))
         for child in node.children:
             data.update(get_data(child, node.name))
         return data
@@ -122,14 +129,16 @@ def write_jointspace_bvh(holistic_data: pd.DataFrame, bvh_out_file: TextIOBase) 
     """
     Write a bvh file from a holistic dataframe.
     """
-    max_frames = 30
+    max_frames = 120
     skels = [HumanoidPositionSkeleton.from_mp_pose(row) for _, row in holistic_data.iloc[:max_frames].iterrows()]
 
     link_lengths = pd.DataFrame((_get_bone_offsets(s) for s in skels))    
     bone_avg_offsets = link_lengths.mean(axis=0)
     print(bone_avg_offsets)
 
-    bvh_root_node = get_bvh_hierarchy(bone_avg_offsets)
+    METERS_TO_CM = 100.
+    bone_avg_offsets_cm = bone_avg_offsets * METERS_TO_CM
+    bvh_root_node = get_bvh_hierarchy(bone_avg_offsets_cm)
     
     frame_count = min(holistic_data.shape[0], max_frames)
     fps = 30.0
@@ -138,85 +147,11 @@ def write_jointspace_bvh(holistic_data: pd.DataFrame, bvh_out_file: TextIOBase) 
 
     df = pd.DataFrame(columns = col_names)
     for i, skel in enumerate(skels[:max_frames]):        
-        row_data = convert_row_to_jointspace(skel, bvh_root_node, col_names)
+        row_data = convert_row_to_jointspace(skel, bvh_root_node, position_multiplier=METERS_TO_CM)
         df.loc[i] = row_data
     frames = df.to_numpy()
 
     write_bvh(bvh_out_file, bvh_root_node, fps, frame_count,  frames)
-    
-
-def convert_to_jointspace(skel: HumanoidPositionSkeleton, csv_file) -> pd.DataFrame:
-    """
-    Convert a holistic dataframe (in cartesian coordinates) to human-skeleton jointspace (angular coordinates).
-    """
-
-    # Create a new dataframe to store the jointspace data
-    # todo: decide what the columns will be like. Something like (jx, jy, jz)?
-    
-    col_names = ['frame'] + [
-        col_name for bone in MecanimBone 
-        for col_name in 
-        (f"{bone.name}_rx", f"{bone.name}_ry", f"{bone.name}_rz")
-    ]
-    csvwriter = csv.DictWriter(csv_file, fieldnames=col_names)
-    csvwriter.writeheader()
-    
-
-    # print(holistic_data)
-    print("[")
-    for i, row in islice(holistic_data.iterrows(), 30 * 5):
-        row_skel = HumanoidPositionSkeleton.from_mp_pose(row)
-        tm = row_skel.get_transforms(plot=True)
-        import matplotlib.pyplot as plt
-        plt.show(block=False)
-        pass
-        shoulder = tm.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.LeftLowerArm.name)
-
-
-        tposetf = tm.get_transform('world', MecanimBone.LeftUpperArm.name + '-tpose')
-        relative_coordinates = pt.transform(tposetf, np.append(row_skel.world_position(MecanimBone.LeftLowerArm), [1]))
-
-        actualtf = tm.get_transform('world', MecanimBone.LeftUpperArm.name)
-        actual_coordinates = pt.transform(actualtf, np.append(row_skel.world_position(MecanimBone.LeftLowerArm), [1]))
-        
-        z,y,x = pr.extrinsic_euler_zyx_from_active_matrix(shoulder[:3, :3])
-        # print(f"Std:  {i:3d}: {x:.4f}, {y:.4f}, {z:.4f}")
-
-        shoulder_delta = tm.get_transform(MecanimBone.LeftUpperArm.name + '-tpose', MecanimBone.LeftLowerArm.name)
-        shoulder_delta_euler = pr.extrinsic_euler_zyx_from_active_matrix(shoulder_delta[:3, :3])
-
-        shoulder_delta_euler = (shoulder_delta_euler + 2 * np.pi) % (np.pi) # noramlize -180 to 180
-        z_delta, y_delta, x_delta = np.degrees(shoulder_delta_euler)
-        # print(f"Dlta: {i:3d}: {x_delta:.4f}º, {y_delta:.4f}º, {z_delta:.4f}º")
-        # print(f"  [{x:.4f}, {y:.4f}, {z:.4f}],")
-        print(f"  [{x_delta:.4f}, {y_delta:.4f}, {z_delta:.4f}],")
-
-        csvwriter.writerow({
-            'frame': i,
-            f"{MecanimBone.LeftUpperArm.name}_rx": x_delta,
-            f"{MecanimBone.LeftUpperArm.name}_ry": y_delta,
-            f"{MecanimBone.LeftUpperArm.name}_rz": z_delta,
-        })
-
-
-        # import matplotlib.pyplot as plt 
-        # plt.show(block=False)
-
-        # editor = TransformEditor(tm, 'world', s=0.1)
-        # editor.show()
-        # pass
-        # right_to_left_shoulder_vector = row_skel.world_position(MecanimBone.LeftUpperArm) - row_skel.world_position(MecanimBone.Hips)
-        # spine_up = row_skel.bones[MecanimBone.Spine]
-        # forward = np.cross(right_to_left_shoulder_vector, spine_up)
-        # rot_matrix_shoulder_default = pr.matrix_from_two_vectors(right_to_left_shoulder_vector, forward)
-        # shoulder_typical_transform = pt.transform_from(rot_matrix_shoulder_default, row_skel.world_position(MecanimBone.LeftUpperArm))
-        # tm.add_transform(MecanimBone.LeftUpperArm.name + '-tpose', 'world', shoulder_typical_transform)
-        # elbow = tm.get_transform(MecanimBone.LeftLowerArm.name, MecanimBone.LeftHand.name)
-
-        # row_skel.to_jointspace()
-        # row_skel.to_mp_pose()
-        # row_skel.to_holistic_data()
-    print("]")
 
 if __name__ == "__main__":
     import argparse

@@ -12,7 +12,7 @@ from pytransform3d.transform_manager import TransformManager
 class BVHWriteNode:
     name: str
     offset: Tuple[float, float, float]
-    rotation_order: str = 'xyz' 
+    rotation_order: str
     has_position_channels: bool = False   
     parent: BVHWriteNode = field(default=None)
     children: List[BVHWriteNode] = field(default_factory=list)
@@ -21,7 +21,7 @@ class BVHWriteNode:
     @staticmethod
     def create(name: str, 
         include_position_channels: bool = True, 
-        rotation_order: str = 'xyz', 
+        rotation_order: str = 'zxy', 
         offset: Tuple[float, float, float] = (0., 0., 0.)
     ) -> BVHWriteNode:
         
@@ -83,10 +83,10 @@ class BVHWriteNode:
         for child in self.children:
             yield from child.get_channel_column_names()
 
-    def get_channel_info(self, transform):
+    def get_channel_info(self, transform, position_multiplier: float = 1.0):
         data = {}
         if len(self.channels) == 6:
-            x, y, z = transform[:3,3]
+            x, y, z = transform[:3,3] * position_multiplier
             data.update({
                 f'{self.name}.Xposition': x,
                 f'{self.name}.Yposition': y,
@@ -95,13 +95,20 @@ class BVHWriteNode:
 
         rx, rx, rz = 0., 0., 0.
         R = transform[:3,:3]
+        
+        
+        # pr.intrinsic_euler_xyx_from_active_matrix
         match self.rotation_order.lower():
-            case 'xyz': rx, ry, rz = pr.extrinsic_euler_xyz_from_active_matrix(R)
-            case 'xzy': rx, ry, rz = pr.extrinsic_euler_xzy_from_active_matrix(R)
-            case 'yxz': rx, ry, rz = pr.extrinsic_euler_yxz_from_active_matrix(R)
-            case 'yzx': rx, ry, rz = pr.extrinsic_euler_yzx_from_active_matrix(R)
+            
+            # Trying different euler angle extraction functions.
+            # case 'xyz': rx, ry, rz = pr.intrinsic_euler_xyx_from_active_matrix(R.T)
+
+            # case 'xyz': rx, ry, rz = pr.extrinsic_euler_xyz_from_active_matrix(R.T)
+            # case 'xzy': rx, ry, rz = pr.extrinsic_euler_xzy_from_active_matrix(R)
+            # case 'yxz': rx, ry, rz = pr.extrinsic_euler_yxz_from_active_matrix(R)
+            # case 'yzx': rx, ry, rz = pr.extrinsic_euler_yzx_from_active_matrix(R)
             case 'zxy': rx, ry, rz = pr.extrinsic_euler_zxy_from_active_matrix(R)
-            case 'zyx': rx, ry, rz = pr.extrinsic_euler_zyx_from_active_matrix(R)
+            # case 'zyx': rx, ry, rz = pr.extrinsic_euler_zyx_from_active_matrix(R)
             case _:
                 raise ValueError(f'Unsupported rotation order: {self.rotation_order}')
             

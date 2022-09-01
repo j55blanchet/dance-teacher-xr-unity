@@ -8,6 +8,8 @@ import pandas as pd
 from functools import reduce
 import csv
 import logging
+
+from pyparsing import Optional
 from .utils import throttle
 
 PoseLandmark: mp.solutions.mediapipe.python.solutions.holistic.PoseLandmark = mp.solutions.holistic.PoseLandmark
@@ -47,7 +49,7 @@ def process_video(
     video_path: Path, 
     output_root: Path, 
     holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic,
-    frame_output_folder: bool,
+    frame_output_folder: Optional[Path] = None,
     rewrite_existing: bool = False,
 ):
 
@@ -61,8 +63,8 @@ def process_video(
 
     @throttle(seconds=1)
     def print_progress(i, frame_count):
-        percent_done = int(i * 100 / frame_count)
-        logging.info(f'{video_path.stem}: {percent_done}%')
+        percent_done = i / frame_count
+        logging.info(f'{video_path.stem}: {percent_done:.1%}')
 
     holistic_data_filepath = output_root / (video_path.stem + ".holisticdata.csv")
 
@@ -71,7 +73,7 @@ def process_video(
         return
 
     with(
-        open(str(holistic_data_filepath), 'w', encoding='utf-8') as merged_data_file,
+        open(str(holistic_data_filepath), 'w', newline='', encoding='utf-8') as merged_data_file,
     ):
         merged_data_csv = csv.writer(merged_data_file)
         for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
@@ -88,7 +90,7 @@ def process_video(
             # cv2.waitKey(500)
             if frame_output_folder is not None:
                 frame_output_folder.mkdir(parents=True, exist_ok=True)
-                cv2.imwrite(f'{frame_output_folder}/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.jpg', image)
+                cv2.imwrite(f'{frame_output_folder}/{video_path.stem}/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.jpg', image)
 
             print_progress(frame_i, frame_count)
             if frame_i == 0:
@@ -115,14 +117,15 @@ def process_video(
                     [
                         # We want to remap x, y, z. 
                         #   > The default has negative y being up, positive x being right, and pozitive z being away from the camera.
-                        #   > We want z being up, x being forward, and y being right.
-                        #   So x <- -z
-                        #      y <- x
-                        #      z <- -y
+                        #   > OLD We want z being up, x being forward, and y being right.
+                        #   > We actually want y being up, x being left, and z being forward.
+                        #   So x <- -x
+                        #      y <- -y
+                        #      z <- -z
                         [ 
-                            -lm.z, 
-                            lm.x, 
-                            -lm.y,
+                            lm.x,
+                            -lm.y, 
+                            lm.z,
                             lm.visibility
                         ] if lm is not None else [None, None, None, None]
                         for lm in 
