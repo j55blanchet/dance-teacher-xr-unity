@@ -6,16 +6,22 @@ let gui;
 function preload() {
 }
 
+var camera;
 
 function setup() {
   angleMode(DEGREES);
   let canvas = createCanvas(windowWidth, windowHeight, WEBGL);
   document.oncontextmenu = () => false;
-  createEasyCam();
+
+  // Switch to right handed coordinate system
+  scale(-1, 1, 1);
+
+  camera = createEasyCam();
+  camera.setCenter([100, 100, 100]);
 
   gui = createGui('p5.gui')
 
-  sliderRange(-180, 180, 1);
+  sliderRange(-180, 180, 5);
   gui.addGlobals('rx', 'ry', 'rz');
 
   sliderRange(1, 3, 1);
@@ -44,16 +50,21 @@ function drawCoordinates(s, colx, coly, colz) {
 
 function draw() {
   background(240);
-  stroke(0);
-  strokeWeight(4);
+
   let minDim = min(width, height) / 2;
   let ll = minDim / 2;
+  noStroke();
+  fill(255, 255, 255, 128);
+  box(minDim, 1, minDim);
+  stroke(55);
+  point(0, 0, 0);
+
+  stroke(0);
+  strokeWeight(4);
   
-  translate(0, 0, 50);
+  translate(0, 50, 0);
   push();
 
-  // Switch to left handed coordinate system
-  scale(1, -1, 1);
 
   let col_component_major_base = 230;
   let col_component_minor_base = 190;
@@ -80,18 +91,12 @@ function draw() {
   for (let obj of objs) {
     obj.fn(obj.val);
   }
+
   drawCoordinates(ll / 4);
   stroke(128, 80);
   line(0, 0, 0, ll / 2, 0, 0)
+  
   translate(ll / 2, 0, 0);
   drawCoordinates(ll / 6);
-  // line(0, 0, 0, 0, ll / 2, 0)
   pop();
-
-  translate(0, 0, -50);
-  noStroke(128);
-  fill(255, 255, 255, 128);
-  box(minDim, minDim, 1, 3, 3);
-  stroke(128);
-  point(0, 0, 0);
 }

@@ -1,5 +1,23 @@
 from datetime import datetime, timedelta
 from functools import wraps
+import numpy as np
+
+def get_passive_euler_zxy_from_matrix(R: np.ndarray):
+    r23 = R[1, 2]
+    
+    # Two conditions: thetaX = +/- 1 and otherwise
+    if np.abs(r23) - 1 < 1e-6:
+        thetaX1 = -np.arcsin(r23)
+        thetaX2 = np.pi - thetaX1
+        cx1 = np.cos(thetaX1)
+        cx2 = np.cos(thetaX2)
+        r21 = R[1, 0]
+        r22 = R[1, 1]
+        thetaZ1 = - np.arctan2(r21 / cx1, r22 / cx1)   
+        thetaZ2 = - np.arctan2(r21 / cx2, r22 / cx2)     
+        
+    else:
+        thetaX = -np.arcsin(r23)
 
 class throttle(object):
     """

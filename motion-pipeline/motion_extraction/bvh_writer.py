@@ -8,11 +8,23 @@ from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
 from pytransform3d.transform_manager import TransformManager
 
+
+# def passive_euler_zxy_from_matrix(matrix: np.ndarray) -> np.ndarray:
+#     # https://www.researchgate.net/publication/238189035_General_Formula_for_Extracting_the_Euler_Angles
+#     n1 = np.array([0., 0., 1.]) # Z
+#     n2 = np.array([1., 0., 0.]) # X
+#     n3 = np.array([0., 1., 0.]) # Y
+#     D = matrix
+#     C = (n2 @ np.cross(n1, n2) @ n1).T
+
+
+#     return R
+
 @dataclass
 class BVHWriteNode:
     name: str
     offset: Tuple[float, float, float]
-    rotation_order: str
+    rotation_order: str = 'ZXY'
     has_position_channels: bool = False   
     parent: BVHWriteNode = field(default=None)
     children: List[BVHWriteNode] = field(default_factory=list)
@@ -95,8 +107,10 @@ class BVHWriteNode:
 
         rx, rx, rz = 0., 0., 0.
         R = transform[:3,:3]
+
         
         
+        pr.euler_zyx_from_matrix(R)
         # pr.intrinsic_euler_xyx_from_active_matrix
         match self.rotation_order.lower():
             
@@ -107,7 +121,7 @@ class BVHWriteNode:
             # case 'xzy': rx, ry, rz = pr.extrinsic_euler_xzy_from_active_matrix(R)
             # case 'yxz': rx, ry, rz = pr.extrinsic_euler_yxz_from_active_matrix(R)
             # case 'yzx': rx, ry, rz = pr.extrinsic_euler_yzx_from_active_matrix(R)
-            case 'zxy': rx, ry, rz = pr.extrinsic_euler_zxy_from_active_matrix(R)
+            case 'zxy': rx, ry, rz = pr.intrinsic_euler_zxy_from_active_matrix(R.T)
             # case 'zyx': rx, ry, rz = pr.extrinsic_euler_zyx_from_active_matrix(R)
             case _:
                 raise ValueError(f'Unsupported rotation order: {self.rotation_order}')
@@ -134,27 +148,84 @@ def write_bvh(file: TextIOBase, root_node: BVHWriteNode, fps: int, frame_count: 
 
 
 if __name__ == "__main__":
-    pass
-# @dataclass
-# class BVHSkeleton:
+    from pathlib import Path
+    import pandas as pd
 
-#     @dataclass
-#     class Joint:
-#         def __init__(self, name: str, parent: Optional[Self.Joint] = None):
-#             self.name = name
-#             self.parent = parent
-#             self.children = []
-#             self.position = np.zeros(3)
-#             self.rotation = np.zeros(3)
-#             # self.scale = np.ones(3)
+    # Base Shape:
+    #    -  -
+    #    \ /
+    #     |
 
-#         def __repr__(self):
-#             return f'{self.name}'
+    firstNode = BVHWriteNode("First", (0., 0., 0.), has_position_channels=True)
+    secondNode = BVHWriteNode("Second", (0.0, 10., 0.))
+    firstNode.add_child(secondNode)
+    t1Node = BVHWriteNode("T1", (10.0, 10., 0.), end_site_offset=(5., 0., 0.))
+    t2Node = BVHWriteNode("T2", (-10.0, 10., 0.), end_site_offset=(5., 0., 0.))
+    secondNode.add_child(t1Node)
+    secondNode.add_child(t2Node)
 
-#         def add_child(self, child: 'Self.Joint'):
-#             self.children.append(child)
-#             child.parent = self
+    # Transform shape:
+    # |
+    #  \
+    #    --
+    #  /
+    # |
+    tfs = TransformManager()
     
-#     def __init__(self, position_skeleton: HumanoidPositionSkeleton):
-#         self.root = self.Joint('Hips')
-#         pass
+    r90z = pr.passive_matrix_from_angle(basis=2, angle=math.radians(90)) # -90 in z (basis=2) axis
+    
+    # 90deg z rotation world to first (lean to left)
+    tfs.add_transform('world', 'First', pt.transform_from(r90z, np.zeros(3)))
+
+    # Second keeps same orientation as first, but 10 units to left (-x)
+    tfs.add_transform('world', 'Second', pt.transform_from(r90z, np.array([-10., 0., 0.])))
+
+    # t1 is oriented with x pointing up, which is same as first and second, offset from second 10left, 10 up
+    tfs.add_transform('world', 'T1', pt.transform_from(r90z, np.array([-20., 10., 0.])))
+
+    rneg90z = pr.passive_matrix_from_angle(basis=2, angle=math.radians(-90)) # -90 in z (basis=2) axis
+    # t1 is oriented with x pointing down, which is same as first and second, offset from second 10left, 10 down
+    tfs.add_transform('world', 'T2', pt.transform_from(rneg90z, np.array([-20., -10., 0.])))
+
+    position_multiplier = 1.0
+
+    def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
+        try:
+            tf = tfs.get_transform(parent_frame, node.name)
+        except KeyError:
+            tf = np.eye(4)
+        data.update(node.get_channel_info(tf, position_multiplier))
+        for child in node.children:
+            data.update(get_data(child, node.name))
+        return data
+
+    first_pose_data = get_data(firstNode, data={})
+
+    tfs.remove_transform('world', 'T2')
+    point_out = pr.matrix_from_two_vectors(np.array([0., 0., 1.]), np.array([0., -1., 0.]))
+    tfs.add_transform('world', 'T2', pt.transform_from(point_out, np.array([-20., -10., 0.])))
+
+    second_pose_data = get_data(firstNode, data={})
+    
+    col_names = list(firstNode.get_channel_column_names())
+    zero_dict = {k: 0. for k in col_names}
+    df = pd.DataFrame(columns = col_names)
+    df.loc[0] = zero_dict
+    df.loc[1] = first_pose_data
+    df.loc[2] = second_pose_data
+    df.loc[3] = first_pose_data
+    df.loc[4] = zero_dict
+    
+    frames = df.to_numpy()
+
+    # frames = np.array([
+    #     #firstX firstY firstZ firstRZ firstRX firstRY secondRZ secondRX secondRY t1RZ t1RX t1RY t2RZ t2RX t2RY
+    #     [0.,    0.,    0.,    0.,     0.,     0.,     0.,      0.,      0.,      0.,  0.,  0.,  0.,  0.,  0.  ],
+    #     [0.,    0.,    0.,    45.,    0.,     0.,     0.,      0.,      0.,      0.,  0.,  0.,  0.,  0.,  180.  ],
+    #     [0.,    0.,    0.,    0.,     0.,     0.,     0.,      0.,      0.,      0.,  0.,  0.,  0.,  0.,  0.  ],
+    #     [0.,    0.,    0.,    -45.,   0.,     0.,     0.,      0.,      0.,      0.,  0.,  0.,  0.,  0.,  -180.  ],
+    #     [0.,    0.,    0.,    0.,     0.,     0.,     0.,      0.,      0.,      0.,  0.,  0.,  0.,  0.,  0.],
+    # ])
+    path = Path("~/Desktop/test.bvh").expanduser()
+    with path.open('w') as f:
+        write_bvh(f, firstNode, fps=10, frame_count=frames.shape[0], frames=frames)
