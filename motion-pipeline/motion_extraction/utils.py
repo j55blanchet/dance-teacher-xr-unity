@@ -14,10 +14,21 @@ def get_passive_euler_zxy_from_matrix(R: np.ndarray):
         r21 = R[1, 0]
         r22 = R[1, 1]
         thetaZ1 = - np.arctan2(r21 / cx1, r22 / cx1)   
-        thetaZ2 = - np.arctan2(r21 / cx2, r22 / cx2)     
+        thetaZ2 = - np.arctan2(r21 / cx2, r22 / cx2)
+        r13 = R[0, 2]
+        r33 = R[2, 2]
+        thetaY1 = - np.arctan2(r13 / cx1, r33 / cx1)
+        thetaY2 = - np.arctan2(r13 / cx2, r33 / cx2)
+        return [(thetaZ1, thetaX2, thetaY1), (thetaZ2, thetaX2, thetaY2)]
         
     else:
-        thetaX = -np.arcsin(r23)
+        thetaY = 0.
+        thetaX = 0.
+        thetaZ = 0.
+        if r23 < 0:
+            thetaX = np.pi / 2.
+        else:
+            thetaX = -np.pi / 2.
 
 class throttle(object):
     """
