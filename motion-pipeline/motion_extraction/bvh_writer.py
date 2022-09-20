@@ -121,7 +121,7 @@ class BVHWriteNode:
             # case 'xzy': rx, ry, rz = pr.extrinsic_euler_xzy_from_active_matrix(R)
             # case 'yxz': rx, ry, rz = pr.extrinsic_euler_yxz_from_active_matrix(R)
             # case 'yzx': rx, ry, rz = pr.extrinsic_euler_yzx_from_active_matrix(R)
-            case 'zxy': rz, rx, ry = pr.intrinsic_euler_zxy_from_active_matrix(R)
+            case 'zxy': rz, rx, ry = pr.intrinsic_euler_zxy_from_active_matrix(R.T)
             # case 'zyx': rx, ry, rz = pr.extrinsic_euler_zyx_from_active_matrix(R)
 
             # case 'zxy': rz, rx, ry = get_passive_euler_zxy_from_matrix(R)

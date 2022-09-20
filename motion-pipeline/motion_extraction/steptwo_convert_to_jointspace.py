@@ -12,6 +12,7 @@ from pytransform3d.editor import TransformEditor
 import numpy as np
 from itertools import islice
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from motion_extraction.bvh_writer import BVHWriteNode, write_bvh
 
@@ -43,10 +44,10 @@ def convert_row_to_jointspace(
     tfs = skel.get_transforms(plot=False)    
 
     # plot code - uncomment to plot tf hierarchy.
-    # ax = tfs.plot_frames_in('world', s=0.1)
-    # skel.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
-    # plt.show(block=True)
-    # plt.savefig('tf_hierarchy.png')
+    ax = tfs.plot_frames_in('world', s=0.1)
+    skel.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
+    plt.show(block=True)
+    plt.savefig('tf_hierarchy.png')
 
     def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
         try:
@@ -125,11 +126,11 @@ def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
     return hips    
 
 
-def write_jointspace_bvh(holistic_data: pd.DataFrame, bvh_out_file: TextIOBase) -> None:
+def write_jointspace_bvh(holistic_data: pd.DataFrame, bvh_filepath: Path, frame_limit = 9999999999999) -> None:
     """
     Write a bvh file from a holistic dataframe.
     """
-    max_frames = 120
+    max_frames = frame_limit
     skels = [HumanoidPositionSkeleton.from_mp_pose(row) for _, row in holistic_data.iloc[:max_frames].iterrows()]
 
     link_lengths = pd.DataFrame((_get_bone_offsets(s) for s in skels))    
@@ -151,7 +152,8 @@ def write_jointspace_bvh(holistic_data: pd.DataFrame, bvh_out_file: TextIOBase) 
         df.loc[i] = row_data
     frames = df.to_numpy()
 
-    write_bvh(bvh_out_file, bvh_root_node, fps, frame_count,  frames)
+    with bvh_filepath.open('w') as f:
+        write_bvh(f, bvh_root_node, fps, frame_count,  frames)
 
 if __name__ == "__main__":
     import argparse
@@ -172,8 +174,7 @@ if __name__ == "__main__":
                 holistic_dataframe = pd.read_csv(f, index_col='frame')
                 bvh_out_path = args.output_folder / data_file.stem.replace('.holisticdata', '.bvh')
                 # out_path = args.output_folder / data_file.name.replace('.holisticdata', '.jointspace')
-                with bvh_out_path.open('w') as bvh_out_file:
-                    write_jointspace_bvh(holistic_dataframe, bvh_out_file)
-                    print(f"Converted {data_file} to {bvh_out_path}")
+                write_jointspace_bvh(holistic_dataframe, bvh_out_path, frame_limit = 2)
+                print(f"Converted {data_file} to {bvh_out_path}")
 
 
