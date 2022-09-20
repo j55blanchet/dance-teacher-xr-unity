@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 from functools import wraps
 import numpy as np
+from typing import Tuple
 
-def get_passive_euler_zxy_from_matrix(R: np.ndarray):
+def get_passive_euler_zxy_from_matrix(R: np.ndarray) -> Tuple[float, float, float]:
     r23 = R[1, 2]
     
     # Two conditions: thetaX = +/- 1 and otherwise
@@ -13,22 +14,30 @@ def get_passive_euler_zxy_from_matrix(R: np.ndarray):
         cx2 = np.cos(thetaX2)
         r21 = R[1, 0]
         r22 = R[1, 1]
-        thetaZ1 = - np.arctan2(r21 / cx1, r22 / cx1)   
-        thetaZ2 = - np.arctan2(r21 / cx2, r22 / cx2)
+        thetaZ1 = np.arctan2(r21 / cx1, r22 / cx1)   
+        thetaZ2 = np.arctan2(r21 / cx2, r22 / cx2)
         r13 = R[0, 2]
         r33 = R[2, 2]
-        thetaY1 = - np.arctan2(r13 / cx1, r33 / cx1)
-        thetaY2 = - np.arctan2(r13 / cx2, r33 / cx2)
-        return [(thetaZ1, thetaX2, thetaY1), (thetaZ2, thetaX2, thetaY2)]
+        thetaY1 = np.arctan2(r13 / cx1, r33 / cx1)
+        thetaY2 = np.arctan2(r13 / cx2, r33 / cx2)
+        return (thetaZ1, thetaX1, thetaY1)
+        #(thetaZ2, thetaX2, thetaY2)] <- this is the other solution
         
     else:
         thetaY = 0.
         thetaX = 0.
-        thetaZ = 0.
-        if r23 < 0:
+        thetaZ = 0. # thetaY and thetaZ are linked together - can choose any 
+                    # value for one of them and the other will be determined
+        r31 = R[2, 0]
+        r32 = R[2, 1]
+        if r23 > 0:
             thetaX = np.pi / 2.
+            thetaY = thetaZ + np.atan2(r31, r32)
         else:
             thetaX = -np.pi / 2.
+            thetaY = -thetaZ + np.atan2(-r31, -r32)
+        
+        return (thetaZ, thetaX, thetaY)
 
 class throttle(object):
     """

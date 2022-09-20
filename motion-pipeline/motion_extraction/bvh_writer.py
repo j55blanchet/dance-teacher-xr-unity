@@ -7,7 +7,7 @@ import math
 from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
 from pytransform3d.transform_manager import TransformManager
-
+# from utils import get_passive_euler_zxy_from_matrix
 
 # def passive_euler_zxy_from_matrix(matrix: np.ndarray) -> np.ndarray:
 #     # https://www.researchgate.net/publication/238189035_General_Formula_for_Extracting_the_Euler_Angles
@@ -110,7 +110,7 @@ class BVHWriteNode:
 
         
         
-        pr.euler_zyx_from_matrix(R)
+        # pr.euler_zyx_from_matrix(R)
         # pr.intrinsic_euler_xyx_from_active_matrix
         match self.rotation_order.lower():
             
@@ -121,8 +121,10 @@ class BVHWriteNode:
             # case 'xzy': rx, ry, rz = pr.extrinsic_euler_xzy_from_active_matrix(R)
             # case 'yxz': rx, ry, rz = pr.extrinsic_euler_yxz_from_active_matrix(R)
             # case 'yzx': rx, ry, rz = pr.extrinsic_euler_yzx_from_active_matrix(R)
-            case 'zxy': rx, ry, rz = pr.intrinsic_euler_zxy_from_active_matrix(R.T)
+            case 'zxy': rz, rx, ry = pr.intrinsic_euler_zxy_from_active_matrix(R)
             # case 'zyx': rx, ry, rz = pr.extrinsic_euler_zyx_from_active_matrix(R)
+
+            # case 'zxy': rz, rx, ry = get_passive_euler_zxy_from_matrix(R)
             case _:
                 raise ValueError(f'Unsupported rotation order: {self.rotation_order}')
             
@@ -150,6 +152,7 @@ def write_bvh(file: TextIOBase, root_node: BVHWriteNode, fps: int, frame_count: 
 if __name__ == "__main__":
     from pathlib import Path
     import pandas as pd
+    import matplotlib.pyplot as plt
 
     # Base Shape:
     #    -  -
@@ -172,24 +175,29 @@ if __name__ == "__main__":
     # |
     tfs = TransformManager()
     
-    r90z = pr.passive_matrix_from_angle(basis=2, angle=math.radians(90)) # -90 in z (basis=2) axis
+    id3 = np.identity(3)
+    r90z = pr.active_matrix_from_intrinsic_euler_zxy((math.radians(90.), 0., 0.))
+    # r90z = pr.passive_matrix_from_angle(basis=2, angle=math.radians(90)) # 90 in z (basis=2) axis
     
     # 90deg z rotation world to first (lean to left)
-    tfs.add_transform('world', 'First', pt.transform_from(r90z, np.zeros(3)))
+    tfs.add_transform('world', 'First', pt.transform_from(r90z.T, np.array([0., 10.0, 0.])))
 
     # Second keeps same orientation as first, but 10 units to left (-x)
-    tfs.add_transform('world', 'Second', pt.transform_from(r90z, np.array([-10., 0., 0.])))
+    tfs.add_transform('First', 'Second', pt.transform_from(id3, np.array([0., 10., 0.])))
 
     # t1 is oriented with x pointing up, which is same as first and second, offset from second 10left, 10 up
-    tfs.add_transform('world', 'T1', pt.transform_from(r90z, np.array([-20., 10., 0.])))
+    tfs.add_transform('Second', 'T1', pt.transform_from(id3, np.array([10., 10., 0.])))
 
-    rneg90z = pr.passive_matrix_from_angle(basis=2, angle=math.radians(-90)) # -90 in z (basis=2) axis
+    rneg90z = pr.active_matrix_from_intrinsic_euler_zxy((-math.radians(90.), 0., 0.))
+    tfs.add_transform('Second', 'T2Pos', pt.transform_from(id3, np.array([-10., 10., 0.])))
     # t1 is oriented with x pointing down, which is same as first and second, offset from second 10left, 10 down
-    tfs.add_transform('world', 'T2', pt.transform_from(rneg90z, np.array([-20., -10., 0.])))
+    tfs.add_transform('T2Pos', 'T2', pt.transform_from(rneg90z.T, np.zeros(3)))
 
     position_multiplier = 1.0
 
-    def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
+    def get_data(node: BVHWriteNode, parent_frame = 'world', data = None):
+        if data is None:
+            data = {}
         try:
             tf = tfs.get_transform(parent_frame, node.name)
         except KeyError:
@@ -200,13 +208,24 @@ if __name__ == "__main__":
         return data
 
     first_pose_data = get_data(firstNode, data={})
+    print(f'{first_pose_data=}')
 
-    tfs.remove_transform('world', 'T2')
+    ax = tfs.plot_frames_in('world', s=5.0, ax_s=30.0)
+    tfs.plot_connections_in('world', ax=ax)
+    plt.show(block=True)
+
+    tfs.remove_transform('T2Pos', 'T2')
     point_out = pr.matrix_from_two_vectors(np.array([0., 0., 1.]), np.array([0., -1., 0.]))
-    tfs.add_transform('world', 'T2', pt.transform_from(point_out, np.array([-20., -10., 0.])))
+    tfs.add_transform('T2Pos', 'T2', pt.transform_from(point_out, np.zeros(3)))
 
-    second_pose_data = get_data(firstNode, data={})
     
+    second_pose_data = get_data(firstNode, data={})
+    print(f'{second_pose_data=}')
+    
+    ax = tfs.plot_frames_in('world', s=5.0, ax_s=30.0)
+    tfs.plot_connections_in('world', ax=ax)
+    plt.show(block=True)
+
     col_names = list(firstNode.get_channel_column_names())
     zero_dict = {k: 0. for k in col_names}
     df = pd.DataFrame(columns = col_names)
