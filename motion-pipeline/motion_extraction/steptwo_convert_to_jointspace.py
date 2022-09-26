@@ -44,10 +44,10 @@ def convert_row_to_jointspace(
     tfs = skel.get_transforms(plot=False)    
 
     # plot code - uncomment to plot tf hierarchy.
-    ax = tfs.plot_frames_in('world', s=0.1)
-    skel.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
-    plt.show(block=True)
-    plt.savefig('tf_hierarchy.png')
+    # ax = tfs.plot_frames_in('world', s=0.1)
+    # skel.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
+    # plt.show(block=True)
+    # plt.savefig('tf_hierarchy.png')
 
     def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
         try:
@@ -100,6 +100,26 @@ def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
     hips.add_child(leftUpperLeg)
     hips.add_child(rightUpperLeg)
 
+    head = make_node(MecanimBone.Head, offset_channel=Channel.Y)
+    spine.add_child(head)
+
+    avg_lowerleg_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftLowerLeg.name] + bone_avg_offsets[MecanimBone.RightLowerLeg.name])
+    leftLowerLeg = make_node(MecanimBone.LeftLowerLeg, offset_channel=Channel.X, override_offset_val=avg_lowerleg_offset)
+    rightLowerLeg = make_node(MecanimBone.RightLowerLeg, offset_channel=Channel.X, override_offset_val=avg_lowerleg_offset)
+    leftUpperLeg.add_child(leftLowerLeg)
+    rightUpperLeg.add_child(rightLowerLeg)
+
+    avg_foot_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftFootAnkle.name] + bone_avg_offsets[MecanimBone.RightFootAnkle.name])
+    leftFoot = make_node(MecanimBone.LeftFootAnkle, offset_channel=Channel.X, override_offset_val=avg_foot_offset)
+    rightFoot = make_node(MecanimBone.RightFootAnkle, offset_channel=Channel.X, override_offset_val=avg_foot_offset)
+    leftLowerLeg.add_child(leftFoot)
+    rightLowerLeg.add_child(rightFoot)
+
+    # add end sites for feet
+    avg_foot_length = 0.5 * (bone_avg_offsets[MecanimBone.LeftToes.name] + bone_avg_offsets[MecanimBone.RightToes.name])
+    leftFoot.end_site_offset = np.array((avg_foot_length, 0., 0.))
+    rightFoot.end_site_offset = np.array((avg_foot_length, 0., 0.))
+
     leftUpperArm = make_node(MecanimBone.LeftUpperArm, offset_channel=Channel.X)
     rightUpperArm = make_node(MecanimBone.RightUpperArm, offset_channel=Channel.X)
     # avg_shoulder_link = 0.5 * (bone_avg_offsets[MecanimBone.LeftUpperArm.name] + bone_avg_offsets[MecanimBone.RightUpperArm.name])
@@ -114,14 +134,26 @@ def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
 
     avg_lowerarm_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftLowerArm.name] + bone_avg_offsets[MecanimBone.RightLowerArm.name])
     leftLowerArm = make_node(MecanimBone.LeftLowerArm, offset_channel=Channel.X, override_offset_val=avg_lowerarm_offset)
-    rightLowerArm = make_node(MecanimBone.RightLowerArm, offset_channel=Channel.X, override_offset_val=avg_lowerarm_offset, negate_offset=True)
+    rightLowerArm = make_node(MecanimBone.RightLowerArm, offset_channel=Channel.X, override_offset_val=avg_lowerarm_offset)
     leftUpperArm.add_child(leftLowerArm)
     rightUpperArm.add_child(rightLowerArm)
 
-    # Add end sites for the lower arms.
+    # Add hand
     avg_hand_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftHand.name] + bone_avg_offsets[MecanimBone.RightHand.name])
-    leftLowerArm.end_site_offset = (avg_hand_offset, 0., 0.)
-    rightLowerArm.end_site_offset = (avg_hand_offset, 0., 0.)
+    leftHand = make_node(MecanimBone.LeftHand, offset_channel=Channel.X, override_offset_val=avg_hand_offset)
+    rightHand = make_node(MecanimBone.RightHand, offset_channel=Channel.X, override_offset_val=avg_hand_offset)
+    leftLowerArm.add_child(leftHand)
+    rightLowerArm.add_child(rightHand)
+
+    # Add end sites for the hands
+    avg_finger_length = 0.25 * (
+        bone_avg_offsets[MecanimBone.LeftHandIndexRoot.name] + 
+        bone_avg_offsets[MecanimBone.RightHandIndexRoot.name] + 
+        bone_avg_offsets[MecanimBone.LeftHandPinkyRoot.name] + 
+        bone_avg_offsets[MecanimBone.RightHandPinkyRoot.name]
+    )
+    leftLowerArm.end_site_offset = (avg_finger_length, 0., 0.)
+    rightLowerArm.end_site_offset = (avg_finger_length, 0., 0.)
 
     return hips    
 
@@ -162,7 +194,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_folder', type=Path, required=True)
     parser.add_argument('holistic_data', nargs="+", type=Path)
     parser.add_argument('--log_level', type=str, default='INFO')
-
+    parser.add_argument('--frame_limit', type=int, default=9999999999999)
     args = parser.parse_args()
 
     args.output_folder.mkdir(exist_ok=True, parents=True)
@@ -174,7 +206,7 @@ if __name__ == "__main__":
                 holistic_dataframe = pd.read_csv(f, index_col='frame')
                 bvh_out_path = args.output_folder / data_file.stem.replace('.holisticdata', '.bvh')
                 # out_path = args.output_folder / data_file.name.replace('.holisticdata', '.jointspace')
-                write_jointspace_bvh(holistic_dataframe, bvh_out_path, frame_limit = 2)
+                write_jointspace_bvh(holistic_dataframe, bvh_out_path, frame_limit = args.frame_limit)
                 print(f"Converted {data_file} to {bvh_out_path}")
 
 

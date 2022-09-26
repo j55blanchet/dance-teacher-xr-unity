@@ -272,7 +272,7 @@ class HumanoidPositionSkeleton:
     def bone_length_to_parent(self, bone: MecanimBone):
         if bone.parent is None:
             return 0
-        return np.linalg.norm(self.bones[bone] - self.bones[bone.parent])
+        return np.linalg.norm(self.world_position(bone) - self.world_position(bone.parent))
 
     def get_measurement(self, measurement: MecanimMeasurement):
         match measurement:
@@ -408,6 +408,13 @@ class HumanoidPositionSkeleton:
         spine_rot_matrix = hips_rot_matrix
         spine_tf = pt.transform_from(spine_rot_matrix, self.world_position(MecanimBone.Spine))
         tm.add_transform(MecanimBone.Spine.name, 'world', spine_tf)
+        
+        # Create transform for head - pointing laterally from left eye to right eye, with y pointing up
+        head_lateral = self.world_position(MecanimBone.RightEye) - self.world_position(MecanimBone.LeftEye)
+        head_up = self.bones[MecanimBone.Head]
+        head_rot_matrix = pr.matrix_from_two_vectors(head_lateral, head_up)
+        head_tf = pt.transform_from(head_rot_matrix, self.world_position(MecanimBone.Head))
+        tm.add_transform(MecanimBone.Head.name, 'world', head_tf)
 
         # Create transform for left shoulder - pointing to elbow, with twist axis pointing to wrist.
         left_shoulder_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.LeftLowerArm], self.bones[MecanimBone.LeftHand])
@@ -448,34 +455,32 @@ class HumanoidPositionSkeleton:
         right_elbow_tf = pt.transform_from(right_elbow_rot_matrix, self.world_position(MecanimBone.RightLowerArm))
         tm.add_transform(MecanimBone.RightLowerArm.name, 'world', right_elbow_tf)
 
-        # Create transform for left wrist - pointing towards midpoint of index & pinky, with twist aligned with elbow
-        # left_hand_knuckle_midpoint = (self.bones[MecanimBone.LeftHandIndexRoot] + self.bones[MecanimBone.LeftHandPinkyRoot]) / 2
-        # left_wrist_rot_matrix = pr.matrix_from_two_vectors(
-            # left_hand_knuckle_midpoint,
-            # left_hand_lateral,
-        # )
-        # left_wrist_tf = pt.transform_from(left_wrist_rot_matrix, self.world_position(MecanimBone.LeftHand))
-        # tm.add_transform(MecanimBone.LeftHand.name, 'world', left_wrist_tf)
+        # Create transform for left wrist - pointing towards midpoint of index & pinky, with perpendicular twist axis.
+        left_hand_knuckle_midpoint = (self.bones[MecanimBone.LeftHandIndexRoot] + self.bones[MecanimBone.LeftHandPinkyRoot]) / 2
+        left_hand_lateral = self.bones[MecanimBone.LeftHandPinkyRoot] - self.bones[MecanimBone.LeftHandIndexRoot]
+        left_wrist_rot_matrix = pr.matrix_from_two_vectors(
+            left_hand_knuckle_midpoint,
+            left_hand_lateral,
+        )
+        left_wrist_tf = pt.transform_from(left_wrist_rot_matrix, self.world_position(MecanimBone.LeftHand))
+        tm.add_transform(MecanimBone.LeftHand.name, 'world', left_wrist_tf)
 
-        # Create transform for right shoulder - pointing to elbow, with twist axis pointing to wrist.
-        # right_shoulder_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.RightLowerArm], self.bones[MecanimBone.RightHand])
-        # right_shoulder_tf = pt.transform_from(right_shoulder_rot_matrix, self.world_position(MecanimBone.RightUpperArm))
-        # tm.add_transform(MecanimBone.RightUpperArm.name, 'world', right_shoulder_tf)
+        # Create transform for right wrist - pointing towards midpoint of index & pinky, with perpendicular twist axis.
+        right_hand_knuckle_midpoint = (self.bones[MecanimBone.RightHandIndexRoot] + self.bones[MecanimBone.RightHandPinkyRoot]) / 2
+        right_hand_lateral = self.bones[MecanimBone.RightHandPinkyRoot] - self.bones[MecanimBone.RightHandIndexRoot]
+        right_wrist_rot_matrix = pr.matrix_from_two_vectors(
+            left_hand_knuckle_midpoint,
+            left_hand_lateral,
+        )
+        right_wrist_tf = pt.transform_from(right_wrist_rot_matrix, self.world_position(MecanimBone.RightHand))
+        tm.add_transform(MecanimBone.RightHand.name, 'world', right_wrist_tf)
 
-        # Create transform for 
-        # Todo: repeat for other bones!
-
-        # for bone in MecanimBone:
-        #     if bone.parent is not None:
-        #         transform = pt.transform_from(np.eye(3), self.bones[bone])
-        #         tm.add_transform(bone.name, bone.parent.name, transform)
-
-        # Create transform for left theigh - pointing to knee, with twist axis pointing to ankle.
+        # Create transform for left thigh - pointing to knee, with twist axis pointing to ankle.
         left_thigh_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.LeftLowerLeg], self.bones[MecanimBone.LeftFootAnkle])
         left_thigh_tf = pt.transform_from(left_thigh_rot_matrix, self.world_position(MecanimBone.LeftUpperLeg))
         tm.add_transform(MecanimBone.LeftUpperLeg.name, 'world', left_thigh_tf)
 
-        # Create transform for right theigh - pointing to knee, with twist axis in line with ankle.
+        # Create transform for right thigh - pointing to knee, with twist axis in line with ankle.
         right_thigh_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.RightLowerLeg], self.bones[MecanimBone.RightFootAnkle])
         right_thigh_tf = pt.transform_from(right_thigh_rot_matrix, self.world_position(MecanimBone.RightUpperLeg))
         tm.add_transform(MecanimBone.RightUpperLeg.name, 'world', right_thigh_tf)
@@ -489,6 +494,20 @@ class HumanoidPositionSkeleton:
         right_knee_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.RightFootAnkle], self.bones[MecanimBone.RightToes])
         right_knee_tf = pt.transform_from(right_knee_rot_matrix, self.world_position(MecanimBone.RightLowerLeg))
         tm.add_transform(MecanimBone.RightLowerLeg.name, 'world', right_knee_tf)
+
+        # Create transform for left ankle - pointing to toes, with y axis up from heel
+        left_heel_to_ankle = -self.bones[MecanimBone.LeftHeel]
+        left_foot_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.LeftToes], -left_heel_to_ankle)
+        left_foot_tf = pt.transform_from(left_foot_rot_matrix, self.world_position(MecanimBone.LeftFootAnkle))
+        tm.add_transform(MecanimBone.LeftFootAnkle.name, 'world', left_foot_tf)
+
+        # Create transform for right ankle - pointing to toes, with y axis up from heel
+        right_heel_to_ankle = -self.bones[MecanimBone.RightHeel]
+        right_foot_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.RightToes], -right_heel_to_ankle)
+        right_foot_tf = pt.transform_from(right_foot_rot_matrix, self.world_position(MecanimBone.RightFootAnkle))
+        tm.add_transform(MecanimBone.RightFootAnkle.name, 'world', right_foot_tf)
+
+
 
         if plot:
             ax = tm.plot_frames_in('world', s=0.1)
