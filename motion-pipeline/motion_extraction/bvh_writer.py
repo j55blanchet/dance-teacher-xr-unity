@@ -148,6 +148,8 @@ def write_bvh(file: TextIOBase, root_node: BVHWriteNode, fps: int, frame_count: 
     file.write('\n')
 
 
+def mediapipe_capture_pipeline():
+    pass
 
 if __name__ == "__main__":
     from pathlib import Path
