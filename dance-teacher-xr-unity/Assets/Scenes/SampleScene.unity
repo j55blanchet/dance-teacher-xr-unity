@@ -416,7 +416,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: 5f6018c6fbeaece4d9c17cb6f90443d3, type: 2}
+      objectReference: {fileID: 0}
     - target: {fileID: -4216859302048453862, guid: bdb20905bd9f8954c91cafa0716bd248,
         type: 3}
       propertyPath: m_RootOrder
@@ -479,3 +479,40 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bdb20905bd9f8954c91cafa0716bd248, type: 3}
+--- !u!1 &1275918503 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: bdb20905bd9f8954c91cafa0716bd248,
+    type: 3}
+  m_PrefabInstance: {fileID: 1275918502}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1275918504 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: -6057140222963153312, guid: bdb20905bd9f8954c91cafa0716bd248,
+    type: 3}
+  m_PrefabInstance: {fileID: 1275918502}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1275918505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1275918503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ee2a62eb57b88147a40fefce0dc64eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetAvatar: {fileID: 1275918504}
+  filename: 
+  blender: 1
+  respectBVHTime: 1
+  frameRate: 60
+  clipName: 
+  standardBoneNames: 1
+  flexibleBoneNames: 1
+  boneRenamingMap: []
+  autoPlay: 0
+  autoStart: 0
+  anim: {fileID: 0}
+  clip: {fileID: 0}
