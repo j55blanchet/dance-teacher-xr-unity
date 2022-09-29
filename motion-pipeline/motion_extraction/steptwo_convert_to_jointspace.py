@@ -92,16 +92,18 @@ def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
 
     hips = make_node(MecanimBone.Hips, add_position_channel=True, offset_channel=Channel.X) # the offset channel doesn't matter - will be zero
     spine = make_node(MecanimBone.Spine, offset_channel=Channel.Y)
+    hips.add_child(spine)
+    chest = make_node(MecanimBone.Chest, offset_channel=Channel.Y)
+    spine.add_child(chest)
 
     avg_upperleg_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftUpperLeg.name] + bone_avg_offsets[MecanimBone.RightUpperLeg.name])
     leftUpperLeg = make_node(MecanimBone.LeftUpperLeg, offset_channel=Channel.X, override_offset_val=avg_upperleg_offset)
     rightUpperLeg = make_node(MecanimBone.RightUpperLeg, offset_channel=Channel.X, override_offset_val=avg_upperleg_offset, negate_offset=True)
-    hips.add_child(spine)
     hips.add_child(leftUpperLeg)
     hips.add_child(rightUpperLeg)
 
     head = make_node(MecanimBone.Head, offset_channel=Channel.Y)
-    spine.add_child(head)
+    chest.add_child(head)
 
     avg_lowerleg_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftLowerLeg.name] + bone_avg_offsets[MecanimBone.RightLowerLeg.name])
     leftLowerLeg = make_node(MecanimBone.LeftLowerLeg, offset_channel=Channel.X, override_offset_val=avg_lowerleg_offset)
@@ -129,8 +131,8 @@ def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
     shoulder_x = shoulderWidth / 2.
     leftUpperArm.offset = (shoulder_x, shoudler_y, 0.)
     rightUpperArm.offset = (-shoulder_x, shoudler_y, 0.)
-    spine.add_child(leftUpperArm)
-    spine.add_child(rightUpperArm)
+    chest.add_child(leftUpperArm)
+    chest.add_child(rightUpperArm)
 
     avg_lowerarm_offset = 0.5 * (bone_avg_offsets[MecanimBone.LeftLowerArm.name] + bone_avg_offsets[MecanimBone.RightLowerArm.name])
     leftLowerArm = make_node(MecanimBone.LeftLowerArm, offset_channel=Channel.X, override_offset_val=avg_lowerarm_offset)

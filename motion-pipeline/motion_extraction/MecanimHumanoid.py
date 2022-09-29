@@ -19,6 +19,7 @@ class MecanimMeasurement(Enum):
 class MecanimBone(Enum):
     Hips = auto()
     Spine = auto()
+    Chest = auto()
     LeftUpperArm = auto()
     LeftLowerArm = auto()
     LeftHand = auto()
@@ -81,14 +82,16 @@ class MecanimBone(Enum):
                 return None
             case MecanimBone.Spine:
                 return MecanimBone.Hips
-            case MecanimBone.LeftUpperArm:
+            case MecanimBone.Chest:
                 return MecanimBone.Spine
+            case MecanimBone.LeftUpperArm:
+                return MecanimBone.Chest
             case MecanimBone.LeftLowerArm:
                 return MecanimBone.LeftUpperArm
             case MecanimBone.LeftHand:
                 return MecanimBone.LeftLowerArm
             case MecanimBone.RightUpperArm:
-                return MecanimBone.Spine
+                return MecanimBone.Chest
             case MecanimBone.RightLowerArm:
                 return MecanimBone.RightUpperArm
             case MecanimBone.RightHand:
@@ -110,7 +113,7 @@ class MecanimBone(Enum):
             case MecanimBone.RightToes:
                 return MecanimBone.RightFootAnkle
             case MecanimBone.Head:
-                return MecanimBone.Spine
+                return MecanimBone.Chest
             case MecanimBone.LeftHandPinkyRoot:
                 return MecanimBone.LeftHand
             case MecanimBone.LeftHandIndexRoot:
@@ -164,6 +167,12 @@ class MecanimBone(Enum):
                 rightHip = get_pose_bone_position(PoseLandmark.RIGHT_HIP)
                 return (leftShoulder + rightShoulder + leftHip + rightHip) / 4
 
+            case MecanimBone.Chest:
+                # Find centerpoint of shoulders
+                leftShoulder = get_pose_bone_position(PoseLandmark.LEFT_SHOULDER)
+                rightShoulder = get_pose_bone_position(PoseLandmark.RIGHT_SHOULDER)
+                return (leftShoulder + rightShoulder) / 2
+                
             case MecanimBone.LeftUpperArm:
                 # Return left shoulder
                 return get_pose_bone_position(PoseLandmark.LEFT_SHOULDER)
@@ -403,9 +412,14 @@ class HumanoidPositionSkeleton:
         hips_rot_matrix: np.ndarray = pr.matrix_from_two_vectors(hips_lateral, self.bones[MecanimBone.Spine])
         hips_tf = pt.transform_from(hips_rot_matrix, self.world_position(MecanimBone.Hips))
         tm.add_transform(MecanimBone.Hips.name, 'world', hips_tf)
+        
+        shoulder_leftward = self.world_position(MecanimBone.LeftUpperArm) - self.world_position(MecanimBone.RightUpperArm)
+        chest_rot_matrix: np.ndarray = pr.matrix_from_two_vectors(shoulder_leftward, self.bones[MecanimBone.Spine])
+        chest_tf = pt.transform_from(chest_rot_matrix, self.world_position(MecanimBone.Chest))
+        tm.add_transform(MecanimBone.Chest.name, 'world', chest_tf)
 
-        # # Create transform for spine - pointing laterally, with y pointing up, located at spine root
-        spine_rot_matrix = hips_rot_matrix
+        spine_leftward = 0.5 * (pr.norm_vector(hips_lateral) + pr.norm__vector(shoulder_leftward))
+        spine_rot_matrix = pr.matrix_from_two_vectors(spine_leftward, self.bones[MecanimBone.Spine])
         spine_tf = pt.transform_from(spine_rot_matrix, self.world_position(MecanimBone.Spine))
         tm.add_transform(MecanimBone.Spine.name, 'world', spine_tf)
         
