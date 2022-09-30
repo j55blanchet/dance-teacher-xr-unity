@@ -27,11 +27,13 @@
             "module": "motion_extraction.stepone_get_holistic_data",
             "justMyCode": true,
             "args": [
-                "--video_folder=${workspaceFolder}/data/source_videos",
+                // "--video_folder=${workspaceFolder}/data/source_videos/",
+                "--video_folder=${workspaceFolder}/data/source_videos/tpose2.mp4",
                 "--output_folder=${workspaceFolder}/data/holistic_data",
                 "--log_level=INFO",
                 "--model-complexity=2",
-                "--frame_output_folder=${workspaceFolder}/temp/frames"
+                "--frame_output_folder=${workspaceFolder}/temp/frames",
+                "--rewrite_existing",
             ],
         },
         {
