@@ -43,8 +43,11 @@
             "module": "motion_extraction.steptwo_convert_to_jointspace",
             "justMyCode": true,
             "args": [
-                "--output_folder=${workspaceFolder}/data/jointspace_data2",
+                "--naocsv_output_folder=${workspaceFolder}/data/nao",
+                "--bvh_output_folder=${workspaceFolder}/data/bvh",
+                "--csv_output_folder=${workspaceFolder}/data/bvhcsv",
                 "--log_level=INFO",
+                "--frame_limit=-1",
                 "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
             ],
         },
