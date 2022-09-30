@@ -399,6 +399,19 @@ class HumanoidPositionSkeleton:
     def to_jointspace(self, pose: np.ndarray):
         return pose[:self.num_joints]
 
+    def get_offsets_and_measurements(self) -> pd.Series:
+        # Get all parent-child offsets.
+        offsets = { 
+            bone.name:self.bone_length_to_parent(bone) for bone in MecanimBone
+        } 
+        # Add other measurements of interest
+        offsets.update({
+            meas.name: self.get_measurement(meas) for meas in MecanimMeasurement
+        })
+        return pd.Series(
+            offsets
+        )
+
     def get_transforms(self, plot=False) -> TransformManager:
         tm = TransformManager()
 

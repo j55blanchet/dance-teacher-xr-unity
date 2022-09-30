@@ -1,3 +1,3 @@
 from .MotionOutputProvider import MotionOutputProvider
-from .NaoTrajectoryOutputProvider import RobotTrajectoryMapper
+from .NaoTrajectoryOutputProvider import NaoTrajectoryOutputProvider
 from .BVHOutputProvider import BVHOutputProvider

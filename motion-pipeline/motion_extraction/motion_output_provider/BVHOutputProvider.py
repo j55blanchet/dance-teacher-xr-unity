@@ -147,7 +147,7 @@ class BVHOutputProvider(MotionOutputProvider):
             print("\tWrote BVH file to", self.bvh_filepath)
 
         if self.bvhcsv_filepath is not None:
-            self.dataframe.to_csv(self.bvhcsv_filepath, index=False)
+            self.dataframe.to_csv(self.bvhcsv_filepath, index=False, float_format='%.3f')
             print("\tWrote BVH CSV file to", self.bvhcsv_filepath)
 
 
