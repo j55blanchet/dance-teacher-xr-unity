@@ -230,12 +230,10 @@ class MecanimBone(Enum):
                 return get_pose_bone_position(PoseLandmark.RIGHT_FOOT_INDEX)
             
             case MecanimBone.Head:
-                # Find centerpoint of shoulders and centerpoint of ears, then return the midpoint of those two
-                leftShoulder = get_pose_bone_position(PoseLandmark.LEFT_SHOULDER)
-                rightShoulder = get_pose_bone_position(PoseLandmark.RIGHT_SHOULDER)
+                # Find centerpoint of ears then return the midpoint
                 leftEar = get_pose_bone_position(PoseLandmark.LEFT_EAR)
                 rightEar = get_pose_bone_position(PoseLandmark.RIGHT_EAR)
-                return (leftShoulder + rightShoulder + leftEar + rightEar) / 4
+                return (leftEar + rightEar) / 2.
 
             case MecanimBone.LeftHandPinkyRoot:
                 return get_pose_bone_position(PoseLandmark.LEFT_PINKY)
@@ -418,7 +416,7 @@ class HumanoidPositionSkeleton:
         chest_tf = pt.transform_from(chest_rot_matrix, self.world_position(MecanimBone.Chest))
         tm.add_transform(MecanimBone.Chest.name, 'world', chest_tf)
 
-        spine_leftward = 0.5 * (pr.norm_vector(hips_lateral) + pr.norm__vector(shoulder_leftward))
+        spine_leftward = 0.5 * (pr.norm_vector(hips_lateral) + pr.norm_vector(shoulder_leftward))
         spine_rot_matrix = pr.matrix_from_two_vectors(spine_leftward, self.bones[MecanimBone.Spine])
         spine_tf = pt.transform_from(spine_rot_matrix, self.world_position(MecanimBone.Spine))
         tm.add_transform(MecanimBone.Spine.name, 'world', spine_tf)

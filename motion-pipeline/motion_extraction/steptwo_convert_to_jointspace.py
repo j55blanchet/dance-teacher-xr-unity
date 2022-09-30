@@ -47,7 +47,7 @@ def convert_row_to_jointspace(
     # ax = tfs.plot_frames_in('world', s=0.1)
     # skel.plt_skeleton(ax, color='#0f0f0f50', dotcolor="#f00ff050")
     # plt.show(block=True)
-    # plt.savefig('tf_hierarchy.png')
+    # plt.savefig('temp/tf_hierarchy.png')
 
     def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
         try:
@@ -126,11 +126,12 @@ def get_bvh_hierarchy(bone_avg_offsets: pd.Series) -> BVHWriteNode:
     rightUpperArm = make_node(MecanimBone.RightUpperArm, offset_channel=Channel.X)
     # avg_shoulder_link = 0.5 * (bone_avg_offsets[MecanimBone.LeftUpperArm.name] + bone_avg_offsets[MecanimBone.RightUpperArm.name])
     shoulderWidth = bone_avg_offsets[MecanimMeasurement.ShoulderWidth.name]
-    spineLength = bone_avg_offsets[MecanimMeasurement.SpineLength.name]
-    shoudler_y = spineLength
+    # spineLength = bone_avg_offsets[MecanimMeasurement.SpineLength.name]
+    # shoudler_y = spineLength
+
     shoulder_x = shoulderWidth / 2.
-    leftUpperArm.offset = (shoulder_x, shoudler_y, 0.)
-    rightUpperArm.offset = (-shoulder_x, shoudler_y, 0.)
+    leftUpperArm.offset = (shoulder_x, 0., 0.)
+    rightUpperArm.offset = (-shoulder_x, 0., 0.)
     chest.add_child(leftUpperArm)
     chest.add_child(rightUpperArm)
 
