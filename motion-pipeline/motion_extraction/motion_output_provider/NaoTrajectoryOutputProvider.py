@@ -4,7 +4,11 @@
     Integrates into step two to produce a robot output
 """
 from enum import Enum, auto
+from random import sample
 import pandas as pd
+import numpy as np
+
+from motion_extraction.MecanimHumanoid import MecanimBone
 from .MotionOutputProvider import MotionOutputProvider, HumanoidPositionSkeleton, TransformManager, Path
 
 class NaoMotor(Enum):
@@ -72,6 +76,9 @@ class NaoMotor(Enum):
             # case NaoMotor.RWristYaw: return 1.8238
             # case NaoMotor.RHand: return 1.0
             #TODO: Left and Right Legs
+    
+    def limit(self, value: float) -> float:
+        return max(self.range_min, min(self.range_max, value))
 class NaoTrajectoryOutputProvider(MotionOutputProvider):
     def __init__(self, nao_trajectory_filepath: Path):
         self.nao_trajectory_filepath = nao_trajectory_filepath
@@ -84,9 +91,26 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         )
 
     def process_frame(self, skel: HumanoidPositionSkeleton, tfs: TransformManager):
+        
+        row = {}
 
-        #TODO: use TransformManager to calculate arm angles for the Nao
-        pass
+        sample_point = np.array([1., 0., 0.])
+        chest_to_lupperarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.Chest.name)
+        rotated_point = chest_to_lupperarm[:3, :3] @ sample_point
+        x, y, z = rotated_point
+        if z == 0:
+            lshoulder_pitch = 0.
+            lshoulder_roll = 0.
+        else:
+            ang_from_straight_horz = np.arctan2(z, x)
+            ang_from_straight_vert = np.arctan2(y, np.sqrt(x**2 + z**2))
+            lshoulder_roll = (np.pi / 2) - ang_from_straight_horz
+            lshoulder_pitch = ang_from_straight_vert
+        row[NaoMotor.LShoulderPitch.name] = NaoMotor.LShoulderPitch.limit(lshoulder_pitch)
+        row[NaoMotor.LShoulderRoll.name] = NaoMotor.LShoulderRoll.limit(lshoulder_roll)
+
+        self.dataframe.loc[len(self.dataframe)] = pd.Series(row)
 
     def write_output(self):
         self.dataframe.to_csv(self.nao_trajectory_filepath, index=False)
+        print("\tWrote Nao Control file to", self.nao_trajectory_filepath)

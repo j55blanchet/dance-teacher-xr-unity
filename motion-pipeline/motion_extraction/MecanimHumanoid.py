@@ -12,6 +12,10 @@ from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
 from pytransform3d.transform_manager import TransformManager
 
+def matrix_from_two_vectors_xz(v1, v2):
+    v3 = np.cross(v1, v2)
+    return pr.matrix_from_two_vectors(v1, v3)
+
 class MecanimMeasurement(Enum):
     ShoulderWidth = auto()
     SpineLength = auto()
@@ -339,10 +343,7 @@ class HumanoidPositionSkeleton:
             skel.bones[bone] = skel.bones[bone] - relativeTo
             for child in bone.children:
                 make_position_relative(skel, child, ogPos)
-        
-        # hipPos = skeleton.bones[MecanimBone.Hips]
-        # for bone in MecanimBone:
-            # skeleton.bones[bone] -= hipPos
+
         make_position_relative(skeleton, MecanimBone.Hips, np.zeros(3))
 
         if enable_plotting:
@@ -423,7 +424,7 @@ class HumanoidPositionSkeleton:
         hips_rot_matrix: np.ndarray = pr.matrix_from_two_vectors(hips_lateral, self.bones[MecanimBone.Spine])
         hips_tf = pt.transform_from(hips_rot_matrix, self.world_position(MecanimBone.Hips))
         tm.add_transform(MecanimBone.Hips.name, 'world', hips_tf)
-        
+
         shoulder_leftward = self.world_position(MecanimBone.LeftUpperArm) - self.world_position(MecanimBone.RightUpperArm)
         chest_rot_matrix: np.ndarray = pr.matrix_from_two_vectors(shoulder_leftward, self.bones[MecanimBone.Spine])
         chest_tf = pt.transform_from(chest_rot_matrix, self.world_position(MecanimBone.Chest))
@@ -433,7 +434,7 @@ class HumanoidPositionSkeleton:
         spine_rot_matrix = pr.matrix_from_two_vectors(spine_leftward, self.bones[MecanimBone.Spine])
         spine_tf = pt.transform_from(spine_rot_matrix, self.world_position(MecanimBone.Spine))
         tm.add_transform(MecanimBone.Spine.name, 'world', spine_tf)
-        
+
         # Create transform for head - pointing laterally from left eye to right eye, with y pointing up
         head_lateral = self.world_position(MecanimBone.RightEye) - self.world_position(MecanimBone.LeftEye)
         head_up = self.bones[MecanimBone.Head]
@@ -442,12 +443,12 @@ class HumanoidPositionSkeleton:
         tm.add_transform(MecanimBone.Head.name, 'world', head_tf)
 
         # Create transform for left shoulder - pointing to elbow, with twist axis pointing to wrist.
-        left_shoulder_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.LeftLowerArm], self.bones[MecanimBone.LeftHand])
+        left_shoulder_rot_matrix = matrix_from_two_vectors_xz(self.bones[MecanimBone.LeftLowerArm], self.bones[MecanimBone.LeftHand])
         left_shoulder_tf = pt.transform_from(left_shoulder_rot_matrix, self.world_position(MecanimBone.LeftUpperArm))
         tm.add_transform(MecanimBone.LeftUpperArm.name, 'world', left_shoulder_tf)
 
         # Create transform for right shoulder - pointing to elbow, with twist axis pointing to wrist.
-        right_shoulder_rot_matrix = pr.matrix_from_two_vectors(self.bones[MecanimBone.RightLowerArm], self.bones[MecanimBone.RightHand])
+        right_shoulder_rot_matrix = matrix_from_two_vectors_xz(self.bones[MecanimBone.RightLowerArm], self.bones[MecanimBone.RightHand])
         right_shoulder_tf = pt.transform_from(right_shoulder_rot_matrix, self.world_position(MecanimBone.RightUpperArm))
         tm.add_transform(MecanimBone.RightUpperArm.name, 'world', right_shoulder_tf)
 

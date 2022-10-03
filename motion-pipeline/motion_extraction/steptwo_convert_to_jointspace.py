@@ -7,6 +7,7 @@ from pytransform3d.transform_manager import TransformManager
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from .utils import throttle
 
 from .MecanimHumanoid import HumanoidPositionSkeleton
 from .motion_output_provider import MotionOutputProvider, BVHOutputProvider, NaoTrajectoryOutputProvider
@@ -21,10 +22,20 @@ def convert_to_jointspace(holistic_data: pd.DataFrame, naocsv_outpath: Path, bvh
     Concert the holistic data to jointspace and output to bvh file and robot trajectory
     """
 
+    @throttle(1)
+    def print_progress(frame_i, i_max, pretext, posttext = ''):
+        percent = frame_i * 100 / i_max
+        print(f"{pretext} {percent:.2f}% ({frame_i}/{max_frames}) {posttext}")
+
     print("Calculating humanoid position skeletons...")
     METERS_TO_CM = 100.
     max_frames = frame_limit if frame_limit > 0 else len(holistic_data)
-    skels = [HumanoidPositionSkeleton.from_mp_pose(row) for _, row in holistic_data.iloc[:max_frames].iterrows()]
+
+    def make_pose_and_print(frame_i, row):
+        print_progress(frame_i, max_frames, "Step 1/2", "Calculating skeletons")
+        return HumanoidPositionSkeleton.from_mp_pose(row)
+
+    skels = [make_pose_and_print(i, row) for i, row in holistic_data.iloc[:max_frames].iterrows()]
     link_lengths = pd.DataFrame(s.get_offsets_and_measurements() for s in skels)    
     avg_offsets_and_measurements = link_lengths.mean(axis=0)
     avg_offsets_and_measurements_cm = avg_offsets_and_measurements * METERS_TO_CM
@@ -40,7 +51,8 @@ def convert_to_jointspace(holistic_data: pd.DataFrame, naocsv_outpath: Path, bvh
         naocsv_outpath,
     )
 
-    for skel in skels[:max_frames]:     
+    for i, skel in enumerate(skels[:max_frames]):     
+        print_progress(i, max_frames, 'Step 2/2', 'Processing Frames')
         tfs = skel.get_transforms(plot=False)   
         nao_output_provider.process_frame(skel, tfs)
         bvh_output_provider.process_frame(skel, tfs) 
@@ -48,8 +60,6 @@ def convert_to_jointspace(holistic_data: pd.DataFrame, naocsv_outpath: Path, bvh
     print("\nWriting output...")
     bvh_output_provider.write_output()
     nao_output_provider.write_output()
-
-    print("\nDone!")
 
 if __name__ == "__main__":
     import argparse
@@ -78,6 +88,7 @@ if __name__ == "__main__":
                 csv_out_path = args.csv_output_folder / data_file.stem.replace('.holisticdata', '.bvh.csv') if args.csv_output_folder is not None else None
                 # out_path = args.output_folder / data_file.name.replace('.holisticdata', '.jointspace')
                 convert_to_jointspace(holistic_dataframe, naocsv_outpath, bvh_out_path, bvhcsv_outpath = csv_out_path, frame_limit = args.frame_limit)
-                print(f"Converted {data_file} to {bvh_out_path}")
+                
+                print(f"\nDone converting {data_file.name}!")
 
 
