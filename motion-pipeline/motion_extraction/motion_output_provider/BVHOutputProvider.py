@@ -118,10 +118,18 @@ class BVHOutputProvider(MotionOutputProvider):
         self.bvh_filepath = bvh_filepath
         self.bvhcsv_filepath = bvhcsv_filepath
 
-    def process_frame(self, skel: HumanoidPositionSkeleton, tfs: TransformManager):
+    def process_frame(self, skel: HumanoidPositionSkeleton, tfs: Optional[TransformManager]):
         """
         Convert the holistic data to jointspace.
         """    
+
+        if tfs is None:
+            if len(self.dataframe) > 0:
+                self.dataframe.loc[len(self.dataframe)] = self.dataframe.loc[len(self.dataframe) - 1]
+            else:
+                self.dataframe.loc[len(self.dataframe)] = pd.Series({ k:0. for k in self.dataframe.columns})
+            return
+
 
         def get_data(node: BVHWriteNode, parent_frame = 'world', data = {}):
             try:

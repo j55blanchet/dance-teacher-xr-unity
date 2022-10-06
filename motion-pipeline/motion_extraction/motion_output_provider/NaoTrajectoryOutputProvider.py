@@ -7,7 +7,8 @@ from enum import Enum, auto
 from random import sample
 import pandas as pd
 import numpy as np
-
+from typing import Optional
+import pytransform3d.rotations as pr
 from motion_extraction.MecanimHumanoid import MecanimBone
 from .MotionOutputProvider import MotionOutputProvider, HumanoidPositionSkeleton, TransformManager, Path
 
@@ -16,8 +17,8 @@ class NaoMotor(Enum):
     # HeadPitch = auto()
     LShoulderPitch = auto()
     LShoulderRoll = auto()
-    # LElbowYaw = auto()
-    # LElbowRoll = auto()
+    LElbowYaw = auto()
+    LElbowRoll = auto()
     # LWristYaw = auto()
     # LHand = auto()
     # RShoulderPitch = auto()
@@ -46,8 +47,8 @@ class NaoMotor(Enum):
             # case NaoMotor.HeadPitch: return -0.6720
             case NaoMotor.LShoulderPitch: return -2.0857
             case NaoMotor.LShoulderRoll: return -0.3142
-            # case NaoMotor.LElbowYaw: return -2.0857
-            # case NaoMotor.LElbowRoll: return -1.5446
+            case NaoMotor.LElbowYaw: return -2.0857
+            case NaoMotor.LElbowRoll: return -1.5446
             # case NaoMotor.LWristYaw: return -1.8238
             # case NaoMotor.LHand: return 0.0
             # case NaoMotor.RShoulderPitch: return -2.0857
@@ -65,8 +66,8 @@ class NaoMotor(Enum):
             # case NaoMotor.HeadPitch: return 0.5149
             case NaoMotor.LShoulderPitch: return 2.0857
             case NaoMotor.LShoulderRoll: return 1.3265
-            # case NaoMotor.LElbowYaw: return 2.0857
-            # case NaoMotor.LElbowRoll: return -0.0349
+            case NaoMotor.LElbowYaw: return 2.0857
+            case NaoMotor.LElbowRoll: return -0.0349
             # case NaoMotor.LWristYaw: return 1.8238
             # case NaoMotor.LHand: return 1.0
             # case NaoMotor.RShoulderPitch: return 2.0857
@@ -85,29 +86,66 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
 
         self.dataframe = pd.DataFrame(
             columns = [
-                NaoMotor.LShoulderPitch.name,
-                NaoMotor.LShoulderRoll.name,
+                e.name for e in NaoMotor
             ]
         )
-
-    def process_frame(self, skel: HumanoidPositionSkeleton, tfs: TransformManager):
+    
+    def _plt(self, skel, tfs):
+        import matplotlib.pyplot as plt
         
+        tfs.plot_frames_in('world', s=0.1)
+        skel.plt_skeleton(ax=plt.gca(), color='black', alpha=0.5)
+        plt.tight_layout()
+        plt.show(block=True)
+
+    def process_frame(self, skel: HumanoidPositionSkeleton, tfs: Optional[TransformManager]):
+        
+        if tfs is None:
+            if len(self.dataframe) > 0:
+                self.dataframe.loc[len(self.dataframe)] = self.dataframe.loc[len(self.dataframe) - 1]
+            else:
+                self.dataframe.loc[len(self.dataframe)] = pd.Series({ k:0. for k in self.dataframe.columns})
+            return
+
         row = {}
 
         sample_point = np.array([1., 0., 0.])
         chest_to_lupperarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.Chest.name)
-        rotated_point = chest_to_lupperarm[:3, :3] @ sample_point
-        x, y, z = rotated_point
+        lupperarm_vector = chest_to_lupperarm[:3, :3] @ sample_point
+        x, y, z = lupperarm_vector
         if z == 0:
             lshoulder_pitch = 0.
             lshoulder_roll = 0.
         else:
-            ang_from_straight_horz = np.arctan2(z, x)
-            ang_from_straight_vert = np.arctan2(y, np.sqrt(x**2 + z**2))
-            lshoulder_roll = (np.pi / 2) - ang_from_straight_horz
-            lshoulder_pitch = ang_from_straight_vert
+            lshoulder_pitch = -np.arctan2(y, z)
+            lshoulder_roll = np.pi / 2 - np.arctan2(x, z)
         row[NaoMotor.LShoulderPitch.name] = NaoMotor.LShoulderPitch.limit(lshoulder_pitch)
         row[NaoMotor.LShoulderRoll.name] = NaoMotor.LShoulderRoll.limit(lshoulder_roll)
+
+        # Targets:
+        # LShoulderPitch = ~81 deg
+        # LShoulderRoll = ~14 deg
+        # LElbowYaw = ~-119 deg
+        # LElbowRoll = ~-35 deg
+        chest_to_llowerarm = tfs.get_transform(MecanimBone.LeftLowerArm.name, MecanimBone.Chest.name)
+        
+        world_vectoleftshoulder = tfs.get_transform(MecanimBone.Chest.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+        world_vectolowerarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+        world_vectohand = tfs.get_transform(MecanimBone.LeftLowerArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+
+        # Points towards interior of shoulder joint
+        shoulder_pivot_bisection_vector = world_vectolowerarm - world_vectoleftshoulder
+        shoulder_pivot_bisection_vector /= np.linalg.norm(shoulder_pivot_bisection_vector)
+
+        # Points towards interior of elbow joint
+        elbow_pivot_bisection_vector = world_vectolowerarm - world_vectohand
+        elbow_pivot_bisection_vector /= np.linalg.norm(elbow_pivot_bisection_vector)
+
+        lelbow_yaw = -pr.angle_between_vectors(shoulder_pivot_bisection_vector, -elbow_pivot_bisection_vector)
+        row[NaoMotor.LElbowYaw.name] = NaoMotor.LElbowYaw.limit(lelbow_yaw)
+
+        lelbow_roll = -np.abs(pr.angle_between_vectors(world_vectolowerarm, world_vectohand))
+        row[NaoMotor.LElbowRoll.name] = NaoMotor.LElbowRoll.limit(lelbow_roll)
 
         self.dataframe.loc[len(self.dataframe)] = pd.Series(row)
 

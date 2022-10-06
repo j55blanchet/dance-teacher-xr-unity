@@ -106,22 +106,24 @@ def process_video(
                     for landmark_i
                     in range(len(PoseLandmark))
                 ]
-                x, y, z = list(zip(*[
-                    (landmark.x, -landmark.y, -landmark.z)
-                    for _, landmark
-                    in world_landmarks
-                ]))
 
-                # Swap x and y so that default camera angle is good
-                ax.set_xlabel('X')
-                ax.set_ylabel('Y')
-                ax.set_zlabel('Z')
-                ax.scatter(x, y, z)
-                out_path = f'{frame_output_folder}/{video_path.stem}_3d/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.png'
-                Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-                # plt.show(block=True)
-                plt.savefig(out_path)
-                plt.close()
+                if frame_data.pose_world_landmarks is not None:
+                    x, y, z = list(zip(*[
+                        (landmark.x, -landmark.y, -landmark.z)
+                        for _, landmark
+                        in world_landmarks
+                    ]))
+
+                    # Swap x and y so that default camera angle is good
+                    ax.set_xlabel('X')
+                    ax.set_ylabel('Y')
+                    ax.set_zlabel('Z')
+                    ax.scatter(x, y, z)
+                    out_path = f'{frame_output_folder}/{video_path.stem}_3d/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.png'
+                    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+                    # plt.show(block=True)
+                    plt.savefig(out_path)
+                    plt.close()
 
 
             print_progress(frame_i, frame_count)

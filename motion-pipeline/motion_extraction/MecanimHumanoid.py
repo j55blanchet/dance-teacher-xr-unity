@@ -375,7 +375,7 @@ class HumanoidPositionSkeleton:
 
         return skeleton
     
-    def plt_skeleton(self, ax=None, color='red', dotcolor=None, whitelist_bones: Set[MecanimBone] = None):
+    def plt_skeleton(self, ax=None, color='red', alpha=1.0, dotcolor=None, whitelist_bones: Set[MecanimBone] = None):
         if ax is None:
             ax = plt.figure('Skeleton Visualization').add_subplot(projection='3d')
             ax.xaxis.set_label_text('X')
@@ -389,7 +389,7 @@ class HumanoidPositionSkeleton:
             x2s.append(x); y2s.append(y); z2s.append(z)
             if bone.parent is not None and (whitelist_bones is None or bone in whitelist_bones):
                 xs, ys, zs = list(zip(world_pos, self.world_position(bone.parent)))
-                ax.plot(xs, ys, zs, color=color)
+                ax.plot(xs, ys, zs, color=color, alpha=alpha)
             for child in bone.children:
                 draw_connection_relative(child)            
 
@@ -443,6 +443,9 @@ class HumanoidPositionSkeleton:
         tm.add_transform(MecanimBone.Head.name, 'world', head_tf)
 
         # Create transform for left shoulder - pointing to elbow, with twist axis pointing to wrist.
+        # left_elbow_bisection = self.bones[MecanimBone.LeftHand] - self.bones[MecanimBone.LeftLowerArm]
+        # left_elbow_bisection /= np.linalg.norm(left_elbow_bisection)
+        # left_shoulder_rot_matrix = matrix_from_two_vectors_xz(self.bones[MecanimBone.LeftLowerArm], left_elbow_bisection)
         left_shoulder_rot_matrix = matrix_from_two_vectors_xz(self.bones[MecanimBone.LeftLowerArm], self.bones[MecanimBone.LeftHand])
         left_shoulder_tf = pt.transform_from(left_shoulder_rot_matrix, self.world_position(MecanimBone.LeftUpperArm))
         tm.add_transform(MecanimBone.LeftUpperArm.name, 'world', left_shoulder_tf)

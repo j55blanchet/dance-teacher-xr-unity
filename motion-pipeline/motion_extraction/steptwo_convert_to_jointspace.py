@@ -53,7 +53,10 @@ def convert_to_jointspace(holistic_data: pd.DataFrame, naocsv_outpath: Path, bvh
 
     for i, skel in enumerate(skels[:max_frames]):     
         print_progress(i, max_frames, 'Step 2/2', 'Processing Frames')
-        tfs = skel.get_transforms(plot=False)   
+        try:
+            tfs = skel.get_transforms(plot=False)   
+        except:
+            tfs = None
         nao_output_provider.process_frame(skel, tfs)
         bvh_output_provider.process_frame(skel, tfs) 
            
@@ -78,9 +81,13 @@ if __name__ == "__main__":
     if args.csv_output_folder is not None:
         args.csv_output_folder.mkdir(exist_ok=True, parents=True)
 
+    if len(args.holistic_data) == 1 and args.holistic_data[0].is_dir():
+        args.holistic_data = list(args.holistic_data[0].glob('*.holisticdata.csv'))
+
     for holistic_data in args.holistic_data:
         glob_data = holistic_data.parent.glob(holistic_data.name)
         for data_file in glob_data:
+            print(f"Processing {data_file}")
             with data_file.open('r') as f:
                 holistic_dataframe = pd.read_csv(f, index_col='frame')
                 naocsv_outpath = args.naocsv_output_folder / data_file.stem.replace('.holisticdata', '.nao.csv')

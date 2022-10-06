@@ -27,13 +27,13 @@
             "module": "motion_extraction.stepone_get_holistic_data",
             "justMyCode": true,
             "args": [
-                // "--video_folder=${workspaceFolder}/data/source_videos/",
-                "--video_folder=${workspaceFolder}/data/source_videos/tpose2.mp4",
+                "--video_folder=${workspaceFolder}/data/source_videos/",
+                // "--video_folder=${workspaceFolder}/data/source_videos/tpose2.mp4",
                 "--output_folder=${workspaceFolder}/data/holistic_data",
                 "--log_level=INFO",
                 "--model-complexity=2",
                 "--frame_output_folder=${workspaceFolder}/temp/frames",
-                "--rewrite_existing",
+                // "--rewrite_existing",
             ],
         },
         {
@@ -48,7 +48,9 @@
                 "--csv_output_folder=${workspaceFolder}/data/bvhcsv",
                 "--log_level=INFO",
                 "--frame_limit=-1",
-                "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
+                "${workspaceFolder}/data/holistic_data/debbieallenchallenge.holisticdata.csv"
+                // "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
+                // "${workspaceFolder}/data/holistic_data/"
             ],
         },
         {
