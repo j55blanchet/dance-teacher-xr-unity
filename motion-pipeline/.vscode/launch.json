@@ -33,7 +33,7 @@
                 "--log_level=INFO",
                 "--model-complexity=2",
                 "--frame_output_folder=${workspaceFolder}/temp/frames",
-                // "--rewrite_existing",
+                "--rewrite_existing",
             ],
         },
         {
@@ -101,6 +101,15 @@
                 "-joint_angle_output=${workspaceFolder}/data/jointspace_data/tpose2_bvhjointangles.csv",
                 "-frame_time=4.5",
                 "-repeat=1"
+            ]
+        },
+        {
+            "name": "View URDF",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.temp.view_urdf",
+            "args": [
+                "${workspaceFolder}/data/urdf/naoV50_generated_urdf/nao.urdf",        
             ]
         }
     ]

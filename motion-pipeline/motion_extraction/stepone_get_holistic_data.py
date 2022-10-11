@@ -12,6 +12,8 @@ import logging
 
 from .utils import throttle
 
+import mpl_toolkits.mplot3d.art3d as art3d
+
 PoseLandmark: mp.solutions.mediapipe.python.solutions.holistic.PoseLandmark = mp.solutions.holistic.PoseLandmark
 HandLandmark: mp.solutions.mediapipe.python.solutions.holistic.HandLandmark = mp.solutions.holistic.HandLandmark
 
@@ -64,7 +66,7 @@ def process_video(
     @throttle(seconds=1)
     def print_progress(i, frame_count):
         percent_done = i / frame_count
-        logging.info(f'{video_path.stem}: {percent_done:.1%}')
+        logging.info(f'{video_path.stem}: {i}/{frame_count} {percent_done:.1%}')
 
     holistic_data_filepath = output_root / (video_path.stem + ".holisticdata.csv")
 
@@ -108,6 +110,7 @@ def process_video(
                 ]
 
                 if frame_data.pose_world_landmarks is not None:
+
                     x, y, z = list(zip(*[
                         (landmark.x, -landmark.y, -landmark.z)
                         for _, landmark
@@ -119,10 +122,26 @@ def process_video(
                     ax.set_ylabel('Y')
                     ax.set_zlabel('Z')
                     ax.scatter(x, y, z)
+                    # mp.solutions.holistic.POSE_CONNECTIONS
+
+                    lm_pairs =[(world_landmarks[i][1], world_landmarks[j][1]) for i, j in mp.solutions.holistic.POSE_CONNECTIONS]
+                    segs = [[(src.x, -src.y, -src.z), (dest.x, -dest.y, -dest.z)] for src, dest in lm_pairs]
+                    lines = art3d.Line3DCollection(
+                        segs,
+                        colors="gray"
+                    )
+                    plt.gca().add_collection3d(lines)
                     out_path = f'{frame_output_folder}/{video_path.stem}_3d/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.png'
                     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+
+                    ax = plt.gca()
+                    ax.azim = -92
+                    ax.elev = 118
+                    ax.dist = 10
+                    
                     # plt.show(block=True)
                     plt.savefig(out_path)
+                    # plt.show(block=True)
                     plt.close()
 
 

@@ -52,6 +52,8 @@ class MecanimBone(Enum):
     LeftEye = auto()
     RightEye = auto()
     Nose = auto()
+    
+    ChestRightward = auto()
 
     @classmethod
     def root_bone(cls):
@@ -140,6 +142,10 @@ class MecanimBone(Enum):
                 return MecanimBone.Nose
             case MecanimBone.Nose:
                 return MecanimBone.Head
+            
+            case MecanimBone.ChestRightward:
+                return MecanimBone.Spine
+
             case _:
                 raise ValueError(f'{self} is not a valid MecanimBone')
 
@@ -263,6 +269,10 @@ class MecanimBone(Enum):
                 return get_pose_bone_position(PoseLandmark.RIGHT_EYE)
             case MecanimBone.Nose:
                 return get_pose_bone_position(PoseLandmark.NOSE)
+
+            
+            case MecanimBone.ChestRightward:
+                return MecanimBone.position_from_mp_pose(MecanimBone.Chest, poseRow)
 
             case _:
                 raise Exception(f'Unknown PoseBone {bone}')
@@ -429,6 +439,11 @@ class HumanoidPositionSkeleton:
         chest_rot_matrix: np.ndarray = pr.matrix_from_two_vectors(shoulder_leftward, self.bones[MecanimBone.Spine])
         chest_tf = pt.transform_from(chest_rot_matrix, self.world_position(MecanimBone.Chest))
         tm.add_transform(MecanimBone.Chest.name, 'world', chest_tf)
+
+        shoulder_rightward = self.world_position(MecanimBone.RightUpperArm) - self.world_position(MecanimBone.LeftUpperArm)
+        chestreversed_rot_matrix: np.ndarray = pr.matrix_from_two_vectors(shoulder_rightward, self.bones[MecanimBone.Spine])
+        chestreversed_tf = pt.transform_from(chestreversed_rot_matrix, self.world_position(MecanimBone.Chest))
+        tm.add_transform(MecanimBone.ChestRightward.name, 'world', chestreversed_tf)
 
         spine_leftward = 0.5 * (pr.norm_vector(hips_lateral) + pr.norm_vector(shoulder_leftward))
         spine_rot_matrix = pr.matrix_from_two_vectors(spine_leftward, self.bones[MecanimBone.Spine])

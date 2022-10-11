@@ -21,10 +21,10 @@ class NaoMotor(Enum):
     LElbowRoll = auto()
     # LWristYaw = auto()
     # LHand = auto()
-    # RShoulderPitch = auto()
-    # RShoulderRoll = auto()
-    # RElbowYaw = auto()
-    # RElbowRoll = auto()
+    RShoulderPitch = auto()
+    RShoulderRoll = auto()
+    RElbowYaw = auto()
+    RElbowRoll = auto()
     # RWristYaw = auto()
     # RHand = auto()
     # LHipYawPitch = auto()
@@ -51,10 +51,10 @@ class NaoMotor(Enum):
             case NaoMotor.LElbowRoll: return -1.5446
             # case NaoMotor.LWristYaw: return -1.8238
             # case NaoMotor.LHand: return 0.0
-            # case NaoMotor.RShoulderPitch: return -2.0857
-            # case NaoMotor.RShoulderRoll: return -1.3265
-            # case NaoMotor.RElbowYaw: return -2.0857
-            # case NaoMotor.RElbowRoll: return 0.0349
+            case NaoMotor.RShoulderPitch: return -2.0857
+            case NaoMotor.RShoulderRoll: return -1.3265
+            case NaoMotor.RElbowYaw: return -2.0857
+            case NaoMotor.RElbowRoll: return 0.0349
             # case NaoMotor.RWristYaw: return -1.8238
             # case NaoMotor.RHand: return 0.0
             #TODO: Left and Right Legs
@@ -70,10 +70,10 @@ class NaoMotor(Enum):
             case NaoMotor.LElbowRoll: return -0.0349
             # case NaoMotor.LWristYaw: return 1.8238
             # case NaoMotor.LHand: return 1.0
-            # case NaoMotor.RShoulderPitch: return 2.0857
-            # case NaoMotor.RShoulderRoll: return 0.3142
-            # case NaoMotor.RElbowYaw: return 2.0857
-            # case NaoMotor.RElbowRoll: return 1.5446
+            case NaoMotor.RShoulderPitch: return 2.0857
+            case NaoMotor.RShoulderRoll: return 0.3142
+            case NaoMotor.RElbowYaw: return 2.0857
+            case NaoMotor.RElbowRoll: return 1.5446
             # case NaoMotor.RWristYaw: return 1.8238
             # case NaoMotor.RHand: return 1.0
             #TODO: Left and Right Legs
@@ -109,9 +109,8 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
 
         row = {}
 
-        sample_point = np.array([1., 0., 0.])
         chest_to_lupperarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.Chest.name)
-        lupperarm_vector = chest_to_lupperarm[:3, :3] @ sample_point
+        lupperarm_vector = chest_to_lupperarm[:3, :3] @ np.array([1., 0., 0.])
         x, y, z = lupperarm_vector
         if z == 0:
             lshoulder_pitch = 0.
@@ -122,31 +121,76 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         row[NaoMotor.LShoulderPitch.name] = NaoMotor.LShoulderPitch.limit(lshoulder_pitch)
         row[NaoMotor.LShoulderRoll.name] = NaoMotor.LShoulderRoll.limit(lshoulder_roll)
 
+        chest_to_rupperarm = tfs.get_transform(MecanimBone.RightUpperArm.name, MecanimBone.ChestRightward.name)
+        rupperarm_vector = chest_to_rupperarm[:3, :3] @ np.array([1., 0., 0.])
+        x, y, z = rupperarm_vector
+        if z == 0:
+            rshoulder_pitch = 0.
+            rshoulder_roll = 0.
+        else:
+            # z faces backwards, so we need to flip the sign
+            rshoulder_pitch = -np.arctan2(y, -z)
+            rshoulder_roll = np.pi / 2 - np.arctan2(x, -z)
+        row[NaoMotor.RShoulderPitch.name] = NaoMotor.RShoulderPitch.limit(rshoulder_pitch)
+        row[NaoMotor.RShoulderRoll.name] = NaoMotor.RShoulderRoll.limit(rshoulder_roll)
+      
         # Targets:
         # LShoulderPitch = ~81 deg
         # LShoulderRoll = ~14 deg
         # LElbowYaw = ~-119 deg
         # LElbowRoll = ~-35 deg
-        chest_to_llowerarm = tfs.get_transform(MecanimBone.LeftLowerArm.name, MecanimBone.Chest.name)
+        # chest_to_llowerarm = tfs.get_transform(MecanimBone.LeftLowerArm.name, MecanimBone.Chest.name)
         
-        world_vectoleftshoulder = tfs.get_transform(MecanimBone.Chest.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
-        world_vectolowerarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
-        world_vectohand = tfs.get_transform(MecanimBone.LeftLowerArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+        world_vectolshoulder = tfs.get_transform(MecanimBone.Chest.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+        world_vectollowerarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+        world_vectolhand = tfs.get_transform(MecanimBone.LeftLowerArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
 
         # Points towards interior of shoulder joint
-        shoulder_pivot_bisection_vector = world_vectolowerarm - world_vectoleftshoulder
-        shoulder_pivot_bisection_vector /= np.linalg.norm(shoulder_pivot_bisection_vector)
+        lshoulder_pivot_bisection_vector = world_vectollowerarm - world_vectolshoulder
+        lshoulder_pivot_bisection_vector /= np.linalg.norm(lshoulder_pivot_bisection_vector)
 
         # Points towards interior of elbow joint
-        elbow_pivot_bisection_vector = world_vectolowerarm - world_vectohand
-        elbow_pivot_bisection_vector /= np.linalg.norm(elbow_pivot_bisection_vector)
+        lelbow_pivot_bisection_vector = world_vectolhand - world_vectollowerarm
+        lelbow_pivot_bisection_vector /= np.linalg.norm(lelbow_pivot_bisection_vector)
 
-        lelbow_yaw = -pr.angle_between_vectors(shoulder_pivot_bisection_vector, -elbow_pivot_bisection_vector)
+        lshoulder_pivot_bisection_vector_proj = pr.vector_projection(lshoulder_pivot_bisection_vector, world_vectollowerarm)
+        lshoulder_pivot_vector_rejection = lshoulder_pivot_bisection_vector - lshoulder_pivot_bisection_vector_proj
+        lshoulder_pivot_vector_rejection /= np.linalg.norm(lshoulder_pivot_vector_rejection)
+
+        lelbow_pivot_bisection_vector_proj = pr.vector_projection(lelbow_pivot_bisection_vector, world_vectollowerarm)
+        lelbow_pivot_vector_rejection = lelbow_pivot_bisection_vector - lelbow_pivot_bisection_vector_proj
+        lelbow_pivot_vector_rejection /= np.linalg.norm(lelbow_pivot_vector_rejection)
+
+        lelbow_yaw = -pr.angle_between_vectors(lshoulder_pivot_vector_rejection, lelbow_pivot_vector_rejection)
         row[NaoMotor.LElbowYaw.name] = NaoMotor.LElbowYaw.limit(lelbow_yaw)
-
-        lelbow_roll = -np.abs(pr.angle_between_vectors(world_vectolowerarm, world_vectohand))
+        lelbow_roll = -np.abs(pr.angle_between_vectors(world_vectollowerarm, world_vectolhand))
         row[NaoMotor.LElbowRoll.name] = NaoMotor.LElbowRoll.limit(lelbow_roll)
 
+        world_vectorrshoulder = tfs.get_transform(MecanimBone.ChestRightward.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+        world_vectorrlowerarm = tfs.get_transform(MecanimBone.RightUpperArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])        
+        world_vectorrhand = tfs.get_transform(MecanimBone.RightLowerArm.name, 'world')[:3, :3] @ np.array([1., 0., 0.])
+
+        # Points towards interior of shoulder joint
+        rshoulder_pivot_bisection_vector = world_vectorrlowerarm - world_vectorrshoulder
+        rshoulder_pivot_bisection_vector /= np.linalg.norm(rshoulder_pivot_bisection_vector)
+
+        # Points towards interior of elbow joint
+        relbow_pivot_bisection_vector = world_vectorrhand - world_vectorrlowerarm
+        relbow_pivot_bisection_vector /= np.linalg.norm(relbow_pivot_bisection_vector)
+
+        rshoulder_pivot_bisection_vector_proj = pr.vector_projection(rshoulder_pivot_bisection_vector, world_vectorrlowerarm)
+        rshoulder_pivot_vector_rejection = rshoulder_pivot_bisection_vector - rshoulder_pivot_bisection_vector_proj
+        rshoulder_pivot_vector_rejection /= np.linalg.norm(rshoulder_pivot_vector_rejection)
+
+        relbow_pivot_bisection_vector_proj = pr.vector_projection(relbow_pivot_bisection_vector, world_vectorrlowerarm)
+        relbow_pivot_vector_rejection = relbow_pivot_bisection_vector - relbow_pivot_bisection_vector_proj
+        relbow_pivot_vector_rejection /= np.linalg.norm(relbow_pivot_vector_rejection)
+
+        relbow_yaw = -pr.angle_between_vectors(rshoulder_pivot_vector_rejection, relbow_pivot_vector_rejection)
+        row[NaoMotor.RElbowYaw.name] = NaoMotor.RElbowYaw.limit(relbow_yaw)
+        relbow_roll = np.abs(pr.angle_between_vectors(world_vectorrlowerarm, world_vectorrhand))
+        row[NaoMotor.RElbowRoll.name] = NaoMotor.RElbowRoll.limit(relbow_roll)
+        
         self.dataframe.loc[len(self.dataframe)] = pd.Series(row)
 
     def write_output(self):
