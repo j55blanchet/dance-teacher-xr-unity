@@ -33,7 +33,7 @@
                 "--log_level=INFO",
                 "--model-complexity=2",
                 "--frame_output_folder=${workspaceFolder}/temp/frames",
-                "--rewrite_existing",
+                // "--rewrite_existing",
             ],
         },
         {
@@ -48,8 +48,9 @@
                 "--csv_output_folder=${workspaceFolder}/data/bvhcsv",
                 "--log_level=INFO",
                 "--frame_limit=-1",
-                "${workspaceFolder}/data/holistic_data/debbieallenchallenge.holisticdata.csv"
+                // "${workspaceFolder}/data/holistic_data/debbieallenchallenge.holisticdata.csv"
                 // "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
+                "${workspaceFolder}/data/holistic_data/ArmShuffle.holisticdata.csv"
                 // "${workspaceFolder}/data/holistic_data/"
             ],
         },

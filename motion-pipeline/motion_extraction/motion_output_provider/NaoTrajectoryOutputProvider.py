@@ -12,9 +12,12 @@ import pytransform3d.rotations as pr
 from motion_extraction.MecanimHumanoid import MecanimBone
 from .MotionOutputProvider import MotionOutputProvider, HumanoidPositionSkeleton, TransformManager, Path
 
+from ..temp.view_urdf import display_urdf
+nao_urdf_path = Path(r"""D:\dev\humanmotion\dance-teacher-xr\motion-pipeline\data\urdf\naoV50_generated_urdf\nao.urdf""")
+
 class NaoMotor(Enum):
-    # HeadYaw = auto()
-    # HeadPitch = auto()
+    HeadYaw = auto()
+    HeadPitch = auto()
     LShoulderPitch = auto()
     LShoulderRoll = auto()
     LElbowYaw = auto()
@@ -43,8 +46,8 @@ class NaoMotor(Enum):
     @property
     def range_min(self):
         match self:
-            # case NaoMotor.HeadYaw: return -2.0857
-            # case NaoMotor.HeadPitch: return -0.6720
+            case NaoMotor.HeadYaw: return -2.0857
+            case NaoMotor.HeadPitch: return -0.6720
             case NaoMotor.LShoulderPitch: return -2.0857
             case NaoMotor.LShoulderRoll: return -0.3142
             case NaoMotor.LElbowYaw: return -2.0857
@@ -62,8 +65,8 @@ class NaoMotor(Enum):
     @property 
     def range_max(self):
         match self:
-            # case NaoMotor.HeadYaw: return 2.0857
-            # case NaoMotor.HeadPitch: return 0.5149
+            case NaoMotor.HeadYaw: return 2.0857
+            case NaoMotor.HeadPitch: return 0.5149
             case NaoMotor.LShoulderPitch: return 2.0857
             case NaoMotor.LShoulderRoll: return 1.3265
             case NaoMotor.LElbowYaw: return 2.0857
@@ -116,11 +119,12 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
             lshoulder_pitch = 0.
             lshoulder_roll = 0.
         else:
-            lshoulder_pitch = -np.arctan2(y, z)
-            lshoulder_roll = np.pi / 2 - np.arctan2(x, z)
+            lshoulder_pitch = np.arctan2(-y, z)
+            lshoulder_roll = np.arctan2(x, z)
         row[NaoMotor.LShoulderPitch.name] = NaoMotor.LShoulderPitch.limit(lshoulder_pitch)
         row[NaoMotor.LShoulderRoll.name] = NaoMotor.LShoulderRoll.limit(lshoulder_roll)
 
+        # Note: in chest-rightward coordinate system, x is rightward, y is up, and z is *backward*
         chest_to_rupperarm = tfs.get_transform(MecanimBone.RightUpperArm.name, MecanimBone.ChestRightward.name)
         rupperarm_vector = chest_to_rupperarm[:3, :3] @ np.array([1., 0., 0.])
         x, y, z = rupperarm_vector
@@ -129,8 +133,8 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
             rshoulder_roll = 0.
         else:
             # z faces backwards, so we need to flip the sign
-            rshoulder_pitch = -np.arctan2(y, -z)
-            rshoulder_roll = np.pi / 2 - np.arctan2(x, -z)
+            rshoulder_pitch = np.arctan2(-y, -z)
+            rshoulder_roll = np.arctan2(-x, -z)
         row[NaoMotor.RShoulderPitch.name] = NaoMotor.RShoulderPitch.limit(rshoulder_pitch)
         row[NaoMotor.RShoulderRoll.name] = NaoMotor.RShoulderRoll.limit(rshoulder_roll)
       
@@ -161,7 +165,12 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         lelbow_pivot_vector_rejection = lelbow_pivot_bisection_vector - lelbow_pivot_bisection_vector_proj
         lelbow_pivot_vector_rejection /= np.linalg.norm(lelbow_pivot_vector_rejection)
 
-        lelbow_yaw = -pr.angle_between_vectors(lshoulder_pivot_vector_rejection, lelbow_pivot_vector_rejection)
+        lelbow_axis_angle = pr.axis_angle_from_two_directions(lshoulder_pivot_vector_rejection, lelbow_pivot_vector_rejection)
+        lelbow_angle_sign = lelbow_axis_angle[:3].dot(world_vectollowerarm)
+        lelbow_yaw = lelbow_axis_angle[3] * lelbow_angle_sign
+        lelbow_yaw -= np.pi / 2
+
+        # lelbow_yaw = -pr.angle_between_vectors(lshoulder_pivot_vector_rejection, lelbow_pivot_vector_rejection)
         row[NaoMotor.LElbowYaw.name] = NaoMotor.LElbowYaw.limit(lelbow_yaw)
         lelbow_roll = -np.abs(pr.angle_between_vectors(world_vectollowerarm, world_vectolhand))
         row[NaoMotor.LElbowRoll.name] = NaoMotor.LElbowRoll.limit(lelbow_roll)
@@ -186,12 +195,26 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         relbow_pivot_vector_rejection = relbow_pivot_bisection_vector - relbow_pivot_bisection_vector_proj
         relbow_pivot_vector_rejection /= np.linalg.norm(relbow_pivot_vector_rejection)
 
-        relbow_yaw = -pr.angle_between_vectors(rshoulder_pivot_vector_rejection, relbow_pivot_vector_rejection)
+        relbow_axis_angle = pr.axis_angle_from_two_directions(rshoulder_pivot_vector_rejection, relbow_pivot_vector_rejection)
+        relbow_angle_sign = relbow_axis_angle[:3].dot(world_vectorrlowerarm)
+        relbow_yaw = relbow_axis_angle[3] * relbow_angle_sign
+        relbow_yaw -= np.pi / 2
+        relbow_yaw %= np.pi
+        # relbow_yaw = -pr.angle_between_vectors(rshoulder_pivot_vector_rejection, relbow_pivot_vector_rejection)
+
         row[NaoMotor.RElbowYaw.name] = NaoMotor.RElbowYaw.limit(relbow_yaw)
         relbow_roll = np.abs(pr.angle_between_vectors(world_vectorrlowerarm, world_vectorrhand))
         row[NaoMotor.RElbowRoll.name] = NaoMotor.RElbowRoll.limit(relbow_roll)
         
-        self.dataframe.loc[len(self.dataframe)] = pd.Series(row)
+
+        # todo: calculate head yaw & pitch.
+        frame_index = len(self.dataframe)
+        self.dataframe.loc[frame_index] = pd.Series(row)
+        
+        debug = False
+        if debug:
+            display_urdf(nao_urdf_path, joint_values = row, fig_title=f"Frame {frame_index} NAO URDF")
+
 
     def write_output(self):
         self.dataframe.to_csv(self.nao_trajectory_filepath, index=False)

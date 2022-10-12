@@ -1,12 +1,16 @@
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 from argparse import ArgumentParser
 from pytransform3d.urdf import UrdfTransformManager
 import pytransform3d.visualizer as pv
 import matplotlib.pyplot as plt
 
-def display_urdf(urdf_path: Path, joint_values: Dict[str, float] = {}):
+def display_urdf(urdf_path: Path, joint_values: Dict[str, float] = {}, fig_title: Optional[str] = None):
     tm = UrdfTransformManager()
+
+    if fig_title is not None:
+        fig = plt.gcf()
+        fig.canvas.manager.set_window_title(fig_title)
 
     with urdf_path.open('r') as f:
         tm.load_urdf(f.read())
