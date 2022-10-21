@@ -52,6 +52,8 @@ class MecanimBone(Enum):
     LeftEye = auto()
     RightEye = auto()
     Nose = auto()
+    LeftEar = auto()
+    RightEar = auto()
     
     ChestRightward = auto()
 
@@ -141,6 +143,11 @@ class MecanimBone(Enum):
             case MecanimBone.RightEye:
                 return MecanimBone.Nose
             case MecanimBone.Nose:
+                return MecanimBone.Head
+
+            case MecanimBone.LeftEar:
+                return MecanimBone.Head
+            case MecanimBone.RightEar:
                 return MecanimBone.Head
             
             case MecanimBone.ChestRightward:
@@ -240,10 +247,15 @@ class MecanimBone(Enum):
                 return get_pose_bone_position(PoseLandmark.RIGHT_FOOT_INDEX)
             
             case MecanimBone.Head:
-                # Find centerpoint of ears then return the midpoint
+                # Find centerpoint of ears
                 leftEar = get_pose_bone_position(PoseLandmark.LEFT_EAR)
                 rightEar = get_pose_bone_position(PoseLandmark.RIGHT_EAR)
-                return (leftEar + rightEar) / 2.
+                earCtr = (leftEar + rightEar) / 2
+                # the ears seem to be consistently placed too far forward. We'll 
+                # adjust by moving the nose distance further back.
+                nose = get_pose_bone_position(PoseLandmark.NOSE)
+                nose_to_earctr = earCtr - nose
+                return earCtr + nose_to_earctr / 2
 
             case MecanimBone.LeftHandPinkyRoot:
                 return get_pose_bone_position(PoseLandmark.LEFT_PINKY)
@@ -269,7 +281,10 @@ class MecanimBone(Enum):
                 return get_pose_bone_position(PoseLandmark.RIGHT_EYE)
             case MecanimBone.Nose:
                 return get_pose_bone_position(PoseLandmark.NOSE)
-
+            case MecanimBone.LeftEar:
+                return get_pose_bone_position(PoseLandmark.LEFT_EAR)
+            case MecanimBone.RightEar:
+                return get_pose_bone_position(PoseLandmark.RIGHT_EAR)
             
             case MecanimBone.ChestRightward:
                 return MecanimBone.position_from_mp_pose(MecanimBone.Chest, poseRow)
@@ -451,9 +466,9 @@ class HumanoidPositionSkeleton:
         tm.add_transform(MecanimBone.Spine.name, 'world', spine_tf)
 
         # Create transform for head - pointing laterally from left eye to right eye, with y pointing up
-        head_lateral = self.world_position(MecanimBone.RightEye) - self.world_position(MecanimBone.LeftEye)
+        head_leftward = self.world_position(MecanimBone.LeftEar) - self.world_position(MecanimBone.RightEar)
         head_up = self.bones[MecanimBone.Head]
-        head_rot_matrix = pr.matrix_from_two_vectors(head_lateral, head_up)
+        head_rot_matrix = pr.matrix_from_two_vectors(head_leftward, head_up)
         head_tf = pt.transform_from(head_rot_matrix, self.world_position(MecanimBone.Head))
         tm.add_transform(MecanimBone.Head.name, 'world', head_tf)
 

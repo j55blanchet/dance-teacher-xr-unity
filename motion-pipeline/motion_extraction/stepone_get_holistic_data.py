@@ -100,9 +100,6 @@ def process_video(
                 Path(out_path_2d).parent.mkdir(parents=True, exist_ok=True)
                 cv2.imwrite(out_path_2d, image)
 
-                fig = plt.figure(f'{holistic_data_filepath.name}-frame{frame_i}')
-                ax = fig.add_subplot(projection='3d')
-
                 world_landmarks  = [
                     tuple([PoseLandmark(landmark_i), (frame_data.pose_world_landmarks.landmark[landmark_i] if frame_data.pose_world_landmarks else None)])
                     for landmark_i
@@ -110,7 +107,8 @@ def process_video(
                 ]
 
                 if frame_data.pose_world_landmarks is not None:
-
+                    fig = plt.figure(f'{holistic_data_filepath.name}-frame{frame_i}')
+                    ax = fig.add_subplot(projection='3d')
                     x, y, z = list(zip(*[
                         (landmark.x, -landmark.y, -landmark.z)
                         for _, landmark

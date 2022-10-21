@@ -114,27 +114,29 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
 
         chest_to_lupperarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.Chest.name)
         lupperarm_vector = chest_to_lupperarm[:3, :3] @ np.array([1., 0., 0.])
-        x, y, z = lupperarm_vector
-        if z == 0:
+        luarm_x, luarm_y, luarm_z = lupperarm_vector
+        if luarm_z == 0:
             lshoulder_pitch = 0.
             lshoulder_roll = 0.
         else:
-            lshoulder_pitch = np.arctan2(-y, z)
-            lshoulder_roll = np.arctan2(x, z)
+            lshoulder_pitch = np.arctan2(-luarm_y, luarm_z)
+            lshoulder_roll = pr.angle_between_vectors(lupperarm_vector, [0., 0., 1.]) - np.pi / 2
+            # lshoulder_roll = np.arctan2(luarm_x, luarm_z)
         row[NaoMotor.LShoulderPitch.name] = NaoMotor.LShoulderPitch.limit(lshoulder_pitch)
         row[NaoMotor.LShoulderRoll.name] = NaoMotor.LShoulderRoll.limit(lshoulder_roll)
 
         # Note: in chest-rightward coordinate system, x is rightward, y is up, and z is *backward*
         chest_to_rupperarm = tfs.get_transform(MecanimBone.RightUpperArm.name, MecanimBone.ChestRightward.name)
         rupperarm_vector = chest_to_rupperarm[:3, :3] @ np.array([1., 0., 0.])
-        x, y, z = rupperarm_vector
-        if z == 0:
+        ruarm_x, ruarm_y, ruarm_z = rupperarm_vector
+        if ruarm_z == 0:
             rshoulder_pitch = 0.
             rshoulder_roll = 0.
         else:
             # z faces backwards, so we need to flip the sign
-            rshoulder_pitch = np.arctan2(-y, -z)
-            rshoulder_roll = np.arctan2(-x, -z)
+            rshoulder_pitch = np.arctan2(-ruarm_y, -ruarm_z)
+            rshoulder_roll = pr.angle_between_vectors(rupperarm_vector, [0., 0., -1.]) - np.pi / 2
+            # rshoulder_roll = np.arctan2(-ruarm_x, -ruarm_z)
         row[NaoMotor.RShoulderPitch.name] = NaoMotor.RShoulderPitch.limit(rshoulder_pitch)
         row[NaoMotor.RShoulderRoll.name] = NaoMotor.RShoulderRoll.limit(rshoulder_roll)
       
@@ -206,8 +208,16 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         relbow_roll = np.abs(pr.angle_between_vectors(world_vectorrlowerarm, world_vectorrhand))
         row[NaoMotor.RElbowRoll.name] = NaoMotor.RElbowRoll.limit(relbow_roll)
         
+        # Calculate head yaw and pitch
+        head2chest = tfs.get_transform(MecanimBone.Head.name, MecanimBone.Chest.name)
+        gaze_direction = head2chest[:3, :3] @ np.array([0., 0., 1.])
+        gaze_x, gaze_y, gaze_z = gaze_direction
 
-        # todo: calculate head yaw & pitch.
+        head_yaw = np.arctan2(gaze_x, gaze_z)
+        head_pitch = np.arctan2(gaze_z, gaze_y)
+        row[NaoMotor.HeadYaw.name] = NaoMotor.HeadYaw.limit(head_yaw)
+        row[NaoMotor.HeadPitch.name] = NaoMotor.HeadPitch.limit(head_pitch)
+        
         frame_index = len(self.dataframe)
         self.dataframe.loc[frame_index] = pd.Series(row)
         
