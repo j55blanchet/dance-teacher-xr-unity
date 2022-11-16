@@ -7,7 +7,7 @@ from enum import Enum, auto
 from random import sample
 import pandas as pd
 import numpy as np
-from typing import Optional
+from typing import Dict, Optional
 import pytransform3d.rotations as pr
 from motion_extraction.MecanimHumanoid import MecanimBone
 from .MotionOutputProvider import MotionOutputProvider, HumanoidPositionSkeleton, TransformManager, Path
@@ -92,13 +92,13 @@ class NaoMotor(Enum):
             case NaoMotor.LShoulderRoll: return 7.19407
             case NaoMotor.LElbowYaw: return 8.26797
             case NaoMotor.LElbowRoll: return 7.19407
-            case NaoMotor.LWristYaw: return 24.6229
+            # case NaoMotor.LWristYaw: return 24.6229
             # case NaoMotor.LHand: return 1.0
             case NaoMotor.RShoulderPitch: return 8.26797
             case NaoMotor.RShoulderRoll: return 7.19407
             case NaoMotor.RElbowYaw: return 8.26797
             case NaoMotor.RElbowRoll: return 7.19407
-            case NaoMotor.RWristYaw: return 24.6229
+            # case NaoMotor.RWristYaw: return 24.6229
             # case NaoMotor.RHand: return 1.0
             #TODO: Left and Right Legs
 
@@ -130,7 +130,7 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
                 self.dataframe.loc[len(self.dataframe)] = pd.Series({ k:0. for k in self.dataframe.columns})
             return
 
-        row = {}
+        row: Dict[str, float] = {}
 
         chest_to_lupperarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.Chest.name)
         lupperarm_vector = chest_to_lupperarm[:3, :3] @ np.array([1., 0., 0.])
@@ -239,6 +239,22 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         row[NaoMotor.HeadPitch.name] = NaoMotor.HeadPitch.limit(head_pitch)
         
         frame_index = len(self.dataframe)
+
+        fps = 30.
+        # Ensure that velocity limits are not exceeded
+        for (motor_name, motor_angle) in row.items():
+            # skip if this is the first frame
+            if len(self.dataframe) == 0:
+                break
+
+            motor = NaoMotor[motor_name]
+            prev_angle = self.dataframe[motor_name].iloc[-1]
+            max_angle_change = motor.velocity_max() / fps
+            angle_change = np.abs(motor_angle - prev_angle)
+            if angle_change > max_angle_change:
+                new_motor_angle = prev_angle + np.sign(angle_change) * max_angle_change
+                row[motor_name] = motor.limit(new_motor_angle)
+
         self.dataframe.loc[frame_index] = pd.Series(row)
         
         debug = False
