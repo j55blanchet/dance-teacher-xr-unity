@@ -68,7 +68,7 @@ for prefix, highlight_ranges in [
     plt.xlabel('Frame')
     plt.ylabel('Angle (deg)')
     plt.legend()
-    plt.title(f'{traj_filename} {prefix}Elbow angles ((<{ang_threshold_deg} deg angle hl)')
+    plt.title(f'{traj_filename} {prefix}Elbow angles (<{ang_threshold_deg} deg angle hl)')
     for start, end in highlight_ranges:
         plt.axvspan(start, end, color='red', alpha=0.2)
     plt.show()
