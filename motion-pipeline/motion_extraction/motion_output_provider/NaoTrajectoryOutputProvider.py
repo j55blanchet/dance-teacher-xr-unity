@@ -83,6 +83,26 @@ class NaoMotor(Enum):
     
     def limit(self, value: float) -> float:
         return max(self.range_min, min(self.range_max, value))
+    
+    def velocity_max(self) -> float:
+        match self:
+            case NaoMotor.HeadYaw: return 8.26797
+            case NaoMotor.HeadPitch: return 7.19407
+            case NaoMotor.LShoulderPitch: return 8.26797
+            case NaoMotor.LShoulderRoll: return 7.19407
+            case NaoMotor.LElbowYaw: return 8.26797
+            case NaoMotor.LElbowRoll: return 7.19407
+            case NaoMotor.LWristYaw: return 24.6229
+            # case NaoMotor.LHand: return 1.0
+            case NaoMotor.RShoulderPitch: return 8.26797
+            case NaoMotor.RShoulderRoll: return 7.19407
+            case NaoMotor.RElbowYaw: return 8.26797
+            case NaoMotor.RElbowRoll: return 7.19407
+            case NaoMotor.RWristYaw: return 24.6229
+            # case NaoMotor.RHand: return 1.0
+            #TODO: Left and Right Legs
+
+
 class NaoTrajectoryOutputProvider(MotionOutputProvider):
     def __init__(self, nao_trajectory_filepath: Path):
         self.nao_trajectory_filepath = nao_trajectory_filepath
