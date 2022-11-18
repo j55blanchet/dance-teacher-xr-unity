@@ -15,6 +15,8 @@ from .MotionOutputProvider import MotionOutputProvider, HumanoidPositionSkeleton
 from ..temp.view_urdf import display_urdf
 nao_urdf_path = Path(r"""D:\dev\humanmotion\dance-teacher-xr\motion-pipeline\data\urdf\naoV50_generated_urdf\nao.urdf""")
 
+
+
 class NaoMotor(Enum):
     HeadYaw = auto()
     HeadPitch = auto()
@@ -84,6 +86,7 @@ class NaoMotor(Enum):
     def limit(self, value: float) -> float:
         return max(self.range_min, min(self.range_max, value))
     
+    @property
     def velocity_max(self) -> float:
         match self:
             case NaoMotor.HeadYaw: return 8.26797
@@ -101,6 +104,11 @@ class NaoMotor(Enum):
             # case NaoMotor.RWristYaw: return 24.6229
             # case NaoMotor.RHand: return 1.0
             #TODO: Left and Right Legs
+
+    @property 
+    def velocity_max_with_buffer(self):
+        MAX_VEL_BUFFER_PERCENT = 0.1 # 10%
+        return self.velocity_max * (1 - MAX_VEL_BUFFER_PERCENT)
 
 
 class NaoTrajectoryOutputProvider(MotionOutputProvider):
@@ -249,7 +257,7 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
 
             motor = NaoMotor[motor_name]
             prev_angle = self.dataframe[motor_name].iloc[-1]
-            max_angle_change = motor.velocity_max() / fps
+            max_angle_change = motor.velocity_max_with_buffer / fps
             angle_change = np.abs(motor_angle - prev_angle)
             if angle_change > max_angle_change:
                 new_motor_angle = prev_angle + np.sign(angle_change) * max_angle_change
