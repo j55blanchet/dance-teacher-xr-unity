@@ -51,8 +51,8 @@
                 // "${workspaceFolder}/data/holistic_data/debbieallenchallenge.holisticdata.csv"
                 // "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
                 // "${workspaceFolder}/data/holistic_data/ArmShuffle.holisticdata.csv"
-                "${workspaceFolder}/data/holistic_data/last-christmas-tutorial.holisticdata.csv"
-                // "${workspaceFolder}/data/holistic_data/mad-at-disney.holisticdata.csv"
+                // "${workspaceFolder}/data/holistic_data/last-christmas-tutorial.holisticdata.csv"
+                "${workspaceFolder}/data/holistic_data/mad-at-disney.holisticdata.csv"
                 // "${workspaceFolder}/data/holistic_data/"
             ],
         },
@@ -113,6 +113,14 @@
             "module": "motion_extraction.temp.view_urdf",
             "args": [
                 "${workspaceFolder}/data/urdf/naoV50_generated_urdf/nao.urdf",        
+            ]
+        },
+        {
+            "name": "Nao Teleoperation",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.teleoperation",
+            "args": [
             ]
         }
     ]

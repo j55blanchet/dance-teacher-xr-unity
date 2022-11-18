@@ -12,11 +12,6 @@ from .utils import throttle
 from .MecanimHumanoid import HumanoidPositionSkeleton
 from .motion_output_provider import MotionOutputProvider, BVHOutputProvider, NaoTrajectoryOutputProvider
 
- 
-
-
-
-
 def convert_to_jointspace(holistic_data: pd.DataFrame, naocsv_outpath: Path, bvh_filepath: Path, bvhcsv_outpath: Optional[Path] = None, frame_limit = -1) -> None:
     """
     Concert the holistic data to jointspace and output to bvh file and robot trajectory
