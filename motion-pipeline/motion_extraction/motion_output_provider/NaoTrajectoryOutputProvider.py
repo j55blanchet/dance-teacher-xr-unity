@@ -129,17 +129,19 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         plt.tight_layout()
         plt.show(block=True)
 
-    def process_frame(self, skel: HumanoidPositionSkeleton, tfs: Optional[TransformManager]):
+    def process_frame(self, skel: HumanoidPositionSkeleton, tfs: Optional[TransformManager], record_to_dataframe: bool = True):
         
+        # tfs can be None when a human isn't recognized in a video frame. 
+        # If so, just use the previous frame's transforms (if there is one, else default to zeros).
         if tfs is None:
+            inferred_joints  = pd.Series({ k:0. for k in self.dataframe.columns})
             if len(self.dataframe) > 0:
-                self.dataframe.loc[len(self.dataframe)] = self.dataframe.loc[len(self.dataframe) - 1]
-            else:
-                self.dataframe.loc[len(self.dataframe)] = pd.Series({ k:0. for k in self.dataframe.columns})
-            return
+                inferred_joints = self.dataframe.loc[len(self.dataframe) - 1]
+            if record_to_dataframe:
+                self.dataframe.loc[len(self.dataframe)]
+            return inferred_joints
 
         row: Dict[str, float] = {}
-
         chest_to_lupperarm = tfs.get_transform(MecanimBone.LeftUpperArm.name, MecanimBone.Chest.name)
         lupperarm_vector = chest_to_lupperarm[:3, :3] @ np.array([1., 0., 0.])
         luarm_x, luarm_y, luarm_z = lupperarm_vector
@@ -263,11 +265,16 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
                 new_motor_angle = prev_angle + np.sign(angle_change) * max_angle_change
                 row[motor_name] = motor.limit(new_motor_angle)
 
-        self.dataframe.loc[frame_index] = pd.Series(row)
+        series_data = pd.Series(row)
+
+        if record_to_dataframe:
+            self.dataframe.loc[frame_index] = pd.Series(row)
         
         debug = False
         if debug:
             display_urdf(nao_urdf_path, joint_values = row, fig_title=f"Frame {frame_index} NAO URDF")
+
+        return series_data
 
 
     def write_output(self):
