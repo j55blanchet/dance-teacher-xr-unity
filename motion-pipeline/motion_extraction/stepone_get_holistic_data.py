@@ -22,6 +22,74 @@ mp_drawing_styles = mp.solutions.drawing_styles
 
 T = TypeVar('T')
 
+def construct_header_row():
+    return ['frame'] + \
+           [f'{PoseLandmark(landmark_i).name}_{field}' 
+               for landmark_i in np.array(sorted(PoseLandmark))
+               for field in ('x', 'y', 'z', 'vis')
+           ] + \
+           [f'LEFTHAND_{HandLandmark(landmark_i).name}_{field}'
+               for landmark_i in np.array(sorted(HandLandmark))
+               for field in ('x', 'y', 'z')
+           ] + \
+           [f'RIGHTHAND_{HandLandmark(landmark_i).name}_{field}'
+               for landmark_i in np.array(sorted(HandLandmark))
+               for field in ('x', 'y', 'z')
+            ]
+
+def transform_to_holistic_csvrow(frame_i: int, frame_data, as_pdSeries: bool = False):
+    row = [frame_i]
+            
+    row += list(reduce(
+            lambda x, y: x + y,
+            [
+                # We want to remap x, y, z. 
+                #   > The default has negative y being up, positive x being right, and pozitive z being away from the camera.
+                #   > We actually want y being up, x being left, and z being forward (towards camera).
+                #   So x <- x
+                #      y <- -y
+                #      z <- -z
+                [ 
+                    lm.x,
+                    -lm.y, 
+                    -lm.z,
+                    lm.visibility
+                ] if lm is not None else [None, None, None, None]
+                for lm in 
+                [(frame_data.pose_world_landmarks.landmark[landmark_i] if frame_data.pose_world_landmarks else None)
+                    for landmark_i in range(len(PoseLandmark))
+                ]
+            ]
+        ))
+        
+    row += list(reduce(
+            lambda x, y: x + y,
+            [
+                ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
+                for lm in 
+                [(frame_data.right_hand_landmarks.landmark[landmark_i] if hasattr(frame_data, 'right_hand_landmarks') and frame_data.right_hand_landmarks is not None else None)
+                    for landmark_i in range(len(HandLandmark))
+                ]
+            ]
+        ))
+
+    row += list(reduce(
+            lambda x, y: x + y,
+            [
+                ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
+                for lm in 
+                [(frame_data.left_hand_landmarks.landmark[landmark_i] if hasattr(frame_data, 'left_hand_landmarks') and frame_data.left_hand_landmarks is not None else None)
+                    for landmark_i in range(len(HandLandmark))
+                ]
+            ]
+        ))
+
+    if as_pdSeries:
+        return pd.Series(row, index=construct_header_row())
+
+    return row
+
+
 def _perform_by_frame(video_path: Path, on_frame: Callable[[cv2.Mat, int], T]) -> Generator[T, None, None]:
     try:
         cap = cv2.VideoCapture(str(video_path))
@@ -146,67 +214,10 @@ def process_video(
             print_progress(frame_i, frame_count)
             if frame_i == 0:
                 merged_data_csv.writerow(
-                    ['frame'] + 
-                    [f'{PoseLandmark(landmark_i).name}_{field}' 
-                        for landmark_i in np.array(sorted(PoseLandmark))
-                        for field in ('x', 'y', 'z', 'vis')
-                    ] + 
-                    [f'LEFTHAND_{HandLandmark(landmark_i).name}_{field}'
-                        for landmark_i in np.array(sorted(HandLandmark))
-                        for field in ('x', 'y', 'z')
-                    ] +
-                    [f'RIGHTHAND_{HandLandmark(landmark_i).name}_{field}'
-                        for landmark_i in np.array(sorted(HandLandmark))
-                        for field in ('x', 'y', 'z')
-                    ]
+                    construct_header_row()
                 )
             
-            row = [frame_i]
-            
-            row += list(reduce(
-                    lambda x, y: x + y,
-                    [
-                        # We want to remap x, y, z. 
-                        #   > The default has negative y being up, positive x being right, and pozitive z being away from the camera.
-                        #   > We actually want y being up, x being left, and z being forward (towards camera).
-                        #   So x <- x
-                        #      y <- -y
-                        #      z <- -z
-                        [ 
-                            lm.x,
-                            -lm.y, 
-                            -lm.z,
-                            lm.visibility
-                        ] if lm is not None else [None, None, None, None]
-                        for lm in 
-                        [(frame_data.pose_world_landmarks.landmark[landmark_i] if frame_data.pose_world_landmarks else None)
-                            for landmark_i in range(len(PoseLandmark))
-                        ]
-                    ]
-                ))
-                
-            row += list(reduce(
-                    lambda x, y: x + y,
-                    [
-                        ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
-                        for lm in 
-                        [(frame_data.right_hand_landmarks.landmark[landmark_i] if frame_data.right_hand_landmarks is not None else None)
-                            for landmark_i in range(len(HandLandmark))
-                        ]
-                    ]
-                ))
-
-            row += list(reduce(
-                    lambda x, y: x + y,
-                    [
-                        ([lm.x, lm.y, lm.z] if lm is not None else [None, None, None])
-                        for lm in 
-                        [(frame_data.left_hand_landmarks.landmark[landmark_i] if frame_data.left_hand_landmarks is not None else None)
-                            for landmark_i in range(len(HandLandmark))
-                        ]
-                    ]
-                ))
-
+            row = transform_to_holistic_csvrow(frame_i, frame_data)
             merged_data_csv.writerow(row)
             
 def main():
