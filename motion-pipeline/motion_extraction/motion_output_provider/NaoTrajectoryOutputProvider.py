@@ -12,10 +12,7 @@ import pytransform3d.rotations as pr
 from motion_extraction.MecanimHumanoid import MecanimBone
 from .MotionOutputProvider import MotionOutputProvider, HumanoidPositionSkeleton, TransformManager, Path
 
-from ..temp.view_urdf import display_urdf
-nao_urdf_path = Path(r"""D:\dev\humanmotion\dance-teacher-xr\motion-pipeline\data\urdf\naoV50_generated_urdf\nao.urdf""")
-
-
+from ..view_urdf import display_urdf
 
 class NaoMotor(Enum):
     HeadYaw = auto()
@@ -121,11 +118,12 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
             ]
         )
     
-    def _plt(self, skel, tfs):
+    def _plt(self, skel, tfs, ax=None):
         import matplotlib.pyplot as plt
-        
-        tfs.plot_frames_in('world', s=0.1)
-        skel.plt_skeleton(ax=plt.gca(), color='black', alpha=0.5)
+        if ax == None:
+            ax = plt.gca()
+        tfs.plot_frames_in('world', s=0.1, ax=ax)
+        skel.plt_skeleton(ax=ax, color='black', alpha=0.5)
         plt.tight_layout()
         plt.show(block=True)
 

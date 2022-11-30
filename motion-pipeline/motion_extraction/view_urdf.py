@@ -4,25 +4,35 @@ from argparse import ArgumentParser
 from pytransform3d.urdf import UrdfTransformManager
 import pytransform3d.visualizer as pv
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
-def display_urdf(urdf_path: Path, joint_values: Dict[str, float] = {}, fig_title: Optional[str] = None):
-    tm = UrdfTransformManager()
+nao_urdf_path = Path(r"""D:\dev\humanmotion\dance-teacher-xr\motion-pipeline\data\urdf\naoV50_generated_urdf\nao.urdf""")
+
+def display_urdf(urdf_path: Path = nao_urdf_path, joint_values: Dict[str, float] = {}, fig_title: Optional[str] = None, block=True):
+    tm = load_urdf(urdf_path)
 
     if fig_title is not None:
         fig = plt.gcf()
         fig.canvas.manager.set_window_title(fig_title)
 
-    with urdf_path.open('r') as f:
+    plot_urdf(tm, joint_values, block=block)
+    plt.show(block=block)
+
+def load_urdf(urdf_path = nao_urdf_path):
+    tm = UrdfTransformManager()
+    with nao_urdf_path.open('r') as f:
         tm.load_urdf(f.read())
+    return tm
 
-    for key, value in joint_values.items():
-        tm.set_joint(key, value)
-
-    tm.plot_connections_in('torso')
-    # tm.plot_frames_in('torso', s=0.1)
-    plt.show(block=True)
-
+def plot_urdf(urdf_tm: UrdfTransformManager, joint_values: Dict[str, float], ax:Axes = None):
+    if ax == None:
+        ax = plt.gca()
     
+    for key, value in joint_values.items():
+        urdf_tm.set_joint(key, value)
+
+    urdf_tm.plot_connections_in('torso', ax=ax)
+    # tm.plot_frames_in('torso', s=0.1)
 
 if __name__ == "__main__":
 

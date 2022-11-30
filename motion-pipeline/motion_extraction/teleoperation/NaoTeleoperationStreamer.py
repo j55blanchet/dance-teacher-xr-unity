@@ -2,8 +2,11 @@ from asyncio import Future
 from collections import deque
 from dataclasses import dataclass
 from typing import Deque, List, Literal, Union
+from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 import pandas as pd
 from ..motion_output_provider import NaoTrajectoryOutputProvider
+from ..view_urdf import load_urdf, plot_urdf
 from ..stepone_get_holistic_data import transform_to_holistic_csvrow
 from ..MecanimHumanoid import HumanoidPositionSkeleton
 import json
@@ -18,13 +21,18 @@ class NaoTeleoperationListener:
 
 class NaoTeleoperationStreamer:
 
-    def __init__(self):
+    def __init__(self, urdf_display_axes: Axes = None):
+        self.urdf_ax = urdf_display_axes
+
         self.traj_output_provider = NaoTrajectoryOutputProvider('temp/nao_ctl.csv')
         self.frame_i = 0
-        self.listeners: List[NaoTeleoperationListener] = []
+        self.listeners: List[NaoTeleoperationListener] = []        
         
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setblocking(False)
+
+        if self.urdf_ax is not None:
+            self.urdf_tm = load_urdf()
 
     def register_listener(self, name: str, listener_ip: Union[int, Literal['localhost']], listener_port: int):
         self.listeners.append(
@@ -35,15 +43,21 @@ class NaoTeleoperationStreamer:
             )
         )
 
-    def on_pose(self, pose_results):
-        
-        holistic_row = transform_to_holistic_csvrow(self.frame_i, pose_results, as_pdSeries=True)
+    def on_pose(self, holistic_row: pd.Series):
         
         skel = HumanoidPositionSkeleton.from_mp_pose(holistic_row)
         tfs = skel.get_transforms(plot=False)
         nao_ctl = self.traj_output_provider.process_frame(skel, tfs, record_to_dataframe=False)
         self.frame_i += 1
         self.forward_to_listeners(nao_ctl)
+
+        if self.urdf_ax is not None:
+            self.urdf_ax.clear()
+            # plot_urdf(
+            #     self.urdf_tm, 
+            #     joint_values=nao_ctl.to_dict(),
+            #     ax=self.urdf_ax
+            # )
 
     def forward_to_listeners(self, nao_ctl: pd.Series):
         ctl = nao_ctl.to_dict()
