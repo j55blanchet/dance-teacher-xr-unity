@@ -14,8 +14,8 @@ from .utils import throttle
 
 import mpl_toolkits.mplot3d.art3d as art3d
 
-PoseLandmark: mp.solutions.mediapipe.python.solutions.holistic.PoseLandmark = mp.solutions.holistic.PoseLandmark
-HandLandmark: mp.solutions.mediapipe.python.solutions.holistic.HandLandmark = mp.solutions.holistic.HandLandmark
+PoseLandmark = mp.solutions.holistic.PoseLandmark
+HandLandmark = mp.solutions.holistic.HandLandmark
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -89,6 +89,35 @@ def transform_to_holistic_csvrow(frame_i: int, frame_data, as_pdSeries: bool = F
 
     return row
 
+def plot_3d_pose(holistic_row_series, fig=None, ax=None, title=None):
+    if fig is None and ax is None:
+        fig = plt.figure(title)
+    if ax is None:
+        ax = fig.add_subplot(projection='3d')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+    
+    x, y, z = [
+        [
+            holistic_row_series[f'{PoseLandmark(landmark_i).name}_{field}']
+            for landmark_i in range(len(PoseLandmark))
+        ]
+        for field in ('x', 'y', 'z')
+    ]
+    # Plot the joint positions
+    ax.scatter(x, y, z)
+
+    # Connect joint position skeleton
+    segs = [
+        [(x[i], y[i], z[i]), (x[j], y[j], z[j])] 
+        for i, j in mp.solutions.holistic.POSE_CONNECTIONS
+    ]
+    lines = art3d.Line3DCollection(
+        segs,
+        colors="gray"
+    )
+    ax.add_collection3d(lines)
 
 def _perform_by_frame(video_path: Path, on_frame: Callable[[cv2.Mat, int], T]) -> Generator[T, None, None]:
     try:
@@ -118,7 +147,7 @@ def _perform_by_frame(video_path: Path, on_frame: Callable[[cv2.Mat, int], T]) -
 def process_video(
     video_path: Path, 
     output_root: Path, 
-    holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic,
+    holistic_solution: mp.solutions.holistic.Holistic,
     frame_output_folder: Optional[Path] = None,
     rewrite_existing: bool = False,
 ):
@@ -141,6 +170,8 @@ def process_video(
     if holistic_data_filepath.exists() and not rewrite_existing:
         logging.info(f'Skipping {video_path} - already exists')
         return
+    
+    header_row = construct_header_row()
 
     with(
         open(str(holistic_data_filepath), 'w', newline='', encoding='utf-8') as merged_data_file,
@@ -151,9 +182,9 @@ def process_video(
 
             # cv2.imshow(f'Frame {frame_i}', image)
             # cv2.waitKey(500)
+            holistic_csv_row = transform_to_holistic_csvrow(frame_i, frame_data)
+            holistic_series_row = pd.Series(holistic_csv_row, index=header_row)
 
-            
-            
             if frame_output_folder is not None:
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -168,35 +199,12 @@ def process_video(
                 Path(out_path_2d).parent.mkdir(parents=True, exist_ok=True)
                 cv2.imwrite(out_path_2d, image)
 
-                world_landmarks  = [
-                    tuple([PoseLandmark(landmark_i), (frame_data.pose_world_landmarks.landmark[landmark_i] if frame_data.pose_world_landmarks else None)])
-                    for landmark_i
-                    in range(len(PoseLandmark))
-                ]
-
                 if frame_data.pose_world_landmarks is not None:
-                    fig = plt.figure(f'{holistic_data_filepath.name}-frame{frame_i}')
-                    ax = fig.add_subplot(projection='3d')
-                    x, y, z = list(zip(*[
-                        (landmark.x, -landmark.y, -landmark.z)
-                        for _, landmark
-                        in world_landmarks
-                    ]))
-
-                    # Swap x and y so that default camera angle is good
-                    ax.set_xlabel('X')
-                    ax.set_ylabel('Y')
-                    ax.set_zlabel('Z')
-                    ax.scatter(x, y, z)
-                    # mp.solutions.holistic.POSE_CONNECTIONS
-
-                    lm_pairs =[(world_landmarks[i][1], world_landmarks[j][1]) for i, j in mp.solutions.holistic.POSE_CONNECTIONS]
-                    segs = [[(src.x, -src.y, -src.z), (dest.x, -dest.y, -dest.z)] for src, dest in lm_pairs]
-                    lines = art3d.Line3DCollection(
-                        segs,
-                        colors="gray"
+                    plot_3d_pose(
+                        holistic_series_row, 
+                        title=f'{holistic_data_filepath.name}-frame{frame_i}'
                     )
-                    plt.gca().add_collection3d(lines)
+
                     out_path = f'{frame_output_folder}/{video_path.stem}_3d/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.png'
                     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -210,15 +218,13 @@ def process_video(
                     # plt.show(block=True)
                     plt.close()
 
-
             print_progress(frame_i, frame_count)
             if frame_i == 0:
                 merged_data_csv.writerow(
-                    construct_header_row()
+                    header_row
                 )
             
-            row = transform_to_holistic_csvrow(frame_i, frame_data)
-            merged_data_csv.writerow(row)
+            merged_data_csv.writerow(holistic_csv_row)
             
 def main():
     import argparse
