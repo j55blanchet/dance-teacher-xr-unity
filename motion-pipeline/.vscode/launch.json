@@ -121,6 +121,17 @@
             "request": "launch",
             "module": "motion_extraction.teleoperation",
             "args": [
+                "--input=webcam"
+            ]
+        },
+        {
+            "name": "Nao Teleoperation (Simulation)",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.teleoperation",
+            "args": [
+                "-i=${workspaceFolder}/data/source_videos/",
+                "-sim"
             ]
         }
     ]
