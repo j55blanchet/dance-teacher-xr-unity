@@ -1,5 +1,5 @@
 
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, Literal, NamedTuple, Union
 import mediapipe as mp
 import cv2
 import matplotlib.pyplot as plt
@@ -16,11 +16,17 @@ mp_pose = mp.solutions.pose
 
 
 def stream_realtime(
+    src_media: Union[str, Literal['webcam']],
     on_pose: Callable[[NamedTuple], None],
     ax_livestream: Axes = None,
     ax_mediapipe_3d: Axes = None,
 ):
-    cap = cv2.VideoCapture(0)
+    cap = None
+    if src_media == 'webcam':
+        cap = cv2.VideoCapture(0)
+    else:
+        cap = cv2.VideoCapture(src_media)
+        
     frame_i = 0
 
     # Can use this to use images instead of webcam

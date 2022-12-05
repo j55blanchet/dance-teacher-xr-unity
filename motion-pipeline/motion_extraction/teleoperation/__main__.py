@@ -10,7 +10,8 @@ def add_xyz_labels(ax):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-simulation', action='store_true')
+    parser.add_argument('-sim', '--simulation', action='store_true')
+    parser.add_argument('-i', '--input', type=str, default='webcam')
     parser.add_argument('-listener_ip', type=str, default='localhost')
     parser.add_argument('-listener_port', type=int, default=8080)
     args = parser.parse_args()
@@ -30,7 +31,8 @@ if __name__ == '__main__':
         nao_ctl_streamer.register_listener('Localhost', args.listener_ip, args.listener_port)
 
     stream_realtime(
-        lambda pose_results: nao_ctl_streamer.on_pose(pose_results),
+        src_media=args.input,
+        on_pose=lambda pose_results: nao_ctl_streamer.on_pose(pose_results),
         ax_livestream=ax_livestream,
         ax_mediapipe_3d=ax_mediapipe_3d,
     )
