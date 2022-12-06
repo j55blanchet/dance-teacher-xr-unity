@@ -1,5 +1,5 @@
 
-from typing import Any, Callable, Literal, NamedTuple, Union
+from typing import Any, Callable, List, Literal, NamedTuple, Union
 import mediapipe as mp
 import cv2
 import matplotlib.pyplot as plt

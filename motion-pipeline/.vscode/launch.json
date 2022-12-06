@@ -131,7 +131,8 @@
             "module": "motion_extraction.teleoperation",
             "args": [
                 "-i=${workspaceFolder}/data/pose-test-photos/nao-test-%d.jpg",
-                "-sim"
+                "-sim",
+                "-br", "6",
             ]
         }
     ]
