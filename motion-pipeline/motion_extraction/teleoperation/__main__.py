@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--listener_ip', type=str, default='localhost')
     parser.add_argument('--listener_port', type=int, default=8080)
     parser.add_argument('-br', '--break_frame', action='append')
+    parser.add_argument('--webcam-index', type=int, default=0)
     args = parser.parse_args()
 
     ax_livestream, ax_mediapipe_3d, ax_urdf_display, ax_skeleton = None, None, None, None
@@ -55,4 +56,5 @@ if __name__ == '__main__':
         ax_mediapipe_3d=ax_mediapipe_3d,
         break_on_frames=break_frames,
         show_webcam_feed=not args.simulation,
+        webcam_index=args.webcam_index,
     )

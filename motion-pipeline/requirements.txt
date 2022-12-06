@@ -1,4 +1,5 @@
-mediapipe ~= 0.8.10
-pandas ~= 1.4.2
-protobuf ~= 3.20.0
-pytransform3d ~=1.1.14`
+mediapipe >= 0.8.10
+pandas >= 1.4.2
+protobuf >= 3.20.0
+pytransform3d >=1.1.14
+open3d>=0.16.0
