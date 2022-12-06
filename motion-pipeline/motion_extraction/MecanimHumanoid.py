@@ -252,10 +252,10 @@ class MecanimBone(Enum):
                 rightEar = get_pose_bone_position(PoseLandmark.RIGHT_EAR)
                 earCtr = (leftEar + rightEar) / 2
                 # the ears seem to be consistently placed too far forward. We'll 
-                # adjust by moving the nose distance further back.
+                # adjust by moving 75% of the nose distance further back.
                 nose = get_pose_bone_position(PoseLandmark.NOSE)
                 nose_to_earctr = earCtr - nose
-                return earCtr + nose_to_earctr / 2
+                return earCtr + nose_to_earctr * 0.75
 
             case MecanimBone.LeftHandPinkyRoot:
                 return get_pose_bone_position(PoseLandmark.LEFT_PINKY)

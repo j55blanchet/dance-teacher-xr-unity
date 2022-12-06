@@ -148,8 +148,8 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
             lshoulder_roll = 0.
         else:
             lshoulder_pitch = np.arctan2(-luarm_y, luarm_z)
-            lshoulder_roll = pr.angle_between_vectors(lupperarm_vector, [0., 0., 1.]) - np.pi / 2
-            # lshoulder_roll = np.arctan2(luarm_x, luarm_z)
+            yz_hypotenus = np.sqrt(luarm_y**2 + luarm_z**2)
+            lshoulder_roll = np.arctan2(luarm_x, yz_hypotenus)
         row[NaoMotor.LShoulderPitch.name] = NaoMotor.LShoulderPitch.limit(lshoulder_pitch)
         row[NaoMotor.LShoulderRoll.name] = NaoMotor.LShoulderRoll.limit(lshoulder_roll)
 
@@ -163,8 +163,8 @@ class NaoTrajectoryOutputProvider(MotionOutputProvider):
         else:
             # z faces backwards, so we need to flip the sign
             rshoulder_pitch = np.arctan2(-ruarm_y, -ruarm_z)
-            rshoulder_roll = pr.angle_between_vectors(rupperarm_vector, [0., 0., -1.]) - np.pi / 2
-            # rshoulder_roll = np.arctan2(-ruarm_x, -ruarm_z)
+            yz_hypotenus = np.sqrt(ruarm_y**2 + ruarm_z**2)
+            rshoulder_roll = -np.arctan2(ruarm_x, yz_hypotenus)
         row[NaoMotor.RShoulderPitch.name] = NaoMotor.RShoulderPitch.limit(rshoulder_pitch)
         row[NaoMotor.RShoulderRoll.name] = NaoMotor.RShoulderRoll.limit(rshoulder_roll)
       

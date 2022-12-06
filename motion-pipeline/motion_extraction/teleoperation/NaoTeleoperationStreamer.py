@@ -21,8 +21,9 @@ class NaoTeleoperationListener:
 
 class NaoTeleoperationStreamer:
 
-    def __init__(self, urdf_display_axes: Axes = None):
+    def __init__(self, urdf_display_axes: Axes = None, skeleton_display_axes: Axes = None):
         self.urdf_ax = urdf_display_axes
+        self.skeleton_display_ax = skeleton_display_axes
 
         self.traj_output_provider = NaoTrajectoryOutputProvider('temp/nao_ctl.csv')
         self.frame_i = 0
@@ -53,11 +54,14 @@ class NaoTeleoperationStreamer:
 
         if self.urdf_ax is not None:
             self.urdf_ax.clear()
-            # plot_urdf(
-            #     self.urdf_tm, 
-            #     joint_values=nao_ctl.to_dict(),
-            #     ax=self.urdf_ax
-            # )
+            plot_urdf(
+                self.urdf_tm, 
+                joint_values=nao_ctl.to_dict(),
+                ax=self.urdf_ax
+            )
+        
+        if self.skeleton_display_ax is not None:
+            skel.plt_skeleton(self.skeleton_display_ax, color="#8f8b99", dotcolor="#4a20ab")
 
     def forward_to_listeners(self, nao_ctl: pd.Series):
         ctl = nao_ctl.to_dict()
