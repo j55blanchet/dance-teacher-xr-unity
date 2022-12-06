@@ -39,7 +39,7 @@ if __name__ == '__main__':
         add_xyz_labels(ax_skeleton)
 
     nao_ctl_streamer = NaoTeleoperationStreamer(
-        urdf_display_axes=ax_urdf_display, 
+        urdf_display_axes=ax_urdf_display,
         skeleton_display_axes=ax_skeleton
     )
 
