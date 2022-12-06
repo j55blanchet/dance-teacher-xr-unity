@@ -44,8 +44,10 @@ class NaoTeleoperationStreamer:
             )
         )
 
-    def on_pose(self, holistic_row: pd.Series):
-        
+    def on_pose(self, holistic_row: Union[pd.Series, None]):
+        if holistic_row is None:
+            return
+
         skel = HumanoidPositionSkeleton.from_mp_pose(holistic_row)
         tfs = skel.get_transforms(plot=False)
         nao_ctl = self.traj_output_provider.process_frame(skel, tfs, record_to_dataframe=False)
@@ -61,6 +63,7 @@ class NaoTeleoperationStreamer:
             )
         
         if self.skeleton_display_ax is not None:
+            self.skeleton_display_ax.clear()
             skel.plt_skeleton(self.skeleton_display_ax, color="#8f8b99", dotcolor="#4a20ab")
 
     def forward_to_listeners(self, nao_ctl: pd.Series):

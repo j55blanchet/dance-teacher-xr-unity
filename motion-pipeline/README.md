@@ -21,3 +21,8 @@ In BVH, the following relationship holds between child $j$ and parent $P(j)$ - t
 $$pos_j = R_{P(j)}offset_j + pos_{P(j)}$$
 
 Therefore, the orientation of a joint affects the position of it's children.
+
+## NAO Teleoperation
+1. Start listener from the nao6-experiments repo.
+1. Select Nao Teleoperation debug config and run it.
+    * On windows, you can see available webcams in settings > cameras. The indexes should line up with what's visible there. Change the webcam index in the launch file.
