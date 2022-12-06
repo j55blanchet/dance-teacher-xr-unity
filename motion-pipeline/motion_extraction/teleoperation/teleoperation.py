@@ -4,6 +4,7 @@ import mediapipe as mp
 import cv2
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from pathlib import Path
 
 from ..stepone_get_holistic_data import transform_to_holistic_csvrow, plot_3d_pose
 
@@ -20,17 +21,20 @@ def stream_realtime(
     on_pose: Callable[[NamedTuple], None],
     ax_livestream: Axes = None,
     ax_mediapipe_3d: Axes = None,
+    break_on_frames: List[int] = None,
+    show_webcam_feed: bool = False,
 ):
     cap = None
     if src_media == 'webcam':
         cap = cv2.VideoCapture(0)
     else:
-        cap = cv2.VideoCapture(src_media)
-        
+        media_path = str(Path(src_media).resolve())
+        cap = cv2.VideoCapture(media_path)
+
     frame_i = 0
 
-    # Can use this to use images instead of webcam
-    # cap = cv2.VideoCapture('path/to/image.jpg')
+    # Can use this to use images instead of webcam (for a sequence of images)
+    # cap = cv2.VideoCapture('path/to/image_%d.jpg') 
 
     with mp_pose.Pose(
         min_detection_confidence=0.5,
@@ -40,8 +44,11 @@ def stream_realtime(
         while cap.isOpened():
             success, image = cap.read()
             if not success:
+                # If using video file, we're at the end (so stop)
+                if src_media != 'webcam':
+                    break
+
                 print("Ignoring empty camera frame.")
-                # If loading a video, use 'break' instead of 'continue'.
                 continue
                 
             frame_i += 1
@@ -68,13 +75,18 @@ def stream_realtime(
             if ax_livestream is not None:
                 img_display = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
                 ax_livestream.imshow(img_display)
-                # cv2.imshow('MediaPipe Pose', image)
+
+            if show_webcam_feed and image is not None:
+                cv2.imshow('MediaPipe Pose', image)
 
             if ax_mediapipe_3d is not None:
                 ax_mediapipe_3d.clear()
                 plot_3d_pose(holistic_row, ax=ax_mediapipe_3d)
                 plt.pause(0.001)
-                
+            
+            if break_on_frames is not None and frame_i in break_on_frames:
+                plt.show(block=True)
+
             if cv2.waitKey(5) & 0xFF == 27:
                 break
     
