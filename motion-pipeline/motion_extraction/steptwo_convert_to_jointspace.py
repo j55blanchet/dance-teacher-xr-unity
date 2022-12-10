@@ -1,16 +1,19 @@
 
+from pathlib import Path
 from typing import Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
 from pytransform3d.transform_manager import TransformManager
-import numpy as np
-import matplotlib.pyplot as plt
-from pathlib import Path
-from .utils import throttle
 
 from .MecanimHumanoid import HumanoidPositionSkeleton
-from .motion_output_provider import MotionOutputProvider, BVHOutputProvider, NaoTrajectoryOutputProvider
+from .motion_output_provider import (BVHOutputProvider, MotionOutputProvider,
+                                     NaoTrajectoryOutputProvider)
+from .utils import throttle
+
 
 def convert_to_jointspace(holistic_data: pd.DataFrame, naocsv_outpath: Path, bvh_filepath: Path, bvhcsv_outpath: Optional[Path] = None, frame_limit = -1) -> None:
     """
