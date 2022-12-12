@@ -14,8 +14,11 @@
 import typing as t
 import pandas as pd
 import mediapipe as mp
+import matplotlib.pyplot as plt
 
-def get_worldspace_metrics(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.pose.PoseLandmark]):
+DVAJ: t.Final[t.Tuple[t.Literal["distance"], t.Literal["velocity"], t.Literal["acceleration"], t.Literal["jerk"]]] = ("distance", "velocity", "acceleration", "jerk")
+
+def calc_scalar_dvaj(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.pose.PoseLandmark]) -> pd.DataFrame:
     """
         Returns a dictionary of metrics for the given motion and joints.
 
@@ -43,3 +46,24 @@ def get_worldspace_metrics(motion: pd.DataFrame, landmarks: t.Collection[mp.solu
         output[f"{landmark.name}_jerk"] = output[f"{landmark.name}_acceleration"].diff()
 
     return output
+
+def get_landmarks_present_in_dataframe(frame: pd.DataFrame): 
+    return list(set([
+        col_name[:col_name.rfind('_')] if col_name.rfind('_') >= 0 else col_name
+        for col_name in frame.columns
+    ]))
+
+def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
+    landmarks = get_landmarks_present_in_dataframe(dvaj)
+    
+    metrics = {}
+    for metric in DVAJ:
+        for landmark in landmarks:
+            metrics[f"{landmark}_{metric}_sum"] = dvaj[f"{landmark}_{metric}"].sum()
+            metrics[f"{landmark}_{metric}_avg"] = dvaj[f"{landmark}_{metric}"].mean()
+        
+        # Calculate the sum and average of the sum of all joints.
+        metrics[f"{metric}_sum"] = dvaj[[f"{landmark}_{metric}" for landmark in landmarks]].sum().sum()
+        metrics[f"{metric}_avg"] = dvaj[[f"{landmark}_{metric}" for landmark in landmarks]].sum().mean()
+    
+    return metrics

@@ -135,6 +135,16 @@
                 "-sim",
                 "-br", "8",
             ]
+        },
+        {   
+            "name": "Complexity Analysis",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.complexity_analysis",
+            "args": [
+                "--srcdir=${workspaceFolder}/data/holistic_data/",
+                "--destination=${workspaceFolder}/data/complexity.csv",
+            ],
         }
     ]
 }
