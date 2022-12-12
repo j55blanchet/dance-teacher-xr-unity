@@ -33,7 +33,7 @@ def stream_realtime(
 ):
     cap = None
     if src_media == 'webcam':
-        cap = cv2.VideoCapture(webcam_index)
+        cap = cv2.VideoCapture(0)
         # Set webcam resolution (to 720p)
         cap.set(3, 1280)
         cap.set(4, 720)
