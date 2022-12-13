@@ -11,12 +11,23 @@
         - Tempo (bpm) of accompanying music.
         - Length of motion (in frames).
 """
+from enum import Enum, auto
 import typing as t
 import pandas as pd
 import mediapipe as mp
 import matplotlib.pyplot as plt
 
-DVAJ: t.Final[t.Tuple[t.Literal["distance"], t.Literal["velocity"], t.Literal["acceleration"], t.Literal["jerk"]]] = ("distance", "velocity", "acceleration", "jerk")
+class DVAJ(Enum):
+    distance = auto()
+    velocity = auto()
+    acceleration = auto()
+    jerk = auto()
+
+class Stat(Enum):
+    mean = auto()
+    sum = auto()
+    # MAX = "max"
+    # MIN = "min"
 
 def calc_scalar_dvaj(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.pose.PoseLandmark]) -> pd.DataFrame:
     """
@@ -40,10 +51,10 @@ def calc_scalar_dvaj(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.
 
     # Calculate the scalar distance traveled each frame for each joint.
     for landmark in landmarks:
-        output[f"{landmark.name}_distance"] = motion[[f"{landmark.name}_x", f"{landmark.name}_y", f"{landmark.name}_z"]].diff().pow(2).sum(1).pow(0.5)
-        output[f"{landmark.name}_velocity"] = output[f"{landmark.name}_distance"].diff()
-        output[f"{landmark.name}_acceleration"] = output[f"{landmark.name}_velocity"].diff()
-        output[f"{landmark.name}_jerk"] = output[f"{landmark.name}_acceleration"].diff()
+        output[f"{landmark.name}_{DVAJ.distance.name}"] = motion[[f"{landmark.name}_x", f"{landmark.name}_y", f"{landmark.name}_z"]].diff().pow(2).sum(1).pow(0.5)
+        output[f"{landmark.name}_{DVAJ.velocity.name}"] = output[f"{landmark.name}_{DVAJ.distance.name}"].diff()
+        output[f"{landmark.name}_{DVAJ.acceleration.name}"] = output[f"{landmark.name}_{DVAJ.velocity.name}"].diff()
+        output[f"{landmark.name}_{DVAJ.jerk.name}"] = output[f"{landmark.name}_{DVAJ.acceleration.name}"].diff()
 
     return output
 
@@ -53,17 +64,35 @@ def get_landmarks_present_in_dataframe(frame: pd.DataFrame):
         for col_name in frame.columns
     ]))
 
+def get_metric_name(measure: DVAJ, stat: Stat, target_landmark: str = None):
+    if target_landmark is None:
+        return f"{measure.name}_{stat.name}"
+    else:
+        return f"{target_landmark.name}_{measure.name}_{stat.name}"
+
 def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
-    landmarks = get_landmarks_present_in_dataframe(dvaj)
+    landmark_names = get_landmarks_present_in_dataframe(dvaj)
     
     metrics = {}
-    for metric in DVAJ:
-        for landmark in landmarks:
-            metrics[f"{landmark}_{metric}_sum"] = dvaj[f"{landmark}_{metric}"].sum()
-            metrics[f"{landmark}_{metric}_avg"] = dvaj[f"{landmark}_{metric}"].mean()
+    for measure in DVAJ:
+        for landmark_name in landmark_names:
+            metrics[get_metric_name(measure, Stat.sum,  landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].sum()
+            metrics[get_metric_name(measure, Stat.mean, landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].mean()
         
         # Calculate the sum and average of the sum of all joints.
-        metrics[f"{metric}_sum"] = dvaj[[f"{landmark}_{metric}" for landmark in landmarks]].sum().sum()
-        metrics[f"{metric}_avg"] = dvaj[[f"{landmark}_{metric}" for landmark in landmarks]].sum().mean()
+        metrics[get_metric_name(measure, Stat.sum)]  = dvaj[[f"{landmark}_{measure}" for landmark in landmark_names]].sum().sum()
+        metrics[get_metric_name(measure, Stat.mean)] = dvaj[[f"{landmark}_{measure}" for landmark in landmark_names]].sum().mean()
     
     return metrics
+
+def plot_dvaj(dvaj: pd.DataFrame, ax: plt.Axes = None):
+    landmark_names = get_landmarks_present_in_dataframe(dvaj)
+
+    if ax is None:
+        ax = plt.gca()
+
+    for col in dvaj.columns:
+        ax.plot(dvaj[col], label=col)
+    ax.legend()
+    
+    
