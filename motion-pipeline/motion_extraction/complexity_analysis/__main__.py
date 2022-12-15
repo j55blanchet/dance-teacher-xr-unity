@@ -5,7 +5,8 @@ from typing import Collection
 import pandas as pd
 import mediapipe as mp
 from pathlib import Path
-from .complexityanalysis import calc_scalar_dvaj, calc_dvaj_metrics
+from .complexityanalysis import calc_scalar_dvaj, calc_dvaj_metrics, DVAJ, plot_dvaj
+import matplotlib.pyplot as plt
 
 PoseLandmarks = mp.solutions.pose.PoseLandmark
 
@@ -28,14 +29,21 @@ def analyze_complexities(files: Collection[Path], landmarks: Collection[PoseLand
     for file in files[1:]:
         data = pd.read_csv(file)
         dvaj = calc_scalar_dvaj(data, landmarks)
+        plt.savefig(file.with_suffix('.png'))
         metrics = calc_dvaj_metrics(dvaj)
         new_row = pd.DataFrame(
             columns=list(metrics.keys()), 
             data=[metrics], 
             index=[file.stem.replace('.holisticdata', '')]
         )
+
+        
+
         output = pd.concat([output, new_row])
     
+    wrist_cols = [key for key in metrics.keys() if key.lower().find('wrist') != -1]
+    output.drop(wrist_cols, axis=1)
+
     return output
 
 if __name__ == "__main__":

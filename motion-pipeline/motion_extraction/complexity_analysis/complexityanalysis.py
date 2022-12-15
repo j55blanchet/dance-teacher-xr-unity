@@ -52,9 +52,9 @@ def calc_scalar_dvaj(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.
     # Calculate the scalar distance traveled each frame for each joint.
     for landmark in landmarks:
         output[f"{landmark.name}_{DVAJ.distance.name}"] = motion[[f"{landmark.name}_x", f"{landmark.name}_y", f"{landmark.name}_z"]].diff().pow(2).sum(1).pow(0.5)
-        output[f"{landmark.name}_{DVAJ.velocity.name}"] = output[f"{landmark.name}_{DVAJ.distance.name}"].diff()
-        output[f"{landmark.name}_{DVAJ.acceleration.name}"] = output[f"{landmark.name}_{DVAJ.velocity.name}"].diff()
-        output[f"{landmark.name}_{DVAJ.jerk.name}"] = output[f"{landmark.name}_{DVAJ.acceleration.name}"].diff()
+        output[f"{landmark.name}_{DVAJ.velocity.name}"] = output[f"{landmark.name}_{DVAJ.distance.name}"].diff().abs()
+        output[f"{landmark.name}_{DVAJ.acceleration.name}"] = output[f"{landmark.name}_{DVAJ.velocity.name}"].diff().abs()
+        output[f"{landmark.name}_{DVAJ.jerk.name}"] = output[f"{landmark.name}_{DVAJ.acceleration.name}"].diff().abs()
 
     return output
 
@@ -68,7 +68,7 @@ def get_metric_name(measure: DVAJ, stat: Stat, target_landmark: str = None):
     if target_landmark is None:
         return f"{measure.name}_{stat.name}"
     else:
-        return f"{target_landmark.name}_{measure.name}_{stat.name}"
+        return f"{target_landmark}_{measure.name}_{stat.name}"
 
 def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
     landmark_names = get_landmarks_present_in_dataframe(dvaj)
@@ -80,8 +80,8 @@ def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
             metrics[get_metric_name(measure, Stat.mean, landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].mean()
         
         # Calculate the sum and average of the sum of all joints.
-        metrics[get_metric_name(measure, Stat.sum)]  = dvaj[[f"{landmark}_{measure}" for landmark in landmark_names]].sum().sum()
-        metrics[get_metric_name(measure, Stat.mean)] = dvaj[[f"{landmark}_{measure}" for landmark in landmark_names]].sum().mean()
+        metrics[get_metric_name(measure, Stat.sum)]  = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].sum().sum()
+        metrics[get_metric_name(measure, Stat.mean)] = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].sum().mean()
     
     return metrics
 
