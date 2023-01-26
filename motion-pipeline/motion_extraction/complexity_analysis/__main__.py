@@ -54,6 +54,8 @@ def analyze_complexities(
     row = extra_data[0].copy()
     row.update(metrics)
 
+    cols = list(metrics.keys()) + ['bpm']
+    metrics.update({'bpm': bpms[0]})
     output = pd.DataFrame(
         columns=cols, 
         data=[row], 
