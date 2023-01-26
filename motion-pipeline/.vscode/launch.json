@@ -144,6 +144,11 @@
             "args": [
                 "--srcdir=${workspaceFolder}/data/holistic_data/",
                 "--destination=${workspaceFolder}/data/complexity.csv",
+                "--db=${workspaceFolder}/data/db.json",
+                "-wl", "bartender",
+                "-wl", "last-christmas-tutorial",
+                "-wl", "mad-at-disney-tutorial",
+                "-wl", "pajamaparty-tutorial",
             ],
         }
     ]
