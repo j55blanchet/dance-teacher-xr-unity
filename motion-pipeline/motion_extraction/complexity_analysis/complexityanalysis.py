@@ -79,9 +79,9 @@ def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
             metrics[get_metric_name(measure, Stat.sum,  landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].sum()
             metrics[get_metric_name(measure, Stat.mean, landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].mean()
         
-        # Calculate the sum and average of the sum of all joints.
+        # Calculate the sum and average of all joints.
         metrics[get_metric_name(measure, Stat.sum)]  = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].sum().sum()
-        metrics[get_metric_name(measure, Stat.mean)] = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].sum().mean()
+        metrics[get_metric_name(measure, Stat.mean)] = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].mean().mean()
     
     return metrics
 
