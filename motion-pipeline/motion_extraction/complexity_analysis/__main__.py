@@ -1,7 +1,7 @@
 """
     This module is the entry point for the complexity analysis module.
 """
-from typing import Collection, List
+from typing import Collection, List, Union
 import pandas as pd
 import mediapipe as mp
 from pathlib import Path
@@ -14,7 +14,7 @@ def analyze_complexities(
     files: Collection[Path], 
     start_frames: List[int],
     end_frames: List[int],
-    bpms: List[float],
+    extra_data: List[dict],
     landmarks: Collection[PoseLandmarks] = [
         PoseLandmarks.LEFT_WRIST, 
         PoseLandmarks.RIGHT_WRIST,
@@ -48,12 +48,15 @@ def analyze_complexities(
 
     dvaj = calc_scalar_dvaj(data, landmarks)
     metrics = calc_dvaj_metrics(dvaj)
+    extra_keys = list(extra_data[0].keys())
 
-    cols = list(metrics.keys()) + ['bpm']
-    metrics.update({'bpm': bpms[0]})
+    cols = extra_keys + list(metrics.keys())
+    row = extra_data[0].copy()
+    row.update(metrics)
+
     output = pd.DataFrame(
         columns=cols, 
-        data=[metrics], 
+        data=[row], 
         index=[files[0].stem.replace('.holisticdata', '')]
     )
 
@@ -70,11 +73,15 @@ def analyze_complexities(
 
         dvaj = calc_scalar_dvaj(data, landmarks)
         # plt.savefig(file.with_suffix('.png'))
+
         metrics = calc_dvaj_metrics(dvaj)
-        metrics.update({'bpm': bpms[i]})
+
+        row = extra_data[i].copy()
+        row.update(metrics)
+        
         new_row = pd.DataFrame(
             columns=cols, 
-            data=[metrics], 
+            data=[row], 
             index=[file.stem.replace('.holisticdata', '')]
         )
 
@@ -135,7 +142,9 @@ if __name__ == "__main__":
 
     start_frames = []
     end_frames = []
+    extra_data = []
     bpms = []
+    fpses = []
 
     for file in args.files:
         file_clipname = file.stem.replace('.holisticdata', '')
@@ -148,13 +157,25 @@ if __name__ == "__main__":
             fps = db_entry['fps']
             start_frames.append(int(startTime * fps))
             end_frames.append(int(endTime * fps))
-            bpms.append(db_entry.get('bpm', None))
+            extra_data.append({
+                'bpm': db_entry.get('bpm', None),
+                'fps': fps,
+                'duration': endTime - startTime,
+            })
         else:
             start_frames.append(None)
             end_frames.append(None)
-            bpms.append(None)
+            extra_data.append({
+                'bpm': None,
+                'fps': None,
+                'duration': None,
+            })
 
-    output = analyze_complexities(args.files, start_frames, end_frames, bpms)
+    output = analyze_complexities(args.files, 
+        start_frames, 
+        end_frames, 
+        extra_data
+    )
 
     output.to_csv(args.destination, index=True)
 

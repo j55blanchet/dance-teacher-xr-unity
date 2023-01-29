@@ -74,14 +74,19 @@ def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
     landmark_names = get_landmarks_present_in_dataframe(dvaj)
     
     metrics = {}
+    frameCount = dvaj.shape[0]
+    metrics['frameCount'] = frameCount
+    landmarkCount = len(landmark_names)
+    metrics['landmarkCount'] = landmarkCount
+
     for measure in DVAJ:
-        for landmark_name in landmark_names:
-            metrics[get_metric_name(measure, Stat.sum,  landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].sum()
-            metrics[get_metric_name(measure, Stat.mean, landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].mean()
+        # for landmark_name in landmark_names:
+            # metrics[get_metric_name(measure, Stat.sum,  landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].sum()
+            # metrics[get_metric_name(measure, Stat.mean, landmark_name)] = dvaj[f"{landmark_name}_{measure.name}"].mean()
         
         # Calculate the sum and average of all joints.
         metrics[get_metric_name(measure, Stat.sum)]  = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].sum().sum()
-        metrics[get_metric_name(measure, Stat.mean)] = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].mean().mean()
+        metrics[get_metric_name(measure, Stat.mean)] = dvaj[[f"{landmark}_{measure.name}" for landmark in landmark_names]].sum().sum() / (landmarkCount * frameCount)
     
     return metrics
 
