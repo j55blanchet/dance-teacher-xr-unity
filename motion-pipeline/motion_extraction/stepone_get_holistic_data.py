@@ -188,6 +188,31 @@ def process_video(
             if frame_output_folder is not None:
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+                # # Some code to draw the analysis vectors
+                # imgcpy = image.copy()
+                # analysis_connection_thickness = 7
+                # connections_analysis_drawing_spec = {
+                #     (14, 16): mp_drawing.DrawingSpec(color=(255, 153, 153), thickness=analysis_connection_thickness),
+                #     (12, 14): mp_drawing.DrawingSpec(color=(255, 204, 153), thickness=analysis_connection_thickness),
+                #     (12, 11): mp_drawing.DrawingSpec(color=(255, 255, 153), thickness=analysis_connection_thickness),
+                #     (12, 24): mp_drawing.DrawingSpec(color=(204, 255, 153), thickness=analysis_connection_thickness),
+                #     (24, 23): mp_drawing.DrawingSpec(color=(153, 255, 204), thickness=analysis_connection_thickness),
+                #     (11, 23): mp_drawing.DrawingSpec(color=(153, 204, 255), thickness=analysis_connection_thickness),
+                #     (11, 13): mp_drawing.DrawingSpec(color=(204, 154, 255), thickness=analysis_connection_thickness),
+                #     (13, 15): mp_drawing.DrawingSpec(color=(255, 153, 255), thickness=analysis_connection_thickness),
+                # }
+                # connections_analysis = frozenset(connections_analysis_drawing_spec.keys())
+                
+                # mp_drawing.draw_landmarks(
+                #     imgcpy,
+                #     frame_data.pose_landmarks,
+                #     connections_analysis,
+                #     landmark_drawing_spec={},
+                #     connection_drawing_spec=connections_analysis_drawing_spec
+                # )
+                # cv2.imwrite('temp.jpg', imgcpy)
+
                 mp_drawing.draw_landmarks(
                     image,
                     frame_data.pose_landmarks,
