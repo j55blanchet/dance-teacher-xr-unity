@@ -22,6 +22,99 @@ mp_drawing_styles = mp.solutions.drawing_styles
 
 T = TypeVar('T')
 
+_PRESENCE_THRESHOLD = 0.5
+_VISIBILITY_THRESHOLD = 0.5
+_BGR_CHANNELS = 3
+from typing import List, Tuple, Mapping, Union
+DrawingSpec = mp_drawing.DrawingSpec
+from mediapipe.framework.formats import landmark_pb2
+RED_COLOR = (0, 0, 255)
+WHITE_COLOR = (224, 224, 224)
+def custom_draw_landmarks(
+    image: np.ndarray,
+    landmark_list: landmark_pb2.NormalizedLandmarkList,
+    connections: Optional[List[Tuple[int, int]]] = None,
+    landmark_drawing_spec: Union[DrawingSpec,
+                                 Mapping[int, DrawingSpec]] = DrawingSpec(
+                                     color=RED_COLOR),
+    connection_drawing_spec: Union[DrawingSpec,
+                                   Mapping[Tuple[int, int],
+                                           DrawingSpec]] = DrawingSpec()):
+  """Draws the landmarks and the connections on the image.
+  Args:
+    image: A three channel BGR image represented as numpy ndarray.
+    landmark_list: A normalized landmark list proto message to be annotated on
+      the image.
+    connections: A list of landmark index tuples that specifies how landmarks to
+      be connected in the drawing.
+    landmark_drawing_spec: Either a DrawingSpec object or a mapping from hand
+      landmarks to the DrawingSpecs that specifies the landmarks' drawing
+      settings such as color, line thickness, and circle radius. If this
+      argument is explicitly set to None, no landmarks will be drawn.
+    connection_drawing_spec: Either a DrawingSpec object or a mapping from hand
+      connections to the DrawingSpecs that specifies the connections' drawing
+      settings such as color and line thickness. If this argument is explicitly
+      set to None, no landmark connections will be drawn.
+  Raises:
+    ValueError: If one of the followings:
+      a) If the input image is not three channel BGR.
+      b) If any connetions contain invalid landmark index.
+  """
+  if not landmark_list:
+    return
+  if image.shape[2] != _BGR_CHANNELS:
+    raise ValueError('Input image must contain three channel bgr data.')
+  image_rows, image_cols, _ = image.shape
+  idx_to_coordinates = {}
+  for idx, landmark in enumerate(landmark_list.landmark):
+    if ((landmark.HasField('visibility') and
+         landmark.visibility < _VISIBILITY_THRESHOLD) or
+        (landmark.HasField('presence') and
+         landmark.presence < _PRESENCE_THRESHOLD)):
+      continue
+    landmark_px = mp_drawing._normalized_to_pixel_coordinates(landmark.x, landmark.y,
+                                                   image_cols, image_rows)
+    if landmark_px:
+      idx_to_coordinates[idx] = landmark_px
+  if connections:
+    num_landmarks = len(landmark_list.landmark)
+    # Draws the connections if the start and end landmarks are both visible.
+    for connection in connections:
+      start_idx = connection[0]
+      end_idx = connection[1]
+      if not (0 <= start_idx < num_landmarks and 0 <= end_idx < num_landmarks):
+        raise ValueError(f'Landmark index is out of range. Invalid connection '
+                         f'from landmark #{start_idx} to landmark #{end_idx}.')
+      if start_idx in idx_to_coordinates and end_idx in idx_to_coordinates:
+        if isinstance(connection_drawing_spec, Mapping) and connection_drawing_spec.get(connection) is None:
+            # skip things missing from the mapping
+            continue
+        drawing_spec = connection_drawing_spec[connection] if isinstance(
+            connection_drawing_spec, Mapping) else connection_drawing_spec
+        cv2.line(image, idx_to_coordinates[start_idx],
+                 idx_to_coordinates[end_idx], drawing_spec.color,
+                 drawing_spec.thickness)
+  # Draws landmark points after finishing the connection lines, which is
+  # aesthetically better.
+  if landmark_drawing_spec:
+    for idx, landmark_px in idx_to_coordinates.items():
+      if isinstance(landmark_drawing_spec, Mapping) and landmark_drawing_spec.get(idx) is None:
+        # skip things missing from the mapping
+        continue
+      drawing_spec = landmark_drawing_spec[idx] if isinstance(
+          landmark_drawing_spec, Mapping) else landmark_drawing_spec
+      # White circle border
+      circle_border_radius = max(drawing_spec.circle_radius + 1,
+                                 int(drawing_spec.circle_radius * 1.2))
+      cv2.circle(image, landmark_px, circle_border_radius, WHITE_COLOR,
+                 drawing_spec.thickness)
+      # Fill color into the circle
+      cv2.circle(image, landmark_px, drawing_spec.circle_radius,
+                 drawing_spec.color, drawing_spec.thickness)
+
+
+
+
 def construct_header_row():
     return ['frame'] + \
            [f'{PoseLandmark(landmark_i).name}_{field}' 
@@ -189,7 +282,7 @@ def process_video(
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-                # # Some code to draw the analysis vectors
+                # # # Some code to draw the analysis vectors
                 # imgcpy = image.copy()
                 # analysis_connection_thickness = 7
                 # connections_analysis_drawing_spec = {
@@ -203,12 +296,21 @@ def process_video(
                 #     (13, 15): mp_drawing.DrawingSpec(color=(255, 153, 255), thickness=analysis_connection_thickness),
                 # }
                 # connections_analysis = frozenset(connections_analysis_drawing_spec.keys())
-                
-                # mp_drawing.draw_landmarks(
+                # analysis_unique_lms = set()
+                # for connection in connections_analysis:
+                #     analysis_unique_lms.add(connection[0])
+                #     analysis_unique_lms.add(connection[1])
+                # analysis_unique_lms = frozenset(analysis_unique_lms)
+                # analysis_lm_drawing_spec = {
+                #     lm: mp_drawing.DrawingSpec(color=(244, 244, 244), thickness=analysis_connection_thickness + 2)
+                #     for lm in analysis_unique_lms
+                # }
+
+                # custom_draw_landmarks(
                 #     imgcpy,
                 #     frame_data.pose_landmarks,
                 #     connections_analysis,
-                #     landmark_drawing_spec={},
+                #     landmark_drawing_spec=analysis_lm_drawing_spec,
                 #     connection_drawing_spec=connections_analysis_drawing_spec
                 # )
                 # cv2.imwrite('temp.jpg', imgcpy)
