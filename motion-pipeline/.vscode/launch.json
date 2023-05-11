@@ -150,6 +150,16 @@
                 "-wl", "mad-at-disney-tutorial",
                 "-wl", "pajamaparty-tutorial",
             ],
+        },
+        {   
+            "name": "Dance Tree Construction (DVAJ Method)",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.complexity_analysis.create_dance_tree_dvaj",
+            "args": [
+                "--srcdir=${workspaceFolder}/data/holistic_data/",
+                "--destdir=${workspaceFolder}/data/dancetrees/",
+            ],
         }
     ]
 }
