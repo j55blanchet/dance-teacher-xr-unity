@@ -1,3 +1,4 @@
 {
-    "workbench.colorTheme": "Monokai Dimmed"
+    "workbench.colorTheme": "Monokai Dimmed",
+    "python.terminal.activateEnvironment": true,
 }
