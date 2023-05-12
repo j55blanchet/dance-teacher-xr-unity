@@ -3,21 +3,42 @@ import pandas as pd
 import mediapipe as mp
 import typing as t
 import matplotlib.pyplot as plt
+import enum
+import sys
 
 from .complexityanalysis import get_landmarks_present_in_dataframe, DVAJ, calc_scalar_dvaj
 
 PoseLandmark = mp.solutions.pose.PoseLandmark
 
-"""A anthropomorphic weighting for the human body based on mass distribution.
+T = t.TypeVar('T', bound=enum.Enum)
+def normalize_weighting(w: t.Dict[T, float]) -> t.Dict[T, float]:
+    """Normalizes a weighting dictionary to add up to 1."""    
+
+    value_sum = sum(w.values())
+    return {
+        **{
+            k: v / value_sum for k, v in w.items()
+        }
+    }
+
+"""A feature weighting prioritizing distance and decreasing by half
+for each derivative of distance (velocity, acceleration, jerk)."""
+MEASURE_WEIGHTING_DECREASING: t.Final[t.Dict[DVAJ, float]] = normalize_weighting(
+    {
+        DVAJ.distance: 1.0,
+        DVAJ.velocity: 0.5,
+        DVAJ.acceleration: 0.25,
+        DVAJ.jerk: 0.125
+    }
+)
+
+"""An anthropomorphic weighting for the human body based on mass distribution.
 
     Described by Larboulette, C., & Gibet, S. (2015, August). A review of computable expressive descriptors of human motion
     Inspired by Dempster, W. T. (1955). Space requirements of the seated operator, geometrical, kinematic, and mechanical aspects of the body with special reference to the limbs. Michigan State Univ East Lansing.
 """
-LANDMARK_WEIGHTING_DEMPSTER: t.Final[t.Dict[PoseLandmark, float]] = {
-    **{
-        lm: 0.0 for lm in PoseLandmark # default to 0 weighting
-    }, 
-    **{
+LANDMARK_WEIGHTING_DEMPSTER: t.Final[t.Dict[PoseLandmark, float]] = normalize_weighting(
+    {
         PoseLandmark.LEFT_HIP: 0.497 / 2 + 0.05,  # root: 49.7%. 50% split between hips. Also,
                                                   #   10% of thigh is split between hip and knee.
         PoseLandmark.RIGHT_HIP: 0.497 / 2 + 0.05,
@@ -33,9 +54,37 @@ LANDMARK_WEIGHTING_DEMPSTER: t.Final[t.Dict[PoseLandmark, float]] = {
         PoseLandmark.RIGHT_ANKLE: 0.0145,
         PoseLandmark.NOSE: 0.081 # head: 8.1%
     }
-}
+)
 
-def get_weighted_dvaj(dvaj: pd.DataFrame, measure_weighting: t.Dict[DVAJ, float] = {}, landmark_weighting: t.Dict[str, float] = {}):
+LANDMARK_WEIGHTING_BALANCED: t.Final[t.Dict[PoseLandmark, float]] = normalize_weighting(
+    {
+        # 4-weight for the root & torso
+        PoseLandmark.LEFT_HIP: 1,
+        PoseLandmark.RIGHT_HIP: 1,
+        PoseLandmark.LEFT_SHOULDER: 1,
+        PoseLandmark.RIGHT_SHOULDER: 1,
+
+        # 3-weight for each limb (12 total)
+        PoseLandmark.LEFT_ELBOW: 1,
+        PoseLandmark.LEFT_WRIST: 2,
+        PoseLandmark.RIGHT_ELBOW: 1,
+        PoseLandmark.RIGHT_WRIST: 2,
+        PoseLandmark.LEFT_KNEE: 1,
+        PoseLandmark.RIGHT_KNEE: 1,
+        PoseLandmark.LEFT_ANKLE: 2,
+        PoseLandmark.RIGHT_ANKLE: 2,
+
+        # 4-weight for the head
+        PoseLandmark.LEFT_EAR: 2,
+        PoseLandmark.RIGHT_EAR: 2,
+    }
+)
+
+def get_weighted_dvaj(
+    dvaj: pd.DataFrame, 
+    measure_weighting: t.Dict[DVAJ, float] = {}, 
+    landmark_weighting: t.Dict[str, float] = {}
+):
     landmark_names = get_landmarks_present_in_dataframe(dvaj)
 
     weighted_dvaj_by_landmark = pd.DataFrame()
@@ -52,7 +101,8 @@ def get_weighted_dvaj(dvaj: pd.DataFrame, measure_weighting: t.Dict[DVAJ, float]
 def construct_dance_tree_from_dvaj(
         title: str, 
         weighted_dvaj: pd.DataFrame,
-        ):
+        metric_normalization_maxes: t.Dict[DVAJ, float],
+    ):
     accumlated_complexity = weighted_dvaj.cumsum()
     accumlated_complexity.plot(
         title=f"{title} Accumulated Complexity",
@@ -62,6 +112,19 @@ def construct_dance_tree_from_dvaj(
     # weighted_dvaj.plot(block=True)
 
     return weighted_dvaj
+
+def generate_dvajs(
+    filepaths: t.Iterable[Path],
+    landmarks_to_use: t.Iterable[PoseLandmark]
+):
+    for holistic_csv_file in filepaths:
+        # warn if the file is not a holisticdata.csv file
+        if holistic_csv_file.suffix != ".holisticdata.csv":
+            print(f"WARNING: {holistic_csv_file} is not a .holisticdata.csv file.", file=sys.stderr)
+            continue
+        data = pd.read_csv(holistic_csv_file)
+        dvaj = calc_scalar_dvaj(data, landmarks_to_use)
+        yield dvaj
 
 if __name__ == "__main__":
     import argparse
