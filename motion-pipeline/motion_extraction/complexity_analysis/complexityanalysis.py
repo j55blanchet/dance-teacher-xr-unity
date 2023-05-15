@@ -58,11 +58,23 @@ def calc_scalar_dvaj(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.
 
     return output
 
-def get_landmarks_present_in_dataframe(frame: pd.DataFrame): 
+
+def get_all_landmarks_in_dataframe(frame: pd.DataFrame) -> t.List[str]:
     return list(set([
         col_name[:col_name.rfind('_')] if col_name.rfind('_') >= 0 else col_name
         for col_name in frame.columns
     ]))
+
+def get_pose_landmarks_present_in_dataframe(frame: pd.DataFrame) -> t.List[str]: 
+    all_landmarks = get_all_landmarks_in_dataframe(frame)
+    lms = []
+    for lm in all_landmarks:
+        try:
+            pose_landmark = mp.solutions.pose.PoseLandmark[lm]
+            lms.append(lm)
+        except KeyError:
+            pass
+    return lms
 
 def get_metric_name(measure: DVAJ, stat: Stat, target_landmark: str = None):
     if target_landmark is None:
@@ -71,7 +83,7 @@ def get_metric_name(measure: DVAJ, stat: Stat, target_landmark: str = None):
         return f"{target_landmark}_{measure.name}_{stat.name}"
 
 def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
-    landmark_names = get_landmarks_present_in_dataframe(dvaj)
+    landmark_names = get_pose_landmarks_present_in_dataframe(dvaj)
     
     metrics = {}
     frameCount = dvaj.shape[0]
@@ -94,7 +106,7 @@ def calc_dvaj_metrics(dvaj: pd.DataFrame) -> t.Dict[str, float]:
     return metrics
 
 def plot_dvaj(dvaj: pd.DataFrame, ax: plt.Axes = None):
-    landmark_names = get_landmarks_present_in_dataframe(dvaj)
+    landmark_names = get_pose_landmarks_present_in_dataframe(dvaj)
 
     if ax is None:
         ax = plt.gca()
