@@ -29,7 +29,7 @@ class Stat(Enum):
     # MAX = "max"
     # MIN = "min"
 
-def calc_scalar_dvaj(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.pose.PoseLandmark]) -> pd.DataFrame:
+def calc_scalar_dvaj(motion: pd.DataFrame, landmark_names: t.Collection[str]) -> pd.DataFrame:
     """
         Returns a dictionary of metrics for the given motion and joints.
 
@@ -41,22 +41,24 @@ def calc_scalar_dvaj(motion: pd.DataFrame, landmarks: t.Collection[mp.solutions.
             - Acceleration
             - Jerk
     """
-
-    output = pd.DataFrame()
-
-    # Get x,y,z columns for the selected joints.
-    joint_cols_x = [f"{landmark.name}_x" for landmark in landmarks]
-    joint_cols_y = [f"{landmark.name}_y" for landmark in landmarks]
-    joint_cols_z = [f"{landmark.name}_z" for landmark in landmarks]
+    out_cols = []
+    out_data = []
 
     # Calculate the scalar distance traveled each frame for each joint.
-    for landmark in landmarks:
-        output[f"{landmark.name}_{DVAJ.distance.name}"] = motion[[f"{landmark.name}_x", f"{landmark.name}_y", f"{landmark.name}_z"]].diff().pow(2).sum(1).pow(0.5)
-        output[f"{landmark.name}_{DVAJ.velocity.name}"] = output[f"{landmark.name}_{DVAJ.distance.name}"].diff().abs()
-        output[f"{landmark.name}_{DVAJ.acceleration.name}"] = output[f"{landmark.name}_{DVAJ.velocity.name}"].diff().abs()
-        output[f"{landmark.name}_{DVAJ.jerk.name}"] = output[f"{landmark.name}_{DVAJ.acceleration.name}"].diff().abs()
+    for landmark in landmark_names:
+        dist_col = f"{landmark}_{DVAJ.distance.name}"
+        dist_data = motion[[f"{landmark}_x", f"{landmark}_y", f"{landmark}_z"]].diff().pow(2).sum(1).pow(0.5)
+        velocity_col = f"{landmark}_{DVAJ.velocity.name}"
+        velocity_data = dist_data.diff().abs()
+        acceleration_col = f"{landmark}_{DVAJ.acceleration.name}"
+        acceleration_data = velocity_data.diff().abs()
+        jerk_col = f"{landmark}_{DVAJ.jerk.name}"
+        jerk_data = acceleration_data.diff().abs()
 
-    return output
+        out_cols.extend([dist_col, velocity_col, acceleration_col, jerk_col])
+        out_data.extend([dist_data, velocity_data, acceleration_data, jerk_data])
+
+    return pd.concat(out_data, axis=1, keys=out_cols)
 
 
 def get_all_landmarks_in_dataframe(frame: pd.DataFrame) -> t.List[str]:
