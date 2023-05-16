@@ -297,7 +297,7 @@ if __name__ == "__main__":
     print(f"Using measure weighting: {measure_weighting_choice.name}")
     print(f"Using landmark weighting: {landmark_weighting_choice.name}")
 
-    print("Preprocessing files...")
+    # print("Preprocessing files...")
 
     start_time = time.time()
 
@@ -362,11 +362,11 @@ if __name__ == "__main__":
     #      by the length of the dataframe.
     # 6. Compute weighted averages of the dvajs for each metric.
     
+    print_with_time("Step 5: Creating Dance Trees...")
     for i, dvaj_cumsum, file in zip(range(len(dvaj_cumsums)), dvaj_cumsums, input_files):
 
         filename_stem = filename_stems[i]
-        print_with_time(f"Processing {filename_stem} ({i+1}/{len(input_files)})...", end='')
-        print(f"  Tossed {tossed_frames[i]} frames...", end='')
+        print_with_time(f"\t({i+1}/{len(input_files)}): {filename_stem} ...", end='')
         complexity_measures = aggregate_accumulated_dvaj_by_measure(
             dvaj_cumsum,
             measure_weighting=measure_weighting,
@@ -387,4 +387,5 @@ if __name__ == "__main__":
         with dest_tree_filepath.open('w') as f:
             json.dump(dance_tree, f)
 
-        print(f" Done. Saved dance tree to {dest_tree_filepath.relative_to(args.destdir)}.")
+        print(f"-> {dest_tree_filepath.relative_to(args.destdir)}.")
+    print_with_time("Finished.")
