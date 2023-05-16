@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 import pandas as pd
 import mediapipe as mp
 import typing as t
@@ -120,20 +121,26 @@ class PoseLandmarkWeighting(enum.Enum):
 
 
 def get_position_relative_to_base(positions: pd.DataFrame):
-    positions_relative_to_hip = pd.DataFrame()
-
+    
     lhip_x, lhip_y, lhip_z  = [f"{PoseLandmark.LEFT_HIP.name}_{axis}" for axis in "xyz"]
     rhip_x, rhip_y, rhip_z  = [f"{PoseLandmark.RIGHT_HIP.name}_{axis}" for axis in "xyz"]
     
-    positions_relative_to_hip["base_x"] = (positions[lhip_x] + positions[rhip_x]) / 2
-    positions_relative_to_hip["base_y"] = (positions[lhip_y] + positions[rhip_y]) / 2
-    positions_relative_to_hip["base_z"] = (positions[lhip_z] + positions[rhip_z]) / 2
+    base_x = (positions[lhip_x] + positions[rhip_x]) / 2
+    base_y = (positions[lhip_y] + positions[rhip_y]) / 2
+    base_z = (positions[lhip_z] + positions[rhip_z]) / 2
+
+    cols = ["base_x", "base_y", "base_z"]
+    data = [base_x, base_y, base_z]
 
     for landmark in get_pose_landmarks_present_in_dataframe(positions):
-        positions_relative_to_hip[f"{landmark}_x"] = positions[f"{landmark}_x"] - positions_relative_to_hip["base_x"]
-        positions_relative_to_hip[f"{landmark}_y"] = positions[f"{landmark}_y"] - positions_relative_to_hip["base_y"]
-        positions_relative_to_hip[f"{landmark}_z"] = positions[f"{landmark}_z"] - positions_relative_to_hip["base_z"]
-
+        cols = cols + [f"{landmark}_x", f"{landmark}_y", f"{landmark}_z"]
+        data.extend([
+            positions[f"{landmark}_x"] - base_x,
+            positions[f"{landmark}_y"] - base_y,
+            positions[f"{landmark}_z"] - base_z
+        ])
+        
+    positions_relative_to_hip = pd.concat(data, keys=cols, axis=1)
     return positions_relative_to_hip
 
 def trim_df_to_convergence(df: pd.DataFrame):
@@ -192,17 +199,22 @@ def construct_dance_tree_from_complexity_measures(
         complexity_measures: pd.DataFrame,
     ):
     
-    complexity_measures.plot(
-        title=f"{title} Accumulated Complexity",
-    )
-    plt.show(block=True)
+    # complexity_measures.plot(
+        # title=f"{title} Accumulated Complexity",
+    # )
+    # plt.show(block=True)
 
     return {}
 
 def generate_dvajs(
     filepaths: t.Iterable[Path],
-    landmarks_to_use: t.Iterable[PoseLandmark]
+    landmarks: t.Iterable[PoseLandmark],
+    include_base: bool = True,
 ):
+    landmarks_to_use = [landmark.name for landmark in landmarks]
+    if include_base:
+            landmarks_to_use.append("base")
+
     for holistic_csv_file in filepaths:
         # warn if the file is not a holisticdata.csv file
         if not holistic_csv_file.name.endswith(".holisticdata.csv"):
@@ -210,7 +222,10 @@ def generate_dvajs(
             continue
         data = pd.read_csv(holistic_csv_file, index_col='frame')
         relative_position = get_position_relative_to_base(data)
+        
         dvaj = calc_scalar_dvaj(relative_position, landmarks_to_use)
+        # distance_cols = [col for col in dvaj.columns if "distance" in col]
+        # dvaj[distance_cols].plot(title=f"{holistic_csv_file.name} Distance")
         yield dvaj
 
 if __name__ == "__main__":
@@ -223,6 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--srcdir", type=Path, required=False)  
     parser.add_argument("--measure_weighting", choices=[e.name for e in DvajMeasureWeighting], default=DvajMeasureWeighting.decreasing_by_quarter.name)
     parser.add_argument("--landmark_weighting", choices=[e.name for e in PoseLandmarkWeighting], default=PoseLandmarkWeighting.balanced.name)
+    parser.add_argument("--noinclude_base", action="store_true", default=False)
     parser.add_argument("files", nargs="*", type=Path)
     args = parser.parse_args()
 
@@ -246,45 +262,100 @@ if __name__ == "__main__":
     print(f"Output: saving output dance trees to {args.destdir}.")
     args.destdir.mkdir(parents=True, exist_ok=True)
 
+    filename_stems = [file.stem.replace('.holisticdata', '') for file in input_files]
+
+    debug_dir = args.destdir / "debug"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    debug_file_count = 0
+    def make_debug_path(name: str):
+        global debug_file_count
+        debug_file_count += 1
+        return debug_dir / f"{debug_file_count:04}_{name}"
+    def save_debug_fig(name: str, fn: t.Callable[[plt.Axes], None]):
+        fig, ax = plt.subplots()
+        fn(ax)
+        
+        fig.savefig(make_debug_path(name))
+        plt.close(fig)
+
     measure_weighting_choice = DvajMeasureWeighting[args.measure_weighting]
     measure_weighting = measure_weighting_choice.get_weighting()
 
     landmark_weighting_choice = PoseLandmarkWeighting[args.landmark_weighting]
     landmark_weighting = landmark_weighting_choice.get_weighting()
 
-    landmarks_to_use = [
+    landmarks = [
         lm for lm in landmark_weighting.keys()
         if landmark_weighting.get(lm, 0) > 0
     ]
+    landmark_names = [landmark.name for landmark in landmarks]
+    if not args.noinclude_base:
+        # base is a special landmark that is computed from the average of the hips.
+        #  >> data is made relative to the base during preprocessing.
+        landmark_names.append("base")
 
     print(f"Using measure weighting: {measure_weighting_choice.name}")
     print(f"Using landmark weighting: {landmark_weighting_choice.name}")
 
     print("Preprocessing files...")
 
-    # Preprocess Steps:
+    start_time = time.time()
+
+    def print_with_time(msg: str, **kwargs):
+        print(f"[{time.time() - start_time:.2f}s]\t{msg} ", **kwargs)
+    
+    ##### Preprocess Steps:
     # 1. Calculate the dvaj by-frame for each file.
     # 2. Convert to cumulative sum (accumulated complexity).
     # 3. Trim trailing frames beyond which cumulative sum doesn't change.
     # 4. Calculate normalization denominators for each metric, on a per-frame basis.
-    dvajs = [dvaj for dvaj in generate_dvajs(args.files, landmarks_to_use)]
+
+    # Step 1.
+    print_with_time("Step 1: Calculating DVAJs...")
+    dvajs = [dvaj for dvaj in generate_dvajs(args.files, landmarks, include_base=not args.noinclude_base)]
+    save_debug_fig("generated_dvaj.png", lambda ax: dvajs[0].plot(title=f"Raw DVAJ ({filename_stems[0]})", ax=ax))
+
+    # Step 2.
+    print_with_time("Step 2: Converting to cumulative sum...")
     dvaj_cumsums = [dvaj.cumsum() for dvaj in dvajs]
+    save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsums[0].plot(title=f"Cumulative DVAJ ({filename_stems[0]})", ax=ax))
     del dvajs
 
+    # Step 3.
+    print_with_time("Step 3: Trimming trailing frames...")
     dvaj_cumsums, tossed_frames = zip(*[
         trim_df_to_convergence(dvaj_cumsum) for dvaj_cumsum in dvaj_cumsums
-    ])
-                    
-    metric_normalization_maxes: t.Dict[PoseLandmark, t.Dict[DVAJ, float]] = {
-        landmark: {
-            measure: max(
-                dvaj[f"{landmark.name}_{measure.name}"].iloc[-1] / dvaj.shape[0]
-                for dvaj in dvaj_cumsums
-            )
-            for measure in DVAJ
-        }
-        for landmark in landmarks_to_use
-    }
+    ]) 
+    pd.DataFrame({
+        "trimmed_frames": [dvaj_cumsum.shape[0] for dvaj_cumsum in dvaj_cumsums],
+        "tossed_frames": tossed_frames,
+        }, index=filename_stems).to_csv(make_debug_path("tossed_frames.csv"))
+    
+    for measure in DVAJ:
+        df = dvaj_cumsums[0]
+        measure_cols = [col for col in df.columns if measure.name in col]
+        save_debug_fig(f"trimmed_dvaj_{measure.name}.png", lambda ax: dvaj_cumsums[0].plot(title=f"Trimmed {measure.name} ({filename_stems[0]})", ax=ax))
+
+    # Step 4.
+    # Computes the normalization denominators for each metric, on a per-frame basis.
+    #   - Doing this by frame is necessary because the number of frames in each file may differ,
+    #     and we want to normalize each metric in a consistent, duration-independant way.
+    print_with_time("Step 4: Calculating normalization denominators...")
+    maxes_per_frame = pd.DataFrame({
+        f"{landmark_name}_{measure.name}": [
+            dvaj_cumsum[f"{landmark_name}_{measure.name}"].max() / dvaj_cumsum.shape[0]
+            for dvaj_cumsum in dvaj_cumsums
+        ]
+        for landmark_name in landmark_names
+        for measure in DVAJ
+
+    },  index=filename_stems)
+    # Can lookup the normalization denominator for a given metric with:
+    #   max_vals.loc[f"{landmark_name}_{measure.name}"].
+    max_vals = maxes_per_frame.max()
+    max_vals_and_src = pd.concat([max_vals, maxes_per_frame.idxmax()], keys=["max", "src"], axis=1)
+    maxes_per_frame.to_csv(make_debug_path("movement_per_frame.csv"))
+    max_vals_and_src.to_csv(make_debug_path("max_vals.csv"))
 
     # Process Steps:
     # 5. Normalize each metric by its max among the dataset, adjusted
@@ -293,9 +364,9 @@ if __name__ == "__main__":
     
     for i, dvaj_cumsum, file in zip(range(len(dvaj_cumsums)), dvaj_cumsums, input_files):
 
-        filename_stem = file.stem.replace('.holisticdata', '')
-        print(f"Processing {filename_stem} ({i+1}/{len(input_files)})...", end='')
-        print(f"  Tossed {tossed_frames[i]} frames.", end='')
+        filename_stem = filename_stems[i]
+        print_with_time(f"Processing {filename_stem} ({i+1}/{len(input_files)})...", end='')
+        print(f"  Tossed {tossed_frames[i]} frames...", end='')
         complexity_measures = aggregate_accumulated_dvaj_by_measure(
             dvaj_cumsum,
             measure_weighting=measure_weighting,
@@ -316,4 +387,4 @@ if __name__ == "__main__":
         with dest_tree_filepath.open('w') as f:
             json.dump(dance_tree, f)
 
-        print(f"Done. Saved dance tree to {dest_tree_filepath.relative_to(args.destdir)}.")
+        print(f" Done. Saved dance tree to {dest_tree_filepath.relative_to(args.destdir)}.")
