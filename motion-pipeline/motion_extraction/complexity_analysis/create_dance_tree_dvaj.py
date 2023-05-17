@@ -9,7 +9,7 @@ import sys
 
 from .complexityanalysis import get_pose_landmarks_present_in_dataframe, DVAJ, calc_scalar_dvaj
 
-PoseLandmark = mp.solutions.pose.PoseLandmark
+PoseLandmark = mp.solutions.pose.PoseLandmark # type: ignore
 
 T = t.TypeVar('T', bound=enum.Enum)
 def normalize_weighting(w: t.Dict[T, float]) -> t.Dict[T, float]:
@@ -271,10 +271,22 @@ if __name__ == "__main__":
         global debug_file_count
         debug_file_count += 1
         return debug_dir / f"{debug_file_count:04}_{name}"
-    def save_debug_fig(name: str, fn: t.Callable[[plt.Axes], None]):
+    def save_debug_fig(name: str, fn: t.Callable[[plt.Axes], t.Union[t.Any, None]]):
         fig, ax = plt.subplots()
+        fig.set_size_inches(7.5, 5.0)
+
         fn(ax)
+        # plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+
+        # # max_legend_entries = 10
+        # # legend = plt.gca().get_legend()
+        # # if legend is not None:
+        # #     if len(legend.texts) > max_legend_entries:
+        # #         legend.texts[max_legend_entries - 1].set_text('...')
+        # #     for text in legend.tests[max_legend_entries:]: # remove extra legend entries
+        # #         text.set_visible(False)
         
+        # plt.tight_layout()
         fig.savefig(make_debug_path(name))
         plt.close(fig)
 
@@ -323,9 +335,9 @@ if __name__ == "__main__":
 
     # Step 3.
     print_with_time("Step 3: Trimming trailing frames...")
-    dvaj_cumsums, tossed_frames = zip(*[
+    dvaj_cumsums, tossed_frames = t.cast(t.Tuple[t.List[pd.DataFrame], t.List[int]] , zip(*[
         trim_df_to_convergence(dvaj_cumsum) for dvaj_cumsum in dvaj_cumsums
-    ]) 
+    ]))
     pd.DataFrame({
         "trimmed_frames": [dvaj_cumsum.shape[0] for dvaj_cumsum in dvaj_cumsums],
         "tossed_frames": tossed_frames,
@@ -363,6 +375,9 @@ if __name__ == "__main__":
     # 6. Compute weighted averages of the dvajs for each metric.
     
     print_with_time("Step 5: Creating Dance Trees...")
+
+    net_complexities = []
+
     for i, dvaj_cumsum, file in zip(range(len(dvaj_cumsums)), dvaj_cumsums, input_files):
 
         filename_stem = filename_stems[i]
@@ -372,8 +387,17 @@ if __name__ == "__main__":
             measure_weighting=measure_weighting,
             landmark_weighting=landmark_weighting,
         )
+
+        overall_complexity = complexity_measures.sum(axis=1).rename("overall_complexity")
         dance_tree = construct_dance_tree_from_complexity_measures(filename_stem, complexity_measures)
 
+        if i == 0:
+            # plot & save debug figures for complexity measures and overall complexity
+            save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures.plot(title=f"Complexity Measures ({filename_stem})", ax=ax))
+            save_debug_fig(f"overall_complexity.png", lambda ax: overall_complexity.plot(title=f"Overall Complexity ({filename_stem})", ax=ax))
+
+        net_complexities.append(overall_complexity.iloc[-1])
+        
         # Save the dance tree to a file in destdir with the same name as the holistic_csv_file, but with the extension ".dance_tree.json" instead of ".holisticdata.csv".
         dest_tree_filename = filename_stem + '.dance_tree.json'
         dest_tree_filepath = args.destdir / dest_tree_filename

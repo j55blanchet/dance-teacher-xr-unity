@@ -160,6 +160,17 @@
                 "--srcdir=${workspaceFolder}/data/holistic_data/curated",
                 "--destdir=${workspaceFolder}/data/dancetrees/",
             ],
+        },
+        {
+            "name": "Audio Analysis",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.audio_analysis",
+            "args": [
+                "--srcdir=${workspaceFolder}/data/source_videos",
+                "--destdir=${workspaceFolder}/data/audio_analysis",
+                "--audiocachedir=${workspaceFolder}/data/audio_cache",
+            ]
         }
     ]
 }
