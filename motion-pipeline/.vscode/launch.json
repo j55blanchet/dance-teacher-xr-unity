@@ -168,7 +168,8 @@
             "request": "launch",
             "module": "motion_extraction.audio_analysis",
             "args": [
-                "--srcdir=${workspaceFolder}/data/source_videos",
+                "--videosrcdir=${workspaceFolder}/data/source_videos",
+                "--audiosrcdir=${workspaceFolder}/data/source_audio",
                 "--destdir=${workspaceFolder}/data/audio_analysis",
                 "--analysis_summary_out=${workspaceFolder}/data/summary/audio_analysis.csv",
                 "--audiocachedir=${workspaceFolder}/data/audio_cache",
