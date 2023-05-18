@@ -159,6 +159,7 @@
             "args": [
                 "--srcdir=${workspaceFolder}/data/holistic_data/curated",
                 "--destdir=${workspaceFolder}/data/dancetrees/",
+                "--audiodata=${workspaceFolder}/data/summary/audio_analysis.csv",
             ],
         },
         {
@@ -169,6 +170,7 @@
             "args": [
                 "--srcdir=${workspaceFolder}/data/source_videos",
                 "--destdir=${workspaceFolder}/data/audio_analysis",
+                "--analysis_summary_out=${workspaceFolder}/data/summary/audio_analysis.csv",
                 "--audiocachedir=${workspaceFolder}/data/audio_cache",
             ]
         }

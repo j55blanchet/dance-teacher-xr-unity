@@ -3,13 +3,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import typing as t
 from dataclasses import dataclass
+from . import audio_tools
 
 @dataclass
 class TempoInfo:
     bpm: float
-    starting_beat_offset: float
+    starting_beat_timestamp: float
     beat_times: t.List[float]
     # time_signature: t.Tuple[int, int]
+
+    def starting_beat_sample(self, sr: float) -> int:
+        """
+        Calculate the starting sample index of the first beat in the audio sample.
+
+        Parameters:
+        sr (float): The sample rate of the audio sample.
+
+        Returns:
+        The starting sample index of the first beat in the audio sample.
+        """
+        return int(self.starting_beat_timestamp * sr)
 
 # THIS METHOD DOESN'T WORK
 # def calculate_time_signature(bpm: float, beat_frames: np.ndarray, audio_array: np.ndarray, sample_rate: float) -> tuple:
@@ -51,7 +64,7 @@ class TempoInfo:
 
 #     return beats_per_bar, note_type
 
-def calculate_tempo_info(audio_array: np.ndarray, sample_rate: float) -> TempoInfo:
+def calculate_tempo_info(audio_array: np.ndarray, sample_rate: float, standardize_bpm: bool = True) -> TempoInfo:
     """
     Calculate the tempo information of an audio array.
 
@@ -63,10 +76,11 @@ def calculate_tempo_info(audio_array: np.ndarray, sample_rate: float) -> TempoIn
     TempoInfo: A dataclass containing the tempo information.
     """
     # Calculate the BPM and beat frames using librosa
-    bpm, beat_frames = librosa.beat.beat_track(y=audio_array, sr=sample_rate) # type: ignore
+    bpm, _ = librosa.beat.beat_track(y=audio_array, sr=sample_rate) # type: ignore
+    bpm = audio_tools.standardize_bpm_range(bpm) if standardize_bpm else bpm
 
     # Calculate the starting beat offset
-    beat_times = librosa.frames_to_time(beat_frames, sr=sample_rate)
+    _, beat_times = librosa.beat.beat_track(y=audio_array, bpm=bpm, sr=sample_rate, units='time')
     starting_beat_offset = beat_times[0]
 
     # Calculate the time signature

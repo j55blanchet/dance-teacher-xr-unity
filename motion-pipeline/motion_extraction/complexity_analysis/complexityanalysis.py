@@ -47,12 +47,13 @@ def calc_scalar_dvaj(motion: pd.DataFrame, landmark_names: t.Collection[str]) ->
     # Calculate the scalar distance traveled each frame for each joint.
     for landmark in landmark_names:
         dist_col = f"{landmark}_{DVAJ.distance.name}"
-        dist_data = motion[[f"{landmark}_x", f"{landmark}_y", f"{landmark}_z"]].diff().pow(2).sum(1).pow(0.5)
         velocity_col = f"{landmark}_{DVAJ.velocity.name}"
-        velocity_data = dist_data.diff().abs()
         acceleration_col = f"{landmark}_{DVAJ.acceleration.name}"
-        acceleration_data = velocity_data.diff().abs()
         jerk_col = f"{landmark}_{DVAJ.jerk.name}"
+
+        dist_data = motion[[f"{landmark}_x", f"{landmark}_y", f"{landmark}_z"]].diff().pow(2).sum(1).pow(0.5)
+        velocity_data = dist_data.diff().abs()
+        acceleration_data = velocity_data.diff().abs()
         jerk_data = acceleration_data.diff().abs()
 
         out_cols.extend([dist_col, velocity_col, acceleration_col, jerk_col])
