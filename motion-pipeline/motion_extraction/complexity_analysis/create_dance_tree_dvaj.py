@@ -310,12 +310,21 @@ if __name__ == "__main__":
 
     debug_dir = args.destdir / "debug" / sup_title
     debug_dir.mkdir(parents=True, exist_ok=True)
+    count_by_subpath = {}
     debug_file_count = 0
-    def make_debug_path(name: str):
+    def make_debug_path(name: str, subpath: str = ""):
         global debug_file_count
         debug_file_count += 1
-        return debug_dir / f"{debug_file_count:04}_{name}"
-    def save_debug_fig(name: str, fn: t.Callable[[plt.Axes], t.Union[t.Any, None]], subtitle: t.Optional[str] = sup_title):
+        count_by_subpath[subpath] = count_by_subpath.get(subpath, 0) + 1
+        dirpath = debug_dir
+        prefix = f"{debug_file_count:04}"
+        if len(subpath) > 0:
+            dirpath = dirpath / subpath
+            # prefix = f"{prefix}_subid{count_by_subpath[subpath]:04}"
+        dirpath.mkdir(parents=True, exist_ok=True)
+        return dirpath / f"{prefix}_{subpath}_{name}"
+    
+    def save_debug_fig(name: str, fn: t.Callable[[plt.Axes], t.Union[t.Any, None]], subpath: str = "", subtitle: t.Optional[str] = sup_title):
         fig, ax = plt.subplots()
         fig.set_size_inches(7.5, 5.0)
 
@@ -333,9 +342,9 @@ if __name__ == "__main__":
         # plt.tight_layout()
 
         if subtitle is not None:
-            plt.suptitle(subtitle)
+            plt.suptitle(subtitle, fontsize=8, y=0.99)
 
-        fig.savefig(make_debug_path(name))
+        fig.savefig(make_debug_path(name, subpath))
         plt.close(fig)
 
     audio_data = None
@@ -362,7 +371,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     def print_with_time(msg: str, **kwargs):
-        print(f"[{time.time() - start_time:.2f}s]\t{msg} ", **kwargs)
+        print(f"[{time.time() - start_time: 6.2f}s]\t{msg} ", **kwargs)
     
     ##### Preprocess Steps:
     # 1. Calculate the dvaj by-frame for each file.
@@ -372,34 +381,41 @@ if __name__ == "__main__":
     # 5. Calculate normalization denominators for each metric, on a per-frame basis.
     print_with_time("Step 1: Calculating DVAJs...")
     dvaj_dfs, visibility_dfs = zip(*generate_dvajs_with_visibility(args.files, landmarks, include_base=not args.noinclude_base))
-    save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[0].plot(title=f"Raw DVAJ ({filename_stems[0]})", ax=ax))
+    for i in range(len(filename_stems)):
+        save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Raw DVAJ ({filename_stems[i]})", ax=ax), subpath=filename_stems[i])
 
     if args.weigh_by_visibility:
         dvaj_suffixes = [measure.name for measure in DVAJ]
         print_with_time("Step 2: Weighting by visibility...")
         dvaj_dfs = [weigh_by_visiblity(dvaj, visibility, landmark_names, dvaj_suffixes) for dvaj, visibility in zip(dvaj_dfs, visibility_dfs)]
-        save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[0].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[0]})", ax=ax))
+
+        for i in range(len(filename_stems)):
+            save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[i]})", ax=ax), subpath=filename_stems[i])
     else:
         print_with_time("Step 2: Skipped (not weighting by visibility) ...")
 
     print_with_time("Step 3: Converting to cumulative sum...")
     dvaj_cumsum_dfs = [dvaj.cumsum() for dvaj in dvaj_dfs]
-    save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[0].plot(title=f"Cumulative DVAJ ({filename_stems[0]})", ax=ax))
+    # For any NaNs, fill with the last valid value (NaNs will appear when skeleton isn't tracked)
+    dvaj_cumsum_dfs = [dvaj_cumsum.fillna(method="ffill") for dvaj_cumsum in dvaj_cumsum_dfs]
+    for i in range(len(filename_stems)):
+        save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Cumulative DVAJ ({filename_stems[i]})", ax=ax), subpath=filename_stems[i])
     del dvaj_dfs
     
     print_with_time("Step 4: Trimming trailing frames...")
     dvaj_cumsum_dfs, tossed_frames = t.cast(t.Tuple[t.List[pd.DataFrame], t.List[int]] , zip(*[
         trim_df_to_convergence(dvaj_cumsum) for dvaj_cumsum in dvaj_cumsum_dfs
     ]))
-    pd.DataFrame({
-        "trimmed_frames": [dvaj_cumsum.shape[0] for dvaj_cumsum in dvaj_cumsum_dfs],
-        "tossed_frames": tossed_frames,
-        }, index=filename_stems).to_csv(make_debug_path("tossed_frames.csv"))
+    # pd.DataFrame({
+        # "trimmed_frames": [dvaj_cumsum.shape[0] for dvaj_cumsum in dvaj_cumsum_dfs],
+        # "tossed_frames": tossed_frames,
+        # }, index=filename_stems).to_csv(make_debug_path("tossed_frames.csv"))
     
     for measure in DVAJ:
-        df = dvaj_cumsum_dfs[0]
-        measure_cols = [col for col in df.columns if measure.name in col]
-        save_debug_fig(f"trimmed_dvaj_{measure.name}.png", lambda ax: dvaj_cumsum_dfs[0].plot(title=f"Trimmed {measure.name} ({filename_stems[0]})", ax=ax))
+        for i in range(len(filename_stems)):
+            df = dvaj_cumsum_dfs[i]
+            measure_cols = [col for col in df.columns if measure.name in col]
+            save_debug_fig(f"trimmed_dvaj_{measure.name}.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Trimmed {measure.name} ({filename_stems[0]})", ax=ax), subpath=filename_stems[i])
 
     # Step 5.
     # Computes the normalization denominators for each metric, on a per-frame basis.
@@ -445,8 +461,8 @@ if __name__ == "__main__":
 
         # if i == 0:
         # plot & save debug figures for complexity measures and overall complexity
-        save_debug_fig(f"{filename_stem}_complexity_measures.png", lambda ax: complexity_measures.plot(title=f"Complexity Measures ({filename_stem})", ax=ax))
-        save_debug_fig(f"{filename_stem}_overall_complexity.png", lambda ax: overall_complexity.plot(title=f"Overall Complexity ({filename_stem})", ax=ax))
+        save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures.plot(title=f"Complexity Measures ({filename_stem})", ax=ax), subpath=filename_stem)
+        save_debug_fig(f"overall_complexity.png", lambda ax: overall_complexity.plot(title=f"Overall Complexity ({filename_stem})", ax=ax), subpath=filename_stem)
 
         net_complexities.append(overall_complexity.iloc[-1])
 
