@@ -19,6 +19,9 @@ def standardize_bpm_range(bpm_in: float, bpm_min: float = 80.0, bpm_max: float =
     Returns:
     The standardized BPM value within the specified range.
     """
+    if bpm_in <= 0:
+        raise ValueError('BPM must be greater than 0.')
+        
     bpm = bpm_in
     while bpm < bpm_min:
         bpm *= 2
@@ -133,8 +136,21 @@ def load_audio(path: Path, as_mono: bool = False) -> t.Tuple[np.ndarray, float]:
     # Otherwise, assume it's an audio file
     else:
         # Load the audio file with librosa
-        audio_array, sample_rate = librosa.load(path, sr=None, mono=False)
+        audio_array, sample_rate = librosa.load(path, sr=None, mono=True)
 
+        if len(audio_array) == 0:
+            print("Empty audio array. Trying again with duration set to the length of the audio file.")
+            # See https://stackoverflow.com/questions/74496808/mp3-loading-using-librosa-return-empty-data-when-start-time-metadata-is-0
+            import pydub
+            import math
+            mi = pydub.utils.mediainfo(path)
+            duration = float(mi['duration'])
+            # duration = math.floor(duration)
+            audio_array, sample_rate = librosa.load(path, sr=None, mono=True, duration=duration)
+
+        if len(audio_array) == 0:
+            raise Exception("Couldn't load audio array.")
+        
         # Convert the audio to mono if it's stereo
         if as_mono and audio_array.ndim > 1:
             audio_array = np.mean(audio_array, axis=0)
