@@ -58,14 +58,19 @@ def calculate_cross_similarity(y: np.ndarray, sr: float, segment_times: t.List[t
 
     return cross_similarity
 
-def plot_cross_similarity(cross_similarity: np.ndarray):
+def plot_cross_similarity(cross_similarity: np.ndarray, ax=None):
     """
     Plot the cross-similarity matrix.
 
     Parameters:
     cross_similarity (np.ndarray): A 2D numpy array representing the cross-similarity matrix.
     """
-    fig, ax = plt.subplots()
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+        
     im = ax.imshow(cross_similarity, cmap='viridis', vmin=0, vmax=1)
 
     # Add colorbar

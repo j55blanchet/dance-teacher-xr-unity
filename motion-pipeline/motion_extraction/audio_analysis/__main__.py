@@ -1,16 +1,15 @@
 import argparse
 import json
 import typing as t
-from .audio_tools import calculate_8beat_segments, load_audio, save_audio_from_video
-from .tempo_analysis import calculate_tempo_info, TempoInfo
-from .spectral_analysis import calculate_spectral_contrast
-from .similarity_analysis import calculate_cross_similarity, plot_cross_similarity
 from pathlib import Path
 from dataclasses import asdict
 import numpy as np
 import pandas as pd
 import time
 import psutil
+from . import analyze_audio_file, create_dance_tree_from_audioanalysis
+from .audio_tools import save_audio_from_video
+from .similarity_analysis import plot_cross_similarity
 
 ACCEPT_AUDIO_FILES = ['.mp3', '.wav', '.m4a', '.flac']
 ACCEPT_VIDEO_FILES = ['.mp4', '.mov', '.avi', '.mkv']
@@ -89,48 +88,42 @@ def main():
     src_dirs = [args.audiosrcdir] * len(input_audio_filepaths) + [args.videosrcdir] * len(input_video_filepaths)
 
     for i, (filepath, audio_filepath, input_type, src_dir) in enumerate(zip(all_input_filepaths, all_input_audiopaths, input_types, src_dirs)):
+
         print_with_time(f"Analyzing audio from {i+1}/{len(all_input_filepaths)}: {filepath}")
+        analysis_result = analyze_audio_file(audio_filepath)
 
-        # Load the audio file
-        audio_array, sample_rate = load_audio(audio_filepath, as_mono=True)
+        # Save the analysis information (with same relative path as input file)
+        destdir = args.destdir / 'analysis' / input_type
+        destdir.mkdir(parents=True, exist_ok=True)
+        output_file = destdir / filepath.relative_to(src_dir).with_suffix('.json')
+        with open(output_file, 'w') as f:
+            json.dump(analysis_result.to_dict(), f, indent=4)
 
-        # Calculate the tempo information
-        tempo_info: TempoInfo = calculate_tempo_info(audio_array, sample_rate)
-        starting_beat_sample = tempo_info.starting_beat_sample(sample_rate)
-
-        # Create 8-bar segments
-        eight_beat_segments = calculate_8beat_segments(audio_array, sample_rate, tempo_info.bpm, starting_beat_sample)
-        eight_beat_segments_as_timestamps: t.List[t.Tuple[float, float]] = (np.array(eight_beat_segments) / sample_rate).tolist()
-
-        cross_similarity  = calculate_cross_similarity(audio_array, sample_rate, eight_beat_segments_as_timestamps)
-        fig, ax = plot_cross_similarity(cross_similarity)
+        # Plot cross similarity matrix
+        fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
         ax.set_title(f"{filepath.stem} Cross Similarity")
         similarity_dir = args.destdir / 'segmentsimilarity' / input_type
         similarity_dir.mkdir(parents=True, exist_ok=True)
         fig.savefig(similarity_dir / filepath.relative_to(src_dir).with_suffix('.png'))
-        # spectal_contrast_matrix = calculate_spectral_contrast(audio_array, sample_rate, eight_beat_segments)
-        
-        analysis_result = {
-            'sample_rate': sample_rate,
-            'tempo_info': asdict(tempo_info),
-            'eight_beat_segments': eight_beat_segments_as_timestamps, # Convert to list to make it JSON serializable
-            'cross_similarity': cross_similarity.tolist(),
-            # 'spectral_contrast': spectal_contrast_matrix.tolist()
-        }
 
+        # Create dance trees
+        dance_tree = create_dance_tree_from_audioanalysis(
+            tree_name=filepath.stem + " audio tree",
+            dance_name=filepath.stem,
+            analysis=analysis_result
+        )
+        dance_tree_dir = args.destdir / 'dancetrees' / input_type
+        dance_tree_dir.mkdir(parents=True, exist_ok=True)
+        dance_tree_filepath = dance_tree_dir / filepath.relative_to(src_dir).with_suffix('.dancetree.json')
+        with dance_tree_filepath.open('w') as f:
+            json.dump(dance_tree.to_dict(), f, indent=4) # type: ignore
+
+        # Append summary data (for the CSV file)
         analysis_summary.append(pd.Series({
-            'start_beat': tempo_info.starting_beat_timestamp,
-            'bpm': tempo_info.bpm,
+            'start_beat': analysis_result.tempo_info.starting_beat_timestamp,
+            'bpm': analysis_result.tempo_info.bpm,
             'type': input_type,
         }, name=filepath.stem)) # type: ignore
-
-        # Save the tempo information (with same relative path as input file)
-        destdir = args.destdir / 'analysis' / input_type
-        destdir.mkdir(parents=True, exist_ok=True)
-        output_file = destdir / filepath.relative_to(src_dir).with_suffix('.json')
-
-        with open(output_file, 'w') as f:
-            json.dump(analysis_result, f, indent=4)
 
     # Save the analysis summary
     args.analysis_summary_out.parent.mkdir(parents=True, exist_ok=True)

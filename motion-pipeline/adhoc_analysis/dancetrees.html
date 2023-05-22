@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Dance Tree Visualization</title>
+    <style>
+      video {
+        max-height: 300px;
+        max-width: 100%;
+      }
+
+      video .nodevideo {
+        max-height: 200px;
+        max-width: 150%;
+      }
+
+      .node {
+        flex: 1 1;
+        background: rgba(128, 128, 128, 0.1);
+        border: 1px solid #DDD;
+        padding: 0.2em;
+        margin: 0.2em;
+        text-align: center;
+      }
+      
+      .node .nodevideo {
+        height: 20em;
+      }
+
+      .node .children {
+        font-size: 0.7em;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 0.05em;
+      }
+    </style>
+  </head>
+  <body>
+    <select id="select">
+      <option value="bartender.dancetree.json">Bartender</option>
+      <option value="mad-at-disney-tutorial.dancetree.json">Mad At Disney</option>
+      <option value="last-christmas-tutorial.dancetree.json">Last Christmas</option>
+      <option value="pajamaparty.dancetree.json">Pajama Party</option>
+    </select>
+    <div id="treeVisualization"></div>
+    <script>
+      const select = document.getElementById('select');
+      const treeVisualization = document.getElementById('treeVisualization');
+
+      let danceTree = null;
+      let videoSrc = null;
+
+      function render() {
+
+        if (danceTree == null || videoSrc == null){
+          return;
+        }
+
+        // Replace treeVisualization
+        treeVisualization.replaceChildren(
+            renderNode(danceTree.root)
+        );
+      }
+
+      function renderNode(node) {
+        // Render a single node in the tree visualization
+        const container = document.createElement('div');
+        container.classList.add('node');
+        container.style.flexBasis = node.end_time - node.start_time;
+        // container.style.flexGrow = node.end_time - node.start_time;
+
+        const idLabel = document.createElement('h2');
+        idLabel.textContent = node.id;
+        container.appendChild(idLabel);
+
+        const dataLabel = document.createElement('p');
+        const duration = node.end_time - node.start_time;
+        dataLabel.textContent = `${node.start_time.toFixed(2)}s - ${node.end_time.toFixed(2)}s (${duration.toFixed(2)}s)`;
+        container.appendChild(dataLabel);
+
+        const videoE = document.createElement('video');
+        videoE.src = videoSrc + `#t=${node.start_time},${node.end_time}`;
+        videoE.controls = true;
+        videoE.classList.add('nodevideo');
+        container.appendChild(videoE);
+
+        // Create listener to stop video at node.end_time
+        videoE.addEventListener('timeupdate', function() {
+          if (this.currentTime >= node.end_time) {
+            this.pause();
+            this.currentTime = node.start_time
+          }
+        });
+
+        // Set video to startTime when loaded
+        videoE.addEventListener('loadedmetadata', function() {
+          this.currentTime = node.start_time;
+        });
+
+        const childrenContainer = document.createElement('div');
+        childrenContainer.classList.add('children');
+        container.appendChild(childrenContainer);
+
+        for(const child of node.children) {
+          childrenContainer.appendChild(renderNode(child));
+        }
+        
+        return container;
+      }
+
+      async function loadDanceTree() {
+        // Load the dance tree data from the selected JSON file
+        const filename = select.value;
+        const response = await fetch(`../data/audio_analysis/dancetrees/video/${filename}`)
+        const data = await response.json();
+        danceTree = data;
+        render();
+      }
+
+      function updateDanceTree() {
+        // Update the dance tree data and video source when a new JSON file is selected
+        const filename = select.value;
+        videoSrc = `../data/source_videos/${filename.replace('.dancetree.json', '.mp4')}`;
+        loadDanceTree();
+      }
+
+      select.addEventListener('change', updateDanceTree);
+
+      loadDanceTree();
+    </script>
+  </body>
+</html>
