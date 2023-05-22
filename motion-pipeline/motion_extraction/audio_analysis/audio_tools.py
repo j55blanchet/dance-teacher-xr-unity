@@ -30,50 +30,45 @@ def standardize_bpm_range(bpm_in: float, bpm_min: float = 80.0, bpm_max: float =
     return bpm
 
 
-def calculate_8beat_segments(y: np.ndarray, sr: float, bpm: float, tempo_offset_samples: int) -> t.List[t.Tuple[int, int]]:
-    """
-    Calculate the starting and ending sample indices that divide the audio sample into 8-beat segments.
+def calculate_8beat_segments_with_midpoints(bpm: float, beat_offset: float, duration: float) -> t.Iterable[t.List[float]]:
+    sec_per_beat = 60 / bpm
+    beats_per_bar = 4
+    secs_per_bar = sec_per_beat * beats_per_bar
+    bars_per_segment = 2
+    secs_per_segment = secs_per_bar * bars_per_segment
 
-    Parameters:
-    y (np.ndarray): The audio sample as a numpy array.
-    sr (float): The sample rate of the audio sample.
-    bpm (float): The tempo of the audio sample in beats per minute.
-    tempo_offset_samples (int): The number of samples from the start of the audio sample to the first beat.
+    ## Generate first segment
+    # Edge case: single segment (< 1.5 segments)
+    if duration < beat_offset + secs_per_segment * 1.5:
 
-    Returns:
-    A list of tuples representing the starting and ending sample indices of each 8-beat segment.
-    """
-    segment_frames: t.List[t.Tuple[int, int]] = []
+        # Generate up to two mid-points
+        mid_points = []
+        if duration > beat_offset + secs_per_bar * 0.75:
+            mid_points.append(beat_offset + secs_per_bar)
+        if duration > beat_offset + secs_per_bar * 1.25:
+            mid_points.append(beat_offset + secs_per_segment)
 
-    beats_per_bar = 8
-    beats_per_second = bpm / 60
-    samples_per_beat = sr / beats_per_second
-    samples_per_segment = samples_per_beat * beats_per_bar
-    seconds_per_segment = samples_per_segment / sr
-
-    effective_start_index = 0
-    start_index = tempo_offset_samples
-    end_index = min(int(start_index + samples_per_segment), len(y))
-    while end_index < len(y):
-        segment_frames.append((effective_start_index, end_index))
-        start_index = end_index
-        effective_start_index = end_index
-        end_index = min(int(start_index + samples_per_segment), len(y))
-
-    return segment_frames
-
-
-# def calculate_8beat_segments(y: np.ndarray, sr: float, bpm: float, start_beat: float): 
-#     """ 
-#     """
-#     segment_frames: t.List[t.Tuple[int, int]] = []
-
-#     samples_per_beat = sr * 60 / bpm
-#     samples_beat_offset = int(start_beat * sr) % samples_per_beat
+        yield [0., *mid_points, duration]
+        return
     
+    # Typical case: multiple segments
+    yield [0., secs_per_bar + beat_offset, secs_per_segment + beat_offset]
 
+    ## Generate middle segments (stop if we're within a segment and a half of the end)
+    segment_start = secs_per_segment + beat_offset
+    while segment_start + (1.5 * secs_per_segment) < duration:
+        yield [segment_start, segment_start + secs_per_bar, segment_start + secs_per_segment]
+        segment_start += secs_per_segment
 
-#     return segment_frames
+    ## Generate last segment. This last one can be between 50% and 150% the length of a normal segment.
+    duration_left = duration - segment_start    
+    mid_points = []
+    if duration_left > beat_offset + secs_per_bar * 0.75:
+        mid_points.append(segment_start + beat_offset + secs_per_bar)
+    if duration_left > beat_offset + secs_per_bar * 1.25:
+        mid_points.append(segment_start + beat_offset + secs_per_segment)
+
+    yield [segment_start, *mid_points, duration]
 
 def save_audio_from_video(video_path: Path, output_audio_path: Path, as_mono: bool = False):
     """

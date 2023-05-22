@@ -2,14 +2,16 @@ import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 import typing as t
-from dataclasses import dataclass
+import dataclasses as dc
+import dataclasses_json as dcj
 from . import audio_tools
 
-@dataclass
+@dcj.dataclass_json
+@dc.dataclass
 class TempoInfo:
     bpm: float
     starting_beat_timestamp: float
-    beat_times: t.List[float]
+    beat_times: t.List[float] = dc.field(default_factory=list)
     # time_signature: t.Tuple[int, int]
 
     def starting_beat_sample(self, sr: float) -> int:

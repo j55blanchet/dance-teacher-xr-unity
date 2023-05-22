@@ -1,4 +1,15 @@
 {
     "workbench.colorTheme": "Monokai Dimmed",
     "python.terminal.activateEnvironment": true,
+
+
+    "liveServer.settings.port": 4500,
+    "liveServer.settings.root": "/",
+    "liveServer.settings.CustomBrowser" : "firefox",
+    "liveServer.settings.NoBrowser" : false,
+    "liveServer.settings.ignoreFiles" : [
+            ".vscode/**",
+            "**/*.scss",
+            "**/*.sass"
+    ]
 }
