@@ -46,7 +46,8 @@ def analyze_complexities(
     elif end_frames[0] is not None:
         data = data[:end_frames[0]]
 
-    dvaj = calc_scalar_dvaj(data, landmarks)
+    lm_names = [lm.name for lm in landmarks]
+    dvaj = calc_scalar_dvaj(data, lm_names)
     metrics = calc_dvaj_metrics(dvaj)
     extra_keys = list(extra_data[0].keys())
 
@@ -55,7 +56,7 @@ def analyze_complexities(
     row.update(metrics)
 
     cols = list(metrics.keys()) + ['bpm']
-    metrics.update({'bpm': bpms[0]})
+    metrics.update({'bpm': row['bpm']})
     output = pd.DataFrame(
         columns=cols, 
         data=[row], 
@@ -73,7 +74,7 @@ def analyze_complexities(
         elif end_frames[i] is not None:
             data = data[:end_frames[i]]
 
-        dvaj = calc_scalar_dvaj(data, landmarks)
+        dvaj = calc_scalar_dvaj(data, lm_names)
         # plt.savefig(file.with_suffix('.png'))
 
         metrics = calc_dvaj_metrics(dvaj)
@@ -125,7 +126,7 @@ if __name__ == "__main__":
 
     # if srcdir is specified, add all files of the form "*.holisticdata.csv" in that directory to the list of files.
     if args.srcdir is not None:
-        args.files.extend(file for file in args.srcdir.glob("*.holisticdata.csv"))
+        args.files.extend(file for file in args.srcdir.rglob("*.holisticdata.csv"))
     elif len(args.files) == 0:
         print("No files specified. Use --srcdir or specify files as arguments.")
         sys.exit(1)
