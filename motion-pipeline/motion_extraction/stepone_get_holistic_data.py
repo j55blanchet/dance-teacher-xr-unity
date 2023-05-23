@@ -239,35 +239,37 @@ def _perform_by_frame(video_path: Path, on_frame: Callable[[cv2.Mat, int], T]) -
 
 def process_video(
     video_path: Path, 
+    parent_folder: Path,
     output_root: Path, 
     holistic_solution: mp.solutions.holistic.Holistic,
     frame_output_folder: Optional[Path] = None,
     rewrite_existing: bool = False,
+    print_progress_context: Callable[[],str] = lambda: '',
 ):
 
     # Reset graph for this new file
     holistic_solution.reset()
 
-    csv_file = video_path.with_suffix('.csv')
-    if csv_file.exists():
-        logging.warning(f'Skipping {video_path}')
-        return
+    video_file_relative = video_path.relative_to(parent_folder)
+    video_file_relative_stem = video_file_relative.with_suffix('')
 
     @throttle(seconds=1)
     def print_progress(i, frame_count):
         percent_done = i / frame_count
-        logging.info(f'{video_path.stem}: {i}/{frame_count} {percent_done:.1%}')
+        logging.info(f'{print_progress_context()}{video_file_relative_stem}: {i}/{frame_count} {percent_done:.1%}')
 
-    holistic_data_filepath = output_root / (video_path.stem + ".holisticdata.csv")
+    holistic_data_filepath = output_root / video_file_relative.with_suffix(".holisticdata.csv")
 
     if holistic_data_filepath.exists() and not rewrite_existing:
-        logging.info(f'Skipping {video_path} - already exists')
+        logging.info(f'{print_progress_context()}Skipping (already exists): {video_file_relative}')
         return
     
     header_row = construct_header_row()
 
+    holistic_data_filepath.parent.mkdir(parents=True, exist_ok=True)
+
     with(
-        open(str(holistic_data_filepath), 'w', newline='', encoding='utf-8') as merged_data_file,
+        holistic_data_filepath.open('w', encoding='utf-8') as merged_data_file,
     ):
         merged_data_csv = csv.writer(merged_data_file)
         for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
@@ -380,19 +382,26 @@ def main():
         args.output_folder.mkdir(parents=True)
 
     video_folder = Path(args.video_folder)
-    video_paths = video_folder
+    video_paths = []
+    parent_folder = video_folder.parent
     if video_folder.is_dir():
-        video_paths = video_folder.glob('*.mp4')
+        video_paths = video_folder.rglob('*.mp4')
+        parent_folder = video_folder
     else:
-        video_paths = video_folder.parent.glob(video_folder.name)
+        parent_folder = video_folder.parent
+        video_paths = parent_folder.glob(video_folder.name)
+        
+    video_paths = list(video_paths)
 
-    for video_path in video_paths:
+    for i, video_path in enumerate(video_paths):
         process_video(
             video_path, 
+            parent_folder,
             holistic_solution=holistic_solution, 
             output_root=args.output_folder,
             frame_output_folder=args.frame_output_folder,
-            rewrite_existing=args.rewrite_existing)
+            rewrite_existing=args.rewrite_existing,
+            print_progress_context=lambda: f"{i+1}/{len(video_paths)} ")
 
 
 if __name__ == "__main__":

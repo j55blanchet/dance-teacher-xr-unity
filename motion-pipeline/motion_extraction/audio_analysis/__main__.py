@@ -10,6 +10,7 @@ import psutil
 from . import analyze_audio_file, create_dance_tree_from_audioanalysis
 from .audio_tools import save_audio_from_video
 from .similarity_analysis import plot_cross_similarity
+import matplotlib.pyplot as plt
 
 ACCEPT_AUDIO_FILES = ['.mp3', '.wav', '.m4a', '.flac']
 ACCEPT_VIDEO_FILES = ['.mp4', '.mov', '.avi', '.mkv']
@@ -42,7 +43,14 @@ def main():
     parser.add_argument('--destdir', type=Path, help='The directory to output the analysis results.')
     parser.add_argument('--audiocachedir', type=Path, help='The directory to cache audio files in.')
     parser.add_argument('--analysis_summary_out', type=Path, help='The path to save the analysis summary.')
+    parser.add_argument('--include_mem_usage', action='store_true', help='Whether to include memory usage in the output.', default=False)
     args = parser.parse_args()
+
+    print(f"Running audio analysis...")
+    # print out arguments
+    for arg in vars(args):
+        print(f'{arg}: {getattr(args, arg)}')
+    print()
 
     # Get the paths of the audio or video files (search recursively)
     input_video_filepaths = []
@@ -61,24 +69,28 @@ def main():
 
     start_time = time.time()
     def print_with_time(s: str, **kwargs):
-        print(f"{time.time() - start_time:.2f}s:\t{get_memory_usage()}\t{s}", **kwargs)
+        mem_usage_str = f'{get_memory_usage()}\t' if args.include_mem_usage else ''
+        print(f"{time.time() - start_time:.2f}s:\t{mem_usage_str}{s}", **kwargs)
 
     analysis_summary = []
 
     # Find or cache audio from each video file
+    print_with_time('Caching audio from video files...')
     for i, filepath in enumerate(input_video_filepaths):
-        print_with_time(f"Extracting cached audio {i+1}/{len(input_video_filepaths)}: {filepath}")
+        relative_filepath = filepath.relative_to(args.videosrcdir)
+        # print_with_time(f"Extracting cached audio {i+1}/{len(input_video_filepaths)}: {relative_filepath}")
+        print_with_time(f"\t{i+1}/{len(input_video_filepaths)} ", end='')
 
         # Check if the audio file has already been cached
         cached_audio_filepath = find_cached_audiofile(filepath, args.videosrcdir, args.audiocachedir)
         if cached_audio_filepath:
-            print_with_time(f"\tFound cached audio file: {cached_audio_filepath.relative_to(args.audiocachedir)}")
+            print(f"\tFound cached audio: {cached_audio_filepath.relative_to(args.audiocachedir)}")
         else:
-            print_with_time(f"\tNo cached audio found. Extracting audio from video...", end='')
+            print(f"\tExtracting audio from video --> ", end='')
             # Extract the audio from the video file
             cached_audio_filepath = args.audiocachedir / filepath.relative_to(args.videosrcdir).with_suffix('.mp3')
             save_audio_from_video(filepath, cached_audio_filepath, as_mono=True)
-            print(f'Done (saved to {cached_audio_filepath.relative_to(args.audiocachedir)})')
+            print(f'{cached_audio_filepath.relative_to(args.audiocachedir)})')
 
         input_video_cached_audio_filepaths.append(cached_audio_filepath)
 
@@ -87,15 +99,17 @@ def main():
     input_types = ["audio"] * len(input_audio_filepaths) + ["video"] * len(input_video_filepaths)
     src_dirs = [args.audiosrcdir] * len(input_audio_filepaths) + [args.videosrcdir] * len(input_video_filepaths)
 
+    print_with_time('Analyzing audio...')
     for i, (filepath, audio_filepath, input_type, src_dir) in enumerate(zip(all_input_filepaths, all_input_audiopaths, input_types, src_dirs)):
 
-        print_with_time(f"Analyzing audio from {i+1}/{len(all_input_filepaths)}: {filepath}")
+        relative_filepath = filepath.relative_to(src_dir)
+        print_with_time(f"\t{i+1}/{len(all_input_filepaths)} [{input_type} src] {relative_filepath}")
         analysis_result = analyze_audio_file(audio_filepath)
 
         # Save the analysis information (with same relative path as input file)
         destdir = args.destdir / 'analysis' / input_type
-        destdir.mkdir(parents=True, exist_ok=True)
-        output_file = destdir / filepath.relative_to(src_dir).with_suffix('.json')
+        output_file = destdir / relative_filepath.with_suffix('.json')
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             json.dump(analysis_result.to_dict(), f, indent=4)
 
@@ -104,7 +118,10 @@ def main():
         ax.set_title(f"{filepath.stem} Cross Similarity")
         similarity_dir = args.destdir / 'segmentsimilarity' / input_type
         similarity_dir.mkdir(parents=True, exist_ok=True)
-        fig.savefig(similarity_dir / filepath.relative_to(src_dir).with_suffix('.png'))
+        figpath = similarity_dir / relative_filepath.with_suffix('.png')
+        figpath.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(figpath)
+        plt.close(fig)
 
         # Create dance trees
         dance_tree = create_dance_tree_from_audioanalysis(
@@ -113,8 +130,8 @@ def main():
             analysis=analysis_result
         )
         dance_tree_dir = args.destdir / 'dancetrees' / input_type
-        dance_tree_dir.mkdir(parents=True, exist_ok=True)
-        dance_tree_filepath = dance_tree_dir / filepath.relative_to(src_dir).with_suffix('.dancetree.json')
+        dance_tree_filepath = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
+        dance_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
         with dance_tree_filepath.open('w') as f:
             json.dump(dance_tree.to_dict(), f, indent=4) # type: ignore
 
