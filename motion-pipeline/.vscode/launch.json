@@ -161,7 +161,7 @@
             "request": "launch",
             "module": "motion_extraction.complexity_analysis.create_dance_tree_dvaj",
             "args": [
-                "--srcdir=${workspaceFolder}/data/holistic_data/curated",
+                "--srcdir=${workspaceFolder}/data/holistic_data/",
                 "--destdir=${workspaceFolder}/data/dancetrees/",
                 "--audiodata=${workspaceFolder}/data/summary/audio_analysis.csv",
             ],

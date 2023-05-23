@@ -278,13 +278,15 @@ if __name__ == "__main__":
     parser.add_argument("files", nargs="*", type=Path)
     args = parser.parse_args()
 
-    input_files: t.List[Path] = args.files
+    input_files: t.List[Path] = args.files.copy()
+    relative_dirs: t.List[Path] = [f.parent for f in args.files]
 
     # if srcdir is specified, add all files of the form "*.holisticdata.csv" in that directory to the list of files.
     files_from_srcdir = []
     if args.srcdir is not None:
-        files_from_srcdir = list(args.srcdir.glob("*.holisticdata.csv"))
+        files_from_srcdir = list(args.srcdir.rglob("*.holisticdata.csv"))
         input_files.extend(files_from_srcdir)
+        relative_dirs.extend([args.srcdir for _ in files_from_srcdir])
     elif len(args.files) == 0:
         print("No files specified. Use --srcdir or specify files as arguments.")
         sys.exit(1)
@@ -299,6 +301,11 @@ if __name__ == "__main__":
     args.destdir.mkdir(parents=True, exist_ok=True)
 
     filename_stems = [file.stem.replace('.holisticdata', '') for file in input_files]
+    relative_filename_stems = [
+        str(file.relative_to(relative_dir).parent / file.stem.replace('.holisticdata', ''))
+        for file, relative_dir 
+        in zip(input_files, relative_dirs)
+    ]
 
     measure_weighting_choice = DvajMeasureWeighting[args.measure_weighting]
     measure_weighting = measure_weighting_choice.get_weighting()
@@ -312,7 +319,7 @@ if __name__ == "__main__":
     debug_dir.mkdir(parents=True, exist_ok=True)
     count_by_subpath = {}
     debug_file_count = 0
-    def make_debug_path(name: str, subpath: str = ""):
+    def make_debug_path(name: str, subpath: str = "") -> Path:
         global debug_file_count
         debug_file_count += 1
         count_by_subpath[subpath] = count_by_subpath.get(subpath, 0) + 1
@@ -322,7 +329,9 @@ if __name__ == "__main__":
             dirpath = dirpath / subpath
             # prefix = f"{prefix}_subid{count_by_subpath[subpath]:04}"
         dirpath.mkdir(parents=True, exist_ok=True)
-        return dirpath / f"{prefix}_{subpath}_{name}"
+        subpath_stem = Path(subpath).stem
+        final_path = dirpath / f"{prefix}_{subpath_stem}_{name}"
+        return final_path
     
     def save_debug_fig(name: str, fn: t.Callable[[plt.Axes], t.Union[t.Any, None]], subpath: str = "", subtitle: t.Optional[str] = sup_title):
         fig, ax = plt.subplots()
@@ -344,7 +353,8 @@ if __name__ == "__main__":
         if subtitle is not None:
             plt.suptitle(subtitle, fontsize=8, y=0.99)
 
-        fig.savefig(make_debug_path(name, subpath))
+        save_path = make_debug_path(name, subpath)
+        fig.savefig(str(save_path))
         plt.close(fig)
 
     audio_data = None
@@ -380,9 +390,9 @@ if __name__ == "__main__":
     # 4. Trim trailing frames beyond which cumulative sum doesn't change.
     # 5. Calculate normalization denominators for each metric, on a per-frame basis.
     print_with_time("Step 1: Calculating DVAJs...")
-    dvaj_dfs, visibility_dfs = zip(*generate_dvajs_with_visibility(args.files, landmarks, include_base=not args.noinclude_base))
+    dvaj_dfs, visibility_dfs = zip(*generate_dvajs_with_visibility(input_files, landmarks, include_base=not args.noinclude_base))
     for i in range(len(filename_stems)):
-        save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Raw DVAJ ({filename_stems[i]})", ax=ax), subpath=filename_stems[i])
+        save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Raw DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
 
     if args.weigh_by_visibility:
         dvaj_suffixes = [measure.name for measure in DVAJ]
@@ -390,7 +400,7 @@ if __name__ == "__main__":
         dvaj_dfs = [weigh_by_visiblity(dvaj, visibility, landmark_names, dvaj_suffixes) for dvaj, visibility in zip(dvaj_dfs, visibility_dfs)]
 
         for i in range(len(filename_stems)):
-            save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[i]})", ax=ax), subpath=filename_stems[i])
+            save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
     else:
         print_with_time("Step 2: Skipped (not weighting by visibility) ...")
 
@@ -399,7 +409,7 @@ if __name__ == "__main__":
     # For any NaNs, fill with the last valid value (NaNs will appear when skeleton isn't tracked)
     dvaj_cumsum_dfs = [dvaj_cumsum.fillna(method="ffill") for dvaj_cumsum in dvaj_cumsum_dfs]
     for i in range(len(filename_stems)):
-        save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Cumulative DVAJ ({filename_stems[i]})", ax=ax), subpath=filename_stems[i])
+        save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Cumulative DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
     del dvaj_dfs
     
     print_with_time("Step 4: Trimming trailing frames...")
@@ -415,7 +425,7 @@ if __name__ == "__main__":
         for i in range(len(filename_stems)):
             df = dvaj_cumsum_dfs[i]
             measure_cols = [col for col in df.columns if measure.name in col]
-            save_debug_fig(f"trimmed_dvaj_{measure.name}.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Trimmed {measure.name} ({filename_stems[0]})", ax=ax), subpath=filename_stems[i])
+            save_debug_fig(f"trimmed_dvaj_{measure.name}.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Trimmed {measure.name} ({filename_stems[0]})", ax=ax), subpath=relative_filename_stems[i])
 
     # Step 5.
     # Computes the normalization denominators for each metric, on a per-frame basis.
@@ -444,12 +454,18 @@ if __name__ == "__main__":
     # 7. Compute weighted averages of the dvajs for each metric.
     print_with_time("Step 6: Creating Dance Trees...")
 
-    net_complexities = []
+    data = {
+        "name": [],
+        "net_complexity": [],
+        "frames": [],
+        "complexity_per_frame": [],
+    }
 
     for i, dvaj_cumsum, file in zip(range(len(dvaj_cumsum_dfs)), dvaj_cumsum_dfs, input_files):
 
         filename_stem = filename_stems[i]
-        print_with_time(f"\t({i+1}/{len(input_files)}): {filename_stem} ...", end='')
+        relative_filename_stem = relative_filename_stems[i]
+        print_with_time(f"\t({i+1}/{len(input_files)}): {filename_stem}", end='')
         complexity_measures = aggregate_accumulated_dvaj_by_measure(
             dvaj_cumsum,
             measure_weighting=measure_weighting,
@@ -461,11 +477,14 @@ if __name__ == "__main__":
 
         # if i == 0:
         # plot & save debug figures for complexity measures and overall complexity
-        save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures.plot(title=f"Complexity Measures ({filename_stem})", ax=ax), subpath=filename_stem)
-        save_debug_fig(f"overall_complexity.png", lambda ax: overall_complexity.plot(title=f"Overall Complexity ({filename_stem})", ax=ax), subpath=filename_stem)
+        save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures.plot(title=f"Complexity Measures ({filename_stem})", ax=ax), subpath=relative_filename_stem)
+        save_debug_fig(f"overall_complexity.png", lambda ax: overall_complexity.plot(title=f"Overall Complexity ({filename_stem})", ax=ax), subpath=relative_filename_stem)
 
-        net_complexities.append(overall_complexity.iloc[-1])
-
+        data["name"].append(filename_stem)
+        data["frames"].append(dvaj_cumsum.shape[0])
+        data["complexity_per_frame"].append(overall_complexity.iloc[-1] / dvaj_cumsum.shape[0])
+        data["net_complexity"].append(overall_complexity.iloc[-1])
+        
         # Save the dance tree to a file in destdir with the same name as the holistic_csv_file, but with the extension ".dance_tree.json" instead of ".holisticdata.csv".
         dest_tree_filename = filename_stem + '.dance_tree.json'
         dest_tree_filepath = args.destdir / dest_tree_filename
@@ -476,12 +495,13 @@ if __name__ == "__main__":
         except ValueError:
             pass
         
+        dest_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
         with dest_tree_filepath.open('w') as f:
             json.dump(dance_tree, f)
 
-        print(f"-> {dest_tree_filepath.relative_to(args.destdir)}.")
+        print(f" -> {dest_tree_filepath.relative_to(args.destdir)}.")
     
-    net_complexities = pd.Series(net_complexities, index=filename_stems, name="net_complexity")
-    net_complexities.index.name = "filename"
-    net_complexities.to_csv(make_debug_path("net_complexities.csv"), index=True, header=True)
+    complexity_summary = pd.DataFrame(data, index=relative_filename_stems)
+    complexity_summary.index.name = "path"
+    complexity_summary.to_csv(make_debug_path("complexity_summary.csv"), index=True, header=True)
     print_with_time("Finished.")
