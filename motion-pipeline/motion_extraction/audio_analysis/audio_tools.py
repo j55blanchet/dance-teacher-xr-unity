@@ -134,7 +134,7 @@ def load_audio(path: Path, as_mono: bool = False) -> t.Tuple[np.ndarray, float]:
         audio_array, sample_rate = librosa.load(path, sr=None, mono=True)
 
         if len(audio_array) == 0:
-            print("Empty audio array. Trying again with duration set to the length of the audio file.")
+            # print("Empty audio array. Trying again with duration set to the length of the audio file.")
             # See https://stackoverflow.com/questions/74496808/mp3-loading-using-librosa-return-empty-data-when-start-time-metadata-is-0
             import pydub
             import math

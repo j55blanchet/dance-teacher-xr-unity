@@ -80,7 +80,7 @@ if __name__ == "__main__":
         args.csv_output_folder.mkdir(exist_ok=True, parents=True)
 
     if len(args.holistic_data) == 1 and args.holistic_data[0].is_dir():
-        args.holistic_data = list(args.holistic_data[0].glob('*.holisticdata.csv'))
+        args.holistic_data = list(args.holistic_data[0].rglob('*.holisticdata.csv'))
 
     for holistic_data in args.holistic_data:
         glob_data = holistic_data.parent.glob(holistic_data.name)

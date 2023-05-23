@@ -24,7 +24,7 @@
                 "--output_folder=${workspaceFolder}/data/holistic_data",
                 "--log_level=INFO",
                 "--model-complexity=2",
-                "--frame_output_folder=${workspaceFolder}/temp/frames",
+                // "--frame_output_folder=${workspaceFolder}/temp/frames",
                 // "--rewrite_existing",
             ],
         },
