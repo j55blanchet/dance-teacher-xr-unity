@@ -112,7 +112,7 @@
       async function loadDanceTree() {
         // Load the dance tree data from the selected JSON file
         const filename = select.value;
-        const response = await fetch(`../data/audio_analysis/dancetrees/video/${filename}`)
+        const response = await fetch(`../data/audio_analysis/dancetrees/video/study2/${filename}`)
         const data = await response.json();
         danceTree = data;
         render();
