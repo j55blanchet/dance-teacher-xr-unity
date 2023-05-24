@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 import time
 import pandas as pd
@@ -6,8 +7,9 @@ import typing as t
 import matplotlib.pyplot as plt
 import enum
 import sys
+from tqdm import tqdm, trange
 
-from .complexityanalysis import get_pose_landmarks_present_in_dataframe, DVAJ, calc_scalar_dvaj
+from .uist_complexityanalysis import get_pose_landmarks_present_in_dataframe, DVAJ, calc_scalar_dvaj
 
 PoseLandmark = mp.solutions.pose.PoseLandmark # type: ignore
 
@@ -271,6 +273,8 @@ if __name__ == "__main__":
     parser.add_argument("--destdir", type=Path, default=Path.cwd())  
     parser.add_argument("--srcdir", type=Path, required=False)  
     parser.add_argument("--audiodata", type=Path, required=False)
+    parser.add_argument("--noplot_figs", action="store_false", default=True)
+    parser.add_argument("--complexity_summary_csv", type=Path, required=True)
     parser.add_argument("--measure_weighting", choices=[e.name for e in DvajMeasureWeighting], default=DvajMeasureWeighting.decreasing_by_quarter.name)
     parser.add_argument("--landmark_weighting", choices=[e.name for e in PoseLandmarkWeighting], default=PoseLandmarkWeighting.balanced.name)
     parser.add_argument("--noinclude_base", action="store_true", default=False)
@@ -313,7 +317,8 @@ if __name__ == "__main__":
     landmark_weighting_choice = PoseLandmarkWeighting[args.landmark_weighting]
     landmark_weighting = landmark_weighting_choice.get_weighting()
 
-    sup_title = f"mw-{measure_weighting_choice.name}_lmw-{landmark_weighting_choice.name}_{'byvisibility' if args.weigh_by_visibility else 'ignorevisibility'}"
+    creation_method = f"mw-{measure_weighting_choice.name}_lmw-{landmark_weighting_choice.name}_{'byvisibility' if args.weigh_by_visibility else 'ignorevisibility'}"
+    sup_title = creation_method
 
     debug_dir = args.destdir / "debug" / sup_title
     debug_dir.mkdir(parents=True, exist_ok=True)
@@ -390,17 +395,22 @@ if __name__ == "__main__":
     # 4. Trim trailing frames beyond which cumulative sum doesn't change.
     # 5. Calculate normalization denominators for each metric, on a per-frame basis.
     print_with_time("Step 1: Calculating DVAJs...")
-    dvaj_dfs, visibility_dfs = zip(*generate_dvajs_with_visibility(input_files, landmarks, include_base=not args.noinclude_base))
-    for i in range(len(filename_stems)):
-        save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Raw DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
+    dvaj_dfs, visibility_dfs = zip(*tqdm(generate_dvajs_with_visibility(input_files, landmarks, include_base=not args.noinclude_base), total=len(input_files)))
+    
+    if args.noplot_figs:
+        print_with_time("\tPlotting raw DVAJs...")
+        for i in trange(len(filename_stems)):
+            save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Raw DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
 
     if args.weigh_by_visibility:
         dvaj_suffixes = [measure.name for measure in DVAJ]
         print_with_time("Step 2: Weighting by visibility...")
-        dvaj_dfs = [weigh_by_visiblity(dvaj, visibility, landmark_names, dvaj_suffixes) for dvaj, visibility in zip(dvaj_dfs, visibility_dfs)]
+        dvaj_dfs = [weigh_by_visiblity(dvaj, visibility, landmark_names, dvaj_suffixes) for dvaj, visibility in tqdm(zip(dvaj_dfs, visibility_dfs), total=len(dvaj_dfs))]
 
-        for i in range(len(filename_stems)):
-            save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
+        if args.noplot_figs:
+            print_with_time("\tPlotting visibility-weighted DVAJs...")
+            for i in trange(len(filename_stems)):
+                save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
     else:
         print_with_time("Step 2: Skipped (not weighting by visibility) ...")
 
@@ -408,24 +418,29 @@ if __name__ == "__main__":
     dvaj_cumsum_dfs = [dvaj.cumsum() for dvaj in dvaj_dfs]
     # For any NaNs, fill with the last valid value (NaNs will appear when skeleton isn't tracked)
     dvaj_cumsum_dfs = [dvaj_cumsum.fillna(method="ffill") for dvaj_cumsum in dvaj_cumsum_dfs]
-    for i in range(len(filename_stems)):
-        save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Cumulative DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
+    if args.noplot_figs:
+        print_with_time("\tPlotting cumulative DVAJs...")
+        for i in trange(len(filename_stems)):
+            save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Cumulative DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
     del dvaj_dfs
     
     print_with_time("Step 4: Trimming trailing frames...")
     dvaj_cumsum_dfs, tossed_frames = t.cast(t.Tuple[t.List[pd.DataFrame], t.List[int]] , zip(*[
         trim_df_to_convergence(dvaj_cumsum) for dvaj_cumsum in dvaj_cumsum_dfs
     ]))
+    nontossed_frame_counts = [df.shape[0] for df in dvaj_cumsum_dfs]
     # pd.DataFrame({
         # "trimmed_frames": [dvaj_cumsum.shape[0] for dvaj_cumsum in dvaj_cumsum_dfs],
         # "tossed_frames": tossed_frames,
         # }, index=filename_stems).to_csv(make_debug_path("tossed_frames.csv"))
     
-    for measure in DVAJ:
-        for i in range(len(filename_stems)):
-            df = dvaj_cumsum_dfs[i]
-            measure_cols = [col for col in df.columns if measure.name in col]
-            save_debug_fig(f"trimmed_dvaj_{measure.name}.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Trimmed {measure.name} ({filename_stems[0]})", ax=ax), subpath=relative_filename_stems[i])
+    if args.noplot_figs:
+        for measure in DVAJ:
+            print_with_time(f"\tPlotting trimmed {measure.name}...")
+            for i in trange(len(filename_stems)):
+                df = dvaj_cumsum_dfs[i]
+                measure_cols = [col for col in df.columns if measure.name in col]
+                save_debug_fig(f"trimmed_dvaj_{measure.name}.png", lambda ax: df[measure_cols].plot(title=f"Trimmed {measure.name} ({filename_stems[0]})", ax=ax), subpath=relative_filename_stems[i])
 
     # Step 5.
     # Computes the normalization denominators for each metric, on a per-frame basis.
@@ -439,7 +454,6 @@ if __name__ == "__main__":
         ]
         for landmark_name in landmark_names
         for measure in DVAJ
-
     },  index=filename_stems)
     # Can lookup the normalization denominator for a given metric with:
     #   max_vals.loc[f"{landmark_name}_{measure.name}"].
@@ -448,60 +462,69 @@ if __name__ == "__main__":
     maxes_per_frame.to_csv(make_debug_path("movement_per_frame.csv"))
     max_vals_and_src.to_csv(make_debug_path("max_vals.csv"))
 
-    # Process Steps:
+    # Step 6 & 7.
     # 6. Normalize each metric by its max among the dataset, adjusted
     #      by the length of the dataframe.
-    # 7. Compute weighted averages of the dvajs for each metric.
-    print_with_time("Step 6: Creating Dance Trees...")
-
-    data = {
-        "name": [],
-        "net_complexity": [],
-        "frames": [],
-        "complexity_per_frame": [],
-    }
-
-    for i, dvaj_cumsum, file in zip(range(len(dvaj_cumsum_dfs)), dvaj_cumsum_dfs, input_files):
-
-        filename_stem = filename_stems[i]
-        relative_filename_stem = relative_filename_stems[i]
-        print_with_time(f"\t({i+1}/{len(input_files)}): {filename_stem}", end='')
-        complexity_measures = aggregate_accumulated_dvaj_by_measure(
+    # 7. Aggregate the normalized metrics into a single complexity measure.
+    print_with_time("Step 6 & 7: Normalizing & Aggregating metrics...")
+    complexity_measures = [
+        aggregate_accumulated_dvaj_by_measure(
             dvaj_cumsum,
             measure_weighting=measure_weighting,
             landmark_weighting=landmark_weighting,
         )
+        for dvaj_cumsum in dvaj_cumsum_dfs
+    ]
+    overall_complexities = [
+        complexity_measures[i].sum(axis=1)
+        for i in range(len(complexity_measures))
+    ]
+    del dvaj_cumsum_dfs
+    if args.noplot_figs:
+        print_with_time("\tPlotting complexity measures...")
+        for i in trange(len(filename_stems)):
+            save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures[i].plot(title=f"Complexity Measures ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
+            save_debug_fig(f"overall_complexity.png", lambda ax: overall_complexities[i].plot(title=f"Overall Complexity ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
 
-        overall_complexity = complexity_measures.sum(axis=1).rename("overall_complexity")
-        dance_tree = construct_dance_tree_from_complexity_measures(filename_stem, complexity_measures)
+    # Step 8.
+    # Save results
+    print_with_time("Step 8: Saving results...")
+    overall_complexities_df = pd.concat(overall_complexities, axis=1)
+    overall_complexities_df.columns = relative_filename_stems
 
-        # if i == 0:
-        # plot & save debug figures for complexity measures and overall complexity
-        save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures.plot(title=f"Complexity Measures ({filename_stem})", ax=ax), subpath=relative_filename_stem)
-        save_debug_fig(f"overall_complexity.png", lambda ax: overall_complexity.plot(title=f"Overall Complexity ({filename_stem})", ax=ax), subpath=relative_filename_stem)
+    save_debug_fig(f"overall_complexities.png", lambda ax: overall_complexities_df.plot(title=f"Overall Complexity", ax=ax))
+    overall_complexities_df.to_csv(make_debug_path("overall_complexities.csv"))
 
-        data["name"].append(filename_stem)
-        data["frames"].append(dvaj_cumsum.shape[0])
-        data["complexity_per_frame"].append(overall_complexity.iloc[-1] / dvaj_cumsum.shape[0])
-        data["net_complexity"].append(overall_complexity.iloc[-1])
-        
-        # Save the dance tree to a file in destdir with the same name as the holistic_csv_file, but with the extension ".dance_tree.json" instead of ".holisticdata.csv".
-        dest_tree_filename = filename_stem + '.dance_tree.json'
-        dest_tree_filepath = args.destdir / dest_tree_filename
-
-        # Try to reconstruct the directory structure of the srcdir in the destdir.
-        try:
-            dest_tree_filepath = args.destdir / file.relative_to(args.srcdir).parent / dest_tree_filename
-        except ValueError:
-            pass
-        
-        dest_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
-        with dest_tree_filepath.open('w') as f:
-            json.dump(dance_tree, f)
-
-        print(f" -> {dest_tree_filepath.relative_to(args.destdir)}.")
+    update_data = pd.DataFrame({
+        "stem": filename_stems,
+        "frames": nontossed_frame_counts,
+        "complexity_per_frame": [overall_complexities[i].iloc[-1] / nontossed_frame_counts[i] for i in range(len(filename_stems))], 
+        "net_complexity": [overall_complexities[i].iloc[-1] for i in range(len(filename_stems))],
+    },
+        index=[
+            relative_filename_stems,
+            [creation_method for _ in filename_stems]
+        ]
+    )    
+    update_data.index.names = ["path", "creation_method"]
+    update_data.to_csv(make_debug_path("complexity_summary.csv"))
     
-    complexity_summary = pd.DataFrame(data, index=relative_filename_stems)
-    complexity_summary.index.name = "path"
-    complexity_summary.to_csv(make_debug_path("complexity_summary.csv"), index=True, header=True)
+
+    existing_complexity_summary = None
+    if args.complexity_summary_csv.exists():
+        existing_complexity_summary = pd.read_csv(str(args.complexity_summary_csv), index_col=["path", "creation_method"])
+
+        # Perform an upsert on the existing complexity summary
+        # (combination of outer join and update)
+        existing_complexity_summary = pd.concat([
+            existing_complexity_summary[~existing_complexity_summary.index.isin(update_data.index)], 
+            update_data
+        ])
+        
+        existing_complexity_summary.update(update_data)
+    else:
+        existing_complexity_summary = update_data    
+
+    existing_complexity_summary.to_csv(args.complexity_summary_csv, index=True, header=True)
+
     print_with_time("Finished.")

@@ -5,7 +5,7 @@ from typing import Collection, List, Union
 import pandas as pd
 import mediapipe as mp
 from pathlib import Path
-from .complexityanalysis import calc_scalar_dvaj, calc_dvaj_metrics, DVAJ, plot_dvaj, Stat
+from .uist_complexityanalysis import calc_scalar_dvaj, calc_dvaj_metrics, DVAJ, plot_dvaj, Stat
 import matplotlib.pyplot as plt
 
 PoseLandmarks = mp.solutions.pose.PoseLandmark
