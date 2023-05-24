@@ -9,3 +9,4 @@ moviepy ~=1.0.3
 pydub ~=0.25.1
 psutil~=5.9
 dataclasses-json~=0.5.7
+tqdm >= 4.65.0

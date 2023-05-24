@@ -13,6 +13,14 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "name": "Clean",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/utils/clean.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "VideoPipeline (1): Get MP Holistic Data",
             "type": "python",
             "request": "launch",
@@ -141,10 +149,10 @@
             ]
         },
         {   
-            "name": "Complexity Analysis",
+            "name": "Complexity Metric (UIST)",
             "type": "python",
             "request": "launch",
-            "module": "motion_extraction.complexity_analysis",
+            "module": "motion_extraction.uist_complexity_analysis",
             "args": [
                 "--srcdir=${workspaceFolder}/data/holistic_data/",
                 "--destination=${workspaceFolder}/data/complexity.csv",
@@ -156,14 +164,21 @@
             ],
         },
         {   
-            "name": "Dance Tree Construction (DVAJ Method)",
+            "name": "Calculate Cumulative Complexity",
             "type": "python",
             "request": "launch",
-            "module": "motion_extraction.complexity_analysis.create_dance_tree_dvaj",
+            "module": "motion_extraction.complexity_analysis.calculate_cumulative_complexity",
             "args": [
                 "--srcdir=${workspaceFolder}/data/holistic_data/",
-                "--destdir=${workspaceFolder}/data/dancetrees/",
+                "--destdir=${workspaceFolder}/data/complexities/",
                 "--audiodata=${workspaceFolder}/data/summary/audio_analysis.csv",
+                "--complexity_summary_csv=${workspaceFolder}/data/complexity/dvaj_complexity.csv",
+                "--noplot_figs",
+                // "--measure_weighting=decreasing_by_half",
+                // "--measure_weighting=decreasing_by_quarter",
+                "--measure_weighting=equal",
+                "--landmark_weighting=balanced",
+                // "--landmark_weighting=dempster"
             ],
         },
         {
@@ -178,6 +193,6 @@
                 "--analysis_summary_out=${workspaceFolder}/data/summary/audio_analysis.csv",
                 "--audiocachedir=${workspaceFolder}/data/audio_cache",
             ]
-        }
+        },
     ]
 }
