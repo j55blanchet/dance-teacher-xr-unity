@@ -273,8 +273,7 @@ if __name__ == "__main__":
     parser.add_argument("--destdir", type=Path, default=Path.cwd())  
     parser.add_argument("--srcdir", type=Path, required=False)  
     parser.add_argument("--audiodata", type=Path, required=False)
-    parser.add_argument("--noplot_figs", action="store_false", default=True)
-    parser.add_argument("--complexity_summary_csv", type=Path, required=True)
+    parser.add_argument("--plot_figs", action="store_true", default=False)
     parser.add_argument("--measure_weighting", choices=[e.name for e in DvajMeasureWeighting], default=DvajMeasureWeighting.decreasing_by_quarter.name)
     parser.add_argument("--landmark_weighting", choices=[e.name for e in PoseLandmarkWeighting], default=PoseLandmarkWeighting.balanced.name)
     parser.add_argument("--noinclude_base", action="store_true", default=False)
@@ -397,7 +396,7 @@ if __name__ == "__main__":
     print_with_time("Step 1: Calculating DVAJs...")
     dvaj_dfs, visibility_dfs = zip(*tqdm(generate_dvajs_with_visibility(input_files, landmarks, include_base=not args.noinclude_base), total=len(input_files)))
     
-    if args.noplot_figs:
+    if args.plot_figs:
         print_with_time("\tPlotting raw DVAJs...")
         for i in trange(len(filename_stems)):
             save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Raw DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
@@ -407,7 +406,7 @@ if __name__ == "__main__":
         print_with_time("Step 2: Weighting by visibility...")
         dvaj_dfs = [weigh_by_visiblity(dvaj, visibility, landmark_names, dvaj_suffixes) for dvaj, visibility in tqdm(zip(dvaj_dfs, visibility_dfs), total=len(dvaj_dfs))]
 
-        if args.noplot_figs:
+        if args.plot_figs:
             print_with_time("\tPlotting visibility-weighted DVAJs...")
             for i in trange(len(filename_stems)):
                 save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
@@ -418,7 +417,7 @@ if __name__ == "__main__":
     dvaj_cumsum_dfs = [dvaj.cumsum() for dvaj in dvaj_dfs]
     # For any NaNs, fill with the last valid value (NaNs will appear when skeleton isn't tracked)
     dvaj_cumsum_dfs = [dvaj_cumsum.fillna(method="ffill") for dvaj_cumsum in dvaj_cumsum_dfs]
-    if args.noplot_figs:
+    if args.plot_figs:
         print_with_time("\tPlotting cumulative DVAJs...")
         for i in trange(len(filename_stems)):
             save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Cumulative DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
@@ -434,7 +433,7 @@ if __name__ == "__main__":
         # "tossed_frames": tossed_frames,
         # }, index=filename_stems).to_csv(make_debug_path("tossed_frames.csv"))
     
-    if args.noplot_figs:
+    if args.plot_figs:
         for measure in DVAJ:
             print_with_time(f"\tPlotting trimmed {measure.name}...")
             for i in trange(len(filename_stems)):
@@ -480,7 +479,7 @@ if __name__ == "__main__":
         for i in range(len(complexity_measures))
     ]
     del dvaj_cumsum_dfs
-    if args.noplot_figs:
+    if args.plot_figs:
         print_with_time("\tPlotting complexity measures...")
         for i in trange(len(filename_stems)):
             save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures[i].plot(title=f"Complexity Measures ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
@@ -495,6 +494,13 @@ if __name__ == "__main__":
     save_debug_fig(f"overall_complexities.png", lambda ax: overall_complexities_df.plot(title=f"Overall Complexity", ax=ax))
     overall_complexities_df.to_csv(make_debug_path("overall_complexities.csv"))
 
+    # Save complexity by file
+    for i, relative_filename_stem in enumerate(tqdm(relative_filename_stems)):
+        rel_path = args.destdir / relative_filename_stem
+        # todo: have a file by file storeage of accumulated complexity, 
+        # with different columns for each method of generation.
+        pass
+
     update_data = pd.DataFrame({
         "stem": filename_stems,
         "frames": nontossed_frame_counts,
@@ -508,11 +514,11 @@ if __name__ == "__main__":
     )    
     update_data.index.names = ["path", "creation_method"]
     update_data.to_csv(make_debug_path("complexity_summary.csv"))
-    
 
     existing_complexity_summary = None
-    if args.complexity_summary_csv.exists():
-        existing_complexity_summary = pd.read_csv(str(args.complexity_summary_csv), index_col=["path", "creation_method"])
+    complexity_summary_csv_filepath = args.destdir / "dvaj_complexity.csv"
+    if complexity_summary_csv_filepath.exists():
+        existing_complexity_summary = pd.read_csv(str(complexity_summary_csv_filepath), index_col=["path", "creation_method"])
 
         # Perform an upsert on the existing complexity summary
         # (combination of outer join and update)
@@ -525,6 +531,6 @@ if __name__ == "__main__":
     else:
         existing_complexity_summary = update_data    
 
-    existing_complexity_summary.to_csv(args.complexity_summary_csv, index=True, header=True)
+    existing_complexity_summary.to_csv(args.complexity_summary_csv_filepath, index=True, header=True)
 
     print_with_time("Finished.")
