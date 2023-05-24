@@ -13,14 +13,6 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Clean",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/utils/clean.py",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}"
-        },
-        {
             "name": "VideoPipeline (1): Get MP Holistic Data",
             "type": "python",
             "request": "launch",
@@ -171,13 +163,16 @@
             "args": [
                 "--srcdir=${workspaceFolder}/data/holistic_data/",
                 "--destdir=${workspaceFolder}/data/complexities/",
-                "--audiodata=${workspaceFolder}/data/summary/audio_analysis.csv",
-                "--plot_figs",
+                // "--plot_figs",
                 // "--measure_weighting=decreasing_by_half",
-                "--measure_weighting=decreasing_by_quarter",
+                // "--measure_weighting=decreasing_by_quarter",
+                "--measure_weighting=all",
                 // "--measure_weighting=equal",
-                "--landmark_weighting=balanced",
-                // "--landmark_weighting=dempster"
+                // "--landmark_weighting=balanced",
+                // "--landmark_weighting=dempster",
+                "--landmark_weighting=all",
+                "--weigh_by_visibility=both",
+                "--include_base=both",
             ],
         },
         {

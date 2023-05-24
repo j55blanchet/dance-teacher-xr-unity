@@ -8,10 +8,27 @@ import matplotlib.pyplot as plt
 import enum
 import sys
 from tqdm import tqdm, trange
+import itertools
 
 from .uist_complexityanalysis import get_pose_landmarks_present_in_dataframe, DVAJ, calc_scalar_dvaj
 
 PoseLandmark = mp.solutions.pose.PoseLandmark # type: ignore
+
+def pd_append_replace(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+    """Appends pd2 contents of df1, replacing any rows in df1 that have the same index as pd2, 
+    and returns the result.
+
+    Args:
+        df1 (pd.DataFrame): The original dataframe
+        df2 (pd.DataFrame): Dataframe with updated or additional data
+    
+    Returns:
+        pd.DataFrame: The updated dataframe
+    """
+    return pd.concat([
+        df1[~df1.index.isin(df2.index)], # unmodified rows
+        df2                              # updated / new rows
+    ])
 
 T = t.TypeVar('T', bound=enum.Enum)
 def normalize_weighting(w: t.Dict[T, float]) -> t.Dict[T, float]:
@@ -263,45 +280,38 @@ def generate_dvajs_with_visibility(
         visibility = get_visibility(relative_position, landmarks_to_use)
         yield dvaj, visibility
 
-if __name__ == "__main__":
-    import argparse
-    import sys
-    import json
-    plt.ioff()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--destdir", type=Path, default=Path.cwd())  
-    parser.add_argument("--srcdir", type=Path, required=False)  
-    parser.add_argument("--audiodata", type=Path, required=False)
-    parser.add_argument("--plot_figs", action="store_true", default=False)
-    parser.add_argument("--measure_weighting", choices=[e.name for e in DvajMeasureWeighting], default=DvajMeasureWeighting.decreasing_by_quarter.name)
-    parser.add_argument("--landmark_weighting", choices=[e.name for e in PoseLandmarkWeighting], default=PoseLandmarkWeighting.balanced.name)
-    parser.add_argument("--noinclude_base", action="store_true", default=False)
-    parser.add_argument("--weigh_by_visibility", action="store_false", default=True)
-    parser.add_argument("files", nargs="*", type=Path)
-    args = parser.parse_args()
-
-    input_files: t.List[Path] = args.files.copy()
-    relative_dirs: t.List[Path] = [f.parent for f in args.files]
+def calculate_cumulative_complexities(
+        srcdir: t.Optional[Path],
+        other_files: t.List[Path],
+        destdir: Path,
+        measure_weighting: DvajMeasureWeighting,
+        landmark_weighting: PoseLandmarkWeighting,
+        plot_figs: bool = False,
+        include_base: bool = False,
+        weigh_by_visibility: bool = True,
+        print_prefix: t.Callable[[], str] = lambda: "",
+):
+    input_files: t.List[Path] = other_files.copy()
+    relative_dirs: t.List[Path] = [f.parent for f in other_files]
 
     # if srcdir is specified, add all files of the form "*.holisticdata.csv" in that directory to the list of files.
     files_from_srcdir = []
-    if args.srcdir is not None:
-        files_from_srcdir = list(args.srcdir.rglob("*.holisticdata.csv"))
+    if srcdir is not None:
+        files_from_srcdir = list(srcdir.rglob("*.holisticdata.csv"))
         input_files.extend(files_from_srcdir)
-        relative_dirs.extend([args.srcdir for _ in files_from_srcdir])
-    elif len(args.files) == 0:
-        print("No files specified. Use --srcdir or specify files as arguments.")
+        relative_dirs.extend([srcdir for _ in files_from_srcdir])
+    elif len(input_files) == 0:
+        print(f"{print_prefix()}No files specified. Use --srcdir or specify files as arguments.")
         sys.exit(1)
     
-    print(f"Input: {len(input_files)} files", end='')
-    if args.srcdir is not None:
-        print(f", {len(files_from_srcdir)} from {args.srcdir}.")
+    print(f"{print_prefix()}Input: {len(input_files)} files", end='')
+    if srcdir is not None:
+        print(f", {len(files_from_srcdir)} from {srcdir}.")
     else:
         print('.')
       
-    print(f"Output: saving output dance trees to {args.destdir}.")
-    args.destdir.mkdir(parents=True, exist_ok=True)
+    print(f"{print_prefix()}Output: saving output dance trees to {destdir}.")
+    destdir.mkdir(parents=True, exist_ok=True)
 
     filename_stems = [file.stem.replace('.holisticdata', '') for file in input_files]
     relative_filename_stems = [
@@ -310,21 +320,21 @@ if __name__ == "__main__":
         in zip(input_files, relative_dirs)
     ]
 
-    measure_weighting_choice = DvajMeasureWeighting[args.measure_weighting]
-    measure_weighting = measure_weighting_choice.get_weighting()
+    measure_weighting_choice = measure_weighting
+    measure_weighting_weights = measure_weighting_choice.get_weighting()
 
-    landmark_weighting_choice = PoseLandmarkWeighting[args.landmark_weighting]
-    landmark_weighting = landmark_weighting_choice.get_weighting()
+    landmark_weighting_choice = landmark_weighting
+    landmark_weighting_weights = landmark_weighting_choice.get_weighting()
 
-    creation_method = f"mw-{measure_weighting_choice.name}_lmw-{landmark_weighting_choice.name}_{'byvisibility' if args.weigh_by_visibility else 'ignorevisibility'}"
+    creation_method = f"mw-{measure_weighting_choice.name}_lmw-{landmark_weighting_choice.name}_{'byvisibility' if weigh_by_visibility else 'ignorevisibility'}_{'includebase' if include_base else 'excludebase'}"
     sup_title = creation_method
 
-    debug_dir = args.destdir / "debug" / sup_title
+    debug_dir = destdir / "debug" / sup_title
     debug_dir.mkdir(parents=True, exist_ok=True)
     count_by_subpath = {}
     debug_file_count = 0
     def make_debug_path(name: str, subpath: str = "") -> Path:
-        global debug_file_count
+        nonlocal debug_file_count
         debug_file_count += 1
         count_by_subpath[subpath] = count_by_subpath.get(subpath, 0) + 1
         dirpath = debug_dir
@@ -361,31 +371,27 @@ if __name__ == "__main__":
         fig.savefig(str(save_path))
         plt.close(fig)
 
-    audio_data = None
-    if args.audiodata is not None:
-        audio_data = pd.read_csv(args.audiodata, index_col=0)
-
     landmarks = [
-        lm for lm in landmark_weighting.keys()
-        if landmark_weighting.get(lm, 0) > 0
+        lm for lm in landmark_weighting_weights.keys()
+        if landmark_weighting_weights.get(lm, 0) > 0
     ]
     landmark_names = [landmark.name for landmark in landmarks]
-    if not args.noinclude_base:
+    if include_base:
         # base is a special landmark that is computed from the average of the hips.
         #  >> data is made relative to the base during preprocessing.
         landmark_names.append("base")
 
-    print(f"Using measure weighting: {measure_weighting_choice.name}")
-    print(f"Using landmark weighting: {landmark_weighting_choice.name}")
-    print(f"Including base landmark: {'yes' if not args.noinclude_base else 'no'}")
-    print(f"Weighing by visibility: {'yes' if args.weigh_by_visibility else 'no'}")
+    print(f"{print_prefix()}Using measure weighting: {measure_weighting_choice.name}")
+    print(f"{print_prefix()}Using landmark weighting: {landmark_weighting_choice.name}")
+    print(f"{print_prefix()}Including base landmark: {'yes' if include_base else 'no'}")
+    print(f"{print_prefix()}Weighing by visibility: {'yes' if weigh_by_visibility else 'no'}")
 
     # print("Preprocessing files...")
 
     start_time = time.time()
 
     def print_with_time(msg: str, **kwargs):
-        print(f"[{time.time() - start_time: 6.2f}s]\t{msg} ", **kwargs)
+        print(f"{print_prefix()}[{time.time() - start_time: 6.2f}s]\t{msg} ", **kwargs)
     
     ##### Preprocess Steps:
     # 1. Calculate the dvaj by-frame for each file.
@@ -394,19 +400,19 @@ if __name__ == "__main__":
     # 4. Trim trailing frames beyond which cumulative sum doesn't change.
     # 5. Calculate normalization denominators for each metric, on a per-frame basis.
     print_with_time("Step 1: Calculating DVAJs...")
-    dvaj_dfs, visibility_dfs = zip(*tqdm(generate_dvajs_with_visibility(input_files, landmarks, include_base=not args.noinclude_base), total=len(input_files)))
+    dvaj_dfs, visibility_dfs = zip(*tqdm(generate_dvajs_with_visibility(input_files, landmarks, include_base=include_base), total=len(input_files)))
     
-    if args.plot_figs:
+    if plot_figs:
         print_with_time("\tPlotting raw DVAJs...")
         for i in trange(len(filename_stems)):
             save_debug_fig("generated_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Raw DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
 
-    if args.weigh_by_visibility:
+    if weigh_by_visibility:
         dvaj_suffixes = [measure.name for measure in DVAJ]
         print_with_time("Step 2: Weighting by visibility...")
         dvaj_dfs = [weigh_by_visiblity(dvaj, visibility, landmark_names, dvaj_suffixes) for dvaj, visibility in tqdm(zip(dvaj_dfs, visibility_dfs), total=len(dvaj_dfs))]
 
-        if args.plot_figs:
+        if plot_figs:
             print_with_time("\tPlotting visibility-weighted DVAJs...")
             for i in trange(len(filename_stems)):
                 save_debug_fig("visweighted_dvaj.png", lambda ax: dvaj_dfs[i].plot(title=f"Visibility-Weighted DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
@@ -417,7 +423,7 @@ if __name__ == "__main__":
     dvaj_cumsum_dfs = [dvaj.cumsum() for dvaj in dvaj_dfs]
     # For any NaNs, fill with the last valid value (NaNs will appear when skeleton isn't tracked)
     dvaj_cumsum_dfs = [dvaj_cumsum.fillna(method="ffill") for dvaj_cumsum in dvaj_cumsum_dfs]
-    if args.plot_figs:
+    if plot_figs:
         print_with_time("\tPlotting cumulative DVAJs...")
         for i in trange(len(filename_stems)):
             save_debug_fig("cumsum_dvaj.png", lambda ax: dvaj_cumsum_dfs[i].plot(title=f"Cumulative DVAJ ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
@@ -433,7 +439,7 @@ if __name__ == "__main__":
         # "tossed_frames": tossed_frames,
         # }, index=filename_stems).to_csv(make_debug_path("tossed_frames.csv"))
     
-    if args.plot_figs:
+    if plot_figs:
         for measure in DVAJ:
             print_with_time(f"\tPlotting trimmed {measure.name}...")
             for i in trange(len(filename_stems)):
@@ -469,8 +475,8 @@ if __name__ == "__main__":
     complexity_measures = [
         aggregate_accumulated_dvaj_by_measure(
             dvaj_cumsum,
-            measure_weighting=measure_weighting,
-            landmark_weighting=landmark_weighting,
+            measure_weighting=measure_weighting_weights,
+            landmark_weighting=landmark_weighting_weights,
         )
         for dvaj_cumsum in dvaj_cumsum_dfs
     ]
@@ -479,7 +485,7 @@ if __name__ == "__main__":
         for i in range(len(complexity_measures))
     ]
     del dvaj_cumsum_dfs
-    if args.plot_figs:
+    if plot_figs:
         print_with_time("\tPlotting complexity measures...")
         for i in trange(len(filename_stems)):
             save_debug_fig(f"complexity_measures.png", lambda ax: complexity_measures[i].plot(title=f"Complexity Measures ({filename_stems[i]})", ax=ax), subpath=relative_filename_stems[i])
@@ -495,11 +501,20 @@ if __name__ == "__main__":
     overall_complexities_df.to_csv(make_debug_path("overall_complexities.csv"))
 
     # Save complexity by file
-    for i, relative_filename_stem in enumerate(tqdm(relative_filename_stems)):
-        rel_path = args.destdir / relative_filename_stem
-        # todo: have a file by file storeage of accumulated complexity, 
-        # with different columns for each method of generation.
-        pass
+    for i, relative_filename_stem in enumerate(tqdm(relative_filename_stems)): # type: ignore
+        perfile_complexity_path = (destdir / 'byfile' / relative_filename_stem).with_suffix(".complexity.csv")
+        
+        if perfile_complexity_path.exists():
+            existing_complexity = pd.read_csv(perfile_complexity_path, index_col=0)
+            if creation_method in existing_complexity.columns:
+                # Drop to ensure no rows are retained from previous runs
+                existing_complexity.drop(columns=[creation_method], inplace=True)
+            existing_complexity[creation_method] = overall_complexities[i]
+            existing_complexity.to_csv(str(perfile_complexity_path))
+        else:
+            perfile_complexity_path.parent.mkdir(parents=True, exist_ok=True)
+            overall_complexities[i].name = creation_method
+            overall_complexities[i].to_csv(str(perfile_complexity_path))
 
     update_data = pd.DataFrame({
         "stem": filename_stems,
@@ -516,21 +531,66 @@ if __name__ == "__main__":
     update_data.to_csv(make_debug_path("complexity_summary.csv"))
 
     existing_complexity_summary = None
-    complexity_summary_csv_filepath = args.destdir / "dvaj_complexity.csv"
+    complexity_summary_csv_filepath = destdir / "dvaj_complexity.csv"
     if complexity_summary_csv_filepath.exists():
         existing_complexity_summary = pd.read_csv(str(complexity_summary_csv_filepath), index_col=["path", "creation_method"])
 
         # Perform an upsert on the existing complexity summary
         # (combination of outer join and update)
-        existing_complexity_summary = pd.concat([
-            existing_complexity_summary[~existing_complexity_summary.index.isin(update_data.index)], 
-            update_data
-        ])
-        
-        existing_complexity_summary.update(update_data)
+        existing_complexity_summary = pd_append_replace(
+            existing_complexity_summary,
+            update_data,
+        )
     else:
         existing_complexity_summary = update_data    
 
-    existing_complexity_summary.to_csv(args.complexity_summary_csv_filepath, index=True, header=True)
+    existing_complexity_summary.to_csv(complexity_summary_csv_filepath, index=True, header=True)
 
     print_with_time("Finished.")
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+    import json
+    plt.ioff()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--destdir", type=Path, default=Path.cwd())  
+    parser.add_argument("--srcdir", type=Path, default=None)  
+    parser.add_argument("--plot_figs", action="store_true", default=False)
+    parser.add_argument("--measure_weighting", choices=[e.name for e in DvajMeasureWeighting] + ['all'], default=DvajMeasureWeighting.decreasing_by_quarter.name)
+    parser.add_argument("--landmark_weighting", choices=[e.name for e in PoseLandmarkWeighting] + ['all'], default=PoseLandmarkWeighting.balanced.name)
+    parser.add_argument("--include_base", choices=['true', 'false', 'both'], default='true')
+    parser.add_argument("--weigh_by_visibility", choices=['true', 'false', 'both'], default='true')
+    parser.add_argument("files", nargs="*", type=Path)
+    args = parser.parse_args()
+
+    measure_weighting_choices = [DvajMeasureWeighting[args.measure_weighting]] if args.measure_weighting != 'all' else list(DvajMeasureWeighting)
+    landmark_weighting_choices = [PoseLandmarkWeighting[args.landmark_weighting]] if args.landmark_weighting != 'all' else list(PoseLandmarkWeighting)
+    include_base_choices = [args.include_base] if args.include_base != 'both' else ['true', 'false']
+    weigh_by_visiblity_choices = [args.weigh_by_visibility] if args.weigh_by_visibility != 'both' else ['true', 'false']
+
+
+    run_iterations = list(itertools.product(
+        measure_weighting_choices,
+        landmark_weighting_choices,
+        include_base_choices,
+        weigh_by_visiblity_choices,
+    ))
+
+    def str2bool(v: str):
+        return v.lower() in ("yes", "true", "t", "1")
+
+    for i, (measure_weighting, landmark_weighting, include_base, weigh_by_visibility) in enumerate(run_iterations):
+        calculate_cumulative_complexities(
+            srcdir=args.srcdir,
+            other_files=args.files,
+            destdir=args.destdir,
+            measure_weighting=measure_weighting,
+            landmark_weighting=landmark_weighting,
+            plot_figs=args.plot_figs,
+            weigh_by_visibility=weigh_by_visibility,
+            include_base=include_base,
+            print_prefix=lambda: f"{i}/{len(run_iterations)}\t" if len(run_iterations) > 1 else "",
+        )
