@@ -188,5 +188,29 @@
                 "--audiocachedir=${workspaceFolder}/data/audio_cache",
             ]
         },
+        {
+            "name": "Update Database",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.update_database",
+            "args": [
+                "--videos_dir=${workspaceFolder}/data/source_videos",
+                "--thumbnails_dir=${workspaceFolder}/data/thumbnails",
+                "--database_path=${workspaceFolder}/data/db.json",
+            ]
+        },
+        {
+            "name": "Add Complexities to DanceTrees",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.complexity_analysis.add_complexity_to_dancetree",
+            "args": [
+                "--tree_srcdir=${workspaceFolder}/data/audio_analysis/dancetrees/video/",
+                "--complexity_srcdir=${workspaceFolder}/data/complexities/byfile/",
+                "--database_path=${workspaceFolder}/data/db.json",
+                "--output_dir=${workspaceFolder}/data/dancetrees_with_complexity/",
+                "--complexity_method=mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
+            ]
+        }
     ]
 }

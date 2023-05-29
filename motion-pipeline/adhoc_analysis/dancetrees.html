@@ -58,7 +58,14 @@
         }
 
         // Replace treeVisualization
+
+        treeHeaderInfo = document.createElement('section');
+        const treeName = document.createElement('h1');
+        treeName.textContent = danceTree.tree_name;
+        treeHeaderInfo.appendChild(treeName);
+
         treeVisualization.replaceChildren(
+            treeHeaderInfo,
             renderNode(danceTree.root)
         );
       }
@@ -76,7 +83,8 @@
 
         const dataLabel = document.createElement('p');
         const duration = node.end_time - node.start_time;
-        dataLabel.textContent = `${node.start_time.toFixed(2)}s - ${node.end_time.toFixed(2)}s (${duration.toFixed(2)}s)`;
+        const complexPerSecond = node.complexity / duration;
+        dataLabel.textContent = `${duration.toFixed(2)}s, C: ${node.complexity.toFixed(2)}, C/s: ${complexPerSecond.toFixed(2)} `;        
         container.appendChild(dataLabel);
 
         const videoE = document.createElement('video');
@@ -112,7 +120,7 @@
       async function loadDanceTree() {
         // Load the dance tree data from the selected JSON file
         const filename = select.value;
-        const response = await fetch(`../data/audio_analysis/dancetrees/video/study2/${filename}`)
+        const response = await fetch(`../data/dancetrees_with_complexity/study2/${filename}`)
         const data = await response.json();
         danceTree = data;
         render();
