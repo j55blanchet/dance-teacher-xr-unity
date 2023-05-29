@@ -496,6 +496,7 @@ def calculate_cumulative_complexities(
     print_with_time("Step 8: Saving results...")
     overall_complexities_df = pd.concat(overall_complexities, axis=1)
     overall_complexities_df.columns = relative_filename_stems
+    overall_complexities_df.fillna(method='ffill', inplace=True)
 
     save_debug_fig(f"overall_complexities.png", lambda ax: overall_complexities_df.plot(title=f"Overall Complexity", ax=ax))
     overall_complexities_df.to_csv(make_debug_path("overall_complexities.csv"))
@@ -557,7 +558,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--destdir", type=Path, default=Path.cwd())  
-    parser.add_argument("--srcdir", type=Path, default=None)  
+    parser.add_argument("--srcdir", type=Path, default=None)
     parser.add_argument("--plot_figs", action="store_true", default=False)
     parser.add_argument("--measure_weighting", choices=[e.name for e in DvajMeasureWeighting] + ['all'], default=DvajMeasureWeighting.decreasing_by_quarter.name)
     parser.add_argument("--landmark_weighting", choices=[e.name for e in PoseLandmarkWeighting] + ['all'], default=PoseLandmarkWeighting.balanced.name)

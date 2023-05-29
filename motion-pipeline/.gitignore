@@ -7,9 +7,11 @@ __pycache__/
 *.so
 
 
-data/complexities/debug
+data/complexities/
 data/audio_cache
 data/audio_analysis
+data/thumbnails
+data/dancetrees_with_complexity
 
 # Distribution / packaging
 .Python
