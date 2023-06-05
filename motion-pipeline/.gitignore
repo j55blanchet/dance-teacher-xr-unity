@@ -6,12 +6,18 @@ __pycache__/
 # C extensions
 *.so
 
+data/*
 
-data/complexities/
-data/audio_cache
-data/audio_analysis
-data/thumbnails
-data/dancetrees_with_complexity
+!data/bvh
+!data/bvhcsv
+!data/holistic_data
+!data/nao
+!data/pose_test_photos
+!data/source_videos
+!data/source_audio
+!data/urdf
+!data/summary
+!data/db.json
 
 # Distribution / packaging
 .Python

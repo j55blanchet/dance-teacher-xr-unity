@@ -269,7 +269,7 @@ def process_video(
     holistic_data_filepath.parent.mkdir(parents=True, exist_ok=True)
 
     with(
-        holistic_data_filepath.open('w', encoding='utf-8') as merged_data_file,
+        holistic_data_filepath.open('w', encoding='utf-8', newline='') as merged_data_file,
     ):
         merged_data_csv = csv.writer(merged_data_file)
         for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
@@ -364,7 +364,7 @@ def main():
     parser.add_argument('--log_level', type=str, default='INFO')
     parser.add_argument('--model-complexity', type=int, default=2)
     parser.add_argument('--frame_output_folder', type=Path, default=None)
-    parser.add_argument('--rewrite_existing', action='store_true')
+    parser.add_argument('--rewrite_existing', action='store_true', default=False)
     args = parser.parse_args()
 
     logging.basicConfig(

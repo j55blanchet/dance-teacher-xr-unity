@@ -290,6 +290,7 @@ def calculate_cumulative_complexities(
         include_base: bool = False,
         weigh_by_visibility: bool = True,
         print_prefix: t.Callable[[], str] = lambda: "",
+        skip_existing: bool = False,
 ):
     input_files: t.List[Path] = other_files.copy()
     relative_dirs: t.List[Path] = [f.parent for f in other_files]
@@ -564,6 +565,7 @@ if __name__ == "__main__":
     parser.add_argument("--landmark_weighting", choices=[e.name for e in PoseLandmarkWeighting] + ['all'], default=PoseLandmarkWeighting.balanced.name)
     parser.add_argument("--include_base", choices=['true', 'false', 'both'], default='true')
     parser.add_argument("--weigh_by_visibility", choices=['true', 'false', 'both'], default='true')
+    parser.add_argument('--skip_existing', action='store_true', default=False, help='Skip files that already have a complexity summary')
     parser.add_argument("files", nargs="*", type=Path)
     args = parser.parse_args()
 
@@ -593,5 +595,6 @@ if __name__ == "__main__":
             plot_figs=args.plot_figs,
             weigh_by_visibility=weigh_by_visibility,
             include_base=include_base,
-            print_prefix=lambda: f"{i}/{len(run_iterations)}\t" if len(run_iterations) > 1 else "",
+            print_prefix=lambda: f"{i+1}/{len(run_iterations)}\t" if len(run_iterations) > 1 else "",
+            skip_existing=args.skip_existing,
         )

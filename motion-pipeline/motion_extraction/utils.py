@@ -67,3 +67,23 @@ class throttle(object):
                 return fn(*args, **kwargs)
 
         return wrapper
+    
+
+def remove_extra_newlines(filename):
+    """Removes extra newlines from a file."""
+    with open(str(filename), 'r') as f:
+        lines = f.readlines()
+
+    # Remove extra newlines
+    new_lines = []
+    for line in lines:
+        if line.strip():
+            new_lines.append(line)
+        else:
+            if not new_lines or new_lines[-1].strip():
+                new_lines.append(line)
+
+    with open(filename, 'w') as f:
+        f.writelines(new_lines)
+
+
