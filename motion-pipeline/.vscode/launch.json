@@ -175,6 +175,26 @@
                 "--include_base=both",
             ],
         },
+        {   
+            "name": "Calculate Cumulative Complexity (test)",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.complexity_analysis.calculate_cumulative_complexity",
+            "args": [
+                "--srcdir=${workspaceFolder}/data/holistic_data/tests",
+                "--destdir=${workspaceFolder}/data/test_complexities/",
+                // "--plot_figs",
+                // "--measure_weighting=decreasing_by_half",
+                // "--measure_weighting=decreasing_by_quarter",
+                "--measure_weighting=all",
+                // "--measure_weighting=equal",
+                // "--landmark_weighting=balanced",
+                // "--landmark_weighting=dempster",
+                "--landmark_weighting=all",
+                "--weigh_by_visibility=both",
+                "--include_base=both",
+            ],
+        },
         {
             "name": "Audio Analysis",
             "type": "python",
@@ -186,6 +206,7 @@
                 "--destdir=${workspaceFolder}/data/audio_analysis",
                 "--analysis_summary_out=${workspaceFolder}/data/summary/audio_analysis.csv",
                 "--audiocachedir=${workspaceFolder}/data/audio_cache",
+                "--skip_existing",
             ]
         },
         {

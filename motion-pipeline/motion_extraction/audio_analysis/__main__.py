@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import time
 import psutil
-from . import analyze_audio_file, create_dance_tree_from_audioanalysis
+from . import AudioAnalysisResult, analyze_audio_file, create_dance_tree_from_audioanalysis
 from .audio_tools import save_audio_from_video
 from .similarity_analysis import plot_cross_similarity
 import matplotlib.pyplot as plt
@@ -44,6 +44,7 @@ def main():
     parser.add_argument('--audiocachedir', type=Path, help='The directory to cache audio files in.')
     parser.add_argument('--analysis_summary_out', type=Path, help='The path to save the analysis summary.')
     parser.add_argument('--include_mem_usage', action='store_true', help='Whether to include memory usage in the output.', default=False)
+    parser.add_argument('--skip_existing', action='store_true', help='Whether to skip existing analysis files.', default=False)
     args = parser.parse_args()
 
     print(f"Running audio analysis...")
@@ -103,37 +104,48 @@ def main():
     for i, (filepath, audio_filepath, input_type, src_dir) in enumerate(zip(all_input_filepaths, all_input_audiopaths, input_types, src_dirs)):
 
         relative_filepath = filepath.relative_to(src_dir)
-        print_with_time(f"\t{i+1}/{len(all_input_filepaths)} [{input_type} src] {relative_filepath}")
-        analysis_result = analyze_audio_file(audio_filepath)
 
         # Save the analysis information (with same relative path as input file)
         destdir = args.destdir / 'analysis' / input_type
         output_file = destdir / relative_filepath.with_suffix('.json')
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_file, 'w') as f:
-            json.dump(analysis_result.to_dict(), f, indent=4)
+        
+        analysis_result = None
+        already_exists = False
+        if args.skip_existing and output_file.exists():
+            print_with_time(f"\t{i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {output_file.relative_to(args.destdir)}")
+            analysis_result = AudioAnalysisResult.from_dict(json.load(open(output_file)))
+            already_exists = True
+        else:
+            print_with_time(f"\t{i+1}/{len(all_input_filepaths)} [{input_type} src] Analyzing: {relative_filepath}")
+            analysis_result = analyze_audio_file(audio_filepath)
 
-        # Plot cross similarity matrix
-        fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
-        ax.set_title(f"{filepath.stem} Cross Similarity")
-        similarity_dir = args.destdir / 'segmentsimilarity' / input_type
-        similarity_dir.mkdir(parents=True, exist_ok=True)
-        figpath = similarity_dir / relative_filepath.with_suffix('.png')
-        figpath.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(figpath)
-        plt.close(fig)
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_file, 'w') as f:
+                json.dump(analysis_result.to_dict(), f, indent=4)
 
-        # Create dance trees
-        dance_tree = create_dance_tree_from_audioanalysis(
-            tree_name=filepath.stem + " audio tree",
-            dance_name=filepath.stem,
-            analysis=analysis_result
-        )
-        dance_tree_dir = args.destdir / 'dancetrees' / input_type
-        dance_tree_filepath = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
-        dance_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
-        with dance_tree_filepath.open('w') as f:
-            json.dump(dance_tree.to_dict(), f, indent=4) # type: ignore
+        if not already_exists:
+            # Plot cross similarity matrix
+            fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
+            ax.set_title(f"{filepath.stem} Cross Similarity")
+            similarity_dir = args.destdir / 'segmentsimilarity' / input_type
+            similarity_dir.mkdir(parents=True, exist_ok=True)
+            figpath = similarity_dir / relative_filepath.with_suffix('.png')
+            figpath.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(figpath)
+            plt.close(fig)
+
+        if not already_exists:
+            # Create dance trees
+            dance_tree = create_dance_tree_from_audioanalysis(
+                tree_name=filepath.stem + " audio tree",
+                dance_name=filepath.stem,
+                analysis=analysis_result
+            )
+            dance_tree_dir = args.destdir / 'dancetrees' / input_type
+            dance_tree_filepath = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
+            dance_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
+            with dance_tree_filepath.open('w') as f:
+                json.dump(dance_tree.to_dict(), f, indent=4) # type: ignore
 
         # Append summary data (for the CSV file)
         analysis_summary.append(pd.Series({
