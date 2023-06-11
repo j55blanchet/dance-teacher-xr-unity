@@ -41,10 +41,14 @@
       <option value="bartender.dancetree.json">Bartender</option>
       <option value="mad-at-disney-tutorial.dancetree.json">Mad At Disney</option>
       <option value="last-christmas-tutorial.dancetree.json">Last Christmas</option>
-      <option value="pajamaparty.dancetree.json">Pajama Party</option>
+      <option value="pajamaparty-tutorial.dancetree.json">Pajama Party</option>
     </select>
     <div id="treeVisualization"></div>
     <script>
+
+      const danceTreeFolder = "../data/dancetrees_with_complexity/study2";
+      const videoFolder = "../data/source_videos/study2";
+
       const select = document.getElementById('select');
       const treeVisualization = document.getElementById('treeVisualization');
 
@@ -120,7 +124,7 @@
       async function loadDanceTree() {
         // Load the dance tree data from the selected JSON file
         const filename = select.value;
-        const response = await fetch(`../data/dancetrees_with_complexity/study2/${filename}`)
+        const response = await fetch(`${danceTreeFolder}/${filename}`)
         const data = await response.json();
         danceTree = data;
         render();
@@ -129,7 +133,7 @@
       function updateDanceTree() {
         // Update the dance tree data and video source when a new JSON file is selected
         const filename = select.value;
-        videoSrc = `../data/source_videos/study2/${filename.replace('.dancetree.json', '.mp4')}`;
+        videoSrc = `${videoFolder}/${filename.replace('.dancetree.json', '.mp4')}`;
         loadDanceTree();
       }
 
