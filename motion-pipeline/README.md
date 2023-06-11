@@ -26,3 +26,10 @@ Therefore, the orientation of a joint affects the position of it's children.
 1. Start listener from the nao6-experiments repo.
 1. Select Nao Teleoperation debug config and run it.
     * On windows, you can see available webcams in settings > cameras. The indexes should line up with what's visible there. Change the webcam index in the launch file.
+
+
+
+
+# USEFUL ZSH COMMANDS
+
+    for file in ./*; do ffmpeg -i $file -vcodec copy -acodec copy -tag:v hvc1 ./redone/$file -y; done

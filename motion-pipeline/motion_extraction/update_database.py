@@ -100,17 +100,19 @@ def update_database(
     else:
         database_path.parent.mkdir(parents=True, exist_ok=True)
 
-    out_db = {}
-    for entry in db:
-        out_db[entry['clipName']] = entry
+    old_db_by_clipname = {
+        entry['clipName']: entry
+        for entry in db
+    }
     
+    out_db = {}
     for video_path in video_paths:
         
         relative_path = video_path.relative_to(videos_dir)
         print(f'Processing {relative_path.as_posix()}')
         clip_name = relative_path.stem
 
-        prev_entry = out_db.get(clip_name)
+        prev_entry = old_db_by_clipname.get(clip_name)
         entry = update_create_entry(
             entry = prev_entry,  # type: ignore
             video_path = video_path, 
