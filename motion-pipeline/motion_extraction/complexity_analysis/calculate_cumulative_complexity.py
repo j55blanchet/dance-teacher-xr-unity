@@ -545,6 +545,7 @@ def calculate_cumulative_complexities(
         (overall_complexities[i] - min_linear_cumulative_complexity[:nontossed_frame_counts[i]]) / max_complexity_per_second
         for i in range(len(filename_stems))
     ]
+
     scaled_complexities_df = pd.concat(scaled_complexities, axis=1, names=relative_filename_stems)
     save_debug_fig(f"scaled_complexities.png", lambda ax: scaled_complexities_df.plot(title=f"Scaled Complexity", ax=ax))
 
@@ -557,18 +558,21 @@ def calculate_cumulative_complexities(
             if creation_method in existing_complexity.columns:
                 # Drop to ensure no rows are retained from previous runs
                 existing_complexity.drop(columns=[creation_method], inplace=True)
-            existing_complexity[creation_method] = overall_complexities[i]
+            existing_complexity[creation_method] = scaled_complexities[i]
             existing_complexity.to_csv(str(perfile_complexity_path))
         else:
             perfile_complexity_path.parent.mkdir(parents=True, exist_ok=True)
-            overall_complexities[i].name = creation_method
-            overall_complexities[i].to_csv(str(perfile_complexity_path))
+            csv_data = scaled_complexities[i].copy()
+            csv_data.name = creation_method
+            csv_data.to_csv(str(perfile_complexity_path))
 
     update_data = pd.DataFrame({
         "stem": filename_stems,
         "frames": nontossed_frame_counts,
-        "complexity_per_frame": [overall_complexities[i].iloc[-1] / nontossed_frame_counts[i] for i in range(len(filename_stems))], 
-        "net_complexity": [overall_complexities[i].iloc[-1] for i in range(len(filename_stems))],
+        "unscaled_complexity_per_frame": [overall_complexities[i].iloc[-1] / nontossed_frame_counts[i] for i in range(len(filename_stems))], 
+        "unscaled_net_complexity": [overall_complexities[i].iloc[-1] for i in range(len(filename_stems))],
+        "net_complexity": [scaled_complexities[i].iloc[-1] for i in range(len(filename_stems))],
+        "scaled_complexity_per_second": [scaled_complexities[i].iloc[-1] / (nontossed_frame_counts[i] / 30.) for i in range(len(filename_stems))],
     },
         index=[
             relative_filename_stems,
