@@ -3,6 +3,7 @@ from pathlib import Path
 import time
 import pandas as pd
 import mediapipe as mp
+import numpy as np
 import typing as t
 import matplotlib.pyplot as plt
 import enum
@@ -12,6 +13,7 @@ import itertools
 
 from .uist_complexityanalysis import get_pose_landmarks_present_in_dataframe, DVAJ, calc_scalar_dvaj
 
+BASE_COL_NAME = "base"
 PoseLandmark = mp.solutions.pose.PoseLandmark # type: ignore
 
 def pd_append_replace(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
@@ -100,29 +102,47 @@ LANDMARK_WEIGHTING_DEMPSTER: t.Final[t.Dict[PoseLandmark, float]] = normalize_we
         PoseLandmark.NOSE: 0.081 # head: 8.1%
     }
 )
-
+LANDMARK_WEIGHTING_DEMPSTER_WITH_BASE: t.Final[t.Dict[str, float]] = normalize_weighting({
+    **{k.name: v for k, v in LANDMARK_WEIGHTING_DEMPSTER.items()},
+    **{
+        # Adjust to have the theigh be 10% of the body, move root weighting to base
+        PoseLandmark.LEFT_HIP.name: 0.05,
+        PoseLandmark.RIGHT_HIP.name: 0.05,
+        BASE_COL_NAME: 0.497
+    }
+})
 """A balanced weighting for the human body. (adhoc construction)"""
 LANDMARK_WEIGHTING_BALANCED: t.Final[t.Dict[PoseLandmark, float]] = normalize_weighting(
     {
-        # 4-weight for the root & torso
+        # 1-weight for hips
         PoseLandmark.LEFT_HIP: 1,
         PoseLandmark.RIGHT_HIP: 1,
+
         PoseLandmark.LEFT_SHOULDER: 1,
         PoseLandmark.RIGHT_SHOULDER: 1,
 
-        # 3-weight for each limb (12 total)
+        # 1-weight for the arm joints
         PoseLandmark.LEFT_ELBOW: 1,
-        PoseLandmark.LEFT_WRIST: 2,
+        PoseLandmark.LEFT_WRIST: 1,
         PoseLandmark.RIGHT_ELBOW: 1,
-        PoseLandmark.RIGHT_WRIST: 2,
+        PoseLandmark.RIGHT_WRIST: 1,
+
+        #  1-weight for leg joints
         PoseLandmark.LEFT_KNEE: 1,
         PoseLandmark.RIGHT_KNEE: 1,
         PoseLandmark.LEFT_ANKLE: 2,
         PoseLandmark.RIGHT_ANKLE: 2,
 
-        # 4-weight for the head
-        PoseLandmark.LEFT_EAR: 2,
-        PoseLandmark.RIGHT_EAR: 2,
+        # 1-weight for the head
+        PoseLandmark.LEFT_EAR: 1,
+        PoseLandmark.RIGHT_EAR: 1,
+    }
+)
+LANDMARK_WEIGHTING_BALANCED_WITH_BASE: t.Final[t.Dict[str, float]] = normalize_weighting({
+        **{k.name: v for k, v in LANDMARK_WEIGHTING_BALANCED.items()},
+        **{
+            BASE_COL_NAME: 1.0 /3.0, # this will make it have 1/4 of the total weight, since the above is normalized
+        },
     }
 )
 
@@ -130,11 +150,15 @@ class PoseLandmarkWeighting(enum.Enum):
     balanced = enum.auto()
     dempster = enum.auto()
 
-    def get_weighting(self):
-        if self == PoseLandmarkWeighting.balanced:
+    def get_weighting(self, include_base: bool) -> t.Dict[t.Union[str, PoseLandmark], float]:
+        if self == PoseLandmarkWeighting.balanced and not include_base:
             return LANDMARK_WEIGHTING_BALANCED
-        elif self == PoseLandmarkWeighting.dempster:
+        elif self == PoseLandmarkWeighting.balanced and include_base:
+            return LANDMARK_WEIGHTING_BALANCED_WITH_BASE
+        elif self == PoseLandmarkWeighting.dempster and not include_base:
             return LANDMARK_WEIGHTING_DEMPSTER
+        elif self == PoseLandmarkWeighting.dempster and include_base:
+            return LANDMARK_WEIGHTING_DEMPSTER_WITH_BASE
         else:
             raise ValueError(f"PoseLandmarkWeighting {self} not recognized.")
 
@@ -258,13 +282,9 @@ def weigh_by_visiblity(data: pd.DataFrame, data_vis: pd.DataFrame, col_roots: t.
 
 def generate_dvajs_with_visibility(
     filepaths: t.Iterable[Path],
-    landmarks: t.Iterable[PoseLandmark],
+    landmark_names: t.Iterable[str],
     include_base: bool = True,
 ):
-    landmarks_to_use = [landmark.name for landmark in landmarks]
-    if include_base:
-            landmarks_to_use.append("base")
-
     for holistic_csv_file in filepaths:
         # warn if the file is not a holisticdata.csv file
         if not holistic_csv_file.name.endswith(".holisticdata.csv"):
@@ -273,11 +293,11 @@ def generate_dvajs_with_visibility(
         data = pd.read_csv(holistic_csv_file, index_col='frame')
         relative_position = get_position_relative_to_base(data)
         
-        dvaj = calc_scalar_dvaj(relative_position, landmarks_to_use)
+        dvaj = calc_scalar_dvaj(relative_position, landmark_names)
         # distance_cols = [col for col in dvaj.columns if "distance" in col]
         # dvaj[distance_cols].plot(title=f"{holistic_csv_file.name} Distance")
 
-        visibility = get_visibility(relative_position, landmarks_to_use)
+        visibility = get_visibility(relative_position, landmark_names)
         yield dvaj, visibility
 
 def calculate_cumulative_complexities(
@@ -325,7 +345,7 @@ def calculate_cumulative_complexities(
     measure_weighting_weights = measure_weighting_choice.get_weighting()
 
     landmark_weighting_choice = landmark_weighting
-    landmark_weighting_weights = landmark_weighting_choice.get_weighting()
+    landmark_weighting_weights = landmark_weighting_choice.get_weighting(include_base=include_base)
 
     creation_method = f"mw-{measure_weighting_choice.name}_lmw-{landmark_weighting_choice.name}_{'byvisibility' if weigh_by_visibility else 'ignorevisibility'}_{'includebase' if include_base else 'excludebase'}"
     sup_title = creation_method
@@ -376,11 +396,10 @@ def calculate_cumulative_complexities(
         lm for lm in landmark_weighting_weights.keys()
         if landmark_weighting_weights.get(lm, 0) > 0
     ]
-    landmark_names = [landmark.name for landmark in landmarks]
-    if include_base:
-        # base is a special landmark that is computed from the average of the hips.
-        #  >> data is made relative to the base during preprocessing.
-        landmark_names.append("base")
+
+    landmark_names = [*landmarks]
+    if isinstance(landmark_names[0], PoseLandmark):
+        landmark_names = [landmark.name for landmark in landmarks ]
 
     print(f"{print_prefix()}Using measure weighting: {measure_weighting_choice.name}")
     print(f"{print_prefix()}Using landmark weighting: {landmark_weighting_choice.name}")
@@ -401,7 +420,7 @@ def calculate_cumulative_complexities(
     # 4. Trim trailing frames beyond which cumulative sum doesn't change.
     # 5. Calculate normalization denominators for each metric, on a per-frame basis.
     print_with_time("Step 1: Calculating DVAJs...")
-    dvaj_dfs, visibility_dfs = zip(*tqdm(generate_dvajs_with_visibility(input_files, landmarks, include_base=include_base), total=len(input_files)))
+    dvaj_dfs, visibility_dfs = zip(*tqdm(generate_dvajs_with_visibility(input_files, landmark_names, include_base=include_base), total=len(input_files)))
     
     if plot_figs:
         print_with_time("\tPlotting raw DVAJs...")
@@ -485,6 +504,10 @@ def calculate_cumulative_complexities(
         complexity_measures[i].sum(axis=1)
         for i in range(len(complexity_measures))
     ]
+    for i in range(len(overall_complexities)):
+        overall_complexities[i].name = filename_stems[i]
+        overall_complexities[i].ffill(inplace=True)
+
     del dvaj_cumsum_dfs
     if plot_figs:
         print_with_time("\tPlotting complexity measures...")
@@ -494,13 +517,36 @@ def calculate_cumulative_complexities(
 
     # Step 8.
     # Save results
-    print_with_time("Step 8: Saving results...")
+    print_with_time("Step 8: Scaling & Saving results...")
     overall_complexities_df = pd.concat(overall_complexities, axis=1)
     overall_complexities_df.columns = relative_filename_stems
-    overall_complexities_df.fillna(method='ffill', inplace=True)
+    # overall_complexities_df.fillna(method='ffill', inplace=True)
+        
+    complexity_per_frame = [overall_complexities[i].iloc[-1] / nontossed_frame_counts[i] for i in range(len(filename_stems))]
+    min_complexity_per_frame = min(complexity_per_frame)
+    max_complexity_per_frame = max(complexity_per_frame)
+    fps = 30.0
 
-    save_debug_fig(f"overall_complexities.png", lambda ax: overall_complexities_df.plot(title=f"Overall Complexity", ax=ax))
+    max_complexity_per_second = (max_complexity_per_frame - min_complexity_per_frame) * fps
+    max_frames = max(nontossed_frame_counts)
+
+    # Add cols for min and max complexity
+    debug_overall_complexities_df = overall_complexities_df.copy()
+    max_linear_cumulative_complexity = np.linspace(0, max_frames * max_complexity_per_frame, max_frames, endpoint=False)
+    min_linear_cumulative_complexity = np.linspace(0, max_frames * min_complexity_per_frame, max_frames, endpoint=False)
+    # hundred_percent_scale_cumulative_complexity = np.linspace(0, max_frames * max_complexity_per_second, max_frames, endpoint=False)
+    debug_overall_complexities_df["max"] = max_linear_cumulative_complexity
+    debug_overall_complexities_df["min"] = min_linear_cumulative_complexity
+    
+    save_debug_fig(f"overall_complexities.png", lambda ax: debug_overall_complexities_df.plot(title=f"Overall Complexity", ax=ax))
     overall_complexities_df.to_csv(make_debug_path("overall_complexities.csv"))
+
+    scaled_complexities = [
+        (overall_complexities[i] - min_linear_cumulative_complexity[:nontossed_frame_counts[i]]) / max_complexity_per_second
+        for i in range(len(filename_stems))
+    ]
+    scaled_complexities_df = pd.concat(scaled_complexities, axis=1, names=relative_filename_stems)
+    save_debug_fig(f"scaled_complexities.png", lambda ax: scaled_complexities_df.plot(title=f"Scaled Complexity", ax=ax))
 
     # Save complexity by file
     for i, relative_filename_stem in enumerate(tqdm(relative_filename_stems)): # type: ignore
@@ -585,6 +631,15 @@ if __name__ == "__main__":
     def str2bool(v: str):
         return v.lower() in ("yes", "true", "t", "1")
 
+    run_iterations = [
+        (measure_weighting, 
+         landmark_weighting, 
+         str2bool(include_base), 
+         str2bool(weigh_by_visibility)) 
+        for measure_weighting, landmark_weighting, include_base, weigh_by_visibility 
+        in run_iterations
+    ]
+        
     for i, (measure_weighting, landmark_weighting, include_base, weigh_by_visibility) in enumerate(run_iterations):
         calculate_cumulative_complexities(
             srcdir=args.srcdir,

@@ -49,7 +49,7 @@
             ],
         },
         {
-            "name": "VideoPipeline (2): Convert to Joint Space",
+            "name": "VideoPipeline (2.x): Convert to Joint Space",
             "type": "python",
             "request": "launch",
             "module": "motion_extraction.steptwo_convert_to_jointspace",
@@ -191,8 +191,10 @@
                 // "--landmark_weighting=balanced",
                 // "--landmark_weighting=dempster",
                 "--landmark_weighting=all",
-                "--weigh_by_visibility=both",
-                "--include_base=both",
+                // "--weigh_by_visibility=both",
+                "--weigh_by_visibility=true",
+                // "--include_base=both",
+                "--include_base=true",
             ],
         },
         {
