@@ -17,7 +17,7 @@ data/*
 !data/source_audio
 !data/urdf
 !data/summary
-!data/db.json
+!data/db.csv
 
 # Distribution / packaging
 .Python

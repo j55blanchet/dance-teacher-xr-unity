@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
 from ..dancetree.DanceTree import DanceTree, DanceTreeNode
+from ..update_database import load_db
 
 def find_complexity_df(clip_relative_path: Path,
     complexity_byfile_dir: Path = Path('data/complexities/byfile'),
@@ -55,26 +56,24 @@ def add_complexities_to_dancetrees(
     ):
     import json
 
-    db = []
-    with database_path.open('r') as f:
-        db: list = json.load(f)
-    
+    db = load_db(database_path)
 
     dance_tree_files = list(tree_srcdir.rglob('*.dancetree.json'))
 
     for i, dance_tree_file in enumerate(dance_tree_files):
         relative_filepath = dance_tree_file.relative_to(tree_srcdir)
 
-        print(f'Processing {i+1}/{len(dance_tree_files)}: {dance_tree_file.as_posix()}', end='')
+        print(f'Processing {i+1}/{len(dance_tree_files)}: {relative_filepath.as_posix()}', end='')
         
-        clip_relative_path = relative_filepath.parent / relative_filepath.stem.replace('.dancetree', '')
+        clip_relative_stem = relative_filepath.parent / relative_filepath.stem.replace('.dancetree', '')
 
-        complexity = find_complexity_df(clip_relative_path, complexity_srcdir, complexity_method)
+        complexity = find_complexity_df(clip_relative_stem, complexity_srcdir, complexity_method)
         if complexity is None:
             print(' - no complexity found!')
             continue
         
-        matching_db_entry =  next((entry for entry in db if entry.get('clipRelativeStem', None)==clip_relative_path.as_posix()), None)
+        if clip_relative_stem.as_posix() in db.index:
+            matching_db_entry =  db.loc[clip_relative_stem.as_posix()].to_dict()
         if matching_db_entry is None:
             print(' - no database entry found!')
             continue
@@ -92,7 +91,7 @@ def add_complexities_to_dancetrees(
             json.dump(tree.to_dict(), f2, indent=2)
 
         print(' - done!')
-
+    print(f'Done! Saved to {output_dir.as_posix()}')
 
 if __name__ == '__main__':
     import argparse

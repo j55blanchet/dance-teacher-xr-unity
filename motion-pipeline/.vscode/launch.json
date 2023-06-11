@@ -144,11 +144,11 @@
             "name": "Complexity Metric (UIST)",
             "type": "python",
             "request": "launch",
-            "module": "motion_extraction.uist_complexity_analysis",
+            "module": "motion_extraction.complexity_analysis.uist_complexityanalysis",
             "args": [
                 "--srcdir=${workspaceFolder}/data/holistic_data/",
                 "--destination=${workspaceFolder}/data/complexity.csv",
-                "--db=${workspaceFolder}/data/db.json",
+                "--db=${workspaceFolder}/data/db.csv",
                 "-wl", "bartender",
                 "-wl", "last-christmas-tutorial",
                 "-wl", "mad-at-disney-tutorial",
@@ -219,7 +219,7 @@
             "args": [
                 "--videos_dir=${workspaceFolder}/data/source_videos",
                 "--thumbnails_dir=${workspaceFolder}/data/thumbnails",
-                "--database_path=${workspaceFolder}/data/db.json",
+                "--database_csv_path=${workspaceFolder}/data/db.csv",
             ]
         },
         {
@@ -230,7 +230,7 @@
             "args": [
                 "--tree_srcdir=${workspaceFolder}/data/audio_analysis/dancetrees/video/",
                 "--complexity_srcdir=${workspaceFolder}/data/complexities/byfile/",
-                "--database_path=${workspaceFolder}/data/db.json",
+                "--database_path=${workspaceFolder}/data/db.csv",
                 "--output_dir=${workspaceFolder}/data/dancetrees_with_complexity/",
                 "--complexity_method=mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
             ]
