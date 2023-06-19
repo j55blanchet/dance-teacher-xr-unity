@@ -15,7 +15,7 @@ class DanceTreeNode(dcj.DataClassJsonMixin):
 @dc.dataclass
 class DanceTree(dcj.DataClassJsonMixin):
     tree_name: str
-    dance_name: str
+    clip_relativepath: str
     bpm: float
     first_beat: float
     root: DanceTreeNode

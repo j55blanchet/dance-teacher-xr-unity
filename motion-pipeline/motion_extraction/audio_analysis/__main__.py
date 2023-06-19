@@ -138,7 +138,7 @@ def main():
             # Create dance trees
             dance_tree = create_dance_tree_from_audioanalysis(
                 tree_name=filepath.stem + " audio tree",
-                dance_name=filepath.stem,
+                clip_relativepath=relative_filepath.with_suffix('').as_posix(),
                 analysis=analysis_result
             )
             dance_tree_dir = args.destdir / 'dancetrees' / input_type

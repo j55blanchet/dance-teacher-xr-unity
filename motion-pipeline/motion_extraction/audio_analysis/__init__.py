@@ -44,10 +44,10 @@ def analyze_audio(audio_array: np.ndarray, sample_rate: int) -> AudioAnalysisRes
         cross_similarity=cross_similarity.tolist()
     )
 
-def create_dance_tree_from_audioanalysis(tree_name: str, dance_name: str, analysis: AudioAnalysisResult) -> DanceTree:
+def create_dance_tree_from_audioanalysis(tree_name: str, clip_relativepath: str, analysis: AudioAnalysisResult) -> DanceTree:
     return DanceTree(
          tree_name=tree_name,
-         dance_name=dance_name,
+         clip_relativepath=clip_relativepath,
          bpm=analysis.tempo_info.bpm,
          first_beat=analysis.tempo_info.starting_beat_timestamp,
         root=DanceTreeNode(
