@@ -1,14 +1,28 @@
 <script lang="ts">
+	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
+    import { DrawingUtils } from "@mediapipe/tasks-vision";
+
 	import VirtualMirror from './VirtualMirror.svelte';
 	import { onMount, tick } from 'svelte';
-    import PoseEstimationWorker from '$lib/pose-estimation.worker?worker'
-    let poseEstimationWorker: Worker | undefined = undefined;
+    
+    import PoseEstimationWorker from '$lib/pose-estimation.worker';
+
+    // let poseEstimationWorker: Worker | null = null;
+    let poseEstimationWorker: PoseEstimationWorker | null = null;
 
     export let webcamStarted = false;
     let videoElement: HTMLVideoElement | undefined = undefined;
     let canvasElement: HTMLCanvasElement | undefined = undefined;
     let webcamVideoStream: MediaStream | undefined = undefined;
     let canvasContext: CanvasRenderingContext2D | undefined = undefined;
+    let drawingUtils: DrawingUtils | undefined = undefined;
+
+    let mirrorStartedTime = new Date().getTime();
+    let lastFrameSent = -1;
+    let lastFrameDecoded = -1;
+
+    // @type {PoseEstimationResult | undefined}
+    let lastDecodedData: undefined = undefined;
 
     const setCanvasSize = () => {
         if (!canvasElement) {
@@ -21,7 +35,20 @@
 
     onMount(async () => {		
 		window.addEventListener('resize', setCanvasSize);
-		poseEstimationWorker = new PoseEstimationWorker();
+
+        poseEstimationWorker = new PoseEstimationWorker();
+
+		// poseEstimationWorker = new Worker(
+        //     new URL('$lib/pose-estimation.worker.ts', import.meta.url),
+        //     // { type: 'module' }
+        // );
+
+        poseEstimationWorker.onmessage = (msg: any) => {
+            if (msg.data.type === 'pose-estimation') {
+                lastFrameDecoded = msg.data.frameId;
+                lastDecodedData = msg.data.result;
+            }
+        };
 
         await tick()
         setCanvasSize();
@@ -89,14 +116,28 @@
             canvasAspectRatio > 0 && 
             videoAspectRatio > 0;
 
-        if (isValidFrame) {
+        const shouldSendNewFrame = 
+            lastFrameDecoded == lastFrameSent;
+
+        if (isValidFrame && shouldSendNewFrame) {
+            const timeSinceStart = new Date().getTime() - mirrorStartedTime;
+            lastFrameSent = frameId;
             poseEstimationWorker?.postMessage({
                 type: 'processFrame',
                 frameId: frameId,
-                frame: canvasContext.getImageData(drawX, drawY, drawWidth, drawHeight)
+                timestampMs: timeSinceStart,
+                image: canvasContext.getImageData(drawX, drawY, drawWidth, drawHeight)
             });
         }
         
+        for(const detectedPoseLandmarks of lastDecodedData?.landmarks ?? []) {
+            drawingUtils?.drawLandmarks(
+                detectedPoseLandmarks, {
+                    radius: (data) => 5 // DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1)
+                }
+            );
+        }
+
         // draw an ellipse in the center of the canvas
         canvasContext.beginPath();
         canvasContext.ellipse(
@@ -116,7 +157,9 @@
     $: if (webcamStarted && videoElement && canvasElement) {
         canvasContext = canvasElement.getContext('2d', {
             willReadFrequently: true,
-        }) ?? undefined;
+        })!;
+
+        drawingUtils = new DrawingUtils(canvasContext);
         renderCanvas();
     }
 </script>
