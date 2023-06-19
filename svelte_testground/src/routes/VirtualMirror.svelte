@@ -15,8 +15,8 @@
             return;
         }
 
-        canvasElement.width = window.innerWidth;
-        canvasElement.height = window.innerHeight;
+        canvasElement.width = videoElement?.offsetWidth ?? 0;
+        canvasElement.height = videoElement?.offsetHeight ?? 0;
     }
 
     onMount(async () => {		
@@ -136,8 +136,8 @@
 <style>
 
 .container {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     margin: 0;
     position: absolute;
     display: flex;
@@ -148,6 +148,7 @@
 video {
     width: 100%;
     height: 100%;
+    visibility: hidden;
 }
 
 canvas {
