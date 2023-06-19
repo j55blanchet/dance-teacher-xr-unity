@@ -13,6 +13,9 @@ devDependencies:
   '@fontsource/fira-mono':
     specifier: ^4.5.10
     version: 4.5.10
+  '@mediapipe/tasks-vision':
+    specifier: 0.10.2-rc2
+    version: 0.10.2-rc2
   '@neoconfetti/svelte':
     specifier: ^1.0.0
     version: 1.0.0
@@ -314,6 +317,10 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.0
       '@jridgewell/sourcemap-codec': 1.4.14
+    dev: true
+
+  /@mediapipe/tasks-vision@0.10.2-rc2:
+    resolution: {integrity: sha512-b9ar6TEUo8I07n/jXSuKDu5HgzkDah9pe4H8BYpcubhCEahlfDD5ixE+9SQyJM4HXHXdF9nN/wRQT7rEnLz7Gg==}
     dev: true
 
   /@neoconfetti/svelte@1.0.0:

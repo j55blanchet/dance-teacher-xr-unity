@@ -1,18 +1,32 @@
 <script>
 	import Header from './Header.svelte';
+	import VirtualMirror from './VirtualMirror.svelte';
 	import './styles.css';
+
+
+	let webcamStarted = false;
+	// const dispatch = createEventDispatcher();
+
+	// function handleWebcamStarted();
+	// 	dispatch('webcamStarted', webcamStarted);
+	// }
 </script>
 
 <div class="app">
-	<Header />
+	<div class="background">
+		<VirtualMirror bind:webcamStarted />
+	</div>
+	<!-- <Header /> -->
 
-	<main>
+	{#if webcamStarted}
+		<main>
 		<slot />
-	</main>
+		</main>
+	{/if}
 
-	<footer>
+	<!--  <footer>
 		<p>visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to learn SvelteKit</p>
-	</footer>
+	</footer> -->
 </div>
 
 <style>
@@ -50,4 +64,16 @@
 			padding: 12px 0;
 		}
 	}
+
+	main {
+		z-index: 2;
+	}
+	
+	.background {
+		z-index: 1;
+		width: 100%;
+		height: 100%;
+		position: absolute;
+	}
+
 </style>
