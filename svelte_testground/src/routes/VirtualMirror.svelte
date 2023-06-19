@@ -1,11 +1,20 @@
 <script lang="ts">
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
-    import { DrawingUtils } from "@mediapipe/tasks-vision";
+    import { DrawingUtils, PoseLandmarker } from "@mediapipe/tasks-vision";
 
 	import VirtualMirror from './VirtualMirror.svelte';
 	import { onMount, tick } from 'svelte';
     
     import PoseEstimationWorker from '$lib/pose-estimation.worker';
+
+    function getContentSize (element: HTMLElement) {
+        var styles = getComputedStyle(element)
+
+        return [
+            element.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight),
+            element.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom)
+        ]
+    }
 
     // let poseEstimationWorker: Worker | null = null;
     let poseEstimationWorker: PoseEstimationWorker | null = null;
@@ -13,6 +22,7 @@
     export let webcamStarted = false;
     let videoElement: HTMLVideoElement | undefined = undefined;
     let canvasElement: HTMLCanvasElement | undefined = undefined;
+    let containerElement: HTMLDivElement | undefined = undefined;
     let webcamVideoStream: MediaStream | undefined = undefined;
     let canvasContext: CanvasRenderingContext2D | undefined = undefined;
     let drawingUtils: DrawingUtils | undefined = undefined;
@@ -21,22 +31,45 @@
     let lastFrameSent = -1;
     let lastFrameDecoded = -1;
 
+    let videoWidth = 1;
+    let videoHeight = 1;
+    let videoAspectRatio = 1;
+    $: videoAspectRatio = videoWidth / videoHeight;
+
+    let containerWidth = 1;
+    let containerHeight = 1;
+    let containerAspectRatio = 1;
+    $: containerAspectRatio = containerWidth / containerHeight;
+
+    function onLoadedVideoData() {
+        if (!videoElement) {
+            return;
+        }
+        videoWidth = videoElement.videoWidth;
+        videoHeight = videoElement.videoHeight;
+    }
+
     // @type {PoseEstimationResult | undefined}
     let lastDecodedData: undefined = undefined;
 
-    const setCanvasSize = () => {
+    const resizeCanvas = () => {
         if (!canvasElement) {
             return;
         }
 
-        canvasElement.width = videoElement?.offsetWidth ?? 0;
-        canvasElement.height = videoElement?.offsetHeight ?? 0;
+        if (containerAspectRatio > videoAspectRatio) {
+            // The container is wider than the video.
+            canvasElement.height = containerHeight;
+            canvasElement.width = containerHeight * videoAspectRatio;
+        } else {
+            // The container is taller than the video.
+            canvasElement.width = containerWidth;
+            canvasElement.height = containerWidth / videoAspectRatio;
+        }
     }
 
     onMount(async () => {		
-		window.addEventListener('resize', setCanvasSize);
-
-        poseEstimationWorker = new PoseEstimationWorker();
+		poseEstimationWorker = new PoseEstimationWorker();
 
 		// poseEstimationWorker = new Worker(
         //     new URL('$lib/pose-estimation.worker.ts', import.meta.url),
@@ -51,11 +84,19 @@
         };
 
         await tick()
-        setCanvasSize();
+        resizeCanvas();
+
+        const resizeObserver = new ResizeObserver(entries => {
+            const [width, height] = getContentSize(containerElement!);
+            containerWidth = width;
+            containerHeight = height;
+        });
+        resizeObserver.observe(containerElement!);
 
 		return () => {
-			window.removeEventListener('resize', setCanvasSize);
+			
             poseEstimationWorker?.terminate();
+            resizeObserver.unobserve(containerElement!);
 		}
 	});
 
@@ -72,6 +113,9 @@
 
     $: if (webcamVideoStream && videoElement) {
         videoElement.srcObject = webcamVideoStream;
+    }
+    $: if (videoWidth && videoHeight && containerWidth && containerHeight) {
+        resizeCanvas();
     }
 
     let frameId = 0;
@@ -105,7 +149,6 @@
             drawX = (canvasElement.width - drawWidth) / 2;
 
         }
-
         canvasContext.drawImage(videoElement, drawX, drawY, drawWidth, drawHeight);
 
         const isValidFrame = 
@@ -116,10 +159,12 @@
             canvasAspectRatio > 0 && 
             videoAspectRatio > 0;
 
-        const shouldSendNewFrame = 
-            lastFrameDecoded == lastFrameSent;
+        if (!isValidFrame) {
+            requestAnimationFrame(renderCanvas);
+            return;
+        }
 
-        if (isValidFrame && shouldSendNewFrame) {
+        if (lastFrameDecoded == lastFrameSent) {
             const timeSinceStart = new Date().getTime() - mirrorStartedTime;
             lastFrameSent = frameId;
             poseEstimationWorker?.postMessage({
@@ -129,27 +174,28 @@
                 image: canvasContext.getImageData(drawX, drawY, drawWidth, drawHeight)
             });
         }
-        
+
+        canvasContext.save();
+        // if (videoAspectRatio > canvasAspectRatio) {
+        //     canvasContext.scale(1.0, drawHeight / canvasElement.height);
+        // } else {
+        //     canvasContext.scale(drawWidth / canvasElement.width, 1.0);
+        // }
+
+        // canvasContext.scale(drawWidth / videoElement.videoWidth, drawHeight / videoElement.videoHeight);
+        // canvasContext.translate(drawX, drawY);
         for(const detectedPoseLandmarks of lastDecodedData?.landmarks ?? []) {
+            drawingUtils?.drawConnectors(
+                detectedPoseLandmarks,
+                PoseLandmarker.POSE_CONNECTIONS
+            )
             drawingUtils?.drawLandmarks(
                 detectedPoseLandmarks, {
                     radius: (data) => 5 // DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1)
                 }
             );
         }
-
-        // draw an ellipse in the center of the canvas
-        canvasContext.beginPath();
-        canvasContext.ellipse(
-            canvasElement.width / 2,
-            canvasElement.height / 2,
-            100,
-            100,
-            0,
-            0,
-            2 * Math.PI
-        );
-        canvasContext.stroke();
+        canvasContext.restore();
 
         requestAnimationFrame(renderCanvas);
     }
@@ -164,10 +210,12 @@
     }
 </script>
 
-<div class="container">
+<div class="container" bind:this={containerElement}>
     {#if webcamStarted}    
         <!-- svelte-ignore a11y-media-has-caption -->
-        <video bind:this={videoElement} autoplay on:play={setCanvasSize}></video>
+        <video bind:this={videoElement} autoplay 
+            on:play={resizeCanvas}
+            on:loadeddata={onLoadedVideoData}></video>
         <canvas bind:this={canvasElement}></canvas>  
     {:else}
         <button id="startWebcam" on:click={startWebcam}>
@@ -182,6 +230,7 @@
     width: 100%;
     height: 100%;
     margin: 0;
+    padding: 0;
     position: absolute;
     display: flex;
     justify-content: center;
@@ -191,7 +240,7 @@
 video {
     width: 100%;
     height: 100%;
-    visibility: hidden;
+    display: hidden;
 }
 
 canvas {

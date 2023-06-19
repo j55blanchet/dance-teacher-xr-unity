@@ -20,7 +20,7 @@
 
 	{#if webcamStarted}
 		<main>
-		<slot />
+			<slot />
 		</main>
 	{/if}
 
@@ -34,6 +34,8 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
+		align-items: start;
+		justify-content: left;
 	}
 
 	main {
@@ -41,10 +43,12 @@
 		display: flex;
 		flex-direction: column;
 		padding: 1rem;
-		width: 100%;
+		/* width: 100%; */
 		max-width: 64rem;
-		margin: 0 auto;
+		/* margin: 0 auto; */
 		box-sizing: border-box;
+		justify-content: left;
+		align-items: start;
 	}
 
 	footer {
@@ -67,6 +71,7 @@
 
 	main {
 		z-index: 2;
+		width: 50%;
 	}
 	
 	.background {
