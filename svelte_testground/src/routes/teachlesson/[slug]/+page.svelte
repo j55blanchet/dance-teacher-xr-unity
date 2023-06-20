@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { readable } from 'svelte/store';
+
+import { readable } from 'svelte/store';
 
 import type { DanceTree, Dance } from '$lib/dances-store';
 import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
@@ -9,6 +10,11 @@ export let data;
 
 const dance: Dance = data.dance;
 const danceTree: DanceTree = data.danceTree;
+
+let danceSrc: Promise<string>;
+$: {
+    danceSrc = import("../lib/data/bundle/videos/" + dance.clipPath);
+}
 
 </script>
 
@@ -26,11 +32,13 @@ const danceTree: DanceTree = data.danceTree;
         <DanceTreeVisual node={danceTree.root} />
     </div>
     <div class="preview">
-
+        {dance.clipPath}
+        
+        <video>
+            <source src={"/lib/data/bundle/videos/" + dance.clipPath} type="video/mp4" />
+        </video>
     </div>
-    <!-- <video>
-        <source src={dance.clipPath} type="video/mp4" />
-    </video> -->
+    
 </section>
 
 

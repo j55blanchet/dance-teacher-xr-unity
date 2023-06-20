@@ -8,6 +8,9 @@ def find_complexity_df(clip_relative_path: Path,
     complexity_byfile_dir: Path = Path('data/complexities/byfile'),
     complexity_method: str = 'mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase'):
 
+    if complexity_byfile_dir.parts[-1] != 'byfile':
+        complexity_byfile_dir = complexity_byfile_dir / 'byfile'
+
     complexity_path = complexity_byfile_dir / clip_relative_path.with_suffix('.complexity.csv')
     if not complexity_path.exists():
         return None
@@ -97,7 +100,7 @@ def add_complexities_to_dancetrees(
             json.dump(tree.to_dict(), f2, indent=2)
 
         print(' - done!')
-    print_with_prefix(f'Done! Saved to {output_dir.as_posix()}')
+    print_with_prefix(f'Done! Saved {len(dance_tree_files)} trees to {output_dir.as_posix()}')
 
 if __name__ == '__main__':
     import argparse

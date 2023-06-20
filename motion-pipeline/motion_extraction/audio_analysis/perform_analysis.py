@@ -36,11 +36,12 @@ def get_memory_usage() -> str:
     available_memory_MB = available_memory / 1024 / 1024
     return f"{memory_usage_MB:,.2f} / {available_memory_MB:,.2f} MB"
 
-def get_audio_dancetree_dir(
+def get_audio_result_dir(
     analysis_dir: Path,
     input_type: t.Literal['audio', 'video'],
+    result_type: t.Literal['analysis', 'dancetrees', 'segmentsimilarity'],
 ):
-    return analysis_dir / 'analysis' / input_type
+    return analysis_dir / result_type / input_type
 
 def perform_audio_analysis(
         videosrcdir: t.Optional[Path],
@@ -112,17 +113,17 @@ def perform_audio_analysis(
         relative_filepath = filepath.relative_to(src_dir)
 
         # Save the analysis information (with same relative path as input file)
-        tree_destdir = get_audio_dancetree_dir(destdir, input_type)
-        output_file = tree_destdir / relative_filepath.with_suffix('.json')
+        analysis_destdir = get_audio_result_dir(destdir, input_type, 'analysis')
+        output_file = analysis_destdir / relative_filepath.with_suffix('.json')
         
         analysis_result = None
         already_exists = False
         if skip_existing and output_file.exists():
-            print_with_time(f"\t{i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {output_file.relative_to(destdir)}")
+            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {output_file.relative_to(destdir)}")
             analysis_result = AudioAnalysisResult.from_dict(json.load(open(output_file)))
             already_exists = True
         else:
-            print_with_time(f"\t{i+1}/{len(all_input_filepaths)} [{input_type} src] Analyzing: {relative_filepath}")
+            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Analyzing: {relative_filepath}")
             analysis_result = analyze_audio_file(audio_filepath)
 
             output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -133,7 +134,7 @@ def perform_audio_analysis(
             # Plot cross similarity matrix
             fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
             ax.set_title(f"{filepath.stem} Cross Similarity")
-            similarity_dir = destdir / 'segmentsimilarity' / input_type
+            similarity_dir = get_audio_result_dir(destdir, input_type, 'segmentsimilarity')
             similarity_dir.mkdir(parents=True, exist_ok=True)
             figpath = similarity_dir / relative_filepath.with_suffix('.png')
             figpath.parent.mkdir(parents=True, exist_ok=True)
@@ -147,7 +148,7 @@ def perform_audio_analysis(
                 clip_relativepath=relative_filepath.with_suffix('').as_posix(),
                 analysis=analysis_result
             )
-            dance_tree_dir = destdir / 'dancetrees' / input_type
+            dance_tree_dir = get_audio_result_dir(destdir, input_type, 'dancetrees')
             dance_tree_filepath = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
             dance_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
             with dance_tree_filepath.open('w') as f:

@@ -1,8 +1,8 @@
 import { readable, writable, derived } from 'svelte/store';
 
 // import json data
-import dancesData from '$lib/data/dances.json';
-import danceTreeData from '$lib/data/dancetrees.json';
+import dancesData from '$lib/data/bundle/dances.json';
+import danceTreeData from '$lib/data/bundle/dancetrees.json';
 
 export const dances = dancesData;
 // readable(

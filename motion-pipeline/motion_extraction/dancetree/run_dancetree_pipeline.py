@@ -3,7 +3,7 @@ import typing as t
 from ..stepone_get_holistic_data import compute_holistic_data
 from ..update_database import update_database
 from ..complexity_analysis import calculate_cumulative_complexity as cmplxty
-from ..audio_analysis.perform_analysis import perform_audio_analysis, get_audio_dancetree_dir
+from ..audio_analysis.perform_analysis import perform_audio_analysis, get_audio_result_dir
 from ..complexity_analysis.add_complexity_to_dancetree import add_complexities_to_dancetrees
 from .bundle_data import bundle_data
 
@@ -15,16 +15,19 @@ def run_dancetree_pipeline(
     bundle_export_path: Path,
     include_audio_cache_in_bundle: bool = False,
     include_thumbnail_cache_in_bundle: bool = False,
+    rewrite_existing_holistic_data: bool = False,
+    skip_existing_cumulative_complexity: bool = False,
+    skip_existing_audioanalysis: bool = False,
 ):
     complexities_temp_dir = temp_dir / 'complexities'
     audio_analysis_temp_dir = temp_dir / 'audio_analysis'
-    audio_analysis_tree_dir = get_audio_dancetree_dir(audio_analysis_temp_dir, 'video')
+    audio_analysis_tree_dir = get_audio_result_dir(audio_analysis_temp_dir, 'video', 'dancetrees')
     trees_with_complexity_dir = temp_dir / 'trees_with_complexity'
 
-    audio_cache_dir =  bundle_export_path / 'audio_cache' if include_audio_cache_in_bundle \
-                        else audio_analysis_temp_dir / 'audio_cache'
+    audio_cache_dir =  bundle_export_path / 'audio' if include_audio_cache_in_bundle \
+                        else audio_analysis_temp_dir / 'audio'
     
-    thumbnails_outdir = bundle_export_path / 'thumbs' if include_thumbnail_cache_in_bundle \
+    thumbnails_outdir = bundle_export_path / 'thumbnails' if include_thumbnail_cache_in_bundle \
                         else None
 
     COMPLEXITY_MEASURE_WEIGHITNG = cmplxty.DvajMeasureWeighting.decreasing_by_quarter
@@ -45,6 +48,7 @@ def run_dancetree_pipeline(
     compute_holistic_data(
         video_folder=video_srcdir,
         output_folder=holistic_data_srcdir,
+        rewrite_existing=rewrite_existing_holistic_data,
         print_prefix=lambda: f'{step()} compute holistic data:',
     )
 
@@ -67,7 +71,7 @@ def run_dancetree_pipeline(
         include_base=True,
         weigh_by_visibility=True,
         print_prefix=lambda: f'{step()} calc. complexity:',
-        skip_existing=False,
+        skip_existing=skip_existing_cumulative_complexity,
     )
     
     current_step += 1
@@ -78,7 +82,7 @@ def run_dancetree_pipeline(
         audiocachedir=audio_cache_dir if audio_cache_dir else temp_dir / 'audio_cache',
         analysis_summary_out=audio_analysis_temp_dir / 'audio_analysis_summary.csv',
         include_mem_usage=False,
-        skip_existing=False,
+        skip_existing=skip_existing_audioanalysis,
         print_prefix=lambda: f'{step()} audio analysis:',
     )
 
@@ -112,6 +116,9 @@ if __name__ == "__main__":
     parser.add_argument('--bundle_export_path', type=Path)
     parser.add_argument('--include_audio_cache_in_bundle', action='store_true')
     parser.add_argument('--include_thumbnail_cache_in_bundle', action='store_true')
+    parser.add_argument("--rewrite_existing_holistic_data", action='store_true')
+    parser.add_argument("--skip_existing_cumulative_complexity", action='store_true')
+    parser.add_argument("--skip_existing_audioanalysis", action='store_true')
     args = parser.parse_args()
 
     run_dancetree_pipeline(
@@ -122,4 +129,7 @@ if __name__ == "__main__":
         bundle_export_path=args.bundle_export_path,
         include_audio_cache_in_bundle=args.include_audio_cache_in_bundle,
         include_thumbnail_cache_in_bundle=args.include_thumbnail_cache_in_bundle,
+        rewrite_existing_holistic_data=args.rewrite_existing_holistic_data,
+        skip_existing_cumulative_complexity=args.skip_existing_cumulative_complexity,
+        skip_existing_audioanalysis=args.skip_existing_audioanalysis,
     )

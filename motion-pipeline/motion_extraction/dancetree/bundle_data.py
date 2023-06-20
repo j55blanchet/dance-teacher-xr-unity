@@ -41,7 +41,7 @@ def bundle_data(
         dances[tree.clip_relativepath] = db_info.to_dict()
         dances[tree.clip_relativepath]['clip_relativepath'] = tree.clip_relativepath
 
-        video_relativepath = db_info['clipPath']
+        video_relativepath: str = db_info['clipPath']
         video_src_path = source_videos_dir / video_relativepath
         video_export_path = videos_export_dir / video_relativepath
         if not video_export_path.exists():
