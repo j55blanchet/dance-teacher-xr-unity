@@ -244,9 +244,10 @@
             "module": "motion_extraction.dancetree.bundle_data",
             "args": [
                 "--dancetree_srcdir=${workspaceFolder}/data/dancetrees_with_complexity",
+                "--source_videos_dir=${workspaceFolder}/data/source_videos",
                 "--db_csv_path=${workspaceFolder}/data/db.csv",
-                "--dances_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/dances.json",
-                "--dancetrees_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/dancetrees.json",
+                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/",
+                "--exclude_test"
             ]
         }
     ]
