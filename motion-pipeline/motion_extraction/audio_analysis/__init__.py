@@ -8,9 +8,8 @@ from .tempo_analysis import TempoInfo, calculate_tempo_info
 from .similarity_analysis import calculate_cross_similarity
 from ..dancetree import DanceTree, DanceTreeNode
 
-@dcj.dataclass_json
 @dc.dataclass
-class AudioAnalysisResult:
+class AudioAnalysisResult(dcj.DataClassJsonMixin):
         duration: float
         sample_rate: int
         tempo_info: TempoInfo
