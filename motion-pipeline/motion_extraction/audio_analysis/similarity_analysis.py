@@ -58,7 +58,10 @@ def calculate_cross_similarity(y: np.ndarray, sr: float, segment_times: t.List[t
 
     return cross_similarity
 
-def plot_cross_similarity(cross_similarity: np.ndarray, ax=None):
+def plot_cross_similarity(
+    cross_similarity: t.Union[np.ndarray, t.Sequence[t.Sequence[float]]], 
+    ax=None
+):
     """
     Plot the cross-similarity matrix.
 

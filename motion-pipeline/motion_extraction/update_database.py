@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import json
 import cv2
-from typing import Dict, List
+import typing as t
 from enum import Enum
 
 class ClipType(str, Enum):
@@ -40,7 +40,7 @@ def load_db(db_csv_path: PathLike):
     return db
 
 def update_create_videoentry(
-        entry: Dict, 
+        entry: t.Dict, 
         video_path: Path, 
         clip_name: str, 
         clip_path: PathLike,
@@ -110,15 +110,20 @@ def create_thumbnail(video_path: Path, relative_path: Path, timestamp: float, th
 def update_database(
         database_csv_path: PathLike,
         videos_dir: PathLike, 
-        thumbnails_dir: PathLike
+        thumbnails_dir: t.Optional[PathLike],
+        print_prefix: t.Callable[[], str] = lambda: '',
     ):
 
-    videos_dir = Path(videos_dir)
-    thumbnails_dir = Path(thumbnails_dir)
-    
-    thumbnails_dir.mkdir(exist_ok=True, parents=True)
+    def print_with_prefix(*args, **kwargs):
+        print(print_prefix(), *args, **kwargs)
 
-    video_paths: List[Path] = []
+    database_csv_path = Path(database_csv_path)
+    videos_dir = Path(videos_dir)
+    thumbnails_dir = None if not thumbnails_dir else Path(thumbnails_dir)
+    if thumbnails_dir:
+        thumbnails_dir.mkdir(exist_ok=True, parents=True)
+
+    video_paths: t.List[Path] = []
     for file_ending in valid_file_endings:
         video_paths.extend(videos_dir.rglob(f'*.{file_ending}'))    
 
@@ -126,7 +131,7 @@ def update_database(
     if database_csv_path.exists():
         old_db = load_db(database_csv_path)
     else:
-        print(f'WARNING No database.csv file found at {database_csv_path}.', flush=True)
+        print_with_prefix(f'WARNING No database.csv file found at {database_csv_path}.', flush=True)
         database_csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     clip_names = [
@@ -143,7 +148,7 @@ def update_database(
     discarding_clipnames = old_db_clipnames - clip_names_set
     adding_clipnames = clip_names_set - old_db_clipnames
 
-    discarded_entries = old_db_by_clipname.loc[discarding_clipnames]
+    discarded_entries = old_db_by_clipname.loc[discarding_clipnames] # type: ignore
     count_new_entries = len(clip_names_set) - len(old_db_by_clipname)
         
     out_db = {}
@@ -152,7 +157,7 @@ def update_database(
 
         relative_path = video_path.relative_to(videos_dir)
         
-        print(f'Processing {relative_path.as_posix()}')
+        print_with_prefix(f'Processing {relative_path.as_posix()}')
         clip_name = relative_path.stem
         relative_clip_stem = (relative_path.parent / relative_path.stem).as_posix()
 
@@ -174,8 +179,9 @@ def update_database(
             is_test=is_test
         )
         start_time: float = entry['startTime']
-        thumbnail_path = create_thumbnail(videos_dir.joinpath(relative_path), relative_path, start_time, thumbnails_dir)
-        entry['thumbnailSrc'] = thumbnail_path.relative_to(thumbnails_dir).as_posix()
+        if thumbnails_dir:
+            thumbnail_path = create_thumbnail(videos_dir.joinpath(relative_path), relative_path, start_time, thumbnails_dir)
+            entry['thumbnailSrc'] = thumbnail_path.relative_to(thumbnails_dir).as_posix()
 
         out_db[relative_clip_stem] = entry
     
@@ -184,9 +190,9 @@ def update_database(
     df = pd.DataFrame.from_records(new_db)
     df.set_index('clipRelativeStem', inplace=True)
 
-    print(f'Discarded {len(discarded_entries)} entries')
-    print(f'Added {count_new_entries} entries')
-    print(f"Updated {len(old_db_by_clipname)} entries")
+    print_with_prefix(f'Discarded {len(discarded_entries)} entries')
+    print_with_prefix(f'Added {count_new_entries} entries')
+    print_with_prefix(f"Updated {len(old_db_by_clipname)} entries")
 
     write_db(df, database_csv_path)
 

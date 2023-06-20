@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys
-from typing import Callable, Generator, TypeVar, Optional
+import typing as t
 import cv2
 from matplotlib import pyplot as plt
 import mediapipe as mp
@@ -20,7 +20,7 @@ HandLandmark = mp.solutions.holistic.HandLandmark
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
-T = TypeVar('T')
+T = t.TypeVar('T')
 
 _PRESENCE_THRESHOLD = 0.5
 _VISIBILITY_THRESHOLD = 0.5
@@ -33,7 +33,7 @@ WHITE_COLOR = (224, 224, 224)
 def custom_draw_landmarks(
     image: np.ndarray,
     landmark_list: landmark_pb2.NormalizedLandmarkList,
-    connections: Optional[List[Tuple[int, int]]] = None,
+    connections: t.Optional[List[Tuple[int, int]]] = None,
     landmark_drawing_spec: Union[DrawingSpec,
                                  Mapping[int, DrawingSpec]] = DrawingSpec(
                                      color=RED_COLOR),
@@ -212,7 +212,7 @@ def plot_3d_pose(holistic_row_series, fig=None, ax=None, title=None):
     )
     ax.add_collection3d(lines)
 
-def _perform_by_frame(video_path: Path, on_frame: Callable[[cv2.Mat, int], T]) -> Generator[T, None, None]:
+def _perform_by_frame(video_path: Path, on_frame: t.Callable[[cv2.Mat, int], T]):
     try:
         cap = cv2.VideoCapture(str(video_path))
         frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -242,9 +242,9 @@ def process_video(
     parent_folder: Path,
     output_root: Path, 
     holistic_solution: mp.solutions.holistic.Holistic,
-    frame_output_folder: Optional[Path] = None,
+    frame_output_folder: t.Optional[Path] = None,
     rewrite_existing: bool = False,
-    print_progress_context: Callable[[],str] = lambda: '',
+    print_progress_context: t.Callable[[],str] = lambda: '',
 ):
 
     # Reset graph for this new file
@@ -256,12 +256,12 @@ def process_video(
     @throttle(seconds=1)
     def print_progress(i, frame_count):
         percent_done = i / frame_count
-        logging.info(f'{print_progress_context()}{video_file_relative_stem}: {i}/{frame_count} {percent_done:.1%}')
+        print(f'{print_progress_context()}{video_file_relative_stem}: {i}/{frame_count} {percent_done:.1%}')
 
     holistic_data_filepath = output_root / video_file_relative.with_suffix(".holisticdata.csv")
 
     if holistic_data_filepath.exists() and not rewrite_existing:
-        logging.info(f'{print_progress_context()}Skipping (already exists): {video_file_relative}')
+        print(f'{print_progress_context()}Skipping (already exists): {video_file_relative}')
         return
     
     header_row = construct_header_row()
@@ -355,33 +355,24 @@ def process_video(
             
             merged_data_csv.writerow(holistic_csv_row)
             
-def main():
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--video_folder', type=Path, required=True)
-    parser.add_argument('--output_folder', type=Path, required=True)
-    parser.add_argument('--log_level', type=str, default='INFO')
-    parser.add_argument('--model-complexity', type=int, default=2)
-    parser.add_argument('--frame_output_folder', type=Path, default=None)
-    parser.add_argument('--rewrite_existing', action='store_true', default=False)
-    args = parser.parse_args()
-
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=args.log_level.upper(),
-    )
-
+def compute_holistic_data(
+    video_folder: Path,
+    output_folder: Path,
+    model_complexity: int = 2,
+    frame_output_folder: t.Optional[Path] = None,
+    rewrite_existing: bool = False,
+    print_prefix: t.Callable[[], str]=lambda: '',
+):
     holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic = mp.solutions.holistic.Holistic(
         static_image_mode=False,
-        model_complexity=args.model_complexity,
+        model_complexity=model_complexity,
         enable_segmentation=False
     )
 
-    if not args.output_folder.exists():
-        args.output_folder.mkdir(parents=True)
+    if not output_folder.exists():
+        output_folder.mkdir(parents=True)
 
-    video_folder = Path(args.video_folder)
+    video_folder = Path(video_folder)
     video_paths = []
     parent_folder = video_folder.parent
     if video_folder.is_dir():
@@ -398,11 +389,29 @@ def main():
             video_path, 
             parent_folder,
             holistic_solution=holistic_solution, 
-            output_root=args.output_folder,
-            frame_output_folder=args.frame_output_folder,
-            rewrite_existing=args.rewrite_existing,
-            print_progress_context=lambda: f"{i+1}/{len(video_paths)} ")
+            output_root=output_folder,
+            frame_output_folder=frame_output_folder,
+            rewrite_existing=rewrite_existing,
+            print_progress_context=lambda: f"{print_prefix()} Video {i+1}/{len(video_paths)} ")
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--video_folder', type=Path, required=True)
+    parser.add_argument('--output_folder', type=Path, required=True)
+    parser.add_argument('--log_level', type=str, default='INFO')
+    parser.add_argument('--model-complexity', type=int, default=2)
+    parser.add_argument('--frame_output_folder', type=Path, default=None)
+    parser.add_argument('--rewrite_existing', action='store_true', default=False)
+    args = parser.parse_args()
+
+    compute_holistic_data(
+        video_folder=args.video_folder,
+        output_folder=args.output_folder,
+        log_level=args.log_level,
+        model_complexity=args.model_complexity,
+        frame_output_folder=args.frame_output_folder,
+        rewrite_existing=args.rewrite_existing,
+    )

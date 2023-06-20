@@ -13,7 +13,12 @@ def bundle_data(
     bundle_export_path: Path,
     source_videos_dir: Path,
     exclude_test: bool = True,
+    print_prefix: t.Callable[[], str] = lambda: '',
 ):
+    def print_with_prefix(*args, **kwargs):
+        print(print_prefix(), *args, **kwargs)
+
+    print_with_prefix('Loading database...')
     db = load_db(db_csv_path)
     
     dancetree_filepaths = list(dancetree_srcdir.rglob('*.dancetree.json'))
@@ -27,7 +32,7 @@ def bundle_data(
 
     dancetree_dict = defaultdict(list)
     dances = {}
-    for tree in dancetrees:
+    for i, tree in enumerate(dancetrees):
         db_info = db.loc[tree.clip_relativepath]
         if exclude_test and db_info['is_test']:
             continue
@@ -36,9 +41,11 @@ def bundle_data(
         dances[tree.clip_relativepath] = db_info.to_dict()
         dances[tree.clip_relativepath]['clip_relativepath'] = tree.clip_relativepath
 
-        video_src_path = source_videos_dir / db_info['clipPath']
-        video_export_path = videos_export_dir / db_info['clipPath']
+        video_relativepath = db_info['clipPath']
+        video_src_path = source_videos_dir / video_relativepath
+        video_export_path = videos_export_dir / video_relativepath
         if not video_export_path.exists():
+            print_with_prefix(f'Copying video {i+1}/{len(dancetrees)}: {video_relativepath}')
             video_export_path.parent.mkdir(parents=True, exist_ok=True)
 
             # symlink
@@ -58,6 +65,7 @@ def bundle_data(
 
     dancetrees_export_path.parent.mkdir(parents=True, exist_ok=True)
     dancetrees_export_path.write_text(json.dumps(dancetree_dict, indent=2), encoding='utf-8')
+    print_with_prefix(f'Exported bundle with {len(dancetrees)} dancetrees to {bundle_export_path.resolve().as_posix()}')
 
 if __name__ == "__main__":
     import argparse

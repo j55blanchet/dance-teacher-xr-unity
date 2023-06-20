@@ -249,6 +249,20 @@
                 "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/",
                 "--exclude_test"
             ]
+        },
+        {
+            "name": "Run DanceTree Pipeline",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.dancetree.run_dancetree_pipeline",
+            "args": [
+                "--database_csv_path=${workspaceFolder}/data/db.csv",
+                "--video_srcdir=${workspaceFolder}/data/source_videos",
+                "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
+                "--temp_dir=${workspaceFolder}/data/temp",
+                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
+                "--include_thumbnail_cache_in_bundle",
+            ]
         }
     ]
 }
