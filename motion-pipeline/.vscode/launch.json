@@ -172,7 +172,9 @@
                 // "--landmark_weighting=dempster",
                 "--landmark_weighting=all",
                 "--weigh_by_visibility=both",
+                // "--weigh_by_visibility=true",
                 "--include_base=both",
+                // "--include_base=true",
             ],
         },
         {   
@@ -185,12 +187,12 @@
                 "--destdir=${workspaceFolder}/data/test_complexities/",
                 // "--plot_figs",
                 // "--measure_weighting=decreasing_by_half",
-                // "--measure_weighting=decreasing_by_quarter",
-                "--measure_weighting=all",
+                "--measure_weighting=decreasing_by_quarter",
+                // "--measure_weighting=all",
                 // "--measure_weighting=equal",
-                // "--landmark_weighting=balanced",
+                "--landmark_weighting=balanced",
                 // "--landmark_weighting=dempster",
-                "--landmark_weighting=all",
+                // "--landmark_weighting=all",
                 // "--weigh_by_visibility=both",
                 "--weigh_by_visibility=true",
                 // "--include_base=both",
@@ -236,14 +238,15 @@
             ]
         },
         {
-            "name": "Export dancetrees",
+            "name": "Bundle Data for Frontend",
             "type": "python",
             "request": "launch",
-            "module": "motion_extraction.dancetree.bundle_dancetrees",
+            "module": "motion_extraction.dancetree.bundle_data",
             "args": [
                 "--dancetree_srcdir=${workspaceFolder}/data/dancetrees_with_complexity",
                 "--db_csv_path=${workspaceFolder}/data/db.csv",
-                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/dances-bundle.json",
+                "--dances_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/dances.json",
+                "--dancetrees_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/dancetrees.json",
             ]
         }
     ]

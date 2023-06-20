@@ -1,8 +1,6 @@
 <script lang="ts">
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import { DrawingUtils, PoseLandmarker } from "@mediapipe/tasks-vision";
-
-	import VirtualMirror from './VirtualMirror.svelte';
 	import { onMount, tick } from 'svelte';
     
     import PoseEstimationWorker from '$lib/pose-estimation.worker';
@@ -50,7 +48,7 @@
     }
 
     // @type {PoseEstimationResult | undefined}
-    let lastDecodedData: undefined = undefined;
+    let lastDecodedData: undefined | any = undefined;
 
     const resizeCanvas = () => {
         if (!canvasElement) {

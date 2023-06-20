@@ -1,0 +1,470 @@
+[
+  {
+    "title": "Bartender",
+    "clipName": "bartender",
+    "clipPath": "study2/bartender.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 566,
+    "fps": 30.0,
+    "duration": 18.866666666666667,
+    "width": 576,
+    "height": 1024,
+    "startTime": 0.0,
+    "endTime": 14.9,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "study2/bartender.jpg",
+    "clip_relativepath": "study2/bartender"
+  },
+  {
+    "title": "Mad At Disney",
+    "clipName": "mad-at-disney-tutorial",
+    "clipPath": "study2/mad-at-disney-tutorial.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 544,
+    "fps": 29.97,
+    "duration": 18.151484818151484,
+    "width": 540,
+    "height": 960,
+    "startTime": 0.0,
+    "endTime": 18.151484818151484,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "study2/mad-at-disney-tutorial.jpg",
+    "clip_relativepath": "study2/mad-at-disney-tutorial"
+  },
+  {
+    "title": "Last Christmas",
+    "clipName": "last-christmas-tutorial",
+    "clipPath": "study2/last-christmas-tutorial.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 452,
+    "fps": 30.0,
+    "duration": 15.066666666666666,
+    "width": 540,
+    "height": 960,
+    "startTime": 0.0,
+    "endTime": 15.066666666666666,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "study2/last-christmas-tutorial.jpg",
+    "clip_relativepath": "study2/last-christmas-tutorial"
+  },
+  {
+    "title": "Pajama Party",
+    "clipName": "pajamaparty-tutorial",
+    "clipPath": "study2/pajamaparty-tutorial.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 419,
+    "fps": 30.0,
+    "duration": 13.966666666666669,
+    "width": 540,
+    "height": 960,
+    "startTime": 0.0,
+    "endTime": 13.966666666666669,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "study2/pajamaparty-tutorial.jpg",
+    "clip_relativepath": "study2/pajamaparty-tutorial"
+  },
+  {
+    "title": "raysteps-watchmyshoes",
+    "clipName": "raysteps-watchmyshoes",
+    "clipPath": "other/raysteps-watchmyshoes.MP4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 570,
+    "fps": 30.0,
+    "duration": 19.0,
+    "width": 576,
+    "height": 1024,
+    "startTime": 0.0,
+    "endTime": 19.0,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "other/raysteps-watchmyshoes.jpg",
+    "clip_relativepath": "other/raysteps-watchmyshoes"
+  },
+  {
+    "title": "Renegade",
+    "clipName": "renegade",
+    "clipPath": "other/renegade.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 367,
+    "fps": 30.0,
+    "duration": 12.233333333333333,
+    "width": 576,
+    "height": 1024,
+    "startTime": 0.0,
+    "endTime": 12.233333333333333,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/renegade.jpg",
+    "clip_relativepath": "other/renegade"
+  },
+  {
+    "title": "It's a Fit",
+    "clipName": "itsafit",
+    "clipPath": "other/itsafit.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 414,
+    "fps": 29.97,
+    "duration": 13.813813813813814,
+    "width": 576,
+    "height": 1024,
+    "startTime": 1.0,
+    "endTime": 10.0,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/itsafit.jpg",
+    "clip_relativepath": "other/itsafit"
+  },
+  {
+    "title": "Unhhunh",
+    "clipName": "unhhunh",
+    "clipPath": "other/unhhunh.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 578,
+    "fps": 30.0,
+    "duration": 19.266666666666666,
+    "width": 540,
+    "height": 960,
+    "startTime": 0.0,
+    "endTime": 19.266666666666666,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/unhhunh.jpg",
+    "clip_relativepath": "other/unhhunh"
+  },
+  {
+    "title": "Getup",
+    "clipName": "getup",
+    "clipPath": "other/getup.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 527,
+    "fps": 29.22365988909427,
+    "duration": 18.03333333333333,
+    "width": 720,
+    "height": 1280,
+    "startTime": 0.0,
+    "endTime": 18.03333333333333,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/getup.jpg",
+    "clip_relativepath": "other/getup"
+  },
+  {
+    "title": "Debbie-Allen Challenge",
+    "clipName": "debbieallenchallenge",
+    "clipPath": "other/debbieallenchallenge.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 922,
+    "fps": 30.0,
+    "duration": 30.73333333333333,
+    "width": 576,
+    "height": 1024,
+    "startTime": 0.0,
+    "endTime": 30.73333333333333,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/debbieallenchallenge.jpg",
+    "clip_relativepath": "other/debbieallenchallenge"
+  },
+  {
+    "title": "Cold Dance",
+    "clipName": "colddance",
+    "clipPath": "other/colddance.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 398,
+    "fps": 30.0,
+    "duration": 13.266666666666667,
+    "width": 576,
+    "height": 1024,
+    "startTime": 0.0,
+    "endTime": 13.266666666666667,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/colddance.jpg",
+    "clip_relativepath": "other/colddance"
+  },
+  {
+    "title": "Say So",
+    "clipName": "sayso",
+    "clipPath": "other/sayso.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 1733,
+    "fps": 29.72985800690437,
+    "duration": 58.29156666666667,
+    "width": 540,
+    "height": 960,
+    "startTime": 0.0,
+    "endTime": 58.29156666666667,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/sayso.jpg",
+    "clip_relativepath": "other/sayso"
+  },
+  {
+    "title": "Welcome to My World",
+    "clipName": "welcome-to-my-world",
+    "clipPath": "other/welcome-to-my-world.mp4",
+    "clipType": "video",
+    "is_test": false,
+    "frameCount": 430,
+    "fps": 29.0,
+    "duration": 14.827586206896552,
+    "width": 576,
+    "height": 1024,
+    "startTime": 0.0,
+    "endTime": 14.827586206896552,
+    "poseUpperBodyOnly": false,
+    "tags": [
+      "TikTok"
+    ],
+    "landmarkScope": [
+      "pose"
+    ],
+    "thumbnailSrc": "other/welcome-to-my-world.jpg",
+    "clip_relativepath": "other/welcome-to-my-world"
+  },
+  {
+    "title": "test-still",
+    "clipName": "test-still",
+    "clipPath": "tests/test-still.mp4",
+    "clipType": "video",
+    "is_test": true,
+    "frameCount": 611,
+    "fps": 30.0,
+    "duration": 20.366666666666667,
+    "width": 1080,
+    "height": 1920,
+    "startTime": 0.0,
+    "endTime": 20.366666666666667,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "tests/test-still.jpg",
+    "clip_relativepath": "tests/test-still"
+  },
+  {
+    "title": "test-twostep_active",
+    "clipName": "test-twostep_active",
+    "clipPath": "tests/test-twostep_active.mp4",
+    "clipType": "video",
+    "is_test": true,
+    "frameCount": 684,
+    "fps": 30.0,
+    "duration": 22.8,
+    "width": 1080,
+    "height": 1920,
+    "startTime": 0.0,
+    "endTime": 22.8,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "tests/test-twostep_active.jpg",
+    "clip_relativepath": "tests/test-twostep_active"
+  },
+  {
+    "title": "test-twostep_halfspeed",
+    "clipName": "test-twostep_halfspeed",
+    "clipPath": "tests/test-twostep_halfspeed.mp4",
+    "clipType": "video",
+    "is_test": true,
+    "frameCount": 680,
+    "fps": 30.0,
+    "duration": 22.666666666666668,
+    "width": 1080,
+    "height": 1920,
+    "startTime": 0.0,
+    "endTime": 22.666666666666668,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "tests/test-twostep_halfspeed.jpg",
+    "clip_relativepath": "tests/test-twostep_halfspeed"
+  },
+  {
+    "title": "test-twostep_feetcropped",
+    "clipName": "test-twostep_feetcropped",
+    "clipPath": "tests/test-twostep_feetcropped.mp4",
+    "clipType": "video",
+    "is_test": true,
+    "frameCount": 677,
+    "fps": 30.0,
+    "duration": 22.566666666666663,
+    "width": 1080,
+    "height": 1920,
+    "startTime": 0.0,
+    "endTime": 22.566666666666663,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "tests/test-twostep_feetcropped.jpg",
+    "clip_relativepath": "tests/test-twostep_feetcropped"
+  },
+  {
+    "title": "test-twostep_baseline",
+    "clipName": "test-twostep_baseline",
+    "clipPath": "tests/test-twostep_baseline.mp4",
+    "clipType": "video",
+    "is_test": true,
+    "frameCount": 683,
+    "fps": 30.0,
+    "duration": 22.766666666666666,
+    "width": 1080,
+    "height": 1920,
+    "startTime": 0.0,
+    "endTime": 22.766666666666666,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "tests/test-twostep_baseline.jpg",
+    "clip_relativepath": "tests/test-twostep_baseline"
+  },
+  {
+    "title": "test-twostep_reduced",
+    "clipName": "test-twostep_reduced",
+    "clipPath": "tests/test-twostep_reduced.mp4",
+    "clipType": "video",
+    "is_test": true,
+    "frameCount": 669,
+    "fps": 30.0,
+    "duration": 22.3,
+    "width": 1080,
+    "height": 1920,
+    "startTime": 0.0,
+    "endTime": 22.3,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "tests/test-twostep_reduced.jpg",
+    "clip_relativepath": "tests/test-twostep_reduced"
+  },
+  {
+    "title": "test-twostep_onehand",
+    "clipName": "test-twostep_onehand",
+    "clipPath": "tests/test-twostep_onehand.mp4",
+    "clipType": "video",
+    "is_test": true,
+    "frameCount": 669,
+    "fps": 30.0,
+    "duration": 22.3,
+    "width": 1080,
+    "height": 1920,
+    "startTime": 0.0,
+    "endTime": 22.3,
+    "poseUpperBodyOnly": false,
+    "tags": [],
+    "landmarkScope": [
+      "pose",
+      "rightHand",
+      "leftHand",
+      "face"
+    ],
+    "thumbnailSrc": "tests/test-twostep_onehand.jpg",
+    "clip_relativepath": "tests/test-twostep_onehand"
+  }
+]
