@@ -13,21 +13,23 @@ def run_dancetree_pipeline(
     holistic_data_srcdir: Path,
     temp_dir: Path,
     bundle_export_path: Path,
-    include_audio_cache_in_bundle: bool = False,
-    include_thumbnail_cache_in_bundle: bool = False,
+    bundle_media_export_path: Path,
+    include_audio_in_bundle: bool = False,
+    include_thumbnail_in_bundle: bool = False,
     rewrite_existing_holistic_data: bool = False,
     skip_existing_cumulative_complexity: bool = False,
     skip_existing_audioanalysis: bool = False,
+
 ):
     complexities_temp_dir = temp_dir / 'complexities'
     audio_analysis_temp_dir = temp_dir / 'audio_analysis'
     audio_analysis_tree_dir = get_audio_result_dir(audio_analysis_temp_dir, 'video', 'dancetrees')
     trees_with_complexity_dir = temp_dir / 'trees_with_complexity'
 
-    audio_cache_dir =  bundle_export_path / 'audio' if include_audio_cache_in_bundle \
+    audio_cache_dir =  bundle_media_export_path / 'audio' if include_audio_in_bundle \
                         else audio_analysis_temp_dir / 'audio'
     
-    thumbnails_outdir = bundle_export_path / 'thumbnails' if include_thumbnail_cache_in_bundle \
+    thumbnails_outdir = bundle_media_export_path / 'thumbnails' if include_thumbnail_in_bundle \
                         else None
 
     COMPLEXITY_MEASURE_WEIGHITNG = cmplxty.DvajMeasureWeighting.decreasing_by_quarter
@@ -101,6 +103,7 @@ def run_dancetree_pipeline(
         dancetree_srcdir=trees_with_complexity_dir,
         db_csv_path=database_csv_path,
         bundle_export_path=bundle_export_path,
+        bundle_media_export_path=bundle_media_export_path,
         source_videos_dir=video_srcdir,
         exclude_test=True,
         print_prefix=lambda: f'{step()} bundle data:',
@@ -114,8 +117,9 @@ if __name__ == "__main__":
     parser.add_argument('--holistic_data_srcdir', type=Path)
     parser.add_argument('--temp_dir', type=Path)
     parser.add_argument('--bundle_export_path', type=Path)
-    parser.add_argument('--include_audio_cache_in_bundle', action='store_true')
-    parser.add_argument('--include_thumbnail_cache_in_bundle', action='store_true')
+    parser.add_argument('--bundle_media_export_path', type=Path)
+    parser.add_argument('--include_audio_in_bundle', action='store_true')
+    parser.add_argument('--include_thumbnail_in_bundle', action='store_true')
     parser.add_argument("--rewrite_existing_holistic_data", action='store_true')
     parser.add_argument("--skip_existing_cumulative_complexity", action='store_true')
     parser.add_argument("--skip_existing_audioanalysis", action='store_true')
@@ -127,8 +131,9 @@ if __name__ == "__main__":
         holistic_data_srcdir=args.holistic_data_srcdir,
         temp_dir=args.temp_dir,
         bundle_export_path=args.bundle_export_path,
-        include_audio_cache_in_bundle=args.include_audio_cache_in_bundle,
-        include_thumbnail_cache_in_bundle=args.include_thumbnail_cache_in_bundle,
+        bundle_media_export_path=args.bundle_media_export_path,
+        include_audio_in_bundle=args.include_audio_in_bundle,
+        include_thumbnail_in_bundle=args.include_thumbnail_in_bundle,
         rewrite_existing_holistic_data=args.rewrite_existing_holistic_data,
         skip_existing_cumulative_complexity=args.skip_existing_cumulative_complexity,
         skip_existing_audioanalysis=args.skip_existing_audioanalysis,
