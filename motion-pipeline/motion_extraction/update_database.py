@@ -3,14 +3,18 @@ from pathlib import Path
 import pandas as pd
 import json
 import cv2
-from typing import Dict, List
+import typing as t
+from enum import Enum
 
-from numpy.core.fromnumeric import trace
+class ClipType(str, Enum):
+    video = 'video'
+    mocap = 'mocap'
 
 valid_file_endings = [
-    'mp4',
-    'm4v',
-    'mov',
+    # Case-insensitive for mp4, m4v, and mov
+    '[mM][pP]4',
+    '[mM]4[vV]',
+    '[mM][oO][vV]',
 ]
 
 def write_db(db: pd.DataFrame, db_csv_path: PathLike):
@@ -27,14 +31,21 @@ def load_db(db_csv_path: PathLike):
     db['tags'] = db['tags'].apply(lambda x: json.loads(x.replace("'",'"')))
     db['landmarkScope'] = db['landmarkScope'].apply(lambda x: json.loads(x.replace("'",'"')))
 
+    # convert is_test to bool
+    db['is_test'] = db['is_test'].astype(bool)
+
+    # convert clipType to enum
+    db['clipType'] = db['clipType'].apply(lambda x: ClipType[x])
+
     return db
 
-def update_create_entry(
-        entry: Dict, 
+def update_create_videoentry(
+        entry: t.Dict, 
         video_path: Path, 
         clip_name: str, 
         clip_path: PathLike,
         relative_clip_stem: str,
+        is_test: bool,
     ):
     if entry is None:
         entry = {}
@@ -45,6 +56,9 @@ def update_create_entry(
     out_entry['clipName'] = clip_name
     out_entry['clipPath'] = Path(clip_path).as_posix()
     out_entry['clipRelativeStem'] = relative_clip_stem
+    out_entry['clipType'] = ClipType.video.name
+    out_entry['is_test'] = is_test
+
 
     vid_data = cv2.VideoCapture(video_path.as_posix())
     frame_count = vid_data.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -96,15 +110,20 @@ def create_thumbnail(video_path: Path, relative_path: Path, timestamp: float, th
 def update_database(
         database_csv_path: PathLike,
         videos_dir: PathLike, 
-        thumbnails_dir: PathLike
+        thumbnails_dir: t.Optional[PathLike],
+        print_prefix: t.Callable[[], str] = lambda: '',
     ):
 
-    videos_dir = Path(videos_dir)
-    thumbnails_dir = Path(thumbnails_dir)
-    
-    thumbnails_dir.mkdir(exist_ok=True, parents=True)
+    def print_with_prefix(*args, **kwargs):
+        print(print_prefix(), *args, **kwargs)
 
-    video_paths: List[Path] = []
+    database_csv_path = Path(database_csv_path)
+    videos_dir = Path(videos_dir)
+    thumbnails_dir = None if not thumbnails_dir else Path(thumbnails_dir)
+    if thumbnails_dir:
+        thumbnails_dir.mkdir(exist_ok=True, parents=True)
+
+    video_paths: t.List[Path] = []
     for file_ending in valid_file_endings:
         video_paths.extend(videos_dir.rglob(f'*.{file_ending}'))    
 
@@ -112,7 +131,7 @@ def update_database(
     if database_csv_path.exists():
         old_db = load_db(database_csv_path)
     else:
-        print(f'WARNING No database.csv file found at {database_csv_path}.', flush=True)
+        print_with_prefix(f'WARNING No database.csv file found at {database_csv_path}.', flush=True)
         database_csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     clip_names = [
@@ -123,35 +142,46 @@ def update_database(
 
     # Remove entries for videos that no longer exist (searching by clipName)
     old_db_by_clipname = old_db.set_index('clipName')
-    old_db_by_clipname = old_db_by_clipname.loc[clip_names]
+    old_db_clipnames = set(old_db_by_clipname.index)
 
-    discarded_entries = old_db_by_clipname.loc[~old_db_by_clipname.index.isin(clip_names_set)]
+    updating_clipnames = clip_names_set.intersection(old_db_clipnames)
+    discarding_clipnames = old_db_clipnames - clip_names_set
+    adding_clipnames = clip_names_set - old_db_clipnames
+
+    discarded_entries = old_db_by_clipname.loc[discarding_clipnames] # type: ignore
     count_new_entries = len(clip_names_set) - len(old_db_by_clipname)
         
     out_db = {}
     for video_path in video_paths:
         
+
         relative_path = video_path.relative_to(videos_dir)
-        print(f'Processing {relative_path.as_posix()}')
+        
+        print_with_prefix(f'Processing {relative_path.as_posix()}')
         clip_name = relative_path.stem
         relative_clip_stem = (relative_path.parent / relative_path.stem).as_posix()
 
-        prev_entry = {}
-        try:
-            prev_entry = old_db_by_clipname.loc[clip_name].to_dict()
-        except KeyError:
-            pass
+        is_test = False
+        if len(relative_path.parents) > 0 and \
+            relative_path.parents[0].name.lower().startswith('test'):
+            is_test = True
 
-        entry = update_create_entry(
+        prev_entry = {}
+        if clip_name in updating_clipnames:
+            prev_entry = old_db_by_clipname.loc[clip_name].to_dict()
+        
+        entry = update_create_videoentry(
             entry = prev_entry,  # type: ignore
             video_path = video_path, 
             clip_name = clip_name, 
             clip_path = relative_path,
-            relative_clip_stem = relative_clip_stem
+            relative_clip_stem = relative_clip_stem,
+            is_test=is_test
         )
         start_time: float = entry['startTime']
-        thumbnail_path = create_thumbnail(videos_dir.joinpath(relative_path), relative_path, start_time, thumbnails_dir)
-        entry['thumbnailSrc'] = thumbnail_path.relative_to(thumbnails_dir).as_posix()
+        if thumbnails_dir:
+            thumbnail_path = create_thumbnail(videos_dir.joinpath(relative_path), relative_path, start_time, thumbnails_dir)
+            entry['thumbnailSrc'] = thumbnail_path.relative_to(thumbnails_dir).as_posix()
 
         out_db[relative_clip_stem] = entry
     
@@ -160,9 +190,9 @@ def update_database(
     df = pd.DataFrame.from_records(new_db)
     df.set_index('clipRelativeStem', inplace=True)
 
-    print(f'Discarded {len(discarded_entries)} entries')
-    print(f'Added {count_new_entries} entries')
-    print(f"Updated {len(old_db_by_clipname)} entries")
+    print_with_prefix(f'Discarded {len(discarded_entries)} entries')
+    print_with_prefix(f'Added {count_new_entries} entries')
+    print_with_prefix(f"Updated {len(old_db_by_clipname)} entries")
 
     write_db(df, database_csv_path)
 

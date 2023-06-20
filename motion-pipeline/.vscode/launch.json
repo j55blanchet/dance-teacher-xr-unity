@@ -172,7 +172,9 @@
                 // "--landmark_weighting=dempster",
                 "--landmark_weighting=all",
                 "--weigh_by_visibility=both",
+                // "--weigh_by_visibility=true",
                 "--include_base=both",
+                // "--include_base=true",
             ],
         },
         {   
@@ -185,12 +187,12 @@
                 "--destdir=${workspaceFolder}/data/test_complexities/",
                 // "--plot_figs",
                 // "--measure_weighting=decreasing_by_half",
-                // "--measure_weighting=decreasing_by_quarter",
-                "--measure_weighting=all",
+                "--measure_weighting=decreasing_by_quarter",
+                // "--measure_weighting=all",
                 // "--measure_weighting=equal",
-                // "--landmark_weighting=balanced",
+                "--landmark_weighting=balanced",
                 // "--landmark_weighting=dempster",
-                "--landmark_weighting=all",
+                // "--landmark_weighting=all",
                 // "--weigh_by_visibility=both",
                 "--weigh_by_visibility=true",
                 // "--include_base=both",
@@ -233,6 +235,33 @@
                 "--database_path=${workspaceFolder}/data/db.csv",
                 "--output_dir=${workspaceFolder}/data/dancetrees_with_complexity/",
                 "--complexity_method=mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
+            ]
+        },
+        {
+            "name": "Bundle Data for Frontend",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.dancetree.bundle_data",
+            "args": [
+                "--dancetree_srcdir=${workspaceFolder}/data/dancetrees_with_complexity",
+                "--source_videos_dir=${workspaceFolder}/data/source_videos",
+                "--db_csv_path=${workspaceFolder}/data/db.csv",
+                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/",
+                "--exclude_test"
+            ]
+        },
+        {
+            "name": "Run DanceTree Pipeline",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.dancetree.run_dancetree_pipeline",
+            "args": [
+                "--database_csv_path=${workspaceFolder}/data/db.csv",
+                "--video_srcdir=${workspaceFolder}/data/source_videos",
+                "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
+                "--temp_dir=${workspaceFolder}/data/temp",
+                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
+                "--include_thumbnail_cache_in_bundle",
             ]
         }
     ]

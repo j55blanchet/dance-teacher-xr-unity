@@ -2,6 +2,7 @@ from pathlib import Path
 import pandas as pd
 from ..dancetree.DanceTree import DanceTree, DanceTreeNode
 from ..update_database import load_db
+import typing as t
 
 def find_complexity_df(clip_relative_path: Path,
     complexity_byfile_dir: Path = Path('data/complexities/byfile'),
@@ -53,8 +54,12 @@ def add_complexities_to_dancetrees(
         database_path: Path,
         output_dir: Path,
         complexity_method: str = 'mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase',
+        get_print_prefix: t.Callable[[], str] = lambda: '',
     ):
     import json
+
+    def print_with_prefix(*args, **kwargs):
+        print(get_print_prefix(), *args, **kwargs)
 
     db = load_db(database_path)
 
@@ -63,7 +68,7 @@ def add_complexities_to_dancetrees(
     for i, dance_tree_file in enumerate(dance_tree_files):
         relative_filepath = dance_tree_file.relative_to(tree_srcdir)
 
-        print(f'Processing {i+1}/{len(dance_tree_files)}: {relative_filepath.as_posix()}', end='')
+        print_with_prefix(f'Processing {i+1}/{len(dance_tree_files)}: {relative_filepath.as_posix()}', end='')
         
         clip_relative_stem = relative_filepath.parent / relative_filepath.stem.replace('.dancetree', '')
 
@@ -72,6 +77,7 @@ def add_complexities_to_dancetrees(
             print(' - no complexity found!')
             continue
         
+        matching_db_entry = None
         if clip_relative_stem.as_posix() in db.index:
             matching_db_entry =  db.loc[clip_relative_stem.as_posix()].to_dict()
         if matching_db_entry is None:
@@ -91,7 +97,7 @@ def add_complexities_to_dancetrees(
             json.dump(tree.to_dict(), f2, indent=2)
 
         print(' - done!')
-    print(f'Done! Saved to {output_dir.as_posix()}')
+    print_with_prefix(f'Done! Saved to {output_dir.as_posix()}')
 
 if __name__ == '__main__':
     import argparse
@@ -104,9 +110,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     add_complexities_to_dancetrees(
-        args.tree_srcdir,
-        args.complexity_srcdir,
-        args.database_path,
-        args.output_dir,
-        args.complexity_method,
+        tree_srcdir=args.tree_srcdir,
+        complexity_srcdir=args.complexity_srcdir,
+        database_path=args.database_path,
+        output_dir=args.output_dir,
+        complexity_method=args.complexity_method,
     )
