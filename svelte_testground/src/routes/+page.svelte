@@ -2,6 +2,8 @@
 	import Counter from './Counter.svelte';
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcome_fallback from '$lib/images/svelte-welcome.png';
+
+	import { dances } from '$lib/dances-store';
 </script>
 
 <svelte:head>
@@ -11,21 +13,16 @@
 
 <section>
 	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcome_fallback} alt="Welcome" />
-			</picture>
-		</span>
-
-		to your new<br />SvelteKit app
+		LearnThatDance 2.0
 	</h1>
 
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
-
-	<Counter />
+	<p>Pick a dance</p>
+	<ul>
+		{#each $dances as dance (dance.clip_relativepath)}
+		<li class="outlined thin">{dance.title}</li>
+		{/each}
+	</ul>
+	<!-- <Counter /> -->
 </section>
 
 <style>
@@ -35,25 +32,36 @@
 		justify-content: center;
 		align-items: center;
 		flex: 0.6;
+		margin: 0 auto;
+	}
+	p {
+		font-size: 1.1rem;
+		margin-bottom: 0;
+		padding: 0.25em 0.5em;
+		
 	}
 
-	h1 {
-		width: 100%;
+	ul {
+		margin-top: 0;
 	}
 
-	.welcome {
-		display: block;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
+	ul li {
+		list-style: none;
+		padding: 0.25em 0.5em;
+		scale: 1;
+		transition: background-color 0.2s ease-in-out,
+			box-shadow 0.2s ease-in-out
+			scale 0.2s ease-in-out;
 	}
 
-	.welcome img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		display: block;
+	ul li:not(:last-child) {
+		margin-bottom: 0.15em;
+	}
+
+	ul li:hover {
+		cursor: pointer;
+		background-color: #dedede;
+		box-shadow: 0 0 2px #000;
+		scale: 1.04 1;
 	}
 </style>
