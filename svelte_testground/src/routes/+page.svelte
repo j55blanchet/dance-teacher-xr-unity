@@ -27,7 +27,6 @@
 	<h1>
 		LearnThatDance 2.0
 	</h1>
-
 	
 	<div class="cols">
 		<div class="col dance-picking ta-center" style="max-width: 40ch;">

@@ -262,6 +262,12 @@
                 "--temp_dir=${workspaceFolder}/data/temp",
                 "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
                 "--include_thumbnail_cache_in_bundle",
+                "--include_audio_cache_in_bundle",
+
+                // Feel free to comment out any of the following
+                // "--rewrite_existing_holistic_data",
+                "--skip_existing_cumulative_complexity",
+                "--skip_existing_audioanalysis"
             ]
         }
     ]
