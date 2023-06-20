@@ -110,7 +110,7 @@ LANDMARK_WEIGHTING_DEMPSTER_WITH_BASE: t.Final[t.Dict[str, float]] = normalize_w
         PoseLandmark.RIGHT_HIP.name: 0.05,
         BASE_COL_NAME: 0.497
     }
-})
+}) # type: ignore
 """A balanced weighting for the human body. (adhoc construction)"""
 LANDMARK_WEIGHTING_BALANCED: t.Final[t.Dict[PoseLandmark, float]] = normalize_weighting(
     {
@@ -143,7 +143,7 @@ LANDMARK_WEIGHTING_BALANCED_WITH_BASE: t.Final[t.Dict[str, float]] = normalize_w
         **{
             BASE_COL_NAME: 1.0 /3.0, # this will make it have 1/4 of the total weight, since the above is normalized
         },
-    }
+    } # type: ignore
 )
 
 class PoseLandmarkWeighting(enum.Enum):
@@ -162,6 +162,14 @@ class PoseLandmarkWeighting(enum.Enum):
         else:
             raise ValueError(f"PoseLandmarkWeighting {self} not recognized.")
 
+def get_complexity_creationmethod_name(
+    measure_weighting_choice: DvajMeasureWeighting,
+    landmark_weighting_choice: PoseLandmarkWeighting,
+    weigh_by_visibility: bool,
+    include_base: bool
+):
+    creation_method = f"mw-{measure_weighting_choice.name}_lmw-{landmark_weighting_choice.name}_{'byvisibility' if weigh_by_visibility else 'ignorevisibility'}_{'includebase' if include_base else 'excludebase'}"
+    return creation_method
 
 def get_position_relative_to_base(positions: pd.DataFrame):
     
@@ -282,7 +290,7 @@ def weigh_by_visiblity(data: pd.DataFrame, data_vis: pd.DataFrame, col_roots: t.
 
 def generate_dvajs_with_visibility(
     filepaths: t.Iterable[Path],
-    landmark_names: t.Iterable[str],
+    landmark_names: t.List[str],
     include_base: bool = True,
 ):
     for holistic_csv_file in filepaths:
@@ -347,7 +355,12 @@ def calculate_cumulative_complexities(
     landmark_weighting_choice = landmark_weighting
     landmark_weighting_weights = landmark_weighting_choice.get_weighting(include_base=include_base)
 
-    creation_method = f"mw-{measure_weighting_choice.name}_lmw-{landmark_weighting_choice.name}_{'byvisibility' if weigh_by_visibility else 'ignorevisibility'}_{'includebase' if include_base else 'excludebase'}"
+    creation_method = get_complexity_creationmethod_name(
+        measure_weighting_choice,
+        landmark_weighting_choice,
+        weigh_by_visibility,
+        include_base,
+    )
     sup_title = creation_method
 
     debug_dir = destdir / "debug" / sup_title
@@ -398,8 +411,11 @@ def calculate_cumulative_complexities(
     ]
 
     landmark_names = [*landmarks]
-    if isinstance(landmark_names[0], PoseLandmark):
-        landmark_names = [landmark.name for landmark in landmarks ]
+    
+    landmark_names = [
+        (landmark.name if isinstance(landmark, PoseLandmark) else landmark)  # type: ignore
+        for landmark in landmarks
+    ]
 
     print(f"{print_prefix()}Using measure weighting: {measure_weighting_choice.name}")
     print(f"{print_prefix()}Using landmark weighting: {landmark_weighting_choice.name}")
