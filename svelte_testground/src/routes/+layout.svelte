@@ -1,9 +1,8 @@
 <script>
-	import Header from './Header.svelte';
 	import VirtualMirror from '$lib/VirtualMirror.svelte';
 	import SketchButton from '$lib/SketchButton.svelte';
 
-	import './styles.css';
+	import './styles.scss';
 	import { onMount } from "svelte";
 
 
