@@ -246,7 +246,8 @@
                 "--dancetree_srcdir=${workspaceFolder}/data/dancetrees_with_complexity",
                 "--source_videos_dir=${workspaceFolder}/data/source_videos",
                 "--db_csv_path=${workspaceFolder}/data/db.csv",
-                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/",
+                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
+                "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
                 "--exclude_test"
             ]
         },
@@ -261,8 +262,9 @@
                 "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
                 "--temp_dir=${workspaceFolder}/data/temp",
                 "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
-                "--include_thumbnail_cache_in_bundle",
-                "--include_audio_cache_in_bundle",
+                "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
+                "--include_thumbnail_in_bundle",
+                "--include_audio_in_bundle",
 
                 // Feel free to comment out any of the following
                 // "--rewrite_existing_holistic_data",

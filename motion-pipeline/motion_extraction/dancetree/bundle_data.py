@@ -11,6 +11,7 @@ def bundle_data(
     dancetree_srcdir: Path,
     db_csv_path: Path,
     bundle_export_path: Path,
+    bundle_media_export_path: Path,
     source_videos_dir: Path,
     exclude_test: bool = True,
     print_prefix: t.Callable[[], str] = lambda: '',
@@ -27,7 +28,7 @@ def bundle_data(
         for filepath in dancetree_filepaths
     ]
 
-    videos_export_dir = bundle_export_path / 'videos'
+    videos_export_dir = bundle_media_export_path / 'videos'
     videos_export_dir.mkdir(parents=True, exist_ok=True)
 
     dancetree_dict = defaultdict(list)
@@ -74,6 +75,7 @@ if __name__ == "__main__":
     parser.add_argument('--db_csv_path', type=Path, required=True)
     parser.add_argument('--source_videos_dir', type=Path, required=True)
     parser.add_argument('--bundle_export_path', type=Path, required=True)
+    parser.add_argument('--bundle_media_export_path', type=Path, required=True)
     parser.add_argument('--exclude_test', action='store_true', default=False)
 
     args = parser.parse_args()
@@ -82,6 +84,7 @@ if __name__ == "__main__":
         dancetree_srcdir=args.dancetree_srcdir,
         db_csv_path=args.db_csv_path,
         bundle_export_path=args.bundle_export_path,
+        bundle_media_export_path=args.bundle_media_export_path,
         source_videos_dir=args.source_videos_dir,
         exclude_test=args.exclude_test,
     )
