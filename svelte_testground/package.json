@@ -11,8 +11,6 @@
 		"format": "prettier --plugin-search-dir . --write ."
 	},
 	"devDependencies": {
-		"@fontsource/fira-mono": "^4.5.10",
-		"@mediapipe/pose": "^0.5.1675469404",
 		"@mediapipe/tasks-vision": "0.10.2-rc2",
 		"@neoconfetti/svelte": "^1.0.0",
 		"@sveltejs/adapter-auto": "^2.0.0",
