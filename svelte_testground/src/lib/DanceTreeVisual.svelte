@@ -4,12 +4,21 @@ import { createEventDispatcher } from 'svelte';
 import type { DanceTreeNode } from '$lib/dances-store';
 
 export let enableClick: boolean = false;
+export let currentTime: number = 0;
 export let node: DanceTreeNode;
+
+export let showProgressNodes: Array<DanceTreeNode> = [];
+
+let progressPercent = 0;
+$: progressPercent = (currentTime - node.start_time) / (node.end_time - node.start_time);
 $: node_title = node.id.split("-").findLast(() => true);
+
+let showProgress = false;
+$: showProgress = showProgressNodes.includes(node);
 
 const dispatch = createEventDispatcher();
 
-function barClicked (e) {
+function barClicked () {
     if (enableClick) {
         dispatch('nodeClicked', node);
     }
@@ -17,11 +26,25 @@ function barClicked (e) {
 </script>
 
 <div class="node" style="--node-duration:{node.end_time - node.start_time}">
-    <a class="bar outlined" class:button={enableClick} on:click={barClicked}></a>
+    <a class="bar outlined" 
+       class:button={enableClick} 
+       class:active={showProgress}
+       on:click={barClicked}
+    >
+        {#if showProgress}<span class="progress outlined" style="width:{progressPercent*100}%">
+            <!-- {currentTime.toFixed(1)} -->
+        </span>{/if}
+    </a>
     {#if node.children.length > 0}
         <div class="children">
         {#each node.children as child}
-            <svelte:self node={child} {enableClick} on:nodeClicked />
+            <svelte:self 
+                node={child} 
+                {enableClick} 
+                {currentTime}
+                {showProgressNodes}
+                on:nodeClicked 
+                />
         {/each}
         </div>
     {/if}
@@ -34,6 +57,20 @@ function barClicked (e) {
         height: 1em;
         border-width: 0.12em;
         padding: 0;
+        overflow: hidden;
+    }
+
+    .bar.active {
+        // border-width: 0.12em;
+        box-shadow: 0 0 1px black;
+        border: 0 solid transparent;
+    }
+
+    .bar .progress {
+        display: block;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.3);
+        border-width: 0.12em;
     }
 
     // .bar.clickable {

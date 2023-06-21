@@ -2,7 +2,7 @@
 
 import { readable } from 'svelte/store';
 
-import type { DanceTree, Dance } from '$lib/dances-store';
+import type { DanceTree, Dance, DanceTreeNode } from '$lib/dances-store';
 import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
 	import { tick } from 'svelte';
 
@@ -20,7 +20,13 @@ $: {
 let videoElement: HTMLVideoElement;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
-
+let currentPlayingNode: DanceTreeNode | null = null;
+let showProgressNodes: Array<DanceTreeNode> = [];
+$: {
+    showProgressNodes = currentPlayingNode !== null ? 
+        [currentPlayingNode]:
+        [];
+}
 $: if (videoCurrentTime > stopTime) {
     videoElement.pause();
 }
@@ -28,12 +34,17 @@ $: if (videoCurrentTime > stopTime) {
 async function onNodeClicked(e: any) {
     console.log('node clicked', e.detail);
 
+    currentPlayingNode = e.detail;
     if (videoElement) {
         videoElement.currentTime = e.detail.start_time;
         stopTime = e.detail.end_time;
         await tick();
         videoElement.play();
     }
+}
+
+function showProgress(node: DanceTreeNode) {
+    return node === currentPlayingNode;
 }
 </script>
 
@@ -42,14 +53,19 @@ async function onNodeClicked(e: any) {
         <a class="button" href="/">&lt; Go Home</a>
         <h1 class="title">
             {dance.title}
-            <span class="subtitle">{danceTree.tree_name}</span>
         </h1>
         <div>
         </div>
     </nav>
     <div class="visual-tree">
         <div>
-            <DanceTreeVisual on:nodeClicked={onNodeClicked} enableClick node={danceTree.root} /> 
+            <DanceTreeVisual 
+                on:nodeClicked={onNodeClicked} 
+                enableClick 
+                node={danceTree.root}
+                showProgressNodes={showProgressNodes}
+                currentTime={videoCurrentTime}
+            /> 
         </div>
     </div>
     <div class="preview">
@@ -62,6 +78,25 @@ async function onNodeClicked(e: any) {
 
 
 <style lang="scss">
+
+    .preview {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        overflow: hidden;
+        padding-bottom: 1rem;
+
+        & video {
+            flex-grow: 1;
+            flex-shrink: 1;
+            flex-basis: 1rem;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 0.5em;
+        }
+    }
+
     section {
         position: relative;
         width: 100vw;
@@ -71,7 +106,7 @@ async function onNodeClicked(e: any) {
         box-sizing: border-box;
         display: grid;
         overflow: hidden;
-        grid-template-rows: 3rem auto 1fr; 
+        grid-template-rows: 3rem auto minmax(0, 1fr); 
     }
 
     nav {

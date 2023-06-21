@@ -18,3 +18,5 @@ export function load({ params }) {
         danceTree: danceTree
     }
 }
+
+export const prerender = false;
