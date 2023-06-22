@@ -13,9 +13,9 @@ const config = {
 		// See https://kit.svelte.dev/docs/adapters for more information about adapters.
 		adapter: adapter({
 			pages: '../docs',
-			fallback: 'index.html'
-		})
-	}
+			fallback: '404.html'
+		}),	 
+	},
 };
 
 export default config;
