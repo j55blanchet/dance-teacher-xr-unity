@@ -248,6 +248,7 @@
                 "--db_csv_path=${workspaceFolder}/data/db.csv",
                 "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
                 "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
+                "--rename_mp4s_to_mp4v",
                 "--exclude_test"
             ]
         },
@@ -263,6 +264,8 @@
                 "--temp_dir=${workspaceFolder}/data/temp",
                 "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
                 "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
+                "--rename_mp4s_to_mp4v",
+                "--delete_old_export_folder",
                 // "--include_thumbnail_in_bundle",
                 // "--include_audio_in_bundle",
 

@@ -13,6 +13,7 @@ def bundle_data(
     bundle_export_path: Path,
     bundle_media_export_path: Path,
     source_videos_dir: Path,
+    rename_mp4s_to_mp4v: bool,
     exclude_test: bool = True,
     print_prefix: t.Callable[[], str] = lambda: '',
 ):
@@ -45,6 +46,11 @@ def bundle_data(
         video_relativepath: str = db_info['clipPath']
         video_src_path = source_videos_dir / video_relativepath
         video_export_path = videos_export_dir / video_relativepath
+
+        if rename_mp4s_to_mp4v and video_src_path.suffix.lower() == '.mp4':
+            video_export_path = video_export_path.with_suffix('.mp4v')
+            dances[tree.clip_relativepath]['clipPath'] = Path(video_relativepath).with_suffix('.mp4v').as_posix()
+
         if not video_export_path.exists():
             print_with_prefix(f'Copying video {i+1}/{len(dancetrees)}: {video_relativepath}')
             video_export_path.parent.mkdir(parents=True, exist_ok=True)
@@ -76,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument('--source_videos_dir', type=Path, required=True)
     parser.add_argument('--bundle_export_path', type=Path, required=True)
     parser.add_argument('--bundle_media_export_path', type=Path, required=True)
+    parser.add_argument('--rename_mp4s_to_mp4v', action='store_true', default=False)
     parser.add_argument('--exclude_test', action='store_true', default=False)
 
     args = parser.parse_args()
@@ -86,6 +93,7 @@ if __name__ == "__main__":
         bundle_export_path=args.bundle_export_path,
         bundle_media_export_path=args.bundle_media_export_path,
         source_videos_dir=args.source_videos_dir,
+        rename_mp4s_to_mp4v=args.rename_mp4s_to_mp4v,
         exclude_test=args.exclude_test,
     )
 

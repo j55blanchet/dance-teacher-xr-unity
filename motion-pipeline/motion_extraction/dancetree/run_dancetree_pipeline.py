@@ -6,6 +6,7 @@ from ..complexity_analysis import calculate_cumulative_complexity as cmplxty
 from ..audio_analysis.perform_analysis import perform_audio_analysis, get_audio_result_dir
 from ..complexity_analysis.add_complexity_to_dancetree import add_complexities_to_dancetrees
 from .bundle_data import bundle_data
+import shutil
 
 def run_dancetree_pipeline(
     database_csv_path: Path,
@@ -14,6 +15,8 @@ def run_dancetree_pipeline(
     temp_dir: Path,
     bundle_export_path: Path,
     bundle_media_export_path: Path,
+    rename_mp4s_to_mp4v: bool,
+    delete_old_export_folder: bool,
     include_audio_in_bundle: bool = False,
     include_thumbnail_in_bundle: bool = False,
     rewrite_existing_holistic_data: bool = False,
@@ -47,6 +50,15 @@ def run_dancetree_pipeline(
     STEP_COUNT = 6
     current_step = 1
     step = lambda: f'Step {current_step}/{STEP_COUNT}:'
+
+    if delete_old_export_folder:
+        STEP_COUNT += 1
+        print(f'{step()} delete old data: removing old export data')
+        shutil.rmtree(str(bundle_export_path), ignore_errors=True)
+        print(f'{step()} delete old data: removing old media data')
+        shutil.rmtree(str(bundle_media_export_path), ignore_errors=True)
+
+    current_step += 1
     compute_holistic_data(
         video_folder=video_srcdir,
         output_folder=holistic_data_srcdir,
@@ -105,6 +117,7 @@ def run_dancetree_pipeline(
         bundle_export_path=bundle_export_path,
         bundle_media_export_path=bundle_media_export_path,
         source_videos_dir=video_srcdir,
+        rename_mp4s_to_mp4v=rename_mp4s_to_mp4v,
         exclude_test=True,
         print_prefix=lambda: f'{step()} bundle data:',
     )
@@ -118,6 +131,8 @@ if __name__ == "__main__":
     parser.add_argument('--temp_dir', type=Path)
     parser.add_argument('--bundle_export_path', type=Path)
     parser.add_argument('--bundle_media_export_path', type=Path)
+    parser.add_argument('--rename_mp4s_to_mp4v', action='store_true')
+    parser.add_argument('--delete_old_export_folder', action='store_true')
     parser.add_argument('--include_audio_in_bundle', action='store_true')
     parser.add_argument('--include_thumbnail_in_bundle', action='store_true')
     parser.add_argument("--rewrite_existing_holistic_data", action='store_true')
@@ -132,6 +147,8 @@ if __name__ == "__main__":
         temp_dir=args.temp_dir,
         bundle_export_path=args.bundle_export_path,
         bundle_media_export_path=args.bundle_media_export_path,
+        rename_mp4s_to_mp4v=args.rename_mp4s_to_mp4v,
+        delete_old_export_folder=args.delete_old_export_folder,
         include_audio_in_bundle=args.include_audio_in_bundle,
         include_thumbnail_in_bundle=args.include_thumbnail_in_bundle,
         rewrite_existing_holistic_data=args.rewrite_existing_holistic_data,
