@@ -92,6 +92,7 @@ def run_dancetree_pipeline(
     perform_audio_analysis(
         videosrcdir=video_srcdir,
         audiosrcdir=None,
+        database_csv_path=database_csv_path,
         destdir=audio_analysis_temp_dir,
         audiocachedir=audio_cache_dir if audio_cache_dir else temp_dir / 'audio_cache',
         analysis_summary_out=audio_analysis_temp_dir / 'audio_analysis_summary.csv',
