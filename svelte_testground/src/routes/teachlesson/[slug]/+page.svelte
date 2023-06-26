@@ -20,6 +20,7 @@ $: {
 let videoElement: HTMLVideoElement;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
+let videoPlaybackSpeed: number = 1;
 let currentPlayingNode: DanceTreeNode | null = null;
 let showProgressNodes: Array<DanceTreeNode> = [];
 $: {
@@ -65,20 +66,26 @@ function showProgress(node: DanceTreeNode) {
                 node={danceTree.root}
                 showProgressNodes={showProgressNodes}
                 currentTime={videoCurrentTime}
+                beatTimes={dance.beatTimes || []}
             /> 
         </div>
     </div>
     <div class="preview">
         <video bind:this={videoElement}
-        bind:currentTime={videoCurrentTime}>
+               bind:currentTime={videoCurrentTime}
+               bind:playbackRate={videoPlaybackSpeed}>
             <source src={danceSrc} type="video/mp4" />
-        </video>    
+        </video>
+        <div class="controls">
+            <label>Playback Speed
+                <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.5" max="2" step="0.1" />
+            </label>
+        </div>    
     </div>
 </section>
 
 
 <style lang="scss">
-
     .preview {
         display: flex;
         flex-direction: column;
@@ -123,12 +130,6 @@ function showProgress(node: DanceTreeNode) {
         margin: 0;
         padding: 0;
         font-size: 2rem;
-    }
-
-    nav .subtitle {
-        font-size: 1.5rem;
-        font-weight: 100;
-        color: gray;
     }
 
     .visual-tree {
