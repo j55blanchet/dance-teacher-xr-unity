@@ -7,6 +7,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Perform audio analysis on a directory of audio files.')
     parser.add_argument('--videosrcdir', type=Path, help='The directory containing the input video files.', required=False)
     parser.add_argument('--audiosrcdir', type=Path, help='The directory containing the input audio files.', required=False)
+    parser.add_argument('--database_csv_path', type=Path, help='The path to the database CSV file.')
     parser.add_argument('--destdir', type=Path, help='The directory to output the analysis results.')
     parser.add_argument('--audiocachedir', type=Path, help='The directory to cache audio files in.')
     parser.add_argument('--analysis_summary_out', type=Path, help='The path to save the analysis summary.')
@@ -17,6 +18,7 @@ if __name__ == '__main__':
     perform_audio_analysis(
         videosrcdir=args.videosrcdir,
         audiosrcdir=args.audiosrcdir,
+        database_csv_path=args.database_csv_path,
         destdir=args.destdir,
         audiocachedir=args.audiocachedir,
         analysis_summary_out=args.analysis_summary_out,

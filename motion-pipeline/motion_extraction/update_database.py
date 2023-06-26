@@ -18,9 +18,12 @@ valid_file_endings = [
 ]
 
 def write_db(db: pd.DataFrame, db_csv_path: PathLike):
-    # convert tags and landmarkScope to strings
+    # convert list items to strings
     db['tags'] = db['tags'].apply(lambda x: json.dumps(x))
     db['landmarkScope'] = db['landmarkScope'].apply(lambda x: json.dumps(x))
+    
+    if 'beatTimes' in db.columns:
+        db['beatTimes'] = db['beatTimes'].apply(lambda x: json.dumps(x))
 
     db.sort_index(inplace=True)
     db.to_csv(str(db_csv_path))
@@ -28,9 +31,11 @@ def write_db(db: pd.DataFrame, db_csv_path: PathLike):
 def load_db(db_csv_path: PathLike):
     db = pd.read_csv(str(db_csv_path), index_col='clipRelativeStem')
 
-    # convert tags and landmarkScope to lists
-    db['tags'] = db['tags'].apply(lambda x: json.loads(x.replace("'",'"')))
-    db['landmarkScope'] = db['landmarkScope'].apply(lambda x: json.loads(x.replace("'",'"')))
+    # convert lists
+    db['tags'] = db.get('tags', '[]').apply(lambda x: json.loads(x.replace("'",'"')))
+    db['landmarkScope'] = db.get('landmarkScope', '[]').apply(lambda x: json.loads(x.replace("'",'"')))
+    if 'beatTimes' in db.columns:
+        db['beatTimes'] = db.get('beatTimes', '[]').apply(lambda x: json.loads(x.replace("'",'"')))
 
     # convert is_test to bool
     db['is_test'] = db['is_test'].astype(bool)

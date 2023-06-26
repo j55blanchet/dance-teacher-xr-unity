@@ -4,14 +4,14 @@ import psutil
 import time
 import json
 import pandas as pd
+import numpy as np
 from dataclasses import asdict
+import matplotlib.pyplot as plt
 
 from . import AudioAnalysisResult, analyze_audio_file, create_dance_tree_from_audioanalysis
 from .audio_tools import save_audio_from_video
 from .similarity_analysis import plot_cross_similarity
-import matplotlib.pyplot as plt
-
-
+from ..update_database import load_db, write_db
 
 ACCEPT_AUDIO_FILES = ['.mp3', '.wav', '.m4a', '.flac']
 ACCEPT_VIDEO_FILES = ['.mp4', '.mov', '.avi', '.mkv']
@@ -46,6 +46,7 @@ def get_audio_result_dir(
 def perform_audio_analysis(
         videosrcdir: t.Optional[Path],
         audiosrcdir: t.Optional[Path],
+        database_csv_path: Path,
         destdir: Path,
         audiocachedir: Path,
         analysis_summary_out: Path,
@@ -53,7 +54,6 @@ def perform_audio_analysis(
         skip_existing: bool = False,
         print_prefix: t.Callable[[], str] = lambda: '',
 ):
-
     def print_with_prefix(s: str="", **kwargs):
         print(f"{print_prefix()}{s}", **kwargs)
 
@@ -107,6 +107,10 @@ def perform_audio_analysis(
     input_types: t.List[t.Literal["audio", "video"]] = ["audio"] * len(input_audio_filepaths) + ["video"] * len(input_video_filepaths) # type: ignore
     src_dirs = [audiosrcdir] * len(input_audio_filepaths) + [videosrcdir] * len(input_video_filepaths)
 
+    bpms = []
+    beat_times = []
+    beat_offsets = []
+
     print_with_time('Analyzing audio...')
     for i, (filepath, audio_filepath, input_type, src_dir) in enumerate(zip(all_input_filepaths, all_input_audiopaths, input_types, src_dirs)):
 
@@ -125,10 +129,14 @@ def perform_audio_analysis(
         else:
             print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Analyzing: {relative_filepath}")
             analysis_result = analyze_audio_file(audio_filepath)
-
             output_file.parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 json.dump(analysis_result.to_dict(), f, indent=4)
+
+            
+        bpms.append(analysis_result.tempo_info.bpm)
+        beat_times.append(np.array(analysis_result.tempo_info.beat_times).tolist())
+        beat_offsets.append(analysis_result.tempo_info.starting_beat_timestamp)
 
         if not already_exists:
             # Plot cross similarity matrix
@@ -166,5 +174,12 @@ def perform_audio_analysis(
     summary_df = pd.concat(analysis_summary, axis=1).T
     summary_df.index.name = 'filename'
     summary_df.to_csv(str(analysis_summary_out))
+
+    # Save database csv
+    dance_db = load_db(database_csv_path)
+    dance_db['bpm'] = bpms
+    dance_db['beatTimes'] = beat_times
+    dance_db['bpmOffset'] = beat_offsets
+    write_db(dance_db, database_csv_path)
 
     print_with_time("Finished")
