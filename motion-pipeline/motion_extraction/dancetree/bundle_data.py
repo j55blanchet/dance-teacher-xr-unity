@@ -41,7 +41,7 @@ def bundle_data(
 
         dancetree_dict[tree.clip_relativepath].append(tree.to_dict())
         dances[tree.clip_relativepath] = db_info.to_dict()
-        dances[tree.clip_relativepath]['clip_relativepath'] = tree.clip_relativepath
+        dances[tree.clip_relativepath]['clipRelativeStem'] = tree.clip_relativepath
 
         video_relativepath: str = db_info['clipPath']
         video_src_path = source_videos_dir / video_relativepath

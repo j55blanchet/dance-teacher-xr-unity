@@ -59,19 +59,19 @@ def run_dancetree_pipeline(
         shutil.rmtree(str(bundle_media_export_path), ignore_errors=True)
 
     current_step += 1
-    compute_holistic_data(
-        video_folder=video_srcdir,
-        output_folder=holistic_data_srcdir,
-        rewrite_existing=rewrite_existing_holistic_data,
-        print_prefix=lambda: f'{step()} compute holistic data:',
-    )
-
-    current_step += 1
     update_database(
         database_csv_path=database_csv_path,
         videos_dir=video_srcdir,
         thumbnails_dir=thumbnails_outdir,
         print_prefix=lambda: f'{step()} update database:',
+    )
+
+    current_step += 1
+    compute_holistic_data(
+        video_folder=video_srcdir,
+        output_folder=holistic_data_srcdir,
+        rewrite_existing=rewrite_existing_holistic_data,
+        print_prefix=lambda: f'{step()} compute holistic data:',
     )
 
     current_step += 1
