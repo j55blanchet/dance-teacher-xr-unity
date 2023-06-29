@@ -4,7 +4,7 @@ import { readable } from 'svelte/store';
 
 import type { DanceTree, Dance, DanceTreeNode } from '$lib/dances-store';
 import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
-	import { tick } from 'svelte';
+import { tick } from 'svelte';
 
 /** @type {import('./$types').PageData} */    
 export let data;

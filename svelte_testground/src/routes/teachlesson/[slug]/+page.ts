@@ -2,9 +2,13 @@ import { error } from '@sveltejs/kit';
 
 import { getDanceAndDanceTreeFromSlog } from '$lib/dances-store.js';
 
-export function load({ params }) {
+import type { PageLoad } from './$types';
 
-    const [dance, danceTree] = getDanceAndDanceTreeFromSlog(params.slug);
+/** @type {import('./$types').PageLoad} */
+export function load({ params })  {
+
+    const slug: string = params.slug;
+    const [dance, danceTree] = getDanceAndDanceTreeFromSlog(slug);
 
     if (!dance) {
         throw  error(404, 'Dance Not found');
