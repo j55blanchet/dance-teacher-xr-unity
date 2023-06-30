@@ -49,6 +49,11 @@ function showProgress(node: DanceTreeNode) {
 }
 </script>
 
+<svelte:head>
+	<title>Dance | {dance.title}</title>
+	<meta name="description" content="App for learning the dance: {dance.title}" />
+</svelte:head>
+
 <section>
     <nav>
         <a class="button" href="/">&lt; Go Home</a>
@@ -114,22 +119,6 @@ function showProgress(node: DanceTreeNode) {
         display: grid;
         overflow: hidden;
         grid-template-rows: 3rem auto minmax(0, 1fr); 
-    }
-
-    nav {
-        /* padding: 0.5rem; */
-        padding: 0 0.5em;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        background: rgba(0, 0, 0, .2);
-    }
-
-    nav h1 {
-        margin: 0;
-        padding: 0;
-        font-size: 2rem;
     }
 
     .visual-tree {
