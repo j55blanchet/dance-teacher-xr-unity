@@ -93,6 +93,8 @@
 		LearnThatDance 2.0
 	</h1>
 	
+	<p>Try the <a href="/robot">robot control</a> test page.</p>
+	
 	<div class="cols">
 		<div class="col dance-picking ta-center" style="max-width: 60ch;">
 			<p>Pick a dance</p>
