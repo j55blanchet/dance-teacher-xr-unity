@@ -2,6 +2,7 @@
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import { DrawingUtils, PoseLandmarker } from "@mediapipe/tasks-vision";
 	import { onMount, tick } from 'svelte';
+    import { webcamStream } from './streams';
     
     import PoseEstimationWorker from '$lib/pose-estimation.worker';
 
@@ -17,14 +18,15 @@
     // let poseEstimationWorker: Worker | null = null;
     let poseEstimationWorker: PoseEstimationWorker | null = null;
 
-    export let webcamStarted = false;
+    let webcamConnected = false;
     let videoElement: HTMLVideoElement | undefined = undefined;
     let canvasElement: HTMLCanvasElement | undefined = undefined;
     let containerElement: HTMLDivElement | undefined = undefined;
-    let webcamVideoStream: MediaStream | undefined = undefined;
+    // let webcamVideoStream: MediaStream | undefined = undefined;
     let canvasContext: CanvasRenderingContext2D | undefined = undefined;
     let drawingUtils: DrawingUtils | undefined = undefined;
 
+    
     let mirrorStartedTime = new Date().getTime();
     let lastFrameSent = -1;
     let lastFrameDecoded = -1;
@@ -101,24 +103,32 @@
     function startWebcam() {
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
-                webcamStarted = true;
-                webcamVideoStream = stream;
+                webcamStream.set(stream);
+                connectWebcamStream();
             })
             .catch(error => {
                 console.error(error);
             });
     }
 
-    $: if (webcamVideoStream && videoElement) {
-        videoElement.srcObject = webcamVideoStream;
+    function connectWebcamStream() {
+        if (!videoElement || !$webcamStream) {
+            return;
+        }
+        videoElement.srcObject = $webcamStream;
+        webcamConnected = true;
+    }
+    $: if ($webcamStream && videoElement) {
+        connectWebcamStream();
     }
     $: if (videoWidth && videoHeight && containerWidth && containerHeight) {
         resizeCanvas();
     }
 
+
     let frameId = 0;
     function renderCanvas() {
-        if (!canvasElement || !videoElement || !webcamVideoStream || !canvasContext) {
+        if (!canvasElement || !videoElement || !$webcamStream || !canvasContext) {
             return;
         }
 
@@ -198,7 +208,7 @@
         requestAnimationFrame(renderCanvas);
     }
 
-    $: if (webcamStarted && videoElement && canvasElement) {
+    $: if (webcamConnected && videoElement && canvasElement) {
         canvasContext = canvasElement.getContext('2d', {
             willReadFrequently: true,
         })!;
@@ -206,30 +216,40 @@
         drawingUtils = new DrawingUtils(canvasContext);
         renderCanvas();
     }
+
+    onMount(() => {
+        connectWebcamStream();
+        return {};
+    })
 </script>
 
-<div class="container" bind:this={containerElement}>
-    {#if webcamStarted}    
+<div class="wrapper" bind:this={containerElement}>
+    {#if $webcamStream}    
         <!-- svelte-ignore a11y-media-has-caption -->
         <video bind:this={videoElement} autoplay 
             on:play={resizeCanvas}
             on:loadeddata={onLoadedVideoData}></video>
         <canvas bind:this={canvasElement}></canvas>  
     {:else}
-        <button id="startWebcam" on:click={startWebcam}>
-            Start Webcam
-        </button>
+        <div>
+            <button id="startWebcam" on:click={startWebcam}>
+                Start Webcam
+            </button>
+        
+            <p>$webcamStream: {$webcamStream}</p>
+            <p>videoElement: {videoElement}</p>
+        </div>
     {/if}
 </div>
 
 <style>
 
-.container {
+.wrapper {
     width: 100%;
     height: 100%;
     margin: 0;
     padding: 0;
-    position: absolute;
+    /* position: absolute; */
     display: flex;
     justify-content: center;
     align-items: center;

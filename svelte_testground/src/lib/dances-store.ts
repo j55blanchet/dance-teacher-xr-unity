@@ -48,3 +48,7 @@ export function getDanceAndDanceTreeFromSlog(slug: string): [Dance | null, Dance
     return [matchingDance, matchingDanceTree];
     
 }
+
+export function getDanceVideoSrc(dance: Dance): string {
+    return `/bundle/videos/${dance.clipPath}`;
+}
