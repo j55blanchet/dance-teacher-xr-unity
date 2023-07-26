@@ -3,7 +3,9 @@
 import { readable } from 'svelte/store';
 
 import type { DanceTree, Dance, DanceTreeNode } from '$lib/dances-store';
+import { getDanceVideoSrc } from '$lib/dances-store';
 import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
+import PracticePage from '$lib/PracticePage.svelte';
 import { tick } from 'svelte';
 
 /** @type {import('./$types').PageData} */    
@@ -14,10 +16,11 @@ const danceTree: DanceTree = data.danceTree;
 
 let danceSrc: string = '';
 $: {
-    danceSrc = `/bundle/videos/${dance.clipPath}`;
+    danceSrc = getDanceVideoSrc(dance);
 }
 
 let videoElement: HTMLVideoElement;
+let practicePageDialogElement: HTMLDialogElement;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
@@ -41,6 +44,10 @@ async function onNodeClicked(e: any) {
         stopTime = e.detail.end_time;
         await tick();
         videoElement.play();
+    }
+
+    if (practicePageDialogElement) {
+        practicePageDialogElement.showModal();
     }
 }
 
@@ -87,6 +94,12 @@ function showProgress(node: DanceTreeNode) {
             </label>
         </div>    
     </div>
+    <dialog id="practicePage" bind:this={practicePageDialogElement}>
+        <form method="dialog" class="close">
+            <button class="outlined thin" aria-label="Close">X</button>
+        </form>
+        <PracticePage dance={dance}/>
+    </dialog>
 </section>
 
 
@@ -133,6 +146,31 @@ function showProgress(node: DanceTreeNode) {
         display: flex;
         padding: 1em;
         overflow-x: auto;
+    }
+
+    #practicePage {
+        box-sizing: border-box;
+        width: 100vw;
+        height: 100vh;
+
+        &::backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(1rem);
+        }
+
+        & form.close {
+            position: absolute;
+            z-index: 2;
+
+          & button {
+            font-size: 2rem;
+            padding: 0.25em;
+            aspect-ratio: 1;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+          }  
+        }
     }
 
 </style>

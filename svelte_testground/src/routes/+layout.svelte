@@ -2,6 +2,8 @@
 	import VirtualMirror from '$lib/VirtualMirror.svelte';
 	import SketchButton from '$lib/SketchButton.svelte';
 
+	import { webcamStream } from '$lib/streams';
+
 	import './styles.scss';
 	import { onMount } from "svelte";
 
@@ -33,6 +35,10 @@
 	<!--  <footer>
 		<p>visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to learn SvelteKit</p>
 	</footer> -->
+
+	<div class="debug">
+		{$webcamStream}
+	</div>
 </div>
 
 <style>
@@ -44,4 +50,8 @@
 		justify-content: center;
 	}
 
+	.debug {
+		position: absolute;
+		visibility: hidden;
+	}
 </style>
