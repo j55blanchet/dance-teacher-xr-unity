@@ -3,6 +3,7 @@
     import { DrawingUtils, PoseLandmarker } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from './streams';
+    import WebcamSelector from "./WebcamSelector.svelte";
     
     import PoseEstimationWorker from '$lib/pose-estimation.worker';
 
@@ -18,6 +19,7 @@
     }
 
     export let poseEstimationEnabled: boolean = false;
+    export let drawSkeleton: boolean = false;
 
     // let poseEstimationWorker: Worker | null = null;
     let poseEstimationWorker: PoseEstimationWorker | null = null;
@@ -215,6 +217,12 @@
             dispatch('poseEstimationFrameSent', { frameId: frameId, timestampMs: timeSinceStart });
         }
 
+        // Leave early if we're not drawing the skeleton
+        if (!drawSkeleton) {
+            requestAnimationFrame(renderCanvas);
+            return;
+        }
+
         canvasContext.save();
         // if (videoAspectRatio > canvasAspectRatio) {
         //     canvasContext.scale(1.0, drawHeight / canvasElement.height);
@@ -264,12 +272,9 @@
         <canvas bind:this={canvasElement}></canvas>  
     {:else}
         <div>
-            <button id="startWebcam" on:click={startWebcam}>
-                Start Webcam
-            </button>
-        
-            <p>$webcamStream: {$webcamStream}</p>
-            <p>videoElement: {videoElement}</p>
+            <WebcamSelector />
+            <!-- <p>$webcamStream: {$webcamStream}</p> -->
+            <!-- <p>videoElement: {videoElement}</p> -->
         </div>
     {/if}
 </div>

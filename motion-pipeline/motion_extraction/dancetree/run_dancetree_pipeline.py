@@ -113,6 +113,7 @@ def run_dancetree_pipeline(
 
     current_step += 1
     bundle_data(
+        holistic_data_srcdir=holistic_data_srcdir,
         dancetree_srcdir=trees_with_complexity_dir,
         db_csv_path=database_csv_path,
         bundle_export_path=bundle_export_path,
@@ -122,6 +123,7 @@ def run_dancetree_pipeline(
         exclude_test=True,
         print_prefix=lambda: f'{step()} bundle data:',
     )
+
     
 if __name__ == "__main__":
     import argparse

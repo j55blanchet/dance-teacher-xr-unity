@@ -25,5 +25,10 @@
         "a11y-missing-content": "ignore",
         "a11y-media-has-caption": "ignore",
         "a11y-click-events-have-key-events": "ignore",
-    }
+    },
+
+    "typescript.inlayHints.parameterNames.enabled": "all",
+    "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+    "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+    "typescript.inlayHints.variableTypes.enabled": true
 }
