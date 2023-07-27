@@ -1,5 +1,4 @@
 <script lang="ts">
-
 import { readable } from 'svelte/store';
 
 import type { DanceTree, Dance, DanceTreeNode } from '$lib/dances-store';
@@ -7,6 +6,9 @@ import { getDanceVideoSrc } from '$lib/dances-store';
 import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
 import PracticePage from '$lib/PracticePage.svelte';
 import { tick } from 'svelte';
+
+import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
+import type PracticeActivity from '$lib/PracticeActivity';
 
 /** @type {import('./$types').PageData} */    
 export let data;
@@ -21,11 +23,13 @@ $: {
 
 let videoElement: HTMLVideoElement;
 let practicePageDialogElement: HTMLDialogElement;
+let practicePage: PracticePage;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
 let currentPlayingNode: DanceTreeNode | null = null;
 let showProgressNodes: Array<DanceTreeNode> = [];
+let currentPracticeActivity: PracticeActivity | null = null;
 $: {
     showProgressNodes = currentPlayingNode !== null ? 
         [currentPlayingNode]:
@@ -38,15 +42,24 @@ $: if (videoCurrentTime > stopTime) {
 async function onNodeClicked(e: any) {
     console.log('node clicked', e.detail);
 
-    currentPlayingNode = e.detail;
-    if (videoElement) {
-        videoElement.currentTime = e.detail.start_time;
-        stopTime = e.detail.end_time;
-        await tick();
-        videoElement.play();
-    }
+    const selectedTreeNode = e.detail as DanceTreeNode;
+    currentPlayingNode = selectedTreeNode;
+    // if (videoElement) {
+    //     videoElement.currentTime = e.detail.start_time;
+    //     stopTime = e.detail.end_time;
+    //     await tick();
+    //     videoElement.play();
+    // }
+
+    currentPracticeActivity = GeneratePracticeActivity(
+        dance,
+        danceTree,
+        selectedTreeNode,
+        {} // UserDancePerformanceLog
+    )
 
     if (practicePageDialogElement) {
+        practicePage.reset();
         practicePageDialogElement.showModal();
     }
 }
@@ -98,7 +111,7 @@ function showProgress(node: DanceTreeNode) {
         <form method="dialog" class="close">
             <button class="outlined thin" aria-label="Close">X</button>
         </form>
-        <PracticePage dance={dance}/>
+        <PracticePage bind:this={practicePage} dance={dance} practiceActivity={currentPracticeActivity}/>
     </dialog>
 </section>
 
