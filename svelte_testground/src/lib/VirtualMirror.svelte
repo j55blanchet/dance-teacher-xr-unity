@@ -1,10 +1,12 @@
 <script lang="ts">
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import { DrawingUtils, PoseLandmarker } from "@mediapipe/tasks-vision";
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from './streams';
     
     import PoseEstimationWorker from '$lib/pose-estimation.worker';
+
+    const dispatch = createEventDispatcher();
 
     function getContentSize (element: HTMLElement) {
         var styles = getComputedStyle(element)
@@ -15,9 +17,10 @@
         ]
     }
 
+    export let poseEstimationEnabled: boolean = false;
+
     // let poseEstimationWorker: Worker | null = null;
     let poseEstimationWorker: PoseEstimationWorker | null = null;
-
     let webcamConnected = false;
     let videoElement: HTMLVideoElement | undefined = undefined;
     let canvasElement: HTMLCanvasElement | undefined = undefined;
@@ -26,6 +29,8 @@
     let canvasContext: CanvasRenderingContext2D | undefined = undefined;
     let drawingUtils: DrawingUtils | undefined = undefined;
 
+    let resolveWebcamStartedPromise: (() => void) | undefined;
+    export const webcamStarted = new Promise<void>((res) => resolveWebcamStartedPromise = res);
     
     let mirrorStartedTime = new Date().getTime();
     let lastFrameSent = -1;
@@ -68,8 +73,8 @@
         }
     }
 
-    onMount(async () => {		
-		poseEstimationWorker = new PoseEstimationWorker();
+    export function setupPoseEstimation() {
+        poseEstimationWorker = new PoseEstimationWorker();
 
 		// poseEstimationWorker = new Worker(
         //     new URL('$lib/pose-estimation.worker.ts', import.meta.url),
@@ -80,8 +85,29 @@
             if (msg.data.type === 'pose-estimation') {
                 lastFrameDecoded = msg.data.frameId;
                 lastDecodedData = msg.data.result;
+
+                dispatch('poseEstimationResult', {
+                    frameId: msg.data.frameId,
+                    result: msg.data.result
+                });
             }
         };
+
+        return poseEstimationWorker.ready;
+    }
+
+    $: {
+        if (poseEstimationEnabled && !poseEstimationWorker) {
+            setupPoseEstimation();
+        }
+    }
+
+    onMount(async () => {		
+		
+        // Start pose estimation, if enabled
+        if (poseEstimationEnabled) {
+            setupPoseEstimation();
+        }
 
         await tick()
         resizeCanvas();
@@ -94,7 +120,6 @@
         resizeObserver.observe(containerElement!);
 
 		return () => {
-			
             poseEstimationWorker?.terminate();
             resizeObserver.unobserve(containerElement!);
 		}
@@ -117,6 +142,10 @@
         }
         videoElement.srcObject = $webcamStream;
         webcamConnected = true;
+        if(resolveWebcamStartedPromise) {
+            resolveWebcamStartedPromise();
+            resolveWebcamStartedPromise = undefined;
+        }
     }
     $: if ($webcamStream && videoElement) {
         connectWebcamStream();
@@ -172,7 +201,9 @@
             return;
         }
 
-        if (lastFrameDecoded == lastFrameSent) {
+        // Send a new frame to be processed by the pose estimation worker
+        // only after the last frame has been processed.
+        if (lastFrameDecoded == lastFrameSent && poseEstimationEnabled) {
             const timeSinceStart = new Date().getTime() - mirrorStartedTime;
             lastFrameSent = frameId;
             poseEstimationWorker?.postMessage({
@@ -181,6 +212,7 @@
                 timestampMs: timeSinceStart,
                 image: canvasContext.getImageData(drawX, drawY, drawWidth, drawHeight)
             });
+            dispatch('poseEstimationFrameSent', { frameId: frameId, timestampMs: timeSinceStart });
         }
 
         canvasContext.save();

@@ -71,12 +71,17 @@ export default class PoseEstimationWorker {
 
     public onmessage: (msg: any) => void = () => {};
 
-    constructor() {
-        this.loadModel();
-    }
+    public ready: Promise<void>;
 
-    private async loadModel() {
-        this.poseLandmarker = await loadPoseLandmarkerModel();
+    constructor() {
+        this.ready = new Promise(async (res, rej) => {
+            try {
+                this.poseLandmarker = await loadPoseLandmarkerModel();
+                res();
+            } catch (e) {
+                rej(e);
+            }
+        })
     }
 
     public postMessage(msg: any) {
