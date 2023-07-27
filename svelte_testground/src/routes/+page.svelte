@@ -90,12 +90,10 @@
 
 <section>
 	<h1>
-		LearnThatDance 2.0
+		Pick a dance
 	</h1>
 	<div class="cols">
 		<div class="col dance-picking ta-center" style="max-width: 60ch;">
-			<p>Pick a dance</p>
-			
 			<FolderMenu menuContents={menuData} 
 				on:fileSelected={e => toggleSelectDance(e.detail)}
 				selectedFile={selectedDance}

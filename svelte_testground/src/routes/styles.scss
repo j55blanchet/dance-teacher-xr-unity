@@ -111,14 +111,14 @@ button:focus:not(:focus-visible) {
 	white-space: nowrap;
 }
 
-a.button, .outlined {
+.button, .outlined {
 	border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
 	border-width: 3.5px;
 	border-color: var(--color-text);
 	border-style: solid;
 	color: var(--color-text);
 }
-a.button {
+.button {
 	padding: 0.25em;
 	// margin: 0.25em;
 	display: inline-block;
@@ -127,7 +127,7 @@ a.button {
 	cursor: pointer;
 	// transition: color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
-a.button:hover {
+.button:hover {
 	// display: inline-block;
 	background-color: rgba(0, 0, 0, 0.03);
 	color: var(--color-theme-2);

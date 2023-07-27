@@ -30,6 +30,8 @@ let videoPlaybackSpeed: number = 1;
 let currentPlayingNode: DanceTreeNode | null = null;
 let showProgressNodes: Array<DanceTreeNode> = [];
 let currentPracticeActivity: PracticeActivity | null = null;
+let practicePageActive: boolean = false;
+
 $: {
     showProgressNodes = currentPlayingNode !== null ? 
         [currentPlayingNode]:
@@ -61,6 +63,7 @@ async function onNodeClicked(e: any) {
     if (practicePageDialogElement) {
         practicePage.reset();
         practicePageDialogElement.showModal();
+        practicePageActive = true;
     }
 }
 
@@ -109,9 +112,14 @@ function showProgress(node: DanceTreeNode) {
     </div>
     <dialog id="practicePage" bind:this={practicePageDialogElement}>
         <form method="dialog" class="close">
-            <button class="outlined thin" aria-label="Close">X</button>
+            <button class="outlined thin" aria-label="Close" on:click={() => practicePageActive = false}>X</button>
         </form>
-        <PracticePage bind:this={practicePage} dance={dance} practiceActivity={currentPracticeActivity}/>
+        <PracticePage 
+            bind:this={practicePage} 
+            dance={dance} 
+            practiceActivity={currentPracticeActivity}
+            pageActive={practicePageActive}
+        />
     </dialog>
 </section>
 

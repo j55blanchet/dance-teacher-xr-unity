@@ -1,4 +1,5 @@
 import { readable, writable, derived } from 'svelte/store';
+import Papa from 'papaparse';
 
 // import json data
 import dancesData from '$lib/data/bundle/dances.json';
@@ -29,9 +30,6 @@ export const danceTrees = danceTreeData;
 //     }
 // );
 
-
-
-
 const URI_COMPONENT_SEPARATOR = '___';
 
 export function makeDanceTreeSlug(danceTree: DanceTree): string {
@@ -51,4 +49,29 @@ export function getDanceAndDanceTreeFromSlog(slug: string): [Dance | null, Dance
 
 export function getDanceVideoSrc(dance: Dance): string {
     return `/bundle/videos/${dance.clipPath}`;
+}
+
+export function getHolisticDataSrc(dance: Dance): string {
+    return `/bundle/holisticdata/${dance.clipRelativeStem}.holisticdata.csv`;
+}
+
+export async function loadPoseInformation(dance: Dance) {
+    const holisticCsvPath = getHolisticDataSrc(dance);
+    console.log('Url path', holisticCsvPath);
+
+    const response = await fetch(holisticCsvPath);
+    const text = await response.text();
+
+    // parse csv file
+    const data = await new Promise((res, rej) => {       
+        Papa.parse(text, {
+            header: true,
+            worker: true,
+            // download: true,
+            dynamicTyping: true,
+            complete: res,
+        })
+    });
+
+    return data;
 }

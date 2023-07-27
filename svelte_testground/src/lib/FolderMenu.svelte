@@ -68,24 +68,31 @@ details > *:not(summary) {
     border-left: 1px solid #000;
 }
 
+details > *:not(summary) {
+    margin-top: 0.5em;
+}
+
 ul li {
     list-style: none;
     padding: 0.25em 0.5em;
     scale: 1;
     transition: background-color 0.2s ease-in-out,
-        box-shadow 0.2s ease-in-out
-        scale 0.2s ease-in-out;
+    box-shadow 0.2s ease-in-out
+    scale 0.2s ease-in-out;
 }
 
 ul li:not(:last-child) {
     margin-bottom: 0.15em;
 }
 
-ul li.file:hover {
+ul li.file:hover, details:hover {
     cursor: pointer;
-    background-color: #dedede;
-    box-shadow: 0 0 2px #000;
     scale: 1.01 1;
+}
+
+ul li.file:hover {
+    background-color: #dedede;
+    box-shadow: 0 0 2px #555;
 }
 
 </style>

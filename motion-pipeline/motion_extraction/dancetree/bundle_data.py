@@ -8,6 +8,7 @@ from .DanceTree import DanceTree, DanceTreeNode
 
 
 def bundle_data(
+    holistic_data_srcdir: Path,
     dancetree_srcdir: Path,
     db_csv_path: Path,
     bundle_export_path: Path,
@@ -60,6 +61,21 @@ def bundle_data(
 
             # copy video to export dir
             # shutil.copy(video_src_path, video_export_path)
+
+        holistic_relative_path =  tree.clip_relativepath + '.holisticdata.csv'
+        holistic_export_path = bundle_media_export_path / holistic_relative_path
+        holistic_srcpath = holistic_data_srcdir / holistic_relative_path
+        holistic_export_path = bundle_media_export_path / 'holisticdata' / holistic_relative_path
+        if not holistic_export_path.exists():
+            print_with_prefix(f'Copying holistic data {i+1}/{len(dancetrees)}: {holistic_relative_path}')
+            holistic_export_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # symlink
+            holistic_export_path.parent.mkdir(parents=True, exist_ok=True)
+            holistic_export_path.symlink_to(holistic_srcpath)
+
+            # copy holistic data to export dir
+            # shutil.copy(holistsic_srcpath, holistic_export_path)
             
     
     dances = list(dances.values())
