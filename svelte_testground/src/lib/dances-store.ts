@@ -55,10 +55,32 @@ export function getHolisticDataSrc(dance: Dance): string {
     return `/bundle/holisticdata/${dance.clipRelativeStem}.holisticdata.csv`;
 }
 
-export async function loadPoseInformation(dance: Dance) {
-    const holisticCsvPath = getHolisticDataSrc(dance);
-    console.log('Url path', holisticCsvPath);
 
+type PoseInformation = any;
+/**
+ * Get the pose information for a dance. This is a CSV file with the pose information for 
+ * each frame of the dance. It's returned in the form of an array of objects, where each object
+ * is a frame of the dance, with keys corresponding to column names in the CSV file.
+ * 
+ * Example: 
+ * ```
+ * [{
+ *  "frame": 0,
+ *   "NOSE_x": 0.12,
+ *   "NOSE_y": 0.34,
+ *   "NOSE_z": 0.56,
+ *    NOSE_vis": 0.98,
+ *    "LEFT_EYE_INNER_x": 0.12,
+ *    ...
+ * },
+ * ...]
+ * ```
+ * 
+ * @param dance The dance to load the pose information for
+ * @returns The pose information for the dance
+ */
+export async function loadPoseInformation(dance: Dance): Promise<PoseInformation> {
+    const holisticCsvPath = getHolisticDataSrc(dance);
     const response = await fetch(holisticCsvPath);
     const text = await response.text();
 
@@ -73,5 +95,11 @@ export async function loadPoseInformation(dance: Dance) {
         })
     });
 
-    return data;
+    return data as PoseInformation;
+}
+
+export function getDancePose(dance: Dance, poseInformation: PoseInformation, time: number) {
+    
+    const frameIndex = Math.floor(time * dance.fps);
+    return poseInformation[frameIndex] ?? null
 }

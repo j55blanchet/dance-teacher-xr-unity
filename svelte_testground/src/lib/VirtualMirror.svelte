@@ -1,11 +1,11 @@
 <script lang="ts">
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
+    import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/pose-estimation.worker';
+
     import { DrawingUtils, PoseLandmarker } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from './streams';
     import WebcamSelector from "./WebcamSelector.svelte";
-    
-    import PoseEstimationWorker from '$lib/pose-estimation.worker';
 
     const dispatch = createEventDispatcher();
 
@@ -20,6 +20,8 @@
 
     export let poseEstimationEnabled: boolean = false;
     export let drawSkeleton: boolean = false;
+
+    export let poseEstimationCheckFunction: () => boolean = () => true;
 
     // let poseEstimationWorker: Worker | null = null;
     let poseEstimationWorker: PoseEstimationWorker | null = null;
@@ -76,7 +78,7 @@
     }
 
     export function setupPoseEstimation() {
-        poseEstimationWorker = new PoseEstimationWorker();
+        poseEstimationWorker = worker;
 
 		// poseEstimationWorker = new Worker(
         //     new URL('$lib/pose-estimation.worker.ts', import.meta.url),
@@ -84,7 +86,7 @@
         // );
 
         poseEstimationWorker.onmessage = (msg: any) => {
-            if (msg.data.type === 'pose-estimation') {
+            if (msg.data.type === PoseEsimationResponses.poseEstimation) {
                 lastFrameDecoded = msg.data.frameId;
                 lastDecodedData = msg.data.result;
 
@@ -92,6 +94,13 @@
                     frameId: msg.data.frameId,
                     result: msg.data.result
                 });
+            } else if (msg.data.type === PoseEsimationResponses.error) {
+                console.error(msg.data.error);
+
+                if (msg.data.frameId === lastFrameSent) {
+                    lastFrameSent = -1;
+                    lastDecodedData = undefined;
+                }
             }
         };
 
@@ -127,17 +136,6 @@
 		}
 	});
 
-    function startWebcam() {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                webcamStream.set(stream);
-                connectWebcamStream();
-            })
-            .catch(error => {
-                console.error(error);
-            });
-    }
-
     function connectWebcamStream() {
         if (!videoElement || !$webcamStream) {
             return;
@@ -157,7 +155,7 @@
     }
 
 
-    let frameId = 0;
+    let renderedFrameId = 0;
     function renderCanvas() {
         if (!canvasElement || !videoElement || !$webcamStream || !canvasContext) {
             return;
@@ -166,7 +164,7 @@
         // canvasElement.width = videoElement.videoWidth;
         // canvasElement.height = videoElement.videoHeight;
 
-        frameId += 1;
+        renderedFrameId += 1;
         
         const videoAspectRatio = videoElement.videoWidth / videoElement.videoHeight;
         const canvasAspectRatio = canvasElement.width / canvasElement.height;
@@ -205,16 +203,16 @@
 
         // Send a new frame to be processed by the pose estimation worker
         // only after the last frame has been processed.
-        if (lastFrameDecoded == lastFrameSent && poseEstimationEnabled) {
+        if (lastFrameDecoded == lastFrameSent && poseEstimationEnabled && poseEstimationCheckFunction()) {
             const timeSinceStart = new Date().getTime() - mirrorStartedTime;
-            lastFrameSent = frameId;
+            lastFrameSent = renderedFrameId;
+            dispatch('poseEstimationFrameSent', { frameId: renderedFrameId, timestampMs: timeSinceStart });
             poseEstimationWorker?.postMessage({
-                type: 'processFrame',
-                frameId: frameId,
+                type: PoseEstimationMessages.requestPoseEstimation,
+                frameId: renderedFrameId,
                 timestampMs: timeSinceStart,
                 image: canvasContext.getImageData(drawX, drawY, drawWidth, drawHeight)
             });
-            dispatch('poseEstimationFrameSent', { frameId: frameId, timestampMs: timeSinceStart });
         }
 
         // Leave early if we're not drawing the skeleton
