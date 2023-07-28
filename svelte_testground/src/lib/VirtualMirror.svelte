@@ -7,6 +7,8 @@
     import { webcamStream } from './streams';
     import WebcamSelector from "./WebcamSelector.svelte";
 
+    const INITIALIZING_FRAME_ID = -1000;
+
     const dispatch = createEventDispatcher();
 
     function getContentSize (element: HTMLElement) {
@@ -25,6 +27,12 @@
 
     // let poseEstimationWorker: Worker | null = null;
     let poseEstimationWorker: PoseEstimationWorker | null = null;
+
+    // Whether the pose estimation has been primed with the first frame.
+    // let poseEstimationStartedPriming = false;
+    let resolvePoseEstimationPrimed: (() => void) | undefined;
+    export let poseEstimationPrimedPromise = new Promise<void>((res) => resolvePoseEstimationPrimed = res);
+
     let webcamConnected = false;
     let videoElement: HTMLVideoElement | undefined = undefined;
     let canvasElement: HTMLCanvasElement | undefined = undefined;
@@ -34,7 +42,7 @@
     let drawingUtils: DrawingUtils | undefined = undefined;
 
     let resolveWebcamStartedPromise: (() => void) | undefined;
-    export const webcamStarted = new Promise<void>((res) => resolveWebcamStartedPromise = res);
+    export const webcamStartedPromise = new Promise<void>((res) => resolveWebcamStartedPromise = res);
     
     let mirrorStartedTime = new Date().getTime();
     let lastFrameSent = -1;
@@ -48,6 +56,7 @@
     let containerWidth = 1;
     let containerHeight = 1;
     let containerAspectRatio = 1;
+    
     $: containerAspectRatio = containerWidth / containerHeight;
 
     function onLoadedVideoData() {
@@ -87,6 +96,14 @@
 
         poseEstimationWorker.onmessage = (msg: any) => {
             if (msg.data.type === PoseEsimationResponses.poseEstimation) {
+
+                if (msg.data.frameId === INITIALIZING_FRAME_ID) {
+                    // Resolve the pose estimation primed promise, so that 
+                    // anything waiting on it can continue.
+                    resolvePoseEstimationPrimed?.();
+                    return;
+                }
+
                 lastFrameDecoded = msg.data.frameId;
                 lastDecodedData = msg.data.result;
 
@@ -105,6 +122,28 @@
         };
 
         return poseEstimationWorker.ready;
+    }
+
+    /**
+     * Sets flag that will initiate priming the pose estimation
+     * pipeline by performing an estimation on a frame. 
+     */
+    export async function primePoseEstimation() {
+        if (!poseEstimationEnabled || !poseEstimationWorker || !canvasContext || !canvasElement) {
+            throw new Error("Pose estimation not enabled, or not yet ready.");
+        }
+
+        console.log("Priming pose estimation")
+        poseEstimationPrimedPromise = new Promise<void>((res) => resolvePoseEstimationPrimed = res);
+
+        // Send a single pose estimation request to the worker to make sure it's ready
+        poseEstimationWorker.postMessage({
+            type: PoseEstimationMessages.requestPoseEstimation,
+            frameId: INITIALIZING_FRAME_ID,
+            image: canvasContext!.getImageData(0, 0, canvasElement!.width, canvasElement!.height)
+        });
+
+        return poseEstimationPrimedPromise;
     }
 
     $: {
@@ -268,6 +307,7 @@
             on:play={resizeCanvas}
             on:loadeddata={onLoadedVideoData}></video>
         <canvas bind:this={canvasElement}></canvas>  
+        <!-- <span>Pose Estimation: {poseEstimationEnabled}</span> -->
     {:else}
         <div>
             <WebcamSelector />
@@ -288,6 +328,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
 }
 
 video {

@@ -78,6 +78,11 @@ $: {
 async function startCountdown() {
     if (countdownActive) return;
 
+    if (poseEstimationEnabled) {
+        console.log("Triggering pose estimation priming");
+        await virtualMirrorElement.primePoseEstimation();
+    }
+
     state = "playing";
 
     countdownActive = true;
@@ -108,27 +113,22 @@ async function startCountdown() {
 
 export async function reset() {
     
+    currentActivityStepIndex = 0;
+    state = "waitWebcam";
+
     if (videoElement) {
         videoElement.pause();
         videoElement.currentTime = practiceActivity?.startTime ?? 0;
     }
 
-    await virtualMirrorElement.webcamStarted;    
-
+    await virtualMirrorElement.webcamStartedPromise;    
     state = "waitStart";
-    similarityLog = [];
-    poseEstimationCorrespondances = new Map();
-    currentActivityStepIndex = 0;
-    currentActivityType = 'watch';
-    videoCurrentTime = 0;
-    videoPlaybackSpeed = 1;
 
     dancePoseInformation = await loadPoseInformation(dance);
     console.log("DancePoseInformation", dancePoseInformation);
     await poseEstimationReady;
 
-    state = "playing";
-    setTimeout(startCountdown, 1000);
+    startCountdown();
 }
 
 let poseEstimationCorrespondances: Map<number, number> = new Map();
@@ -207,7 +207,7 @@ onMount(() => {
         <pre>{JSON.stringify(similarityLog, undefined, 2)}</pre>
     </div>
     {/if}
-    <div>
+    <div style:display={state === "feedback" ? 'none' : 'flex'}>
         <VirtualMirror
             bind:this={virtualMirrorElement}
             {poseEstimationEnabled}
@@ -215,14 +215,15 @@ onMount(() => {
             poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
             on:poseEstimationFrameSent={poseEstimationFrameSent}
             on:poseEstimationResult={poseEstimationFrameReceived}
-        />  
+        />
+        {#if state === "waitStart"}  
+        <div class="loading outlined thick">
+            <div class="spinner large"></div>
+            <div class="label">Loading...</div>
+        </div>
+        {/if}
     </div>
-    {#if state === "waitStart"}
-    <div class="loading outlined thick">
-        <div class="spinner large"></div>
-        <div class="label">Loading...</div>
-    </div>
-    {/if}
+
 </section>
 
 <style lang="scss">
