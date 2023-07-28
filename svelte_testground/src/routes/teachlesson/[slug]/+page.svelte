@@ -111,9 +111,7 @@ function showProgress(node: DanceTreeNode) {
         </div>    
     </div>
     <dialog id="practicePage" bind:this={practicePageDialogElement}>
-        <form method="dialog" class="close">
-            <button class="outlined thin" aria-label="Close" on:click={() => practicePageActive = false}>X</button>
-        </form>
+        <button class="button outlined thin close" aria-label="Close" on:click={() => {practicePageActive = false; practicePageDialogElement.close();}}>X</button>
         <PracticePage 
             bind:this={practicePage} 
             dance={dance} 
@@ -179,18 +177,17 @@ function showProgress(node: DanceTreeNode) {
             backdrop-filter: blur(1rem);
         }
 
-        & form.close {
+        & .close {
             position: absolute;
+            width: 2rem;
+            height: 2rem;
             z-index: 2;
-
-          & button {
-            font-size: 2rem;
+            font-size: 1.5rem;
             padding: 0.25em;
-            aspect-ratio: 1;
+            
             display: inline-flex;
             justify-content: center;
             align-items: center;
-          }  
         }
     }
 

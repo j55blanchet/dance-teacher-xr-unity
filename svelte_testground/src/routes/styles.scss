@@ -3,6 +3,8 @@
 // @import '@fontsource/fira-mono';
 // @import 'simple-grid.scss';
 
+
+
 :root {
 	/* --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
 		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; */
@@ -11,11 +13,13 @@
 	--color-bg-0: rgb(202, 216, 228);
 	--color-bg-1: hsl(209, 36%, 86%);
 	--color-bg-2: hsl(224, 44%, 95%);
-	--color-theme-1: #ff3e00;
+	--color-red: #ff3e00;
+	--color-theme-1: var(--color-red);
 	--color-theme-2: #4075a6;
 	--color-text: rgba(0, 0, 0, 0.7);
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
+	--max-line-width: 50ch;
 	--std-border-radius: 1rem;
 	font-family: var(--font-body);
 	color: var(--color-text);
@@ -172,6 +176,9 @@ button:focus:not(:focus-visible) {
 .ta-center {
 	text-align: center;
 }
+.margin-auto {
+	margin: auto;
+}
 
 nav {
 	/* padding: 0.5rem; */
@@ -190,3 +197,31 @@ nav h1 {
 	padding: 0;
 	font-size: 2rem;
 }
+
+.spinner {
+	border: 0.25em solid #f3f3f3; /* Light grey */
+	border-top: 0.25em solid var(--color-text); /* Dark grey */
+	border-radius: 50%;
+	width: 1em;
+	height: 1em;
+	animation: spin 2s linear infinite;
+	// margin: 0 auto;
+}
+
+.spinner.large {
+	border: 16px solid #f3f3f3; /* Light grey */
+	border-top: 16px solid var(--color-text); /* Dark grey */
+	width: 60px;
+	height: 60px;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); border-radius: 50%;}
+	25% { border-radius: 50%; border-top: 16px solid var(--color-text);}
+	40% { border-radius: 25%;}
+	60% { border-radius: 25%;}
+	75% { border-radius: 50%;}
+	100% { transform: rotate(360deg); border-radius: 50%;}
+}
+  
+

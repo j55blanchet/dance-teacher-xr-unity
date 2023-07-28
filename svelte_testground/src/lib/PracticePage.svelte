@@ -2,15 +2,19 @@
 import { browser } from '$app/environment';
 import type PracticeActivity from "./PracticeActivity";
 import type { Dance, DanceTreeNode } from "./dances-store";
-import { LiveEvaluator } from './ai/LiveEvaluator';
+import * as evalAI from './ai/Evaluation';
 
 
 import VirtualMirror from "./VirtualMirror.svelte";
-import { getDanceVideoSrc, loadPoseInformation } from "./dances-store";
+import { getDancePose, getDanceVideoSrc, loadPoseInformation } from "./dances-store";
 import { onMount } from "svelte";
+import { webcamStream } from './streams';
+
 
 export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
+
+let state: "waitWebcam" | "waitStart" | "playing" | "feedback" = "waitWebcam";
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
 $: {
@@ -25,6 +29,7 @@ $: {
 }
 
 export let pageActive = false;
+
 let videoElement: HTMLVideoElement;
 let virtualMirrorElement: VirtualMirror;
 let videoCurrentTime: number = 0;
@@ -34,10 +39,9 @@ let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
 let dancePoseInformation: any = null;
-let liveEvaluator: LiveEvaluator | null = null;
+let similarityLog: Array<{ time: number, similarity: number }> = [];
 
 let countdown = -1;
-
 let countdownActive = false;
 
 $: {
@@ -47,14 +51,15 @@ $: {
 $: {
     poseEstimationEnabled = pageActive && (countdownActive || !isVideoPaused) && currentActivityType === 'drill';
 }
+$: {
+    videoPlaybackSpeed = practiceActivity?.playbackSpeed ?? 1.0;
+}
 
 // Auto-pause the video when the practice activity is over
 $: {
-    if (practiceActivity?.endTime && videoCurrentTime > practiceActivity.endTime) {
+    if (practiceActivity?.endTime && videoCurrentTime >= practiceActivity.endTime || videoCurrentTime >= videoElement?.duration) {
         videoElement.pause();
-        // if (practiceActivity.endTime !== videoCurrentTime && videoElement.duration >= practiceActivity.endTime) {
-            // videoElement.currentTime = practiceActivity.endTime;
-        // }
+        state = "feedback";
     }
 }
 
@@ -64,8 +69,16 @@ async function waitSecs(secs: number | undefined) {
     })
 }
 
+$: {
+    if ($webcamStream && state === "waitWebcam") {
+        state = "waitStart";
+    }
+}
+
 async function startCountdown() {
     if (countdownActive) return;
+
+    state = "playing";
 
     countdownActive = true;
     if (videoElement) {
@@ -94,10 +107,17 @@ async function startCountdown() {
 }
 
 export async function reset() {
+    
     if (videoElement) {
         videoElement.pause();
         videoElement.currentTime = practiceActivity?.startTime ?? 0;
     }
+
+    await virtualMirrorElement.webcamStarted;    
+
+    state = "waitStart";
+    similarityLog = [];
+    poseEstimationCorrespondances = new Map();
     currentActivityStepIndex = 0;
     currentActivityType = 'watch';
     videoCurrentTime = 0;
@@ -105,18 +125,49 @@ export async function reset() {
 
     dancePoseInformation = await loadPoseInformation(dance);
     console.log("DancePoseInformation", dancePoseInformation);
-    liveEvaluator = new LiveEvaluator(dancePoseInformation);
     await poseEstimationReady;
-    await virtualMirrorElement.webcamStarted;
 
+    state = "playing";
     setTimeout(startCountdown, 1000);
 }
 
+let poseEstimationCorrespondances: Map<number, number> = new Map();
+let lastPoseEstimationTimestamp: number = -1;
+
 function poseEstimationFrameSent(e: any) {
-    console.log('pose estimation frame sent', e.detail);
+    // Associate the webcam frame being sent for pose estimation
+    // with the current video timestamp, so that we can later
+    // compare the user's pose with the dance pose at that time.
+    console.log("poseEstimationFrameSent", e.detail.frameId, videoElement.currentTime);
+    poseEstimationCorrespondances.set(e.detail.frameId, videoElement.currentTime);
+    lastPoseEstimationTimestamp = videoElement.currentTime;
 }
+
+function shouldSendNextPoseEstimationFrame() {
+    if (lastPoseEstimationTimestamp === videoElement.currentTime) {
+        return false;
+    }
+    return true;
+}
+
 function poseEstimationFrameReceived(e: any) {
-    console.log('pose estimation frame received', e.detail);
+    console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
+    if (!dancePoseInformation) {
+        console.log("No dance pose information", e);
+        return;
+    };
+    
+    if (!poseEstimationCorrespondances.has(e.detail.frameId)) {
+        console.log(`No matching correspondance for ${e.detail.frameId}`, e, "current correspondances: ", poseEstimationCorrespondances)
+        return;
+    };
+    const videoTimestamp = poseEstimationCorrespondances.get(e.detail.frameId)!;
+    poseEstimationCorrespondances.delete(e.detail.frameId);
+
+    const dancePose = getDancePose(dance, dancePoseInformation, videoTimestamp);
+    const similarity = evalAI.compareSkeletons2DVector(dancePose, e.detail.result);
+    similarityLog.push({ time: videoTimestamp, similarity });
+    console.log("similarity", similarity);
 }
 
 onMount(() => {
@@ -128,8 +179,6 @@ onMount(() => {
     return {}
 })
 
-
-
 </script>
 
 <section>
@@ -138,6 +187,7 @@ onMount(() => {
                bind:currentTime={videoCurrentTime}
                bind:playbackRate={videoPlaybackSpeed}
                bind:paused={isVideoPaused}
+               class="shrinkingVideo"
                >
             <source src={danceSrc} type="video/mp4" />
         </video>
@@ -150,15 +200,29 @@ onMount(() => {
             </div>
         {/if}
     </div>
+    {#if state === "feedback"}
+    <div>
+        <h1>Feedback</h1>
+        <button class="button outlined thin" on:click={reset}>Play Again</button>
+        <pre>{JSON.stringify(similarityLog, undefined, 2)}</pre>
+    </div>
+    {/if}
     <div>
         <VirtualMirror
             bind:this={virtualMirrorElement}
             {poseEstimationEnabled}
             drawSkeleton={!isVideoPaused || countdownActive}
+            poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
             on:poseEstimationFrameSent={poseEstimationFrameSent}
             on:poseEstimationResult={poseEstimationFrameReceived}
         />  
     </div>
+    {#if state === "waitStart"}
+    <div class="loading outlined thick">
+        <div class="spinner large"></div>
+        <div class="label">Loading...</div>
+    </div>
+    {/if}
 </section>
 
 <style lang="scss">
@@ -177,12 +241,21 @@ section {
         flex-grow: 1;
         flex-shrink: 1;
         flex-basis: 1rem;
-        max-width: 100%;
-        max-height: 100%;
+        width: 100%;
+        height: 100%;
         border-radius: 0.5em;
         display: flex;
-
+        align-items: stretch;
+        justify-content: stretch;
+        flex-direction: column;
     }
+}
+
+.shrinkingVideo {
+    flex-grow: 1;
+    flex-shrink: 1;
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .countdown {
@@ -209,6 +282,20 @@ section {
 
     padding: 3rem;
     border-radius: 50%;
+}
+
+.loading {
+    // position the spinner in the center of the screen
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 2rem;
+    background-color: #fff;
+
+    & .label {
+        margin-top: 1em;
+    }
 }
 
 </style>

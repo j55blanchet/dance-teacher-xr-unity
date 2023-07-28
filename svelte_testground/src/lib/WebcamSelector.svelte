@@ -4,6 +4,7 @@
 import { webcamStream } from './streams';
 
 let state: 'start' | 'busy' | 'devicelist' | 'success' = 'start';
+let busyText = '';
 let lastError: any | undefined = undefined;
 let videoDeviceList: MediaDeviceInfo[] = [];
 let audioDeviceList: MediaDeviceInfo[] = [];
@@ -14,6 +15,7 @@ let selectedVideoDeviceId: MediaDeviceInfo["deviceId"] | undefined = undefined;
 async function startWebcam() {
     state = 'busy';
     lastError = undefined;
+    busyText = 'Detecting Devices...';
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -48,6 +50,7 @@ async function startWebcam() {
 async function selectDevices()  {
     lastError = undefined;
     state = 'busy';
+    busyText = 'Starting Webcam...';
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -67,17 +70,21 @@ async function selectDevices()  {
 
 <div class="webcamSelector">
     {#if state === "start"}
-    <button id="startWebcam" class="button outlined thin" on:click={startWebcam}>
-        Start Webcam
-    </button>
-        {#if lastError}
-        <div class="error">
-            <p>Failed to start webcam</p>
-            <p>{lastError?.message}</p>
-        </div>
-        {/if}
+    <div class="ta-center">
+        <button id="startWebcam" class="button outlined thin" on:click={startWebcam}>
+            Start Webcam
+        </button>
+            {#if lastError}
+            <div class="error">
+                <p>Failed to start webcam: <code>{lastError?.message}</code></p>
+            </div>
+            {/if}
+    </div>
     {:else if state === "busy"}
-    <div class="spinner"></div>
+    <div class="ta-center">
+        <div class="spinner large margin-auto"></div>
+        <p>{busyText}</p>
+    </div>
     {:else if state === "devicelist"}
         <label for="videoDevices">Video Devices</label>
         <select name="videoDevices" class="outlined thin" bind:value={selectedVideoDeviceId}>
@@ -102,18 +109,12 @@ async function selectDevices()  {
 
 <style lang="scss">
 
-.spinner {
-  border: 16px solid #f3f3f3; /* Light grey */
-  border-top: 16px solid var(--color-text); /* Dark grey */
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.error {
+    color: var(--color-red);
+    
+    & > p {
+        max-width: var(--max-line-width);
+    }
 }
 
 .webcamSelector {
