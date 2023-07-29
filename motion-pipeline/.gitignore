@@ -11,6 +11,7 @@ data/*
 !data/bvh
 !data/bvhcsv
 !data/holistic_data
+!data/pose2d_data
 !data/nao
 !data/pose_test_photos
 !data/source_videos

@@ -261,6 +261,7 @@
                 "--database_csv_path=${workspaceFolder}/data/db.csv",
                 "--video_srcdir=${workspaceFolder}/data/source_videos",
                 "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
+                "--pose2d_data_srcdir=${workspaceFolder}/data/pose2d_data",
                 "--temp_dir=${workspaceFolder}/data/temp",
                 "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
                 "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
