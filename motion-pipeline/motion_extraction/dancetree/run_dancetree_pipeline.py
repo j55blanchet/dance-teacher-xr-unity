@@ -12,6 +12,7 @@ def run_dancetree_pipeline(
     database_csv_path: Path,
     video_srcdir: Path,
     holistic_data_srcdir: Path,
+    pose2d_data_srcdir: Path,
     temp_dir: Path,
     bundle_export_path: Path,
     bundle_media_export_path: Path,
@@ -70,6 +71,7 @@ def run_dancetree_pipeline(
     compute_holistic_data(
         video_folder=video_srcdir,
         output_folder=holistic_data_srcdir,
+        pose2d_output_folder=pose2d_data_srcdir,
         rewrite_existing=rewrite_existing_holistic_data,
         print_prefix=lambda: f'{step()} compute holistic data:',
     )
@@ -114,6 +116,7 @@ def run_dancetree_pipeline(
     current_step += 1
     bundle_data(
         holistic_data_srcdir=holistic_data_srcdir,
+        pose2d_data_srcdir=pose2d_data_srcdir,
         dancetree_srcdir=trees_with_complexity_dir,
         db_csv_path=database_csv_path,
         bundle_export_path=bundle_export_path,
@@ -124,13 +127,13 @@ def run_dancetree_pipeline(
         print_prefix=lambda: f'{step()} bundle data:',
     )
 
-    
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--database_csv_path', type=Path)
     parser.add_argument('--video_srcdir', type=Path)
     parser.add_argument('--holistic_data_srcdir', type=Path)
+    parser.add_argument('--pose2d_data_srcdir', type=Path)
     parser.add_argument('--temp_dir', type=Path)
     parser.add_argument('--bundle_export_path', type=Path)
     parser.add_argument('--bundle_media_export_path', type=Path)
@@ -142,11 +145,12 @@ if __name__ == "__main__":
     parser.add_argument("--skip_existing_cumulative_complexity", action='store_true')
     parser.add_argument("--skip_existing_audioanalysis", action='store_true')
     args = parser.parse_args()
-
+    
     run_dancetree_pipeline(
         database_csv_path=args.database_csv_path,
         video_srcdir=args.video_srcdir,
         holistic_data_srcdir=args.holistic_data_srcdir,
+        pose2d_data_srcdir=args.pose2d_data_srcdir,
         temp_dir=args.temp_dir,
         bundle_export_path=args.bundle_export_path,
         bundle_media_export_path=args.bundle_media_export_path,

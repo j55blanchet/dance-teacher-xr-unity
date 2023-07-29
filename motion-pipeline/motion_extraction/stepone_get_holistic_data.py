@@ -130,6 +130,55 @@ def construct_header_row():
                for field in ('x', 'y', 'z')
             ]
 
+def construct_pose2d_header_row():
+   return ['frame'] + \
+          [f'{PoseLandmark(landmark_i).name}_{field}' 
+               for landmark_i in np.array(sorted(PoseLandmark))
+               for field in ('x', 'y', 'distance', 'vis')
+           ]
+
+def transform_to_pose2d_csvrow(
+    frame_i: int, 
+    frame_data, 
+    video_width: float, 
+    video_height: float, 
+    as_pdSeries: bool = False,
+    in_pixelCoords: bool = True,
+):
+    x_mult = 1 if not in_pixelCoords else video_width
+    y_mult = 1 if not in_pixelCoords else video_height
+    row = [frame_i]
+    row += list(reduce(
+        lambda x, y: x + y,
+        [
+            
+            # Get the pixel coordinates of the landmark.
+            # Pet the documentation, the z-coordinate is the approximate depth / distance from camera, 
+            # with the same approximate magnitude as x. 
+            ([
+                pose2d_lm.x * x_mult, 
+                pose2d_lm.y * y_mult, 
+                pose2d_lm.z * x_mult,
+                pose2d_lm.visibility
+             ] if pose2d_lm is not None 
+             else [None, None, None, None]
+            )
+            for pose2d_lm in 
+            [
+                (frame_data.pose_world_landmarks.landmark[landmark_i] if
+                    hasattr(frame_data, 'pose_world_landmarks') and 
+                    frame_data.pose_world_landmarks is not None 
+                else None)
+                for landmark_i in range(len(PoseLandmark))
+            ]
+        ]
+    ))
+
+    if as_pdSeries:
+      return pd.Series(row, index=construct_header_row())
+   
+    return row
+
 def transform_to_holistic_csvrow(frame_i: int, frame_data, as_pdSeries: bool = False):
     row = [frame_i]
             
@@ -242,6 +291,7 @@ def process_video(
     parent_folder: Path,
     output_root: Path, 
     holistic_solution: mp.solutions.holistic.Holistic,
+    pose_2d_output_root: t.Optional[Path] = None,
     frame_output_folder: t.Optional[Path] = None,
     rewrite_existing: bool = False,
     print_progress_context: t.Callable[[],str] = lambda: '',
@@ -249,6 +299,12 @@ def process_video(
 
     # Reset graph for this new file
     holistic_solution.reset()
+
+    # Get video width / height
+    cap = cv2.VideoCapture(str(video_path))
+    video_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    video_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    cap.release()
 
     video_file_relative = video_path.relative_to(parent_folder)
     video_file_relative_stem = video_file_relative.with_suffix('')
@@ -259,19 +315,29 @@ def process_video(
         print(f'{print_progress_context()}{video_file_relative_stem}: {i}/{frame_count} {percent_done:.1%}')
 
     holistic_data_filepath = output_root / video_file_relative.with_suffix(".holisticdata.csv")
+    pose_2d_data_filepath = (pose_2d_output_root / video_file_relative.with_suffix(".pose2d.csv")) if pose_2d_output_root is not None else None
 
-    if holistic_data_filepath.exists() and not rewrite_existing:
+    if holistic_data_filepath.exists() and \
+       (pose_2d_data_filepath is None or pose_2d_data_filepath.exists()) and \
+       not rewrite_existing:
         print(f'{print_progress_context()}Skipping (already exists): {video_file_relative}')
         return
     
     header_row = construct_header_row()
+    pose2d_header_row = construct_pose2d_header_row()
 
     holistic_data_filepath.parent.mkdir(parents=True, exist_ok=True)
+    pose_2d_file = None
+    pose_2d_csv_writer = None
+    if (pose_2d_data_filepath):
+       pose_2d_data_filepath.parent.mkdir(parents=True, exist_ok=True)
+       pose_2d_file = pose_2d_data_filepath.open('w', encoding='utf-8', newline='')
+       pose_2d_csv_writer = csv.writer(pose_2d_file)
 
     with(
-        holistic_data_filepath.open('w', encoding='utf-8', newline='') as merged_data_file,
+        holistic_data_filepath.open('w', encoding='utf-8', newline='') as holistic_file,
     ):
-        merged_data_csv = csv.writer(merged_data_file)
+        holistic_csv_writer = csv.writer(holistic_file)
         for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
 
 
@@ -349,15 +415,22 @@ def process_video(
 
             print_progress(frame_i, frame_count)
             if frame_i == 0:
-                merged_data_csv.writerow(
-                    header_row
-                )
+                holistic_csv_writer.writerow(header_row)
+                if (pose_2d_csv_writer):
+                    pose_2d_csv_writer.writerow(pose2d_header_row)
             
-            merged_data_csv.writerow(holistic_csv_row)
+            holistic_csv_writer.writerow(holistic_csv_row)
+            if (pose_2d_csv_writer):
+                pose2d_csv_row = transform_to_pose2d_csvrow(frame_i, frame_data, video_width, video_height)
+                pose_2d_csv_writer.writerow(pose2d_csv_row)
+    
+    if (pose_2d_file):
+        pose_2d_file.close()
             
 def compute_holistic_data(
     video_folder: Path,
     output_folder: Path,
+    pose2d_output_folder: t.Optional[Path] = None,
     model_complexity: int = 2,
     frame_output_folder: t.Optional[Path] = None,
     rewrite_existing: bool = False,
@@ -368,6 +441,8 @@ def compute_holistic_data(
         model_complexity=model_complexity,
         enable_segmentation=False
     )
+
+    
 
     if not output_folder.exists():
         output_folder.mkdir(parents=True)
@@ -390,6 +465,7 @@ def compute_holistic_data(
             parent_folder,
             holistic_solution=holistic_solution, 
             output_root=output_folder,
+            pose_2d_output_root=pose2d_output_folder,
             frame_output_folder=frame_output_folder,
             rewrite_existing=rewrite_existing,
             print_progress_context=lambda: f"{print_prefix()} Video {i+1}/{len(video_paths)} ")

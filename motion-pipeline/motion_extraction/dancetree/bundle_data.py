@@ -9,6 +9,7 @@ from .DanceTree import DanceTree, DanceTreeNode
 
 def bundle_data(
     holistic_data_srcdir: Path,
+    pose2d_data_srcdir: Path,
     dancetree_srcdir: Path,
     db_csv_path: Path,
     bundle_export_path: Path,
@@ -55,28 +56,19 @@ def bundle_data(
         if not video_export_path.exists():
             print_with_prefix(f'Copying video {i+1}/{len(dancetrees)}: {video_relativepath}')
             video_export_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # symlink
             video_export_path.symlink_to(video_src_path)
 
-            # copy video to export dir
-            # shutil.copy(video_src_path, video_export_path)
+        def linkFiles(srcpath_folder: Path, file_extension: str, bundle_folder: str):
+            src_relative_path = tree.clip_relativepath + file_extension
+            file_src_path = srcpath_folder / src_relative_path
+            file_export_path = bundle_media_export_path / bundle_folder / src_relative_path
+            if file_src_path.exists() and not file_export_path.exists():
+                print_with_prefix(f'Copying {file_extension} {i+1}/{len(dancetrees)}: {src_relative_path}')
+                file_export_path.parent.mkdir(parents=True, exist_ok=True)
+                file_export_path.symlink_to(file_src_path)
 
-        holistic_relative_path =  tree.clip_relativepath + '.holisticdata.csv'
-        holistic_export_path = bundle_media_export_path / holistic_relative_path
-        holistic_srcpath = holistic_data_srcdir / holistic_relative_path
-        holistic_export_path = bundle_media_export_path / 'holisticdata' / holistic_relative_path
-        if not holistic_export_path.exists():
-            print_with_prefix(f'Copying holistic data {i+1}/{len(dancetrees)}: {holistic_relative_path}')
-            holistic_export_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # symlink
-            holistic_export_path.parent.mkdir(parents=True, exist_ok=True)
-            holistic_export_path.symlink_to(holistic_srcpath)
-
-            # copy holistic data to export dir
-            # shutil.copy(holistsic_srcpath, holistic_export_path)
-            
+        linkFiles(holistic_data_srcdir, '.holisticdata.csv', 'holisticdata')
+        linkFiles(pose2d_data_srcdir, '.pose2d.csv', 'pose2d')
     
     dances = list(dances.values())
 
