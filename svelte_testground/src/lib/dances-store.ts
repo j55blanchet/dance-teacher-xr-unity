@@ -54,6 +54,9 @@ export function getDanceVideoSrc(dance: Dance): string {
 export function getHolisticDataSrc(dance: Dance): string {
     return `/bundle/holisticdata/${dance.clipRelativeStem}.holisticdata.csv`;
 }
+export function get2DPoseDataSrc(dance: Dance): string {
+    return `/bundle/pose2d/${dance.clipRelativeStem}.pose2d.csv`
+}
 
 
 type PoseInformation = any;
@@ -80,8 +83,8 @@ type PoseInformation = any;
  * @returns The pose information for the dance
  */
 export async function loadPoseInformation(dance: Dance): Promise<PoseInformation> {
-    const holisticCsvPath = getHolisticDataSrc(dance);
-    const response = await fetch(holisticCsvPath);
+    const poseCsvPath = get2DPoseDataSrc(dance);
+    const response = await fetch(poseCsvPath);
     const text = await response.text();
 
     // parse csv file
