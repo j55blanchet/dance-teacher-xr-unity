@@ -53,22 +53,25 @@ def bundle_data(
             video_export_path = video_export_path.with_suffix('.mp4v')
             dances[tree.clip_relativepath]['clipPath'] = Path(video_relativepath).with_suffix('.mp4v').as_posix()
 
-        if not video_export_path.exists():
-            print_with_prefix(f'Copying video {i+1}/{len(dancetrees)}: {video_relativepath}')
-            video_export_path.parent.mkdir(parents=True, exist_ok=True)
-            video_export_path.symlink_to(video_src_path)
+        print_with_prefix(f'Linking files for video {i+1}/{len(dancetrees)}: {video_relativepath}')
 
-        def linkFiles(srcpath_folder: Path, file_extension: str, bundle_folder: str):
+        def linkFile(src_file_path: Path, dest_path: Path):
+            if src_file_path.exists() and not src_file_path.exists():
+                print_with_prefix(f'\tLinking {dest_path.name}')
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                dest_path.symlink_to(src_file_path)
+
+        def linkRelatedFile(srcpath_folder: Path, file_extension: str, bundle_folder: str, target_file_extension: t.Optional[str] = None):
             src_relative_path = tree.clip_relativepath + file_extension
             file_src_path = srcpath_folder / src_relative_path
             file_export_path = bundle_media_export_path / bundle_folder / src_relative_path
-            if file_src_path.exists() and not file_export_path.exists():
-                print_with_prefix(f'Copying {file_extension} {i+1}/{len(dancetrees)}: {src_relative_path}')
-                file_export_path.parent.mkdir(parents=True, exist_ok=True)
-                file_export_path.symlink_to(file_src_path)
+            if target_file_extension:
+                file_export_path = file_export_path.with_suffix(target_file_extension)
+            linkFile(file_src_path, file_export_path)
 
-        linkFiles(holistic_data_srcdir, '.holisticdata.csv', 'holisticdata')
-        linkFiles(pose2d_data_srcdir, '.pose2d.csv', 'pose2d')
+        linkFile(video_export_path, video_src_path)
+        linkRelatedFile(holistic_data_srcdir, '.holisticdata.csv', 'holisticdata')
+        linkRelatedFile(pose2d_data_srcdir, '.pose2d.csv', 'pose2d')
     
     dances = list(dances.values())
 
