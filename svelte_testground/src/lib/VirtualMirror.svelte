@@ -1,8 +1,8 @@
 <script lang="ts">
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/pose-estimation.worker';
-
-    import { DrawingUtils, PoseLandmarker } from "@mediapipe/tasks-vision";
+    import { GetPixelLandmarksFromMPResult, type Pose2DPixelLandmarks } from "$lib/mediapipe-utils";
+    import { DrawingUtils, PoseLandmarker, PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from './streams';
     import WebcamSelector from "./WebcamSelector.svelte";
@@ -68,7 +68,8 @@
     }
 
     // @type {PoseEstimationResult | undefined}
-    let lastDecodedData: undefined | any = undefined;
+    let lastDecodedData: null | PoseLandmarkerResult = null;
+    let last2DPixelLandmarks: null | Pose2DPixelLandmarks = null;
 
     const resizeCanvas = () => {
         if (!canvasElement) {
@@ -104,19 +105,28 @@
                     return;
                 }
 
+                const pixel2Dlandmarks = GetPixelLandmarksFromMPResult(
+                    msg.data.result,
+                    canvasElement?.width ?? 1,
+                    canvasElement?.height ?? 1,
+                );
+
                 lastFrameDecoded = msg.data.frameId;
                 lastDecodedData = msg.data.result;
-
+                last2DPixelLandmarks = pixel2Dlandmarks;
+                    
                 dispatch('poseEstimationResult', {
                     frameId: msg.data.frameId,
-                    result: msg.data.result
+                    result: msg.data.result,
+                    pixelLMs: pixel2Dlandmarks, 
                 });
             } else if (msg.data.type === PoseEsimationResponses.error) {
                 console.error(msg.data.error);
 
                 if (msg.data.frameId === lastFrameSent) {
                     lastFrameSent = -1;
-                    lastDecodedData = undefined;
+                    lastDecodedData = null;
+                    last2DPixelLandmarks = null;
                 }
             }
         };
@@ -163,6 +173,7 @@
         resizeCanvas();
 
         const resizeObserver = new ResizeObserver(entries => {
+            if (!containerElement) return;
             const [width, height] = getContentSize(containerElement!);
             containerWidth = width;
             containerHeight = height;

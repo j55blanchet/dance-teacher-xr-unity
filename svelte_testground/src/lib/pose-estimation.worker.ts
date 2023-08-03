@@ -1,6 +1,9 @@
 // import { * } from "@mediapipe/pose";
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 
+// const wasm_loader = import('@mediapipe/tasks-vision/wasm/vision_wasm_internal');
+// const wasm_nosimd_ploader = import('@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal')
+
 // export type PostMessages = 'request-pose-estimation'; 
 export enum ResponseMessages {
     poseEstimation = 'poseEstimation',
