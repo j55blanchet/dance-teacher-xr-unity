@@ -41,6 +41,9 @@ export const PoseLandmarkKeys = Object.freeze(Object.getOwnPropertyNames(PoseLan
 export type Pose3DLandmarks = PoseLandmarkerResult["worldLandmarks"];
 export type Pose2DNormalizedLandmarks = PoseLandmarkerResult["landmarks"]
 
+/**
+ * Represents a pixel landmark
+ */
 type PixelLandmark = {
     x: number;
     y: number;
@@ -48,6 +51,7 @@ type PixelLandmark = {
     visibility: number;
 }
 export type Pose2DPixelLandmarks = PixelLandmark[]
+
 
 // export function Get3DLandmarksFromHolisticRow(holisticRow: any): Pose3DLandmarks {
 //     return [];
