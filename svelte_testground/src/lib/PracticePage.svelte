@@ -1,12 +1,12 @@
 <script lang="ts">
 import { browser } from '$app/environment';
 import type PracticeActivity from "./PracticeActivity";
-import type { Dance, DanceTreeNode } from "./dances-store";
+import type { Dance, DanceTreeNode, Pose2DReferenceData } from "./dances-store";
 import * as evalAI from './ai/Evaluation';
 
 
 import VirtualMirror from "./VirtualMirror.svelte";
-import { getDancePose as getReferencePose, getDanceVideoSrc, loadPoseInformation } from "./dances-store";
+import { getDanceVideoSrc, loadPoseInformation } from "./dances-store";
 import { onMount } from "svelte";
 import { webcamStream } from './streams';
 	import type { Pose2DPixelLandmarks } from './mediapipe-utils';
@@ -39,8 +39,10 @@ let isVideoPaused: boolean = true;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
-let referenceDancePoses: any = null;
-let similarityLog: Array<{ time: number, similarity: number }> = [];
+let referenceDancePoses: Pose2DReferenceData | null = null;
+
+let evaluator: evalAI.UserDanceEvaluator | null = null;
+let trialId = crypto.randomUUID();
 
 let countdown = -1;
 let countdownActive = false;
@@ -85,6 +87,7 @@ async function startCountdown() {
     }
 
     state = "playing";
+    trialId = crypto.randomUUID();
 
     countdownActive = true;
     if (videoElement) {
@@ -126,7 +129,8 @@ export async function reset() {
     state = "waitStart";
 
     referenceDancePoses = await loadPoseInformation(dance);
-    console.log("DancePoseInformation", referenceDancePoses);
+    evaluator = new evalAI.UserDanceEvaluator(referenceDancePoses);
+    // console.log("DancePoseInformation", referenceDancePoses);
     await poseEstimationReady;
 
     startCountdown();
@@ -165,19 +169,12 @@ function poseEstimationFrameReceived(e: any) {
     const videoTimestamp = poseEstimationCorrespondances.get(e.detail.frameId)!;
     poseEstimationCorrespondances.delete(e.detail.frameId);
 
-    const referenceDancePose = getReferencePose(dance, referenceDancePoses, videoTimestamp);
-    if (!referenceDancePose) {
-        return;
-    }
-
     const userDancePose = (e?.detail?.pixelLMs ?? null) as Pose2DPixelLandmarks | null;
     if (!userDancePose) {
         return;
     }
     
-    const similarity = evalAI.compareSkeletons2DVector(referenceDancePose, userDancePose);
-    similarityLog.push({ time: videoTimestamp, similarity });
-    console.log("similarity", similarity);
+    evaluator?.evaluateFrame(trialId, videoTimestamp, userDancePose);
 }
 
 onMount(() => {
@@ -214,7 +211,7 @@ onMount(() => {
     <div>
         <h1>Feedback</h1>
         <button class="button outlined thin" on:click={reset}>Play Again</button>
-        <pre>{JSON.stringify(similarityLog, undefined, 2)}</pre>
+        <pre>{JSON.stringify(evaluator?.recorder?.tracks?.get(trialId)?.evaluation, undefined, 2)}</pre>
     </div>
     {/if}
     <div style:display={state === "feedback" ? 'none' : 'flex'}>

@@ -93,7 +93,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
  */
 export class UserDanceEvaluator {
 
-    private evaluationRecorder = new UserEvaluationRecorder<{
+    public recorder = new UserEvaluationRecorder<{
         dissimilarityScore: number;
     }>();
 
@@ -110,7 +110,7 @@ export class UserDanceEvaluator {
 
         const referencePose = this.referenceData.getReferencePoseAtTime(frameTime);
         if (!referencePose) {
-            this.evaluationRecorder.recordEvaluationFrame(
+            this.recorder.recordEvaluationFrame(
                 trialId,
                 frameTime, 
                 userPose,
@@ -124,7 +124,7 @@ export class UserDanceEvaluator {
             userPose
         )
 
-        this.evaluationRecorder.recordEvaluationFrame(
+        this.recorder.recordEvaluationFrame(
             trialId,
             frameTime,
             userPose,

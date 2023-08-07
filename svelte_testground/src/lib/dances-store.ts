@@ -83,6 +83,7 @@ export class Pose2DReferenceData {
      * @param poses 2D pose landmarks for each frame of the reference data
      */
     constructor(
+        private danceId: string,
         private fps: number, 
         private frameIndices: number[],
         private poses: Pose2DPixelLandmarks[]
@@ -156,6 +157,7 @@ export async function loadPoseInformation(dance: Dance): Promise<Pose2DReference
 
     // convert to array of pose information
     return new Pose2DReferenceData(
+        dance.clipRelativeStem,
         dance.fps, 
         data.data.map((row: any) => +row[`frame`]), 
         data.data.map((row: any) => GetPixelLandmarksFromPose2DRow(row))
@@ -173,11 +175,4 @@ function GetPixelLandmarksFromPose2DRow(pose2drow: any): Pose2DPixelLandmarks | 
             visibility: pose2drow[`${key}_vis`]
         }
     });
-}
-
-export function getDancePose(dance: Dance, poseInformation: Pose2DCSV, time: number): null | Pose2DPixelLandmarks {
-    
-    const frameIndex = Math.floor(time * dance.fps);
-    const csvRowData = poseInformation.data[frameIndex] ?? null
-    return GetPixelLandmarksFromPose2DRow(csvRowData);
 }
