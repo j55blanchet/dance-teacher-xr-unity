@@ -23,12 +23,36 @@ function GetNormalizedVector(
     return [sx / mag, sy / mag]
 }
 
-export function compareSkeletons2DVector(
+export function computeSkeleton2DSimilarityJulienMethod(
+    refLandmarks: Pose2DPixelLandmarks,
+    userLandmarks: Pose2DPixelLandmarks
+) {
+    let score = 0
+
+    return score
+}
+
+/**
+ * 
+ * @param refLandmarks Reference landmarks (expert)
+ * @param userLandmarks Evaluation landmarks (learner)
+ * @returns A score between 0 and 5, where 0 is the worst and 5 is the best
+ */
+export function computeSkeletonDissimilarityQijiaMethod(
     refLandmarks: Pose2DPixelLandmarks, 
     userLandmarks: Pose2DPixelLandmarks
-): number {
+): [number, number] {
 
-    let dissimilarityScore = 0
+    // From the paper: 
+    //     At each frame, we compute the absolute difference be-
+    // tween the corresponding unit vectors of the learner and the
+    // expert, and then sum them up as the per-frame dancing error.
+    // The overall dancing error is calculated as the average of all
+    // frames of the dance. Finally, we scale the score into the range
+    // of [0, 5], where 0 denotes the poorest performance and 5 rep-
+    // resents the best performance. This normalized score serves
+    // as the final performance rating.
+    let rawDissimilarityScore = 0
 
     // Compare 8 Vectors
     for(const vecLandmarkIds of ComparisonVectors) {
@@ -36,11 +60,22 @@ export function compareSkeletons2DVector(
         const [refX, refY] = GetNormalizedVector(refLandmarks, srcLandmark, destLandmark)
         const [usrX, usrY] = GetNormalizedVector(userLandmarks, srcLandmark, destLandmark)
         const [dx, dy] = [refX - usrX, refY - usrY]
-        dissimilarityScore += Math.abs(dx) || 0
-        dissimilarityScore += Math.abs(dy) || 0
+        rawDissimilarityScore += Math.abs(dx) || 0
+        rawDissimilarityScore += Math.abs(dy) || 0
     }
 
-    return dissimilarityScore;
+    const USER_STUDY_DISSIMILARITY_UPPER_BOUND = 18.0
+    const USER_STUDY_DISSIMILARITY_LOWER_BOUND = 15.0
+    const USER_STUDY_DISSIMILARITY_RANGE = USER_STUDY_DISSIMILARITY_UPPER_BOUND - USER_STUDY_DISSIMILARITY_LOWER_BOUND
+
+    const TARGET_UPPER_BOUND_SCORE = 5.0
+    const TARGET_LOWER_BOUND_SCORE = 0.0
+    const TARGET_SCORE_RANGE = TARGET_UPPER_BOUND_SCORE - TARGET_LOWER_BOUND_SCORE
+    
+    const percentileDisimilarity = (rawDissimilarityScore - USER_STUDY_DISSIMILARITY_LOWER_BOUND) / USER_STUDY_DISSIMILARITY_RANGE
+    const scaledScore = TARGET_UPPER_BOUND_SCORE - (TARGET_SCORE_RANGE) * percentileDisimilarity 
+
+    return [rawDissimilarityScore, scaledScore];
 }
 
 export type PerformanceEvaluationTrack<EvaluationType> = {
@@ -94,7 +129,9 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
 export class UserDanceEvaluator {
 
     public recorder = new UserEvaluationRecorder<{
-        dissimilarityScore: number;
+        rawQijiaDissimilarityScore: number;
+        qijiaPerformanceScore: number;
+        julienScore: number;
     }>();
 
     constructor(private referenceData: Pose2DReferenceData) {
@@ -114,12 +151,16 @@ export class UserDanceEvaluator {
                 trialId,
                 frameTime, 
                 userPose,
-                {dissimilarityScore: Infinity}
+                {
+                    rawQijiaDissimilarityScore: NaN,
+                    qijiaPerformanceScore: NaN,
+                    julienScore: NaN
+                }
             )
             return;
         }
 
-        const dissimilarityScore = compareSkeletons2DVector(
+        const [rawQijiaDissimilarityScore, qijiaScaledScore] = computeSkeletonDissimilarityQijiaMethod(
             referencePose, 
             userPose
         )
@@ -128,7 +169,11 @@ export class UserDanceEvaluator {
             trialId,
             frameTime,
             userPose,
-            { dissimilarityScore }
+            { 
+                rawQijiaDissimilarityScore,
+                qijiaPerformanceScore: qijiaScaledScore,
+                julienScore: NaN
+             }
         )
     }
 }
