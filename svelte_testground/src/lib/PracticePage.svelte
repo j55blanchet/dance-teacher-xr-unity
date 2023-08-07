@@ -6,9 +6,10 @@ import * as evalAI from './ai/Evaluation';
 
 
 import VirtualMirror from "./VirtualMirror.svelte";
-import { getDancePose, getDanceVideoSrc, loadPoseInformation } from "./dances-store";
+import { getDancePose as getReferencePose, getDanceVideoSrc, loadPoseInformation } from "./dances-store";
 import { onMount } from "svelte";
 import { webcamStream } from './streams';
+	import type { Pose2DPixelLandmarks } from './mediapipe-utils';
 
 
 export let dance: Dance;
@@ -38,7 +39,7 @@ let isVideoPaused: boolean = true;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
-let dancePoseInformation: any = null;
+let referenceDancePoses: any = null;
 let similarityLog: Array<{ time: number, similarity: number }> = [];
 
 let countdown = -1;
@@ -124,8 +125,8 @@ export async function reset() {
     await virtualMirrorElement.webcamStartedPromise;    
     state = "waitStart";
 
-    dancePoseInformation = await loadPoseInformation(dance);
-    console.log("DancePoseInformation", dancePoseInformation);
+    referenceDancePoses = await loadPoseInformation(dance);
+    console.log("DancePoseInformation", referenceDancePoses);
     await poseEstimationReady;
 
     startCountdown();
@@ -152,7 +153,7 @@ function shouldSendNextPoseEstimationFrame() {
 
 function poseEstimationFrameReceived(e: any) {
     console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
-    if (!dancePoseInformation) {
+    if (!referenceDancePoses) {
         console.log("No dance pose information", e);
         return;
     };
@@ -164,8 +165,17 @@ function poseEstimationFrameReceived(e: any) {
     const videoTimestamp = poseEstimationCorrespondances.get(e.detail.frameId)!;
     poseEstimationCorrespondances.delete(e.detail.frameId);
 
-    const dancePose = getDancePose(dance, dancePoseInformation, videoTimestamp);
-    const similarity = evalAI.compareSkeletons2DVector(dancePose, e.detail.result);
+    const referenceDancePose = getReferencePose(dance, referenceDancePoses, videoTimestamp);
+    if (!referenceDancePose) {
+        return;
+    }
+
+    const userDancePose = (e?.detail?.pixelLMs ?? null) as Pose2DPixelLandmarks | null;
+    if (!userDancePose) {
+        return;
+    }
+    
+    const similarity = evalAI.compareSkeletons2DVector(referenceDancePose, userDancePose);
     similarityLog.push({ time: videoTimestamp, similarity });
     console.log("similarity", similarity);
 }

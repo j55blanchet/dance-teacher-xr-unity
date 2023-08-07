@@ -1,6 +1,8 @@
 import { readable, writable, derived } from 'svelte/store';
 import Papa from 'papaparse';
 
+import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks } from '$lib/mediapipe-utils';
+
 // import json data
 import dancesData from '$lib/data/bundle/dances.json';
 import danceTreeData from '$lib/data/bundle/dancetrees.json';
@@ -59,7 +61,8 @@ export function get2DPoseDataSrc(dance: Dance): string {
 }
 
 
-type PoseInformation = any;
+type Pose2DCSV = any;
+type Pose2DCSVRow = any;
 /**
  * Get the pose information for a dance. This is a CSV file with the pose information for 
  * each frame of the dance. It's returned in the form of an array of objects, where each object
@@ -82,7 +85,7 @@ type PoseInformation = any;
  * @param dance The dance to load the pose information for
  * @returns The pose information for the dance
  */
-export async function loadPoseInformation(dance: Dance): Promise<PoseInformation> {
+export async function loadPoseInformation(dance: Dance): Promise<Pose2DCSV> {
     const poseCsvPath = get2DPoseDataSrc(dance);
     const response = await fetch(poseCsvPath);
     const text = await response.text();
@@ -98,11 +101,25 @@ export async function loadPoseInformation(dance: Dance): Promise<PoseInformation
         })
     });
 
-    return data as PoseInformation;
+    return data as Pose2DCSV;
 }
 
-export function getDancePose(dance: Dance, poseInformation: PoseInformation, time: number) {
+function GetPixelLandmarksFromPose2DRow(pose2drow: any): Pose2DPixelLandmarks | null {
+    if (!pose2drow) return null;
+
+    return PoseLandmarkKeysUpperSnakeCase.map((key, i) => {
+        return {
+            x: pose2drow[`${key}_x`],
+            y: pose2drow[`${key}_y`],
+            dist_from_camera: pose2drow[`${key}_distance`],
+            visibility: pose2drow[`${key}_vis`]
+        }
+    });
+}
+
+export function getDancePose(dance: Dance, poseInformation: Pose2DCSV, time: number): null | Pose2DPixelLandmarks {
     
     const frameIndex = Math.floor(time * dance.fps);
-    return poseInformation[frameIndex] ?? null
+    const csvRowData = poseInformation.data[frameIndex] ?? null
+    return GetPixelLandmarksFromPose2DRow(csvRowData);
 }
