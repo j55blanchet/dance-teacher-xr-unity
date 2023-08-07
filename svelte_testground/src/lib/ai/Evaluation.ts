@@ -1,3 +1,4 @@
+import type { Pose2DReferenceData } from "$lib/dances-store";
 import { type Pose2DPixelLandmarks, PoseLandmarkIds } from "$lib/mediapipe-utils";
 
 const ComparisonVectors = Object.freeze([
@@ -40,4 +41,94 @@ export function compareSkeletons2DVector(
     }
 
     return dissimilarityScore;
+}
+
+export type PerformanceEvaluationTrack<EvaluationType> = {
+    creationDate: Date;
+    frameTimes: number[];
+    userPoses: Pose2DPixelLandmarks[];
+    evaluation: ArrayVersions<EvaluationType>;
+}
+
+type ArrayVersions<T> = {
+    [K in keyof T]: T[K][];
+}
+
+export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> {
+
+    public tracks: Map<string, PerformanceEvaluationTrack<EvaluationType>> = new Map();
+
+    recordEvaluationFrame(id: string, frameTime: number, userPose: Pose2DPixelLandmarks, evaluationResult: EvaluationType) {
+        const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
+
+        if(!this.tracks.has(id)) {
+            this.tracks.set(id, {
+                creationDate: new Date(),
+                frameTimes: [],
+                userPoses: [],
+                evaluation: evaluationkeys.reduce((acc, key) => {
+                    acc[key] = []
+                    return acc
+                }, {} as ArrayVersions<EvaluationType>)
+            })
+        }
+
+        const lastFrameTime = this.tracks.get(id)?.frameTimes.slice(-1)[0] ?? -Infinity
+        if (frameTime <= lastFrameTime) {
+            throw new Error("Frame time must be increasing")
+        }
+
+        const track = this.tracks.get(id)!
+        track.frameTimes.push(frameTime)
+        track.userPoses.push(userPose)
+
+        for(const key of evaluationkeys) {
+            track.evaluation[key].push(evaluationResult[key])
+        }
+    }
+}
+
+/**
+ * Evaluates a user's dance performance against a reference dance.
+ */
+export class UserDanceEvaluator {
+
+    private evaluationRecorder = new UserEvaluationRecorder<{
+        dissimilarityScore: number;
+    }>();
+
+    constructor(private referenceData: Pose2DReferenceData) {
+    };
+
+    /**
+     * Evaluates a single frame of a user's dance performance.
+     * @param trialId Identifier of the current attempt, used to separate recordings into tracks
+     * @param frameTime Frame time in seconds
+     * @param userPose User's pose at the given frame time
+     */
+    evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks) {
+
+        const referencePose = this.referenceData.getReferencePoseAtTime(frameTime);
+        if (!referencePose) {
+            this.evaluationRecorder.recordEvaluationFrame(
+                trialId,
+                frameTime, 
+                userPose,
+                {dissimilarityScore: Infinity}
+            )
+            return;
+        }
+
+        const dissimilarityScore = compareSkeletons2DVector(
+            referencePose, 
+            userPose
+        )
+
+        this.evaluationRecorder.recordEvaluationFrame(
+            trialId,
+            frameTime,
+            userPose,
+            { dissimilarityScore }
+        )
+    }
 }
