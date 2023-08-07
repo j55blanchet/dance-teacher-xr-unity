@@ -60,6 +60,59 @@ export function get2DPoseDataSrc(dance: Dance): string {
     return `/bundle/pose2d/${dance.clipRelativeStem}.pose2d.csv`
 }
 
+/**
+ * Constrain a value to a given range
+ * @param val Value to constrain
+ * @param min Minimum value
+ * @param max Maximum value
+ * @returns Constrained value
+ */
+function constrain(val: number, min: number, max: number) {
+    return Math.min(Math.max(val, min), max);
+}
+
+/**
+ * Reference data for a dance, in the form of an array of 2D pose landmarks for each frame of the dance.
+ */
+export class Pose2DReferenceData {
+    
+    /**
+     * Create a new Pose2DReferenceData object
+     * @param fps Frames per second of the reference data
+     * @param frameIndices Frame indices of the reference data (as some frames may be missing)
+     * @param poses 2D pose landmarks for each frame of the reference data
+     */
+    constructor(
+        private fps: number, 
+        private frameIndices: number[],
+        private poses: Pose2DPixelLandmarks[]
+    ) {
+    }
+
+    /**
+     * Get the reference pose information for a given time in the dance.
+     * @param timestamp Dance timestamp of the frame to get the pose for
+     * @returns Pose information for the frame at the given timestamp, or null if no pose information is available for that frame
+     */
+    getReferencePoseAtTime(timestamp: number): Pose2DPixelLandmarks | null {
+
+        let targetFrameIndex = Math.floor(timestamp * this.fps);
+
+        // Starting at the estimated frame, search backward for the closest frame with pose information. 
+        //   * We're making the assumption that the data may omit frames, but does not contain any duplicate frames. 
+        //     Therefore, we can search backward from the estimated frame to find the closest frame with pose information.
+        let searchIndex = constrain(targetFrameIndex, 0, this.frameIndices.length - 1);
+        
+        while(this.frameIndices[searchIndex] > targetFrameIndex && searchIndex > 0) {
+            searchIndex--;
+        }
+
+        // const frameIndex = this.frameIndices[searchIndex];
+        const pose = this.poses[searchIndex];
+
+        return pose;
+    }
+}
 
 type Pose2DCSV = any;
 type Pose2DCSVRow = any;
@@ -85,13 +138,13 @@ type Pose2DCSVRow = any;
  * @param dance The dance to load the pose information for
  * @returns The pose information for the dance
  */
-export async function loadPoseInformation(dance: Dance): Promise<Pose2DCSV> {
+export async function loadPoseInformation(dance: Dance): Promise<Pose2DReferenceData> {
     const poseCsvPath = get2DPoseDataSrc(dance);
     const response = await fetch(poseCsvPath);
     const text = await response.text();
 
     // parse csv file
-    const data = await new Promise((res, rej) => {       
+    const data: any = await new Promise((res, rej) => {       
         Papa.parse(text, {
             header: true,
             worker: true,
@@ -101,7 +154,12 @@ export async function loadPoseInformation(dance: Dance): Promise<Pose2DCSV> {
         })
     });
 
-    return data as Pose2DCSV;
+    // convert to array of pose information
+    return new Pose2DReferenceData(
+        dance.fps, 
+        data.data.map((row: any) => +row[`frame`]), 
+        data.data.map((row: any) => GetPixelLandmarksFromPose2DRow(row))
+    )
 }
 
 function GetPixelLandmarksFromPose2DRow(pose2drow: any): Pose2DPixelLandmarks | null {
