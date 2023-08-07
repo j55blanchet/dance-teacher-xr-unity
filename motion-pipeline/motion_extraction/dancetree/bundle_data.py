@@ -56,7 +56,7 @@ def bundle_data(
         print_with_prefix(f'Linking files for video {i+1}/{len(dancetrees)}: {video_relativepath}')
 
         def linkFile(src_file_path: Path, dest_path: Path):
-            if src_file_path.exists() and not src_file_path.exists():
+            if src_file_path.exists() and not dest_path.exists():
                 print_with_prefix(f'\tLinking {dest_path.name}')
                 dest_path.parent.mkdir(parents=True, exist_ok=True)
                 dest_path.symlink_to(src_file_path)
@@ -69,7 +69,7 @@ def bundle_data(
                 file_export_path = file_export_path.with_suffix(target_file_extension)
             linkFile(file_src_path, file_export_path)
 
-        linkFile(video_export_path, video_src_path)
+        linkFile(video_src_path, video_export_path)
         linkRelatedFile(holistic_data_srcdir, '.holisticdata.csv', 'holisticdata')
         linkRelatedFile(pose2d_data_srcdir, '.pose2d.csv', 'pose2d')
     

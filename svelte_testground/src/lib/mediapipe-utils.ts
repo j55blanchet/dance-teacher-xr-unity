@@ -57,23 +57,27 @@ export type Pose2DPixelLandmarks = PixelLandmark[]
 //     return [];
 // }
 
-const PoseLandmarkKeysUppercase = Object.freeze(PoseLandmarkKeys.map(k => k.toUpperCase()));
+/**
+ * Convert a string from camelCase to snake_case
+ * @param camelCaseString A string in camelCase, like "leftShoulder"
+ * @returns A string in snake_case, like "left_shoulder"
+ */
+function convertCamelcaseStringToSnakeCase(camelCaseString: string): string {
+    return camelCaseString
+        // Add an underscore before all capital letters 
+        // (other than one occuring as the first character)
+        .replace(
+            /(?<!^)[A-Z]/g, 
+            (letter) => `_${letter.toLowerCase()}`
+        )
+  }
 
-export function GetPixelLandmarksFromPose2DRow(pose2drow: any): Pose2DPixelLandmarks | null {
-    if (!pose2drow) return null;
+export const PoseLandmarkKeysUpperSnakeCase = Object.freeze(PoseLandmarkKeys.map(k => convertCamelcaseStringToSnakeCase(k).toUpperCase()));
 
-    return PoseLandmarkKeysUppercase.map((key, i) => {
-        return {
-            x: pose2drow[`${key}_x`],
-            y: pose2drow[`${key}_y`],
-            dist_from_camera: pose2drow[`${key}_distance`],
-            visibility: pose2drow[`${key}_vis`]
-        }
-    });
-}
+
 
 export function GetPixelLandmarksFromMPResult(result: PoseLandmarkerResult, srcWidth: number, srcHeight: number): Pose2DPixelLandmarks | null {
-    if (result?.landmarks?.length ?? 0 <= 0) return null;
+    if ((result?.landmarks?.length ?? 0) <= 0) return null;
     
     const firstDetectedPerson = result.landmarks[0];
     

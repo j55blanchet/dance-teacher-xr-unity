@@ -2,7 +2,7 @@
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/pose-estimation.worker';
     import { GetPixelLandmarksFromMPResult, type Pose2DPixelLandmarks } from "$lib/mediapipe-utils";
-    import { DrawingUtils, PoseLandmarker, PoseLandmarkerResult } from "@mediapipe/tasks-vision";
+    import { DrawingUtils, PoseLandmarker, type PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from './streams';
     import WebcamSelector from "./WebcamSelector.svelte";
@@ -22,6 +22,8 @@
 
     export let poseEstimationEnabled: boolean = false;
     export let drawSkeleton: boolean = false;
+
+    export let muted: boolean = true;
 
     export let poseEstimationCheckFunction: () => boolean = () => true;
 
@@ -316,7 +318,8 @@
         <!-- svelte-ignore a11y-media-has-caption -->
         <video bind:this={videoElement} autoplay 
             on:play={resizeCanvas}
-            on:loadeddata={onLoadedVideoData}></video>
+            on:loadeddata={onLoadedVideoData}
+            bind:muted={muted}></video>
         <canvas bind:this={canvasElement}></canvas>  
         <!-- <span>Pose Estimation: {poseEstimationEnabled}</span> -->
     {:else}

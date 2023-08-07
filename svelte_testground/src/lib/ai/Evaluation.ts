@@ -27,7 +27,7 @@ export function compareSkeletons2DVector(
     userLandmarks: Pose2DPixelLandmarks
 ): number {
 
-    let score = 0
+    let dissimilarityScore = 0
 
     // Compare 8 Vectors
     for(const vecLandmarkIds of ComparisonVectors) {
@@ -35,9 +35,9 @@ export function compareSkeletons2DVector(
         const [refX, refY] = GetNormalizedVector(refLandmarks, srcLandmark, destLandmark)
         const [usrX, usrY] = GetNormalizedVector(userLandmarks, srcLandmark, destLandmark)
         const [dx, dy] = [refX - usrX, refY - usrY]
-        score += dx
-        score += dy
+        dissimilarityScore += Math.abs(dx) || 0
+        dissimilarityScore += Math.abs(dy) || 0
     }
 
-    return score;
+    return dissimilarityScore;
 }
