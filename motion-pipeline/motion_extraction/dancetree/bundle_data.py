@@ -37,6 +37,9 @@ def bundle_data(
     dancetree_dict = defaultdict(list)
     dances = {}
     for i, tree in enumerate(dancetrees):
+        if tree.clip_relativepath not in db.index:
+            print_with_prefix(f'Warning: No database info for dancetree at: {tree.clip_relativepath}')
+            continue
         db_info = db.loc[tree.clip_relativepath]
         if exclude_test and db_info['is_test']:
             continue
