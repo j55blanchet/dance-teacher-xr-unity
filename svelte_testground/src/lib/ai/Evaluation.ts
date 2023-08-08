@@ -176,6 +176,9 @@ export class UserDanceEvaluator {
      */
     evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks) {
 
+        // TODO: consider flipping the user pose, in case the user is mirroring the 
+        //       reference dance.
+        
         const referencePose = this.referenceData.getReferencePoseAtTime(frameTime);
         if (!referencePose) {
             this.recorder.recordEvaluationFrame(
