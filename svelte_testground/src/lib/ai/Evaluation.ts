@@ -12,6 +12,10 @@ const ComparisonVectors = Object.freeze([
     [PoseLandmarkIds.rightElbow,    PoseLandmarkIds.rightWrist]
 ])
 
+function getMagnitude(v: [number, number]) {
+    return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2), 0.5)
+}
+
 function GetNormalizedVector(
     pixelLandmarks: Pose2DPixelLandmarks,
     srcLandmark: number,
@@ -19,8 +23,10 @@ function GetNormalizedVector(
 ){
     // TODO: utilize a vector arithmetic library?
     const {x: sx, y: sy } = pixelLandmarks[srcLandmark]
-    const mag = Math.pow(Math.pow(sx, 2) + Math.pow(sy, 2), 0.5)
-    return [sx / mag, sy / mag]
+    const {x: dx, y: dy } = pixelLandmarks[destLandmark]
+    const [vec_x, vec_y] = [dx - sx, dy - sy]
+    const mag = getMagnitude([vec_x, vec_y]);
+    return [vec_x / mag, vec_y / mag]
 }
 
 export function computeSkeleton2DSimilarityJulienMethod(
@@ -28,6 +34,21 @@ export function computeSkeleton2DSimilarityJulienMethod(
     userLandmarks: Pose2DPixelLandmarks
 ) {
     let score = 0
+
+    // Idea: 2D vector comparison should look at both angle and magnitude, since angle
+    //       changes are only meaningful when a vectors is perpendicular to the camera.
+    //         > When both vectors are orthogonal to the camera, the angle between them is
+    //           the primary metric for similarity.
+    //         > When one or both vectors are parallel to the camera, the magnitude of the
+    //           vectors is the primary metric for similarity. (we don't want to compare angles in this case,
+    //           because slight changes in angle can result in large changes in the normalized 2D projection 
+    //           of the vector).
+    //         > We can scale the relative constribution of each of these similarity metrics based on the
+    //           current 2D magnitude of the vectors relative to the maximum observed length of that vector.
+
+    // Another idea: Mediapipe includes an approximate z-value for each landmark. We can use this
+    //               to simply compute angle changes in 3D space. This is a simpler approach, but
+    //               should work so long as mediapipe's z-values are accurate enough.
 
     return score
 }
@@ -60,19 +81,26 @@ export function computeSkeletonDissimilarityQijiaMethod(
         const [refX, refY] = GetNormalizedVector(refLandmarks, srcLandmark, destLandmark)
         const [usrX, usrY] = GetNormalizedVector(userLandmarks, srcLandmark, destLandmark)
         const [dx, dy] = [refX - usrX, refY - usrY]
-        rawDissimilarityScore += Math.abs(dx) || 0
-        rawDissimilarityScore += Math.abs(dy) || 0
+        rawDissimilarityScore += getMagnitude([dx, dy]) || 0
     }
 
-    const USER_STUDY_DISSIMILARITY_UPPER_BOUND = 18.0
-    const USER_STUDY_DISSIMILARITY_LOWER_BOUND = 15.0
+    // According to Qijia, from our user studies we found that the upperbound dissimilarity score was 2.5
+    // and the lower bound was zero. This is the average over an entire dance, so the by-frame score may be
+    // higher, or lower. If a user's dissimilarity score was closer to 0, they did well, and if it was closer
+    // to 2.5, they did poorly. (These specific numbers are not mentioned in the paper). 
+    const USER_STUDY_DISSIMILARITY_UPPER_BOUND = 2.5
+    const USER_STUDY_DISSIMILARITY_LOWER_BOUND = 0.0
     const USER_STUDY_DISSIMILARITY_RANGE = USER_STUDY_DISSIMILARITY_UPPER_BOUND - USER_STUDY_DISSIMILARITY_LOWER_BOUND
 
+    // We want to scale the score to a [0...5] range
     const TARGET_UPPER_BOUND_SCORE = 5.0
     const TARGET_LOWER_BOUND_SCORE = 0.0
     const TARGET_SCORE_RANGE = TARGET_UPPER_BOUND_SCORE - TARGET_LOWER_BOUND_SCORE
     
+    // First, normalize the score to a [0...1] range, where 0 is the best and 1 is the worst
     const percentileDisimilarity = (rawDissimilarityScore - USER_STUDY_DISSIMILARITY_LOWER_BOUND) / USER_STUDY_DISSIMILARITY_RANGE
+
+    // Then, scale the score to the target range (negating, since we want 0 to be the worst and 5 to be the best)
     const scaledScore = TARGET_UPPER_BOUND_SCORE - (TARGET_SCORE_RANGE) * percentileDisimilarity 
 
     return [rawDissimilarityScore, scaledScore];
@@ -106,7 +134,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
                     return acc
                 }, {} as ArrayVersions<EvaluationType>)
             })
-        }
+        } 
 
         const lastFrameTime = this.tracks.get(id)?.frameTimes.slice(-1)[0] ?? -Infinity
         if (frameTime <= lastFrameTime) {
@@ -123,16 +151,19 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
     }
 }
 
+
+type EvaluationV1 = {
+    rawQijiaDissimilarityScore: number;
+    qijiaPerformanceScore: number;
+    julienScore: number;
+};
+
 /**
  * Evaluates a user's dance performance against a reference dance.
  */
 export class UserDanceEvaluator {
 
-    public recorder = new UserEvaluationRecorder<{
-        rawQijiaDissimilarityScore: number;
-        qijiaPerformanceScore: number;
-        julienScore: number;
-    }>();
+    public recorder = new UserEvaluationRecorder<EvaluationV1>();
 
     constructor(private referenceData: Pose2DReferenceData) {
     };
@@ -165,6 +196,11 @@ export class UserDanceEvaluator {
             userPose
         )
 
+        const julienScore = computeSkeleton2DSimilarityJulienMethod(
+            referencePose,
+            userPose
+        )
+
         this.recorder.recordEvaluationFrame(
             trialId,
             frameTime,
@@ -172,8 +208,24 @@ export class UserDanceEvaluator {
             { 
                 rawQijiaDissimilarityScore,
                 qijiaPerformanceScore: qijiaScaledScore,
-                julienScore: NaN
+                julienScore: julienScore
              }
         )
+    }
+
+    getPerformanceSummary(id: string) {
+        const track = this.recorder.tracks.get(id)!
+        if (!track) {
+            return null;
+        }
+
+        const evaluationKeys = Object.keys(track.evaluation) as Array<keyof EvaluationV1>
+        const performanceSummary = evaluationKeys.reduce((summary, key) => {
+            const sumOfMetric = track.evaluation[key].reduce((runningTotal, frameValue) => runningTotal + frameValue, 0)
+            summary[key] = sumOfMetric / track.evaluation[key].length
+            return summary
+        }, {} as EvaluationV1)
+
+        return performanceSummary
     }
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { browser } from '$app/environment';
+
 import type PracticeActivity from "./PracticeActivity";
 import type { Dance, DanceTreeNode, Pose2DReferenceData } from "./dances-store";
 import * as evalAI from './ai/Evaluation';
@@ -31,6 +31,8 @@ $: {
 
 export let pageActive = false;
 
+export let flipVideo: boolean = false;
+
 let videoElement: HTMLVideoElement;
 let virtualMirrorElement: VirtualMirror;
 let videoCurrentTime: number = 0;
@@ -43,6 +45,7 @@ let referenceDancePoses: Pose2DReferenceData | null = null;
 
 let evaluator: evalAI.UserDanceEvaluator | null = null;
 let trialId = crypto.randomUUID();
+let performanceSummary: Record<string, any> | null = null;
 
 let countdown = -1;
 let countdownActive = false;
@@ -62,6 +65,7 @@ $: {
 $: {
     if (practiceActivity?.endTime && videoCurrentTime >= practiceActivity.endTime || videoCurrentTime >= videoElement?.duration) {
         videoElement.pause();
+        performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
         state = "feedback";
     }
 }
@@ -195,6 +199,7 @@ onMount(() => {
                bind:playbackRate={videoPlaybackSpeed}
                bind:paused={isVideoPaused}
                class="shrinkingVideo"
+               class:flipped={flipVideo}
                >
             <source src={danceSrc} type="video/mp4" />
         </video>
@@ -211,7 +216,7 @@ onMount(() => {
     <div>
         <h1>Feedback</h1>
         <button class="button outlined thin" on:click={reset}>Play Again</button>
-        <pre>{JSON.stringify(evaluator?.recorder?.tracks?.get(trialId)?.evaluation, undefined, 2)}</pre>
+        <pre>{JSON.stringify(performanceSummary, null, 2)}</pre>
     </div>
     {/if}
     <div style:display={state === "feedback" ? 'none' : 'flex'}>
@@ -264,6 +269,10 @@ section {
     flex-shrink: 1;
     max-width: 100%;
     max-height: 100%;
+}
+
+.flipped {
+    transform: scaleX(-1);
 }
 
 .countdown {

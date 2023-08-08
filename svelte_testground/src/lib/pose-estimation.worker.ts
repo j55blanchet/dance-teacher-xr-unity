@@ -1,4 +1,6 @@
 // import { * } from "@mediapipe/pose";
+import { simd } from "wasm-feature-detect";
+
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 
 // const wasm_loader = import('@mediapipe/tasks-vision/wasm/vision_wasm_internal');
@@ -18,15 +20,24 @@ export enum PostMessages {
 const IS_WEB_WORKER = false;
 
 async function loadPoseLandmarkerModel() {
-    const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10/wasm"
-    );
+
+    const supportsSimd = await simd();
+
+    const MP_FOLDER = "/mediapipe";
+    const wasmVisionFileset = {
+        wasmLoaderPath: `${MP_FOLDER}/vision_wasm_nosimd_internal.js`,
+        wasmBinaryPath: `${MP_FOLDER}/vision_wasm_nosimd_internal.wasm`
+    }
+    if (supportsSimd) {
+        wasmVisionFileset.wasmLoaderPath = `${MP_FOLDER}/vision_wasm_internal.js`;
+        wasmVisionFileset.wasmBinaryPath = `${MP_FOLDER}/vision_wasm_internal.wasm`;
+    }
     
     const runningMode = "VIDEO";
     
-    const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+    const poseLandmarker = await PoseLandmarker.createFromOptions(wasmVisionFileset, {
         baseOptions: {
-          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
+          modelAssetPath: `/mediapipe/pose_landmarker_lite.task`,
           delegate: "GPU"
         },
         runningMode: runningMode,
@@ -35,51 +46,6 @@ async function loadPoseLandmarkerModel() {
     
     return poseLandmarker;
 }
-
-// let poseLandmarker: null | PoseLandmarker = null;
-
-// loadModel().then((model) => {
-//     poseLandmarker = model;
-// });
-
-// const pose = new Pose({locateFile: (file) => {
-    // return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-//   }});
-
-// self.importScripts("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js");
-
-// import("@mediapipe/pose")
-
-// let poseLandmarker = null;
-
-// onmessage = (msg) => {
-
-//     if (!msg) {
-//         return;
-//     }
-
-//     if (!poseLandmarker) {
-//         postMessage({
-//             type: "pose-estimation",
-//             frameId: msg.data.frameId,
-//             result: null
-//         });
-//         return;
-//     }
-
-//     const result = poseLandmarker.detectForVideo(
-//         msg.data.image,
-//         msg.data.timestampMs
-//     )
-
-//     postMessage({
-//         type: "pose-estimation",
-//         frameId: msg.data.frameId,
-//         result: result
-//     });
-// }
-
-// export {};
 
 export default class PoseEstimationWorker {
 
