@@ -109,8 +109,8 @@
 
                 const pixel2Dlandmarks = GetPixelLandmarksFromMPResult(
                     msg.data.result,
-                    canvasElement?.width ?? 1,
-                    canvasElement?.height ?? 1,
+                    canvasElement?.width ?? videoWidth,
+                    canvasElement?.height ?? videoHeight,
                 );
 
                 lastFrameDecoded = msg.data.frameId;
