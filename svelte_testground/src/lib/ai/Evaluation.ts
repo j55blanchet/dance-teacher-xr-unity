@@ -1,5 +1,5 @@
 import type { Pose2DReferenceData } from "$lib/dances-store";
-import { type Pose2DPixelLandmarks, PoseLandmarkIds } from "$lib/mediapipe-utils";
+import { type Pose2DPixelLandmarks, PoseLandmarkIds } from "$lib/webcam/mediapipe-utils";
 
 const ComparisonVectors = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
@@ -84,11 +84,15 @@ export function computeSkeletonDissimilarityQijiaMethod(
         rawDissimilarityScore += getMagnitude([dx, dy]) || 0
     }
 
-    // According to Qijia, from our user studies we found that the upperbound dissimilarity score was 2.5
-    // and the lower bound was zero. This is the average over an entire dance, so the by-frame score may be
-    // higher, or lower. If a user's dissimilarity score was closer to 0, they did well, and if it was closer
-    // to 2.5, they did poorly. (These specific numbers are not mentioned in the paper). 
-    const USER_STUDY_DISSIMILARITY_UPPER_BOUND = 2.5
+    // Average over the 8 vectors
+    rawDissimilarityScore /= ComparisonVectors.length;
+
+    // According to Qijia, we used an upper bound of 2.0 for the dissimimlarity score (which would indicate all vectors
+    // of the user faced the exact opposite directions of the expert), and the lower bound was zero (which would indicate
+    // a perfect match with the expert)
+    // If a user's dissimilarity score was closer to 0, they did well, and if it was closer
+    // to 2.0, they did poorly. (These specific numbers are not mentioned in the paper). 
+    const USER_STUDY_DISSIMILARITY_UPPER_BOUND = 2.0
     const USER_STUDY_DISSIMILARITY_LOWER_BOUND = 0.0
     const USER_STUDY_DISSIMILARITY_RANGE = USER_STUDY_DISSIMILARITY_UPPER_BOUND - USER_STUDY_DISSIMILARITY_LOWER_BOUND
 
@@ -137,7 +141,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
         } 
 
         const lastFrameTime = this.tracks.get(id)?.frameTimes.slice(-1)[0] ?? -Infinity
-        if (frameTime <= lastFrameTime) {
+        if (frameTime < lastFrameTime) {
             throw new Error("Frame time must be increasing")
         }
 
@@ -216,7 +220,7 @@ export class UserDanceEvaluator {
         )
     }
 
-    getPerformanceSummary(id: string) {
+    getPerformanceSummary(id: string): Record<string, any> | null {
         const track = this.recorder.tracks.get(id)!
         if (!track) {
             return null;
@@ -227,7 +231,16 @@ export class UserDanceEvaluator {
             const sumOfMetric = track.evaluation[key].reduce((runningTotal, frameValue) => runningTotal + frameValue, 0)
             summary[key] = sumOfMetric / track.evaluation[key].length
             return summary
-        }, {} as EvaluationV1)
+        }, {} as Record<string, number>)
+        
+        
+        const frameCount = track.frameTimes.length
+        const duration = track.frameTimes[frameCount - 1] - track.frameTimes[0]
+        const fps = frameCount / duration
+
+        performanceSummary["frameCount"] = frameCount
+        performanceSummary["duration"] = duration
+        performanceSummary["fps"] = fps
 
         return performanceSummary
     }

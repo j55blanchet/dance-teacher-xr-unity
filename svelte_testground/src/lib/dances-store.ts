@@ -1,7 +1,7 @@
 import { readable, writable, derived } from 'svelte/store';
 import Papa from 'papaparse';
 
-import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks } from '$lib/mediapipe-utils';
+import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 
 // import json data
 import dancesData from '$lib/data/bundle/dances.json';
@@ -38,15 +38,38 @@ export function makeDanceTreeSlug(danceTree: DanceTree): string {
     return encodeURIComponent(`${danceTree.clip_relativepath}${URI_COMPONENT_SEPARATOR}${danceTree.tree_name}`)
 }
 
-export function getDanceAndDanceTreeFromSlog(slug: string): [Dance | null, DanceTree | null] {
+export function getDanceAndDanceTreeFromDanceTreeId(slug: string): [Dance | null, DanceTree | null] {
     const [clipRelativeStem, tree_name] = decodeURIComponent(slug).split(URI_COMPONENT_SEPARATOR);
     // @ts-ignore
     const matchingDance: Dance | null = dances.find((dance) => dance.clipRelativeStem === clipRelativeStem) ?? null;
+
     // @ts-ignore
     const matchingDanceTrees: DanceTrees = danceTrees[clipRelativeStem] ?? []
     const matchingDanceTree = matchingDanceTrees.find(danceTree => danceTree.tree_name === tree_name) ?? null;    
     return [matchingDance, matchingDanceTree];
     
+}
+
+function FindDanceTreeNodeRecursive(node: DanceTreeNode, nodeId: string): DanceTreeNode | null {
+    for (const child of node.children) {
+        if (child.id === nodeId) {
+            // @ts-ignore
+            return child;
+        }
+        // @ts-ignore
+        const foundNode = FindDanceTreeNodeRecursive(child, nodeId);
+        if (foundNode) {
+            return foundNode;
+        }
+    }
+    return null;
+}
+
+export function findDanceTreeNode(danceTree: DanceTree, nodeId: string): DanceTreeNode | null {
+    if (danceTree.root.id === nodeId) {
+        return danceTree.root;
+    }
+    return FindDanceTreeNodeRecursive(danceTree.root, nodeId);
 }
 
 export function getDanceVideoSrc(dance: Dance): string {

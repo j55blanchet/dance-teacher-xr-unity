@@ -1,11 +1,11 @@
 <script lang="ts">
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
-    import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/pose-estimation.worker';
-    import { GetPixelLandmarksFromMPResult, type Pose2DPixelLandmarks } from "$lib/mediapipe-utils";
+    import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/pose-estimation.worker';
+    import { GetPixelLandmarksFromMPResult, type Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
     import { DrawingUtils, PoseLandmarker, type PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
-    import { webcamStream } from './streams';
-    import WebcamSelector from "./WebcamSelector.svelte";
+    import { webcamStream } from '../webcam/streams';
+    import WebcamSelector from "../webcam/WebcamSelector.svelte";
 
     const INITIALIZING_FRAME_ID = -1000;
 
@@ -48,7 +48,9 @@
     
     let mirrorStartedTime = new Date().getTime();
     let lastFrameSent = -1;
+    let lastFrameReceivedTime = new Date().getTime();
     let lastFrameDecoded = -1;
+    const poseEstimationInterFrameIdleTime = 50; // wait 50ms before dispatching the next frame.
 
     let videoWidth = 1;
     let videoHeight = 1;
@@ -99,6 +101,8 @@
 
         poseEstimationWorker.onmessage = (msg: any) => {
             if (msg.data.type === PoseEsimationResponses.poseEstimation) {
+
+                lastFrameReceivedTime = new Date().getTime();
 
                 if (msg.data.frameId === INITIALIZING_FRAME_ID) {
                     // Resolve the pose estimation primed promise, so that 
@@ -255,8 +259,13 @@
 
         // Send a new frame to be processed by the pose estimation worker
         // only after the last frame has been processed.
-        if (lastFrameDecoded == lastFrameSent && poseEstimationEnabled && poseEstimationCheckFunction()) {
-            const timeSinceStart = new Date().getTime() - mirrorStartedTime;
+        const currentTime = new Date().getTime();
+        const timeSinceLastFrameReceived = currentTime - lastFrameReceivedTime;
+        if (lastFrameDecoded == lastFrameSent && 
+            timeSinceLastFrameReceived > poseEstimationInterFrameIdleTime && 
+            poseEstimationEnabled && poseEstimationCheckFunction()) 
+        {
+            const timeSinceStart = currentTime - mirrorStartedTime;
             lastFrameSent = renderedFrameId;
             dispatch('poseEstimationFrameSent', { frameId: renderedFrameId, timestampMs: timeSinceStart });
             poseEstimationWorker?.postMessage({

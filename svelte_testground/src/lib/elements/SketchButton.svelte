@@ -1,7 +1,7 @@
 <script lang="ts">
 </script>
 
-<button>
+<button on:click>
     <span>
         <slot></slot>
     </span>
@@ -32,7 +32,7 @@ button:active {
 button {
     cursor: pointer;
     position: relative;
-    float: left;
+    /* float: left; */
     font: normal 22px/25px "Patrick Hand", sans-serif;
     margin-right: 10px;
     text-transform: lowercase;

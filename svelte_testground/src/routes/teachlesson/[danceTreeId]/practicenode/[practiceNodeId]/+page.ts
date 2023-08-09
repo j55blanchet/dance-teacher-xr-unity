@@ -1,14 +1,15 @@
 import { error } from '@sveltejs/kit';
 
-import { getDanceAndDanceTreeFromSlog } from '$lib/dances-store.js';
+import { getDanceAndDanceTreeFromDanceTreeId, findDanceTreeNode } from '$lib/dances-store.js';
 
 import type { PageLoad } from './$types';
+
 
 /** @type {import('./$types').PageLoad} */
 export function load({ params })  {
 
-    const slug: string = params.slug;
-    const [dance, danceTree] = getDanceAndDanceTreeFromSlog(slug);
+    const danceTreeId: string = params.danceTreeId;
+    const [dance, danceTree] = getDanceAndDanceTreeFromDanceTreeId(danceTreeId);
 
     if (!dance) {
         throw  error(404, 'Dance Not found');
@@ -17,9 +18,12 @@ export function load({ params })  {
         throw  error(404, 'Dance Tree Not found');   
     }
 
+    const danceTreeNode = findDanceTreeNode(danceTree, params.practiceNodeId);
+
     return {
         dance: dance,
-        danceTree: danceTree
+        danceTree: danceTree,
+        danceTreeNode: danceTreeNode,
     }
 }
 
