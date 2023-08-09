@@ -68,15 +68,15 @@ onDestroy(() => {
 <div>
     <video 
         bind:this={videoElement}
-        {currentTime}    
-        {playbackRate}
-        {paused}
-        {volume}
-        {muted}
-        {videoWidth}
-        {videoHeight}
-        {duration}
-        {ended}
+        bind:currentTime
+        bind:playbackRate
+        bind:paused
+        bind:volume
+        bind:muted
+        bind:videoWidth
+        bind:videoHeight
+        bind:duration
+        bind:ended
         class:flipped={flipHorizontal}
     >
         <slot />

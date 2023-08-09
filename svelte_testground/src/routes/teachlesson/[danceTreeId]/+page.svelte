@@ -8,6 +8,8 @@ import { getDanceVideoSrc } from '$lib/dances-store';
 import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 
+import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
+
 /** @type {import('./$types').PageData} */    
 export let data;
 const dance: Dance = data.dance;
@@ -18,12 +20,14 @@ $: {
     danceSrc = getDanceVideoSrc(dance);
 }
 
-let videoElement: HTMLVideoElement;
+let videoPaused: boolean = true;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
 let currentPlayingNode: DanceTreeNode | null = null;
 let showProgressNodes: Array<DanceTreeNode> = [];
+
+let videoDuration: number;
 
 $: {
     showProgressNodes = currentPlayingNode !== null ? 
@@ -31,19 +35,21 @@ $: {
         [];
 }
 $: if (videoCurrentTime > stopTime) {
-    videoElement.pause();
+    videoPaused = true;
 }
 
 async function onNodeClicked(e: any) {
     console.log('node clicked', e.detail);
 
     const selectedTreeNode = e.detail as DanceTreeNode;
-    currentPlayingNode = selectedTreeNode;
-
+    videoPaused = true;
     stopTime = selectedTreeNode.end_time;
+    currentPlayingNode = selectedTreeNode;
+    await tick();
     videoCurrentTime = selectedTreeNode.start_time;
     await tick();
-    videoElement.play();
+    videoPaused = false;
+    // videoElement.play();
 }
 
 function showProgress(node: DanceTreeNode) {
@@ -112,14 +118,16 @@ async function practiceClicked() {
                 {videoPlaybackSpeed.toFixed(1)}x
             </div>
             <div class="control">
-                
+            <!-- {videoDuration}-{videoPaused ? "Paused" : "Playing"}  -->
             </div>
         </div>    
-        <video bind:this={videoElement}
-               bind:currentTime={videoCurrentTime}
-               bind:playbackRate={videoPlaybackSpeed}>
+        <VideoWithSkeleton bind:currentTime={videoCurrentTime}
+               bind:playbackRate={videoPlaybackSpeed}
+               bind:duration={videoDuration}
+               bind:paused={videoPaused}
+               >
             <source src={danceSrc} type="video/mp4" />
-        </video>
+        </VideoWithSkeleton>
     </div>
     <!-- <dialog id="practicePage" bind:this={practicePageDialogElement}>
         <button class="button outlined thin close" aria-label="Close" on:click={() => {practicePageActive = false; practicePageDialogElement.close();}}>X</button>

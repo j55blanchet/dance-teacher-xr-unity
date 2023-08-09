@@ -9,12 +9,15 @@ import { PoseLandmarker } from "@mediapipe/tasks-vision";
 // export type PostMessages = 'request-pose-estimation'; 
 export enum ResponseMessages {
     poseEstimation = 'poseEstimation',
-    error = 'error'
+    error = 'error',
+    resetComplete = 'resetComplete',
+    resetError = 'resetError'
 };
 
 // Create enum of PoseMessages
 export enum PostMessages {
-    requestPoseEstimation = 'requestPoseEstimation'
+    requestPoseEstimation = 'requestPoseEstimation',
+    reset = 'reset'
 };
 
 const IS_WEB_WORKER = false;
@@ -67,7 +70,14 @@ export default class PoseEstimationWorker {
             }
         })
 
-        this.responseFunctions.set(PostMessages.requestPoseEstimation, this.handlePoseEstimationRequest.bind(this));
+        this.responseFunctions.set(
+            PostMessages.requestPoseEstimation, 
+            this.handlePoseEstimationRequest.bind(this)
+        );
+        this.responseFunctions.set(
+            PostMessages.reset, 
+            this.handleReset.bind(this)
+        );
     }
 
     /**
@@ -111,9 +121,24 @@ export default class PoseEstimationWorker {
             return;
         }
 
-        
-
         this.responseFunctions.get(msgData.type)?.(frameId, msgData);
+    }
+
+    private handleReset(frameId: number, msgData: any) {
+        this.poseLandmarker?.close();
+        this.poseLandmarker = null;
+        this.ready = new Promise(async (res, rej) => {
+            try {
+                this.poseLandmarker = await loadPoseLandmarkerModel();
+                res();
+                this.respondWithMessage(ResponseMessages.resetComplete, frameId, {});
+            } catch (e) {
+                rej(e);
+                this.respondWithMessage(ResponseMessages.resetError, frameId, {
+                    error: e
+                });
+            }
+        })
     }
 
     private handlePoseEstimationRequest(frameId: number, msgData: any) {

@@ -126,16 +126,26 @@
                     result: msg.data.result,
                     pixelLMs: pixel2Dlandmarks, 
                 });
-            } else if (msg.data.type === PoseEsimationResponses.error) {
-                console.error(msg.data.error);
+            } else if (msg.data.type === PoseEsimationResponses.error 
+                      || msg.data.type === PoseEsimationResponses.resetError
+            ) {
+                console.error("PoseEstim Error Message", msg.data.type, msg.data.error);
 
                 if (msg.data.frameId === lastFrameSent) {
                     lastFrameSent = -1;
                     lastDecodedData = null;
                     last2DPixelLandmarks = null;
                 }
+            } else if (msg.data.type == PoseEsimationResponses.resetComplete) {
+                console.log("Pose Estimation Reset Complete");
             }
         };
+
+        // Send reset message
+        worker.postMessage({
+            type: PoseEstimationMessages.reset,
+            frameId: new Date().getTime(),
+        });
 
         return poseEstimationWorker.ready;
     }
