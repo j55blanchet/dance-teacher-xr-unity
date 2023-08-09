@@ -1,4 +1,4 @@
-import type { PoseLandmarkerResult } from '@mediapipe/tasks-vision'
+import type { NormalizedLandmark, PoseLandmarkerResult } from '@mediapipe/tasks-vision'
 
 export const PoseLandmarkIds = Object.freeze({
     nose: 0,
@@ -74,17 +74,28 @@ function convertCamelcaseStringToSnakeCase(camelCaseString: string): string {
 
 export const PoseLandmarkKeysUpperSnakeCase = Object.freeze(PoseLandmarkKeys.map(k => convertCamelcaseStringToSnakeCase(k).toUpperCase()));
 
-
-
 export function GetPixelLandmarksFromMPResult(result: PoseLandmarkerResult, srcWidth: number, srcHeight: number): Pose2DPixelLandmarks | null {
     if ((result?.landmarks?.length ?? 0) <= 0) return null;
     
     const firstDetectedPerson = result.landmarks[0];
     
     return firstDetectedPerson.map((lm, i) => ({
-        x: lm.x,
-        y: lm.y,
-        dist_from_camera: lm.z,
+        x: lm.x * srcWidth,
+        y: lm.y * srcHeight,
+        dist_from_camera: lm.z * srcWidth,
         visibility: (lm as any)["visibility"] ?? 1.0,
+    }));
+}
+
+export function GetNormalizedLandmarksFromPixelLandmarks(
+    pixelLandmarks: Pose2DPixelLandmarks,
+    srcWidth: number,
+    srcHeight: number,
+): NormalizedLandmark[] {
+    return pixelLandmarks.map(lm => ({
+        x: lm.x / srcWidth,
+        y: lm.y / srcHeight,
+        z: lm.dist_from_camera / srcWidth,
+        visibility: lm.visibility,
     }));
 }

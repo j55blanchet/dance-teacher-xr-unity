@@ -1,8 +1,8 @@
 <script>
-	import VirtualMirror from '$lib/VirtualMirror.svelte';
-	import SketchButton from '$lib/SketchButton.svelte';
+	import VirtualMirror from '$lib/elements/VirtualMirror.svelte';
+	import SketchButton from '$lib/elements/SketchButton.svelte';
 
-	import { webcamStream } from '$lib/streams';
+	import { webcamStream } from '$lib/webcam/streams';
 
 	import './styles.scss';
 	import { onMount } from "svelte";
@@ -38,6 +38,7 @@
 
 	<div class="debug">
 		{$webcamStream}
+		<slot name="debug" />
 	</div>
 </div>
 

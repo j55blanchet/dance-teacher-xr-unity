@@ -1,15 +1,15 @@
 <script lang="ts">
 
-import type PracticeActivity from "./PracticeActivity";
+import type PracticeActivity from "./model/PracticeActivity";
 import type { Dance, DanceTreeNode, Pose2DReferenceData } from "./dances-store";
 import * as evalAI from './ai/Evaluation';
 
 
-import VirtualMirror from "./VirtualMirror.svelte";
+import VirtualMirror from "./elements/VirtualMirror.svelte";
 import { getDanceVideoSrc, loadPoseInformation } from "./dances-store";
 import { onMount } from "svelte";
-import { webcamStream } from './streams';
-	import type { Pose2DPixelLandmarks } from './mediapipe-utils';
+import { webcamStream } from './webcam/streams';
+	import type { Pose2DPixelLandmarks } from './webcam/mediapipe-utils';
 
 
 export let dance: Dance;
@@ -141,7 +141,10 @@ export async function reset() {
 }
 
 let poseEstimationCorrespondances: Map<number, number> = new Map();
-let lastPoseEstimationTimestamp: number = -1;
+let lastPoseEstimationVideoTime: number = -1;
+let lastPoseEstimationSentTimestamp: Date = new Date();
+const maximumPoseEstimationFrequencyHz = 10;
+const minimumPoseEsstimationIntervalMs = 1000 / maximumPoseEstimationFrequencyHz;
 
 function poseEstimationFrameSent(e: any) {
     // Associate the webcam frame being sent for pose estimation
@@ -149,11 +152,11 @@ function poseEstimationFrameSent(e: any) {
     // compare the user's pose with the dance pose at that time.
     console.log("poseEstimationFrameSent", e.detail.frameId, videoElement.currentTime);
     poseEstimationCorrespondances.set(e.detail.frameId, videoElement.currentTime);
-    lastPoseEstimationTimestamp = videoElement.currentTime;
+    lastPoseEstimationVideoTime = videoElement.currentTime;
 }
 
 function shouldSendNextPoseEstimationFrame() {
-    if (lastPoseEstimationTimestamp === videoElement.currentTime) {
+    if (lastPoseEstimationVideoTime === videoElement.currentTime && lastPoseEstimationSentTimestamp.getTime() > Date.now() - minimumPoseEsstimationIntervalMs) {
         return false;
     }
     return true;
@@ -161,6 +164,11 @@ function shouldSendNextPoseEstimationFrame() {
 
 function poseEstimationFrameReceived(e: any) {
     console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
+
+    if (state !== 'playing') {
+        return;
+    }
+
     if (!referenceDancePoses) {
         console.log("No dance pose information", e);
         return;
@@ -187,12 +195,13 @@ onMount(() => {
     // after the video starts playing.
     videoElement.currentTime = practiceActivity?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
+    reset();
     return {}
 })
 
 </script>
 
-<section>
+<section class="practicePage">
     <div>
         <video bind:this={videoElement}
                bind:currentTime={videoCurrentTime}
