@@ -67,7 +67,8 @@ $: {
 
 // Auto-pause the video when the practice activity is over
 $: {
-    if (practiceActivity?.endTime && videoCurrentTime >= practiceActivity.endTime || videoCurrentTime >= videoDuration) {
+    if ((practiceActivity?.endTime && videoCurrentTime >= practiceActivity.endTime) || 
+        (videoDuration > 0 && videoCurrentTime >= videoDuration)) {
         isVideoPaused = true;
         performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
         state = "feedback";
@@ -195,8 +196,6 @@ onMount(() => {
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
 
-    
-    videoElement?.play();
     return {}
 })
 
@@ -237,7 +236,6 @@ onMount(() => {
     {#if state === "feedback"}
     <div>
         <h1>Feedback</h1>
-        <label>Video Paused<input type="checkbox" bind:checked={isVideoPaused}></label>
         <button class="button outlined thin" on:click={reset}>Play Again</button>
         <pre>{JSON.stringify(performanceSummary, null, 2)}</pre>
     </div>
