@@ -5,7 +5,7 @@ import { onDestroy, onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import { DrawingUtils, type NormalizedLandmark } from "@mediapipe/tasks-vision";
 
-let videoElement: HTMLVideoElement;
+export let videoElement: HTMLVideoElement | null = null;
 let canvasElement: HTMLCanvasElement;
 let canvasCtx: CanvasRenderingContext2D | null = null;
 let drawingUtils: DrawingUtils | null = null;
@@ -17,6 +17,7 @@ export let volume: number = 1.0;
 export let muted: boolean = false;
 export let videoWidth: number = 0;
 export let videoHeight: number = 0;
+export let flipHorizontal: boolean = false;
 
 export let duration = 0;
 export let ended: boolean = false;
@@ -76,6 +77,7 @@ onDestroy(() => {
         {videoHeight}
         {duration}
         {ended}
+        class:flipped={flipHorizontal}
     >
         <slot />
     </video>
@@ -88,6 +90,8 @@ div {
     display: relative;
     flex-shrink: 1;
     flex-grow: 1;
+    max-height: 100%;
+    max-width: 100%;
 }
 
 video {
@@ -103,6 +107,10 @@ canvas {
     left: 0;
     right: 0;
     bottom: 0;
+}
+
+.flipped {
+    transform: scaleX(-1);
 }
 
 </style>

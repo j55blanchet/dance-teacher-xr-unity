@@ -4,7 +4,7 @@ import type PracticeActivity from "./model/PracticeActivity";
 import type { Dance, DanceTreeNode, Pose2DReferenceData } from "./dances-store";
 import * as evalAI from './ai/Evaluation';
 
-
+import VideoWithSkeleton from "./elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "./elements/VirtualMirror.svelte";
 import { getDanceVideoSrc, loadPoseInformation } from "./dances-store";
 import { onMount } from "svelte";
@@ -16,6 +16,8 @@ export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
 
 let state: "waitWebcam" | "waitStart" | "playing" | "feedback" = "waitWebcam";
+$: console.log("PracticePage state", state);
+
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
 $: {
@@ -37,6 +39,8 @@ let videoElement: HTMLVideoElement;
 let virtualMirrorElement: VirtualMirror;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
+let videoDuration: number = 0;
+$: console.log("VideoDuration", videoDuration);
 let isVideoPaused: boolean = true;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
@@ -63,8 +67,8 @@ $: {
 
 // Auto-pause the video when the practice activity is over
 $: {
-    if (practiceActivity?.endTime && videoCurrentTime >= practiceActivity.endTime || videoCurrentTime >= videoElement?.duration) {
-        videoElement.pause();
+    if (practiceActivity?.endTime && videoCurrentTime >= practiceActivity.endTime || videoCurrentTime >= videoDuration) {
+        isVideoPaused = true;
         performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
         state = "feedback";
     }
@@ -94,10 +98,8 @@ async function startCountdown() {
     trialId = crypto.randomUUID();
 
     countdownActive = true;
-    if (videoElement) {
-        videoElement.pause();
-        videoElement.currentTime = practiceActivity?.startTime ?? 0;
-    }
+    isVideoPaused = true;
+    videoCurrentTime = practiceActivity?.startTime ?? 0;
 
     countdown = 5;
     await waitSecs(beatDuration);
@@ -112,10 +114,7 @@ async function startCountdown() {
     await waitSecs(beatDuration);
 
     countdown = -1;
-    if (videoElement) {
-        videoElement.play();
-    }
-
+    isVideoPaused = false;
     countdownActive = false;
 }
 
@@ -124,10 +123,9 @@ export async function reset() {
     currentActivityStepIndex = 0;
     state = "waitWebcam";
 
-    if (videoElement) {
-        videoElement.pause();
-        videoElement.currentTime = practiceActivity?.startTime ?? 0;
-    }
+    isVideoPaused = true;
+    videoCurrentTime = practiceActivity?.startTime ?? 0;
+    
 
     await virtualMirrorElement.webcamStartedPromise;    
     state = "waitStart";
@@ -150,13 +148,13 @@ function poseEstimationFrameSent(e: any) {
     // Associate the webcam frame being sent for pose estimation
     // with the current video timestamp, so that we can later
     // compare the user's pose with the dance pose at that time.
-    console.log("poseEstimationFrameSent", e.detail.frameId, videoElement.currentTime);
-    poseEstimationCorrespondances.set(e.detail.frameId, videoElement.currentTime);
-    lastPoseEstimationVideoTime = videoElement.currentTime;
+    console.log("poseEstimationFrameSent", e.detail.frameId, videoCurrentTime);
+    poseEstimationCorrespondances.set(e.detail.frameId, videoCurrentTime);
+    lastPoseEstimationVideoTime = videoCurrentTime;
 }
 
 function shouldSendNextPoseEstimationFrame() {
-    if (lastPoseEstimationVideoTime === videoElement.currentTime && lastPoseEstimationSentTimestamp.getTime() > Date.now() - minimumPoseEsstimationIntervalMs) {
+    if (lastPoseEstimationVideoTime === videoCurrentTime && lastPoseEstimationSentTimestamp.getTime() > Date.now() - minimumPoseEsstimationIntervalMs) {
         return false;
     }
     return true;
@@ -193,9 +191,12 @@ onMount(() => {
     // Prepare pose estimation, so that it'll be ready 
     // when we need it, as opposed to creating the model
     // after the video starts playing.
-    videoElement.currentTime = practiceActivity?.startTime ?? 0;
+    videoCurrentTime = practiceActivity?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
+
+    
+    videoElement?.play();
     return {}
 })
 
@@ -203,15 +204,27 @@ onMount(() => {
 
 <section class="practicePage">
     <div>
-        <video bind:this={videoElement}
+        <!-- <video 
                bind:currentTime={videoCurrentTime}
                bind:playbackRate={videoPlaybackSpeed}
                bind:paused={isVideoPaused}
+               bind:duration={videoDuration}
                class="shrinkingVideo"
                class:flipped={flipVideo}
                >
             <source src={danceSrc} type="video/mp4" />
-        </video>
+        </video> -->
+
+        <VideoWithSkeleton
+            bind:videoElement={videoElement}
+            bind:currentTime={videoCurrentTime}
+            bind:playbackRate={videoPlaybackSpeed}
+            bind:paused={isVideoPaused}
+            bind:duration={videoDuration}
+            flipHorizontal={flipVideo}
+        >
+            <source src={danceSrc} type="video/mp4" />
+        </VideoWithSkeleton>
 
         {#if countdown >= 0}
             <div class="countdown">
@@ -224,6 +237,7 @@ onMount(() => {
     {#if state === "feedback"}
     <div>
         <h1>Feedback</h1>
+        <label>Video Paused<input type="checkbox" bind:checked={isVideoPaused}></label>
         <button class="button outlined thin" on:click={reset}>Play Again</button>
         <pre>{JSON.stringify(performanceSummary, null, 2)}</pre>
     </div>
