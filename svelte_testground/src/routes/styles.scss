@@ -20,7 +20,8 @@
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
 	--max-line-width: 50ch;
-	--std-border-radius: 1rem;
+	// --std-border-radius: 1rem;
+	--std-border-radius: 5% 1% 5% 1%/1% 5% 1% 5%;
 	font-family: var(--font-body);
 	color: var(--color-text);
 }

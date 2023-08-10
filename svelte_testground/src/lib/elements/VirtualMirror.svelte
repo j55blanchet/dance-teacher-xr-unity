@@ -6,19 +6,11 @@
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from '../webcam/streams';
     import WebcamSelector from "../webcam/WebcamSelector.svelte";
+    import { getContentSize } from '$lib/utils/resizing';
 
     const INITIALIZING_FRAME_ID = -1000;
 
     const dispatch = createEventDispatcher();
-
-    function getContentSize (element: HTMLElement) {
-        var styles = getComputedStyle(element)
-
-        return [
-            element.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight),
-            element.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom)
-        ]
-    }
 
     export let poseEstimationEnabled: boolean = false;
     export let drawSkeleton: boolean = false;

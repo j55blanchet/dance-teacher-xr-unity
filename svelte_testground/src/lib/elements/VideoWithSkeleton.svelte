@@ -3,12 +3,14 @@
 import type { Dance, Pose2DReferenceData } from "$lib/dances-store";
 import { onDestroy, onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-import { DrawingUtils, type NormalizedLandmark } from "@mediapipe/tasks-vision";
+import { DrawingUtils, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
+import { getContentSize } from "$lib/utils/resizing";
 
-export let videoElement: HTMLVideoElement | null = null;
+let videoElement: HTMLVideoElement;
 let canvasElement: HTMLCanvasElement;
 let canvasCtx: CanvasRenderingContext2D | null = null;
 let drawingUtils: DrawingUtils | null = null;
+export let fitToFlexbox: boolean = false;
 
 export let currentTime: number = 0;
 export let playbackRate: number = 1.0;
@@ -19,11 +21,35 @@ export let videoWidth: number = 0;
 export let videoHeight: number = 0;
 export let flipHorizontal: boolean = false;
 
+let videoAspectRatio = 1;
+$: if (videoWidth > 0 && videoHeight > 0) {
+    videoAspectRatio = videoWidth / videoHeight;
+}
+
 export let duration = 0;
 export let ended: boolean = false;
 
 export let dance: Dance | null = null;
 export let poseData: Pose2DReferenceData | null = null;
+export let drawSkeleton: boolean = true;
+
+let videoElementWidth: number = 0;
+let videoElementHeight: number = 0;
+let videoElementAspectRatio = 1;
+$: if (videoElementWidth > 0 && videoElementHeight > 0) {
+    videoElementAspectRatio = videoElementWidth / videoElementHeight;
+}
+
+$: {
+    if (canvasElement && videoElementAspectRatio > videoAspectRatio) {
+        canvasElement.width = videoElementWidth;
+        canvasElement.height = videoElementHeight * videoAspectRatio;
+    }
+    else if (canvasElement && videoElementAspectRatio <= videoAspectRatio) {
+        canvasElement.width = videoElementWidth;
+        canvasElement.height = videoElementWidth / videoAspectRatio;
+    }
+}
 
 // Keep track of the current pose to draw
 let poseToDraw: NormalizedLandmark[] | null = null;
@@ -34,7 +60,10 @@ $: {
 
 let requestedAnimationFrameId: number | null = null;
 
+$: canvasElement, canvasCtx, poseToDraw, drawSkeleton, drawCanvas();
+
 function drawCanvas() {
+    if (!canvasElement) return;
     if (!canvasCtx) {
         canvasCtx = canvasElement.getContext('2d');
     }
@@ -43,29 +72,49 @@ function drawCanvas() {
         drawingUtils = new DrawingUtils(canvasCtx);
     }
 
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    if (!poseToDraw) { return; }
+    // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-    drawingUtils.drawConnectors(poseToDraw, undefined, {
-    });
-    drawingUtils.drawLandmarks(poseToDraw, {
-    });
-    
-    requestedAnimationFrameId = requestAnimationFrame(drawCanvas);
+    // Draw a red test circle in middle of the canvas
+    canvasCtx.strokeStyle = 'red';
+    canvasCtx.beginPath();
+    canvasCtx.arc(canvasElement.width / 2, canvasElement.height / 2, 50, 0, 2 * Math.PI);
+    canvasCtx.stroke();
+
+    if (!poseToDraw || !drawSkeleton) { return; }
+
+    console.log("redrawing pose")
+    drawingUtils.drawConnectors(
+        poseToDraw, 
+        PoseLandmarker.POSE_CONNECTIONS, 
+        {}
+    );
+    drawingUtils.drawLandmarks(
+        poseToDraw, 
+    {}
+    );
 }
 
+
 onMount(() => {
-    requestedAnimationFrameId = requestAnimationFrame(drawCanvas);
-});
-onDestroy(() => {
-    if (requestedAnimationFrameId !== null) {
-        cancelAnimationFrame(requestedAnimationFrameId);
+    // requestedAnimationFrameId = requestAnimationFrame(drawCanvas);
+    const resizeObserver = new ResizeObserver(entries => {
+        if (!videoElement) return;
+        const [width, height] = getContentSize(videoElement)
+        videoElementWidth = width;
+        videoElementHeight = height;
+    })
+    resizeObserver.observe(videoElement);
+    return () => {
+        // resizeObserver.unobserve(videoElement);
+        // if (requestedAnimationFrameId !== null) {
+        //     cancelAnimationFrame(requestedAnimationFrameId);
+        // }
     }
-})
+});
 
 </script>
 
-<div>
+<div class:fitToFlexbox={fitToFlexbox} class="videoWithSkeleton">
     <video 
         bind:this={videoElement}
         bind:currentTime
@@ -81,36 +130,67 @@ onDestroy(() => {
     >
         <slot />
     </video>
-    <canvas bind:this={canvasElement}></canvas>
+    <div class="overlay">
+        <canvas bind:this={canvasElement}></canvas>
+    </div>
+    <div class="overlay debug">
+        <div><strong>Pose Data:</strong>&nbsp;{poseData ? "Exists" : "Null"}</div>
+        <div><strong>Pose To Draw:</strong>&nbsp;{poseToDraw ? "Exists" : "Null"}</div>
+        <div><strong>Skeleton Enabled:</strong>&nbsp;{drawSkeleton}</div>
+    </div>
 </div>
 
 <style lang="scss">
 
-div {
-    display: relative;
+.videoWithSkeleton {
+    position: relative;
+    display: flex;
     flex-shrink: 1;
     flex-grow: 1;
-    max-height: 100%;
     max-width: 100%;
 }
 
 video {
-    width: 100%;
+    max-width: 100%;
+    // width: 100%;
     height: 100%;
+    border-radius: var(--std-border-radius);
 }
 
-canvas {
+.overlay {
     pointer-events: none;
-    background: transparent;
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.debug {
+    bottom: auto;
+    position: relative;
+}
+canvas {
+    background: transparent;
 }
 
 .flipped {
     transform: scaleX(-1);
+}
+
+.fitToFlexbox {
+    height: 0;
+    align-items: center;
+    flex-direction: column;
+}
+.fitToFlexbox video {
+    // height: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
 }
 
 </style>

@@ -15,6 +15,9 @@ export let data;
 const dance: Dance = data.dance;
 const danceTree: DanceTree = data.danceTree;
 
+// Pin the video small, so the flexbox system can auto-size the height
+let fitVideoToFlexbox = true;
+
 let danceSrc: string = '';
 $: {
     danceSrc = getDanceVideoSrc(dance);
@@ -120,14 +123,18 @@ async function practiceClicked() {
             <div class="control">
             <!-- {videoDuration}-{videoPaused ? "Paused" : "Playing"}  -->
             </div>
-        </div>    
+        </div>
+        
         <VideoWithSkeleton bind:currentTime={videoCurrentTime}
-               bind:playbackRate={videoPlaybackSpeed}
-               bind:duration={videoDuration}
-               bind:paused={videoPaused}
-               >
+            bind:playbackRate={videoPlaybackSpeed}
+            bind:duration={videoDuration}
+            bind:paused={videoPaused}
+            bind:fitToFlexbox={fitVideoToFlexbox}
+            drawSkeleton={false}
+            >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
+    
     </div>
     <!-- <dialog id="practicePage" bind:this={practicePageDialogElement}>
         <button class="button outlined thin close" aria-label="Close" on:click={() => {practicePageActive = false; practicePageDialogElement.close();}}>X</button>
@@ -145,8 +152,8 @@ async function practiceClicked() {
 .preview {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+    align-items: stretch;
+    justify-content: stretch;
     overflow: hidden;
     padding-bottom: 1rem;
 
@@ -158,6 +165,14 @@ async function practiceClicked() {
         // max-height: 100%;
         border-radius: 0.5em;
         height: 0
+    }
+
+    & .videoContainer {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 1rem;
+        height: 0;
+        overflow: hidden;
     }
 }
 
@@ -194,7 +209,8 @@ div:has(.practiceLink) {
 
 .control {
     display: flex;
-    flex-direction: row;
+    flex-direction: row; 
     align-items: center;
+    justify-content: center;
 }
 </style>
