@@ -300,7 +300,7 @@
             )
             drawingUtils?.drawLandmarks(
                 detectedPoseLandmarks, {
-                    radius: (data) => 5 // DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1)
+                    radius: (data) => DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1)
                 }
             );
         }

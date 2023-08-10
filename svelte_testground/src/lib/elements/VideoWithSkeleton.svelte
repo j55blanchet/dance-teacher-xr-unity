@@ -5,6 +5,7 @@ import { onDestroy, onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import { DrawingUtils, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
+	import { object_without_properties } from "svelte/internal";
 
 let videoElement: HTMLVideoElement;
 let canvasElement: HTMLCanvasElement;
@@ -55,7 +56,8 @@ $: {
 let poseToDraw: NormalizedLandmark[] | null = null;
 $: {
     const pixelLandmarks = poseData?.getReferencePoseAtTime(currentTime) ?? null;
-    poseToDraw = pixelLandmarks ? GetNormalizedLandmarksFromPixelLandmarks(pixelLandmarks, dance?.width ?? 1, dance?.height ?? 1) : null;
+    console.log("New reference pose (pix landmarks)", pixelLandmarks, videoWidth, videoHeight)
+    poseToDraw = pixelLandmarks ? GetNormalizedLandmarksFromPixelLandmarks(pixelLandmarks, videoWidth, videoHeight) : null;
 }
 
 let requestedAnimationFrameId: number | null = null;
@@ -72,26 +74,35 @@ function drawCanvas() {
         drawingUtils = new DrawingUtils(canvasCtx);
     }
 
-    // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-    // Draw a red test circle in middle of the canvas
-    canvasCtx.strokeStyle = 'red';
-    canvasCtx.beginPath();
-    canvasCtx.arc(canvasElement.width / 2, canvasElement.height / 2, 50, 0, 2 * Math.PI);
-    canvasCtx.stroke();
+    // Clear the canvas from the previous frame
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
     if (!poseToDraw || !drawSkeleton) { return; }
 
-    console.log("redrawing pose")
+    console.log("redrawing pose", poseToDraw)
     drawingUtils.drawConnectors(
         poseToDraw, 
         PoseLandmarker.POSE_CONNECTIONS, 
-        {}
+        {
+            color: 'white',
+            lineWidth: 4,
+        }
     );
-    drawingUtils.drawLandmarks(
+    drawingUtils.drawConnectors(
         poseToDraw, 
-    {}
+        PoseLandmarker.POSE_CONNECTIONS, 
+        {
+            color: 'black',
+            lineWidth: 2,
+        }
     );
+    // drawingUtils.drawLandmarks(
+    //     poseToDraw, 
+    // {
+    //     color: 'red',
+    //     radius: 1,
+    // }
+    // );
 }
 
 
@@ -133,11 +144,11 @@ onMount(() => {
     <div class="overlay">
         <canvas bind:this={canvasElement}></canvas>
     </div>
-    <div class="overlay debug">
+    <!-- <div class="overlay debug">
         <div><strong>Pose Data:</strong>&nbsp;{poseData ? "Exists" : "Null"}</div>
         <div><strong>Pose To Draw:</strong>&nbsp;{poseToDraw ? "Exists" : "Null"}</div>
         <div><strong>Skeleton Enabled:</strong>&nbsp;{drawSkeleton}</div>
-    </div>
+    </div> -->
 </div>
 
 <style lang="scss">
@@ -172,7 +183,6 @@ video {
 
 .debug {
     bottom: auto;
-    position: relative;
 }
 canvas {
     background: transparent;

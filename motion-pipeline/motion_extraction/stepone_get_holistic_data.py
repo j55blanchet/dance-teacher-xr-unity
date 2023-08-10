@@ -165,9 +165,9 @@ def transform_to_pose2d_csvrow(
             )
             for pose2d_lm in 
             [
-                (frame_data.pose_world_landmarks.landmark[landmark_i] if
-                    hasattr(frame_data, 'pose_world_landmarks') and 
-                    frame_data.pose_world_landmarks is not None 
+                (frame_data.pose_landmarks.landmark[landmark_i] if
+                    hasattr(frame_data, 'pose_landmarks') and 
+                    frame_data.pose_landmarks is not None 
                 else None)
                 for landmark_i in range(len(PoseLandmark))
             ]
