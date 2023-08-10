@@ -1,8 +1,7 @@
 <script lang="ts">
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/pose-estimation.worker';
-    import { GetPixelLandmarksFromMPResult, type Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-    import { DrawingUtils, PoseLandmarker, type PoseLandmarkerResult } from "@mediapipe/tasks-vision";
+    import { DrawingUtils, PoseLandmarker, type NormalizedLandmark, type PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from '../webcam/streams';
     import WebcamSelector from "../webcam/WebcamSelector.svelte";
@@ -38,6 +37,8 @@
     let resolveWebcamStartedPromise: (() => void) | undefined;
     export const webcamStartedPromise = new Promise<void>((res) => resolveWebcamStartedPromise = res);
     
+    export let mirrorHorizontally: boolean = true;
+
     let mirrorStartedTime = new Date().getTime();
     let lastFrameSent = -1;
     let lastFrameReceivedTime = new Date().getTime();
@@ -65,7 +66,6 @@
 
     // @type {PoseEstimationResult | undefined}
     let lastDecodedData: null | PoseLandmarkerResult = null;
-    let last2DPixelLandmarks: null | Pose2DPixelLandmarks = null;
 
     const resizeCanvas = () => {
         if (!canvasElement) {
@@ -103,21 +103,18 @@
                     return;
                 }
 
-                const pixel2Dlandmarks = GetPixelLandmarksFromMPResult(
-                    msg.data.result,
-                    canvasElement?.width ?? videoWidth,
-                    canvasElement?.height ?? videoHeight,
-                );
-
                 lastFrameDecoded = msg.data.frameId;
-                lastDecodedData = msg.data.result;
-                last2DPixelLandmarks = pixel2Dlandmarks;
-                    
-                dispatch('poseEstimationResult', {
-                    frameId: msg.data.frameId,
-                    result: msg.data.result,
-                    pixelLMs: pixel2Dlandmarks, 
-                });
+                lastDecodedData = msg.data.landmarkerResult;
+                
+                const eventDetail = {
+                    frameId: msg.data.frameId as number,
+                    estimatedPose: msg.data.estimatedPose as NormalizedLandmark[] | null,
+                    srcWidth: msg.data.srcWidth as number,
+                    srcHeight: msg.data.srcHeight as number,
+                }
+
+                // console.log("Got pose estimation result", eventDetail);
+                dispatch('poseEstimationResult', eventDetail);
             } else if (msg.data.type === PoseEsimationResponses.error 
                       || msg.data.type === PoseEsimationResponses.resetError
             ) {
@@ -126,10 +123,11 @@
                 if (msg.data.frameId === lastFrameSent) {
                     lastFrameSent = -1;
                     lastDecodedData = null;
-                    last2DPixelLandmarks = null;
                 }
             } else if (msg.data.type == PoseEsimationResponses.resetComplete) {
                 console.log("Pose Estimation Reset Complete");
+                lastFrameSent = -1;
+                lastDecodedData = null;
             }
         };
 
@@ -330,8 +328,12 @@
         <video bind:this={videoElement} autoplay 
             on:play={resizeCanvas}
             on:loadeddata={onLoadedVideoData}
-            bind:muted={muted}></video>
-        <canvas bind:this={canvasElement}></canvas>  
+            bind:muted={muted}
+            class:flippedHorizontal={mirrorHorizontally}
+            ></video>
+        <canvas bind:this={canvasElement}
+            class:flippedHorizontal={mirrorHorizontally}
+            ></canvas>  
         <!-- <span>Pose Estimation: {poseEstimationEnabled}</span> -->
     {:else}
         <div>
@@ -343,6 +345,10 @@
 </div>
 
 <style>
+
+.flippedHorizontal {
+    transform: scaleX(-1);
+}
 
 .wrapper {
     width: 100%;

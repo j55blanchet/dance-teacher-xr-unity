@@ -1,17 +1,20 @@
 <script lang="ts">
-
+import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
+import { GetPixelLandmarksFromNormalizedLandmarks } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "./model/PracticeActivity";
 import type { Dance, DanceTreeNode, Pose2DReferenceData } from "./dances-store";
 import * as evalAI from './ai/Evaluation';
 
 import VideoWithSkeleton from "./elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "./elements/VirtualMirror.svelte";
+import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
 import { getDanceVideoSrc, loadPoseInformation } from "./dances-store";
 import { onMount } from "svelte";
 import { webcamStream } from './webcam/streams';
-import type { Pose2DPixelLandmarks } from './webcam/mediapipe-utils';
+import { FlipXNormalizedPose, type Pose2DPixelLandmarks } from './webcam/mediapipe-utils';
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
-
+export let mirrorForEvaluation: boolean = false;
 export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
 let fitVideoToFlexbox = true;
@@ -33,9 +36,9 @@ $: {
 }
 
 export let pageActive = false;
-
 export let flipVideo: boolean = false;
 
+let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
 let virtualMirrorElement: VirtualMirror;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
@@ -87,6 +90,12 @@ $: {
     }
 }
 
+function playClickSound() {
+    clickAudioElement.currentTime = 0;
+    clickAudioElement.play();
+}
+
+
 async function startCountdown() {
     if (countdownActive) return;
 
@@ -102,16 +111,22 @@ async function startCountdown() {
     isVideoPaused = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
 
+    await waitSecs(beatDuration);
+
     countdown = 5;
+    playClickSound();
     await waitSecs(beatDuration);
 
     countdown = 6;
+    playClickSound();
     await waitSecs(beatDuration);
 
     countdown = 7;
+    playClickSound();
     await waitSecs(beatDuration);
 
     countdown = 8;
+    playClickSound();
     await waitSecs(beatDuration);
 
     countdown = -1;
@@ -148,7 +163,7 @@ function poseEstimationFrameSent(e: any) {
     // Associate the webcam frame being sent for pose estimation
     // with the current video timestamp, so that we can later
     // compare the user's pose with the dance pose at that time.
-    console.log("poseEstimationFrameSent", e.detail.frameId, videoCurrentTime);
+    // console.log("poseEstimationFrameSent", e.detail.frameId, videoCurrentTime);
     poseEstimationCorrespondances.set(e.detail.frameId, videoCurrentTime);
     lastPoseEstimationVideoTime = videoCurrentTime;
 }
@@ -161,7 +176,7 @@ function shouldSendNextPoseEstimationFrame() {
 }
 
 function poseEstimationFrameReceived(e: any) {
-    console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
+    // console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
 
     if (state !== 'playing') {
         return;
@@ -172,19 +187,33 @@ function poseEstimationFrameReceived(e: any) {
         return;
     };
     
-    if (!poseEstimationCorrespondances.has(e.detail.frameId)) {
-        console.log(`No matching correspondance for ${e.detail.frameId}`, e, "current correspondances: ", poseEstimationCorrespondances)
+    const frameId = e.detail.frameId
+    if (!poseEstimationCorrespondances.has(frameId)) {
+        console.log(`No matching correspondance for ${frameId}`, e, "current correspondances: ", poseEstimationCorrespondances)
         return;
     };
-    const videoTimestamp = poseEstimationCorrespondances.get(e.detail.frameId)!;
-    poseEstimationCorrespondances.delete(e.detail.frameId);
+    const videoTimestamp = poseEstimationCorrespondances.get(frameId)!;
+    poseEstimationCorrespondances.delete(frameId);
 
-    const userDancePose = (e?.detail?.pixelLMs ?? null) as Pose2DPixelLandmarks | null;
-    if (!userDancePose) {
-        return;
+    const srcWidth = e?.detail?.srcWidth;
+    const srcHeight = e?.detail?.srcHeight;
+    const userNormalizedPose = (e?.detail?.estimatedPose ?? null) as NormalizedLandmark[] | null;
+    if (!userNormalizedPose) { return; }
+
+    // Flip normalized pose, since the user will be mirroring the dance
+    let evaluationPose = GetPixelLandmarksFromNormalizedLandmarks(userNormalizedPose, srcWidth, srcHeight);
+    if (mirrorForEvaluation) {
+        const userDanceFlippedNormalizedPose = FlipXNormalizedPose(userNormalizedPose);
+        const userDanceFlippedPixelPose = GetPixelLandmarksFromNormalizedLandmarks(userDanceFlippedNormalizedPose, srcWidth, srcHeight);
+        evaluationPose = userDanceFlippedPixelPose;
     }
-    
-    evaluator?.evaluateFrame(trialId, videoTimestamp, userDancePose);
+    if (!evaluationPose) { return; }
+    try {
+        evaluator?.evaluateFrame(trialId, videoTimestamp, evaluationPose);
+    }
+    catch (e) {
+        console.warn('Error evaluating frame', e);
+    }
 }
 
 onMount(() => {
@@ -238,8 +267,7 @@ onMount(() => {
     <div>
         <h1>Feedback</h1>
         <button class="button outlined thin" on:click={reset}>Play Again</button>
-        <div><strong>DancePoseReference</strong>{referenceDancePoses}</div>
-        <pre>{JSON.stringify(performanceSummary, null, 2)}</pre>
+        <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
     </div>
     {/if}
     <div style:display={state === "feedback" ? 'none' : 'flex'}>

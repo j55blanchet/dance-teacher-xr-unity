@@ -1,0 +1,6 @@
+# Attributions
+
+
+We used the following resources to create this project:
+
+* "Metronome.wav", by Druminfected, downloaded from freesound.org. <https://freesound.org/people/Druminfected/sounds/250552/>
