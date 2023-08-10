@@ -1,5 +1,5 @@
 import type { Pose2DReferenceData } from "$lib/dances-store";
-import { type Pose2DPixelLandmarks, PoseLandmarkIds } from "$lib/webcam/mediapipe-utils";
+import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys } from "$lib/webcam/mediapipe-utils";
 
 const ComparisonVectors = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
@@ -12,8 +12,21 @@ const ComparisonVectors = Object.freeze([
     [PoseLandmarkIds.rightElbow,    PoseLandmarkIds.rightWrist]
 ])
 
+function lerp(val: number, srcMin: number, srcMax: number, destMin: number, destMax: number) {
+    const srcRange = srcMax - srcMin
+    const destRange = destMax - destMin
+    return destMin + (destRange * ((val - srcMin) / srcRange))
+}
+
 function getMagnitude(v: [number, number]) {
     return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2), 0.5)
+}
+
+function getArraySum(v: Array<number>) {
+    return v.reduce((a, b) => a + b, 0)
+}
+function getArrayMean(v: Array<number>) {
+    return getArraySum(v) / v.length
 }
 
 function GetNormalizedVector(
@@ -53,16 +66,17 @@ export function computeSkeleton2DSimilarityJulienMethod(
     return score
 }
 
+type Vec8 = [number, number, number, number, number, number, number, number]
 /**
  * 
  * @param refLandmarks Reference landmarks (expert)
  * @param userLandmarks Evaluation landmarks (learner)
- * @returns A score between 0 and 5, where 0 is the worst and 5 is the best
+ * @returns Tuple of scores between 0 and 5, where 0 is the worst and 5 is the best. First is a scalar with the overall score, next is a vector by vector score of the 8 comparison vectors.
  */
 export function computeSkeletonDissimilarityQijiaMethod(
     refLandmarks: Pose2DPixelLandmarks, 
     userLandmarks: Pose2DPixelLandmarks
-): [number, number] {
+): [number, Vec8] {
 
     // From the paper: 
     //     At each frame, we compute the absolute difference be-
@@ -76,13 +90,17 @@ export function computeSkeletonDissimilarityQijiaMethod(
     let rawDissimilarityScore = 0
 
     // Compare 8 Vectors
-    for(const vecLandmarkIds of ComparisonVectors) {
+    const vectorDissimilarityScores = ComparisonVectors.map((vecLandmarkIds) => {
         const [srcLandmark, destLandmark] = vecLandmarkIds
         const [refX, refY] = GetNormalizedVector(refLandmarks, srcLandmark, destLandmark)
         const [usrX, usrY] = GetNormalizedVector(userLandmarks, srcLandmark, destLandmark)
         const [dx, dy] = [refX - usrX, refY - usrY]
-        rawDissimilarityScore += getMagnitude([dx, dy]) || 0
-    }
+        return getMagnitude([dx, dy]) || 0;
+    });
+
+
+    rawDissimilarityScore = getArrayMean(vectorDissimilarityScores);
+
 
     // Average over the 8 vectors
     rawDissimilarityScore /= ComparisonVectors.length;
@@ -92,27 +110,27 @@ export function computeSkeletonDissimilarityQijiaMethod(
     // a perfect match with the expert)
     // If a user's dissimilarity score was closer to 0, they did well, and if it was closer
     // to 2.0, they did poorly. (These specific numbers are not mentioned in the paper). 
-    const USER_STUDY_DISSIMILARITY_UPPER_BOUND = 2.0
-    const USER_STUDY_DISSIMILARITY_LOWER_BOUND = 0.0
-    const USER_STUDY_DISSIMILARITY_RANGE = USER_STUDY_DISSIMILARITY_UPPER_BOUND - USER_STUDY_DISSIMILARITY_LOWER_BOUND
-
-    // We want to scale the score to a [0...5] range
-    const TARGET_UPPER_BOUND_SCORE = 5.0
-    const TARGET_LOWER_BOUND_SCORE = 0.0
-    const TARGET_SCORE_RANGE = TARGET_UPPER_BOUND_SCORE - TARGET_LOWER_BOUND_SCORE
+    const SRC_DISSIMILARITY_WORST = 2.0
+    const SRC_DISSIMILARITY_BEST = 0.0
     
-    // First, normalize the score to a [0...1] range, where 0 is the best and 1 is the worst
-    const percentileDisimilarity = (rawDissimilarityScore - USER_STUDY_DISSIMILARITY_LOWER_BOUND) / USER_STUDY_DISSIMILARITY_RANGE
+    // We want to scale the score to a [0...5] range
+    const TARGET_BEST = 5.0
+    const TARGET_WORST = 0.0
 
-    // Then, scale the score to the target range (negating, since we want 0 to be the worst and 5 to be the best)
-    const scaledScore = TARGET_UPPER_BOUND_SCORE - (TARGET_SCORE_RANGE) * percentileDisimilarity 
+    function scaleScore(s: number) {
+        return lerp(s, SRC_DISSIMILARITY_BEST, SRC_DISSIMILARITY_WORST, TARGET_BEST, TARGET_WORST)
+    }
 
-    return [rawDissimilarityScore, scaledScore];
+    const overallOutputScore = scaleScore(rawDissimilarityScore)
+    const vectorOutputScores = vectorDissimilarityScores.map(scaleScore) as Vec8;
+
+    return [overallOutputScore, vectorOutputScores];
 }
 
 export type PerformanceEvaluationTrack<EvaluationType> = {
     creationDate: Date;
     frameTimes: number[];
+    recordTimesMs: number[];
     userPoses: Pose2DPixelLandmarks[];
     evaluation: ArrayVersions<EvaluationType>;
 }
@@ -132,6 +150,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
             this.tracks.set(id, {
                 creationDate: new Date(),
                 frameTimes: [],
+                recordTimesMs: [],
                 userPoses: [],
                 evaluation: evaluationkeys.reduce((acc, key) => {
                     acc[key] = []
@@ -147,6 +166,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
 
         const track = this.tracks.get(id)!
         track.frameTimes.push(frameTime)
+        track.recordTimesMs.push(new Date().getTime());
         track.userPoses.push(userPose)
 
         for(const key of evaluationkeys) {
@@ -157,8 +177,8 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
 
 
 type EvaluationV1 = {
-    rawQijiaDissimilarityScore: number;
-    qijiaPerformanceScore: number;
+    qijiaOverallScore: number;
+    qijiaByVectorScores: Vec8;
     julienScore: number;
 };
 
@@ -190,15 +210,15 @@ export class UserDanceEvaluator {
                 frameTime, 
                 userPose,
                 {
-                    rawQijiaDissimilarityScore: NaN,
-                    qijiaPerformanceScore: NaN,
+                    qijiaOverallScore: NaN,
+                    qijiaByVectorScores: Array(8).fill(NaN) as Vec8,
                     julienScore: NaN
                 }
             )
             return;
         }
 
-        const [rawQijiaDissimilarityScore, qijiaScaledScore] = computeSkeletonDissimilarityQijiaMethod(
+        const [qijiaOverallScore, qijiaByVectorScores] = computeSkeletonDissimilarityQijiaMethod(
             referencePose, 
             userPose
         )
@@ -213,8 +233,8 @@ export class UserDanceEvaluator {
             frameTime,
             userPose,
             { 
-                rawQijiaDissimilarityScore,
-                qijiaPerformanceScore: qijiaScaledScore,
+                qijiaOverallScore,
+                qijiaByVectorScores,
                 julienScore: julienScore
              }
         )
@@ -226,21 +246,39 @@ export class UserDanceEvaluator {
             return null;
         }
 
-        const evaluationKeys = Object.keys(track.evaluation) as Array<keyof EvaluationV1>
-        const performanceSummary = evaluationKeys.reduce((summary, key) => {
-            const sumOfMetric = track.evaluation[key].reduce((runningTotal, frameValue) => runningTotal + frameValue, 0)
-            summary[key] = sumOfMetric / track.evaluation[key].length
-            return summary
-        }, {} as Record<string, number>)
+        const vectorScoreKeyValues = ComparisonVectors.map((vec, i) => {
+            const [lmSrc, lmDest] = vec;
+            const [srcName, destName] = [PoseLandmarkKeys[lmSrc], PoseLandmarkKeys[lmDest]];
+            const key = `${srcName} -> ${destName}`
+            const vecScores = track.evaluation.qijiaByVectorScores.map((scores) => scores[i]);
+            const meanScore = getArrayMean(vecScores);
+            return [key, meanScore] as [string, number];
+        });
+
+        // const evaluationKeys = Object.keys(track.evaluation) as Array<keyof EvaluationV1>
+        let performanceSummary: Record<string, any> = {
+            qijiaOverallScore: getArrayMean(track.evaluation.qijiaOverallScore),
+            qijiaByVectorScores: new Map(vectorScoreKeyValues),
+        }
+        
+        // evaluationKeys.reduce((summary, key) => {
+        //     const sumOfMetric = track.evaluation[key].reduce((runningTotal, frameValue) => runningTotal + frameValue, 0)
+        //     summary[key] = sumOfMetric / track.evaluation[key].length
+        //     return summary
+        // }, {} as Record<string, number>)
         
         
         const frameCount = track.frameTimes.length
-        const duration = track.frameTimes[frameCount - 1] - track.frameTimes[0]
-        const fps = frameCount / duration
+        const realtimeDurationSecs = (track.recordTimesMs[frameCount - 1] - track.recordTimesMs[0]) / 1000
+        const danceTimeDurationSecs = track.frameTimes[frameCount - 1] - track.frameTimes[0]
+        const danceTimeFps = frameCount / danceTimeDurationSecs
+        const realTimeFps = frameCount / realtimeDurationSecs
 
         performanceSummary["frameCount"] = frameCount
-        performanceSummary["duration"] = duration
-        performanceSummary["fps"] = fps
+        performanceSummary["danceTimeDurationSecs"] = danceTimeDurationSecs
+        performanceSummary["realtimeDurationSecs"] = realtimeDurationSecs
+        performanceSummary["danceTimeFps"] = danceTimeFps
+        performanceSummary["realTimeFps"] = realTimeFps
 
         return performanceSummary
     }

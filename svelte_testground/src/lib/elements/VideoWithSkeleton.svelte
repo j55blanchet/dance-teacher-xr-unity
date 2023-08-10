@@ -56,7 +56,7 @@ $: {
 let poseToDraw: NormalizedLandmark[] | null = null;
 $: {
     const pixelLandmarks = poseData?.getReferencePoseAtTime(currentTime) ?? null;
-    console.log("New reference pose (pix landmarks)", pixelLandmarks, videoWidth, videoHeight)
+    // console.log("New reference pose (pix landmarks)", pixelLandmarks, videoWidth, videoHeight)
     poseToDraw = pixelLandmarks ? GetNormalizedLandmarksFromPixelLandmarks(pixelLandmarks, videoWidth, videoHeight) : null;
 }
 
@@ -79,7 +79,7 @@ function drawCanvas() {
 
     if (!poseToDraw || !drawSkeleton) { return; }
 
-    console.log("redrawing pose", poseToDraw)
+    // console.log("redrawing pose", poseToDraw)
     drawingUtils.drawConnectors(
         poseToDraw, 
         PoseLandmarker.POSE_CONNECTIONS, 

@@ -160,13 +160,19 @@ export default class PoseEstimationWorker {
             return;
         }
 
-        const result = this.poseLandmarker.detectForVideo(
+        const poseLandmarkerResult = this.poseLandmarker.detectForVideo(
             msgData.image,
             msgData.timestampMs
         )
 
+        const allNormalizedPoses = (poseLandmarkerResult?.landmarks ?? [])
+        const firstUserPose = allNormalizedPoses[0] ?? null;
+
         this.respondWithMessage(ResponseMessages.poseEstimation, frameId, {
-            result
+            landmarkerResult: poseLandmarkerResult,
+            estimatedPose: firstUserPose,
+            srcWidth: msgData.image.width,
+            srcHeight: msgData.image.height
         });
     }
 

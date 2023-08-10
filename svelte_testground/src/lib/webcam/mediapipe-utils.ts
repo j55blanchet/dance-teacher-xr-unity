@@ -74,12 +74,19 @@ function convertCamelcaseStringToSnakeCase(camelCaseString: string): string {
 
 export const PoseLandmarkKeysUpperSnakeCase = Object.freeze(PoseLandmarkKeys.map(k => convertCamelcaseStringToSnakeCase(k).toUpperCase()));
 
-export function GetPixelLandmarksFromMPResult(result: PoseLandmarkerResult, srcWidth: number, srcHeight: number): Pose2DPixelLandmarks | null {
-    if ((result?.landmarks?.length ?? 0) <= 0) return null;
+export function FlipXNormalizedPose(pose: NormalizedLandmark[]): NormalizedLandmark[] {
+    return pose.map(lm => ({
+        x: 1 - lm.x,
+        y: lm.y,
+        z: lm.z,
+        visibility: (lm as any).visibility ?? 1,
+    }));
+}
+
+export function GetPixelLandmarksFromNormalizedLandmarks(normalizedLandmarks: NormalizedLandmark[], srcWidth: number, srcHeight: number): Pose2DPixelLandmarks | null {
+    if ((normalizedLandmarks?.length ?? 0) <= 0) return null;
     
-    const firstDetectedPerson = result.landmarks[0];
-    
-    return firstDetectedPerson.map((lm, i) => ({
+    return normalizedLandmarks.map((lm, i) => ({
         x: lm.x * srcWidth,
         y: lm.y * srcHeight,
         dist_from_camera: lm.z * srcWidth,
