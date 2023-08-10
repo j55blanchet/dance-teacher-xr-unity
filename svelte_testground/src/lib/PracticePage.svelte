@@ -1,4 +1,5 @@
 <script lang="ts">
+import { v4 as generateUUIDv4 } from 'uuid';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { GetPixelLandmarksFromNormalizedLandmarks } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "./model/PracticeActivity";
@@ -19,7 +20,7 @@ export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
 let fitVideoToFlexbox = true;
 
-let state: "waitWebcam" | "waitStart" | "playing" | "feedback" = "waitWebcam";
+let state: "waitWebcam" | "waitStart" | "countdown" | "playing" | "feedback" = "waitWebcam";
 $: console.log("PracticePage state", state);
 
 let currentActivityStepIndex: number = 0;
@@ -51,7 +52,7 @@ let poseEstimationReady: Promise<void> | null = null;
 let referenceDancePoses: Pose2DReferenceData | null = null;
 
 let evaluator: evalAI.UserDanceEvaluator | null = null;
-let trialId = crypto.randomUUID();
+let trialId = generateUUIDv4();
 let performanceSummary: Record<string, any> | null = null;
 
 let countdown = -1;
@@ -99,17 +100,17 @@ function playClickSound() {
 async function startCountdown() {
     if (countdownActive) return;
 
+    isVideoPaused = true;
+    videoCurrentTime = practiceActivity?.startTime ?? 0;
+    trialId = generateUUIDv4();
+
     if (poseEstimationEnabled) {
         console.log("Triggering pose estimation priming");
         await virtualMirrorElement.primePoseEstimation();
     }
 
-    state = "playing";
-    trialId = crypto.randomUUID();
-
+    state = "countdown";
     countdownActive = true;
-    isVideoPaused = true;
-    videoCurrentTime = practiceActivity?.startTime ?? 0;
 
     await waitSecs(beatDuration);
 
@@ -129,6 +130,7 @@ async function startCountdown() {
     playClickSound();
     await waitSecs(beatDuration);
 
+    state = "playing"
     countdown = -1;
     isVideoPaused = false;
     countdownActive = false;
@@ -281,7 +283,7 @@ onMount(() => {
         />
         {#if state === "waitStart"}  
         <div class="loading outlined thick">
-            <div class="spinner large"></div>
+            <!-- <div class="spinner large"></div> -->
             <div class="label">Loading...</div>
         </div>
         {/if}

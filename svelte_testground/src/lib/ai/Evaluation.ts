@@ -87,7 +87,7 @@ export function computeSkeletonDissimilarityQijiaMethod(
     // of [0, 5], where 0 denotes the poorest performance and 5 rep-
     // resents the best performance. This normalized score serves
     // as the final performance rating.
-    let rawDissimilarityScore = 0
+    let rawOverallDisimilarityScore = 0
 
     // Compare 8 Vectors
     const vectorDissimilarityScores = ComparisonVectors.map((vecLandmarkIds) => {
@@ -99,11 +99,7 @@ export function computeSkeletonDissimilarityQijiaMethod(
     });
 
 
-    rawDissimilarityScore = getArrayMean(vectorDissimilarityScores);
-
-
-    // Average over the 8 vectors
-    rawDissimilarityScore /= ComparisonVectors.length;
+    rawOverallDisimilarityScore = getArrayMean(vectorDissimilarityScores);
 
     // According to Qijia, we used an upper bound of 2.0 for the dissimimlarity score (which would indicate all vectors
     // of the user faced the exact opposite directions of the expert), and the lower bound was zero (which would indicate
@@ -121,7 +117,7 @@ export function computeSkeletonDissimilarityQijiaMethod(
         return lerp(s, SRC_DISSIMILARITY_BEST, SRC_DISSIMILARITY_WORST, TARGET_BEST, TARGET_WORST)
     }
 
-    const overallOutputScore = scaleScore(rawDissimilarityScore)
+    const overallOutputScore = scaleScore(rawOverallDisimilarityScore)
     const vectorOutputScores = vectorDissimilarityScores.map(scaleScore) as Vec8;
 
     return [overallOutputScore, vectorOutputScores];
@@ -200,9 +196,6 @@ export class UserDanceEvaluator {
      */
     evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks) {
 
-        // TODO: consider flipping the user pose, in case the user is mirroring the 
-        //       reference dance.
-        
         const referencePose = this.referenceData.getReferencePoseAtTime(frameTime);
         if (!referencePose) {
             this.recorder.recordEvaluationFrame(

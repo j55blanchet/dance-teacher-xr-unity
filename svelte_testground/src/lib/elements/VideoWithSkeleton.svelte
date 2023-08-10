@@ -5,7 +5,6 @@ import { onDestroy, onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import { DrawingUtils, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
-	import { object_without_properties } from "svelte/internal";
 
 let videoElement: HTMLVideoElement;
 let canvasElement: HTMLCanvasElement;
