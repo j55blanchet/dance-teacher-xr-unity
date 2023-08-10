@@ -9,11 +9,12 @@ import VirtualMirror from "./elements/VirtualMirror.svelte";
 import { getDanceVideoSrc, loadPoseInformation } from "./dances-store";
 import { onMount } from "svelte";
 import { webcamStream } from './webcam/streams';
-	import type { Pose2DPixelLandmarks } from './webcam/mediapipe-utils';
+import type { Pose2DPixelLandmarks } from './webcam/mediapipe-utils';
 
 
 export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
+let fitVideoToFlexbox = true;
 
 let state: "waitWebcam" | "waitStart" | "playing" | "feedback" = "waitWebcam";
 $: console.log("PracticePage state", state);
@@ -35,7 +36,6 @@ export let pageActive = false;
 
 export let flipVideo: boolean = false;
 
-let videoElement: HTMLVideoElement;
 let virtualMirrorElement: VirtualMirror;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
@@ -127,11 +127,10 @@ export async function reset() {
     isVideoPaused = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     
-
+    referenceDancePoses = await loadPoseInformation(dance);
     await virtualMirrorElement.webcamStartedPromise;    
     state = "waitStart";
 
-    referenceDancePoses = await loadPoseInformation(dance);
     evaluator = new evalAI.UserDanceEvaluator(referenceDancePoses);
     // console.log("DancePoseInformation", referenceDancePoses);
     await poseEstimationReady;
@@ -215,12 +214,14 @@ onMount(() => {
         </video> -->
 
         <VideoWithSkeleton
-            bind:videoElement={videoElement}
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
             bind:paused={isVideoPaused}
             bind:duration={videoDuration}
             flipHorizontal={flipVideo}
+            fitToFlexbox={fitVideoToFlexbox}
+            poseData={referenceDancePoses}
+            drawSkeleton={true}
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
@@ -237,6 +238,7 @@ onMount(() => {
     <div>
         <h1>Feedback</h1>
         <button class="button outlined thin" on:click={reset}>Play Again</button>
+        <div><strong>DancePoseReference</strong>{referenceDancePoses}</div>
         <pre>{JSON.stringify(performanceSummary, null, 2)}</pre>
     </div>
     {/if}
