@@ -31,7 +31,10 @@ function barClicked () {
        class:button={enableClick} 
        class:active={showProgress}
        on:click={barClicked}
-    >
+    >   
+        <span class="complexity">
+            {node.complexity.toFixed(2)}
+        </span>
         {#if showProgress}<span class="progress outlined" style="width:{progressPercent*100}%">
             <!-- {currentTime.toFixed(1)} -->
         </span>{/if}
@@ -81,6 +84,10 @@ function barClicked () {
         height: 100%;
         background-color: rgba(0, 0, 0, 0.3);
         border-width: 0.12em;
+    }
+
+    .complexity {
+        position: absolute;
     }
 
     .beat-line {
