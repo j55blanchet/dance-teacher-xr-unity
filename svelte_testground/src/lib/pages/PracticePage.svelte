@@ -4,15 +4,16 @@ import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { GetPixelLandmarksFromNormalizedLandmarks } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "../model/PracticeActivity";
 import type { Dance, DanceTreeNode, Pose2DReferenceData } from "../dances-store";
-import * as evalAI from '../ai/Evaluation';
+import * as evalAI from '$lib/ai/Evaluation';
+import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 
-import VideoWithSkeleton from "../elements/VideoWithSkeleton.svelte";
-import VirtualMirror from "../elements/VirtualMirror.svelte";
+import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
+import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
-import { getDanceVideoSrc, loadPoseInformation } from "../dances-store";
+import { getDanceVideoSrc, loadPoseInformation } from "$lib/dances-store";
 import { onMount } from "svelte";
-import { webcamStream } from '../webcam/streams';
-import { FlipXNormalizedPose, type Pose2DPixelLandmarks } from '../webcam/mediapipe-utils';
+import { webcamStream } from '$lib/webcam/streams';
+import { FlipXNormalizedPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
 export let mirrorForEvaluation: boolean = false;
@@ -51,7 +52,8 @@ let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
 let referenceDancePoses: Pose2DReferenceData | null = null;
 
-let evaluator: evalAI.UserDanceEvaluator | null = null;
+let lastEvaluationResult: evalAI.EvaluationV1Result | null = null;
+let evaluator: evalAI.UserDanceEvaluatorV1 | null = null;
 let trialId = generateUUIDv4();
 let performanceSummary: Record<string, any> | null = null;
 
@@ -140,7 +142,7 @@ export async function reset() {
     
     currentActivityStepIndex = 0;
     state = "waitWebcam";
-
+    lastEvaluationResult = null;
     isVideoPaused = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     
@@ -148,7 +150,7 @@ export async function reset() {
     await virtualMirrorElement.webcamStartedPromise;    
     state = "waitStart";
 
-    evaluator = new evalAI.UserDanceEvaluator(referenceDancePoses);
+    evaluator = new evalAI.UserDanceEvaluatorV1(referenceDancePoses);
     // console.log("DancePoseInformation", referenceDancePoses);
     await poseEstimationReady;
 
@@ -211,9 +213,10 @@ function poseEstimationFrameReceived(e: any) {
     }
     if (!evaluationPose) { return; }
     try {
-        evaluator?.evaluateFrame(trialId, videoTimestamp, evaluationPose);
+        lastEvaluationResult = evaluator?.evaluateFrame(trialId, videoTimestamp, evaluationPose) ?? null;
     }
     catch (e) {
+        lastEvaluationResult = null;
         console.warn('Error evaluating frame', e);
     }
 }
@@ -276,8 +279,9 @@ onMount(() => {
         <VirtualMirror
             bind:this={virtualMirrorElement}
             {poseEstimationEnabled}
-            drawSkeleton={!isVideoPaused || countdownActive}
+            drawSkeleton={false}
             poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
+            customDrawFn={(ctx, pose) => DrawColorCodedSkeleton(ctx, pose, lastEvaluationResult)}
             on:poseEstimationFrameSent={poseEstimationFrameSent}
             on:poseEstimationResult={poseEstimationFrameReceived}
         />

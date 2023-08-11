@@ -22,6 +22,8 @@
     // let poseEstimationWorker: Worker | null = null;
     let poseEstimationWorker: PoseEstimationWorker | null = null;
 
+    export let customDrawFn: null | ((ctx: CanvasRenderingContext2D, userPose: null | NormalizedLandmark[]) => void) = null;
+
     // Whether the pose estimation has been primed with the first frame.
     // let poseEstimationStartedPriming = false;
     let resolvePoseEstimationPrimed: (() => void) | undefined;
@@ -260,9 +262,10 @@
         // only after the last frame has been processed.
         const currentTime = new Date().getTime();
         const timeSinceLastFrameReceived = currentTime - lastFrameReceivedTime;
-        if (lastFrameDecoded == lastFrameSent && 
+        if (poseEstimationEnabled && 
+            lastFrameDecoded == lastFrameSent && 
             timeSinceLastFrameReceived > poseEstimationInterFrameIdleTime && 
-            poseEstimationEnabled && poseEstimationCheckFunction()) 
+            poseEstimationCheckFunction()) 
         {
             const timeSinceStart = currentTime - mirrorStartedTime;
             lastFrameSent = renderedFrameId;
@@ -274,6 +277,9 @@
                 image: canvasContext.getImageData(drawX, drawY, drawWidth, drawHeight)
             });
         }
+
+        // Use the custom draw function. This allows for higher specificity
+        customDrawFn?.(canvasContext, lastEstimatedPose);
 
         // Leave early if we're not drawing the skeleton
         if (!drawSkeleton) {
@@ -290,6 +296,7 @@
 
         // canvasContext.scale(drawWidth / videoElement.videoWidth, drawHeight / videoElement.videoHeight);
         // canvasContext.translate(drawX, drawY);
+
         if(lastEstimatedPose && lastEstimatedPose.length === PoseLandmarkKeys.length) {
             drawingUtils?.drawConnectors(
                 lastEstimatedPose,
