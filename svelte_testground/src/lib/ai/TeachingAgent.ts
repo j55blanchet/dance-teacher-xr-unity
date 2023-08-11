@@ -1,5 +1,5 @@
 import type { Dance, DanceTree, DanceTreeNode } from '../dances-store'
-import type PracticeActivity from '$lib/PracticeActivity';
+import type PracticeActivity from '$lib/model/PracticeActivity';
 
 export interface UserDancePerformanceLog {
     // markingByNode: Map<DanceTreeNode["id"], number>;
@@ -17,6 +17,6 @@ export function GeneratePracticeActivity(
         startTime: danceTreeNode.start_time,
         endTime: danceTreeNode.end_time,
         activityTypes: ['drill'], // 'watch', 'mark', 'drill', 'fullout']
-        playbackSpeed: 0.60,
+        playbackSpeed: 0.10,
     }
 }

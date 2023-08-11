@@ -1,7 +1,7 @@
 import type { Pose2DReferenceData } from "$lib/dances-store";
 import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys } from "$lib/webcam/mediapipe-utils";
 
-const ComparisonVectors = Object.freeze([
+export const QijiaMethodComparisonVectors = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.leftHip],
     [PoseLandmarkIds.leftHip,       PoseLandmarkIds.rightHip],
@@ -11,6 +11,13 @@ const ComparisonVectors = Object.freeze([
     [PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightElbow],
     [PoseLandmarkIds.rightElbow,    PoseLandmarkIds.rightWrist]
 ])
+
+export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.map((vec, i) => {
+    const [lmSrc, lmDest] = vec;
+    const [srcName, destName] = [PoseLandmarkKeys[lmSrc], PoseLandmarkKeys[lmDest]];
+    const key = `${srcName} -> ${destName}`
+    return key;
+});
 
 function lerp(val: number, srcMin: number, srcMax: number, destMin: number, destMax: number) {
     const srcRange = srcMax - srcMin
@@ -90,7 +97,7 @@ export function computeSkeletonDissimilarityQijiaMethod(
     let rawOverallDisimilarityScore = 0
 
     // Compare 8 Vectors
-    const vectorDissimilarityScores = ComparisonVectors.map((vecLandmarkIds) => {
+    const vectorDissimilarityScores = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
         const [srcLandmark, destLandmark] = vecLandmarkIds
         const [refX, refY] = GetNormalizedVector(refLandmarks, srcLandmark, destLandmark)
         const [usrX, usrY] = GetNormalizedVector(userLandmarks, srcLandmark, destLandmark)
@@ -172,7 +179,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
 }
 
 
-type EvaluationV1 = {
+export type EvaluationV1Result = {
     qijiaOverallScore: number;
     qijiaByVectorScores: Vec8;
     julienScore: number;
@@ -181,9 +188,9 @@ type EvaluationV1 = {
 /**
  * Evaluates a user's dance performance against a reference dance.
  */
-export class UserDanceEvaluator {
+export class UserDanceEvaluatorV1 {
 
-    public recorder = new UserEvaluationRecorder<EvaluationV1>();
+    public recorder = new UserEvaluationRecorder<EvaluationV1Result>();
 
     constructor(private referenceData: Pose2DReferenceData) {
     };
@@ -194,21 +201,11 @@ export class UserDanceEvaluator {
      * @param frameTime Frame time in seconds
      * @param userPose User's pose at the given frame time
      */
-    evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks) {
+    evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks): EvaluationV1Result | null {
 
         const referencePose = this.referenceData.getReferencePoseAtTime(frameTime);
         if (!referencePose) {
-            this.recorder.recordEvaluationFrame(
-                trialId,
-                frameTime, 
-                userPose,
-                {
-                    qijiaOverallScore: NaN,
-                    qijiaByVectorScores: Array(8).fill(NaN) as Vec8,
-                    julienScore: NaN
-                }
-            )
-            return;
+            return null;
         }
 
         const [qijiaOverallScore, qijiaByVectorScores] = computeSkeletonDissimilarityQijiaMethod(
@@ -221,16 +218,19 @@ export class UserDanceEvaluator {
             userPose
         )
 
+        const evaluationResult = { 
+            qijiaOverallScore,
+            qijiaByVectorScores,
+            julienScore: julienScore
+         }
+
         this.recorder.recordEvaluationFrame(
             trialId,
             frameTime,
             userPose,
-            { 
-                qijiaOverallScore,
-                qijiaByVectorScores,
-                julienScore: julienScore
-             }
+            evaluationResult
         )
+        return evaluationResult;
     }
 
     getPerformanceSummary(id: string): Record<string, any> | null {
@@ -239,10 +239,8 @@ export class UserDanceEvaluator {
             return null;
         }
 
-        const vectorScoreKeyValues = ComparisonVectors.map((vec, i) => {
-            const [lmSrc, lmDest] = vec;
-            const [srcName, destName] = [PoseLandmarkKeys[lmSrc], PoseLandmarkKeys[lmDest]];
-            const key = `${srcName} -> ${destName}`
+        const vectorScoreKeyValues = QijiaMethodComparisonVectors.map((vec, i) => {
+            const key = QijiaMethodComparisionVectorNames[i];
             const vecScores = track.evaluation.qijiaByVectorScores.map((scores) => scores[i]);
             const meanScore = getArrayMean(vecScores);
             return [key, meanScore] as [string, number];
