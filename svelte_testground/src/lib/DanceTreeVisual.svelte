@@ -1,5 +1,5 @@
 <script lang="ts">
-
+import { dev } from '$app/environment';
 import { createEventDispatcher } from 'svelte';
 import type { DanceTreeNode } from '$lib/dances-store';
 
@@ -32,19 +32,23 @@ function barClicked () {
        class:active={showProgress}
        on:click={barClicked}
     >   
+        {#if dev}
         <span class="complexity">
             {node.complexity.toFixed(2)}
         </span>
+        {/if}
         {#if showProgress}<span class="progress outlined" style="width:{progressPercent*100}%">
             <!-- {currentTime.toFixed(1)} -->
         </span>{/if}
 
-        {#each beatTimes as beatTime}
-            {#if beatTime > node.start_time && beatTime < node.end_time}
-                <span class="beat-line" style="left:{(beatTime - node.start_time)/(node.end_time - node.start_time)*100}%">
-                </span>
-            {/if}
-        {/each}
+        {#if dev}
+            {#each beatTimes as beatTime}
+                {#if beatTime > node.start_time && beatTime < node.end_time}
+                    <span class="beat-line" style="left:{(beatTime - node.start_time)/(node.end_time - node.start_time)*100}%">
+                    </span>
+                {/if}
+            {/each}
+        {/if}
     </a>
     {#if node.children.length > 0}
         <div class="children">

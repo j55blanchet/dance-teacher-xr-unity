@@ -2,17 +2,17 @@
 import { v4 as generateUUIDv4 } from 'uuid';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { GetPixelLandmarksFromNormalizedLandmarks } from '$lib/webcam/mediapipe-utils';
-import type PracticeActivity from "./model/PracticeActivity";
-import type { Dance, DanceTreeNode, Pose2DReferenceData } from "./dances-store";
-import * as evalAI from './ai/Evaluation';
+import type PracticeActivity from "../model/PracticeActivity";
+import type { Dance, DanceTreeNode, Pose2DReferenceData } from "../dances-store";
+import * as evalAI from '../ai/Evaluation';
 
-import VideoWithSkeleton from "./elements/VideoWithSkeleton.svelte";
-import VirtualMirror from "./elements/VirtualMirror.svelte";
+import VideoWithSkeleton from "../elements/VideoWithSkeleton.svelte";
+import VirtualMirror from "../elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
-import { getDanceVideoSrc, loadPoseInformation } from "./dances-store";
+import { getDanceVideoSrc, loadPoseInformation } from "../dances-store";
 import { onMount } from "svelte";
-import { webcamStream } from './webcam/streams';
-import { FlipXNormalizedPose, type Pose2DPixelLandmarks } from './webcam/mediapipe-utils';
+import { webcamStream } from '../webcam/streams';
+import { FlipXNormalizedPose, type Pose2DPixelLandmarks } from '../webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
 export let mirrorForEvaluation: boolean = false;
