@@ -1,7 +1,7 @@
 <script lang="ts">
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/dances-store';
-import PracticePage from '$lib/PracticePage.svelte';
+import PracticePage from '$lib/pages/PracticePage.svelte';
 
 /** @type {import('./$types').PageData} */    
 export let data;
