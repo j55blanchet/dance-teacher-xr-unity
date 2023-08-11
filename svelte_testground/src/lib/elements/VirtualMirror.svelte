@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PoseLandmarkKeys } from '$lib/webcam/mediapipe-utils';
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/pose-estimation.worker';
     import { DrawingUtils, PoseLandmarker, type NormalizedLandmark, type PoseLandmarkerResult } from "@mediapipe/tasks-vision";
@@ -45,6 +46,8 @@
     let lastFrameDecoded = -1;
     const poseEstimationInterFrameIdleTime = 50; // wait 50ms before dispatching the next frame.
 
+    let lastEstimatedPose: null | NormalizedLandmark[] = null;
+
     let videoWidth = 1;
     let videoHeight = 1;
     let videoAspectRatio = 1;
@@ -53,7 +56,6 @@
     let containerWidth = 1;
     let containerHeight = 1;
     let containerAspectRatio = 1;
-    
     $: containerAspectRatio = containerWidth / containerHeight;
 
     function onLoadedVideoData() {
@@ -63,9 +65,6 @@
         videoWidth = videoElement.videoWidth;
         videoHeight = videoElement.videoHeight;
     }
-
-    // @type {PoseEstimationResult | undefined}
-    let lastDecodedData: null | PoseLandmarkerResult = null;
 
     const resizeCanvas = () => {
         if (!canvasElement) {
@@ -104,7 +103,7 @@
                 }
 
                 lastFrameDecoded = msg.data.frameId;
-                lastDecodedData = msg.data.landmarkerResult;
+                lastEstimatedPose = msg.data.estimatedPose;
                 
                 const eventDetail = {
                     frameId: msg.data.frameId as number,
@@ -122,12 +121,12 @@
 
                 if (msg.data.frameId === lastFrameSent) {
                     lastFrameSent = -1;
-                    lastDecodedData = null;
+                    lastEstimatedPose = null;
                 }
             } else if (msg.data.type == PoseEsimationResponses.resetComplete) {
                 console.log("Pose Estimation Reset Complete");
                 lastFrameSent = -1;
-                lastDecodedData = null;
+                lastEstimatedPose = null;
             }
         };
 
@@ -291,13 +290,13 @@
 
         // canvasContext.scale(drawWidth / videoElement.videoWidth, drawHeight / videoElement.videoHeight);
         // canvasContext.translate(drawX, drawY);
-        for(const detectedPoseLandmarks of lastDecodedData?.landmarks ?? []) {
+        if(lastEstimatedPose && lastEstimatedPose.length === PoseLandmarkKeys.length) {
             drawingUtils?.drawConnectors(
-                detectedPoseLandmarks,
+                lastEstimatedPose,
                 PoseLandmarker.POSE_CONNECTIONS
             )
             drawingUtils?.drawLandmarks(
-                detectedPoseLandmarks, {
+                lastEstimatedPose, {
                     radius: (data) => DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1)
                 }
             );
