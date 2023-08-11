@@ -113,6 +113,9 @@ function toggleSelectDance(dance: Dance) {
 		</div>
 		{/if}
 	</div>
+    <div>
+        <a href="/settings">Settings Page</a>
+    </div>
 	
 	<!-- <Counter /> -->
 </section>

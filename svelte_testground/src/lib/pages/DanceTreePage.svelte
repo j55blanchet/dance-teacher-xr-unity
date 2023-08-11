@@ -85,6 +85,7 @@ async function practiceClicked() {
         <h1 class="title">
             {dance.title}
         </h1>
+        <!-- Empty div, will take up the right side of the page -->
         <div>
         </div>
     </nav>
@@ -103,11 +104,6 @@ async function practiceClicked() {
     
     <div class="ta-center">
         {#if currentPlayingNode}
-        <!-- <a>
-            class="practiceLink button outlined" 
-            href={"practicenode/" + currentPlayingNode.id}>
-            Practice {currentPlayingNode.id}
-        </a> -->
         <span class="practiceLink">{currentPlayingNode.id}</span>
         <SketchButton on:click={practiceClicked}>Practice</SketchButton>
         {/if}
@@ -119,9 +115,6 @@ async function practiceClicked() {
                 <label for="playbackSpeed">Playback Speed</label>
                 <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.5" max="2" step="0.1" />
                 {videoPlaybackSpeed.toFixed(1)}x
-            </div>
-            <div class="control">
-            <!-- {videoDuration}-{videoPaused ? "Paused" : "Playing"}  -->
             </div>
         </div>
         
@@ -136,15 +129,6 @@ async function practiceClicked() {
         </VideoWithSkeleton>
     
     </div>
-    <!-- <dialog id="practicePage" bind:this={practicePageDialogElement}>
-        <button class="button outlined thin close" aria-label="Close" on:click={() => {practicePageActive = false; practicePageDialogElement.close();}}>X</button>
-        <PracticePage 
-            bind:this={practicePage} 
-            dance={dance} 
-            practiceActivity={currentPracticeActivity}
-            pageActive={practicePageActive}
-        />
-    </dialog> -->
 </section>
 
 
@@ -153,8 +137,6 @@ section {
     position: relative;
     width: 100vw;
     height: 100vh;
-    /* padding: 1em; */
-    /* align-self: stretch; */
     box-sizing: border-box;
     display: grid;
     overflow: hidden;
@@ -168,38 +150,14 @@ section {
     justify-content: stretch;
     overflow: hidden;
     padding-bottom: 1rem;
-
-    & video {
-        flex-grow: 1;
-        flex-shrink: 1;
-        flex-basis: 1rem;
-        // max-width: 100%;
-        // max-height: 100%;
-        border-radius: 0.5em;
-        height: 0
-    }
-
-    & .videoContainer {
-        flex-grow: 1;
-        flex-shrink: 1;
-        flex-basis: 1rem;
-        height: 0;
-        overflow: hidden;
-    }
 }
 
 .visual-tree {
-    // position: relative;
-    // width: 400px;
     max-width: 100vw;
-    // padding: 1em;
-    // max-width: 200ch;
-    // overflow-y: scroll;
     margin: 1rem;
 }
 .visual-tree div {
     display: flex;
-    // padding: 1em;
     overflow-x: auto;
 }
 
