@@ -1,4 +1,5 @@
 import type { NormalizedLandmark, PoseLandmarkerResult } from '@mediapipe/tasks-vision'
+import { SwapMultipleArrayElements } from '$lib/utils/array';
 
 export const PoseLandmarkIds = Object.freeze({
     nose: 0,
@@ -74,13 +75,34 @@ function convertCamelcaseStringToSnakeCase(camelCaseString: string): string {
 
 export const PoseLandmarkKeysUpperSnakeCase = Object.freeze(PoseLandmarkKeys.map(k => convertCamelcaseStringToSnakeCase(k).toUpperCase()));
 
-export function FlipXNormalizedPose(pose: NormalizedLandmark[]): NormalizedLandmark[] {
-    return pose.map(lm => ({
+export function MirrorXNormalizedPose(pose: NormalizedLandmark[]): NormalizedLandmark[] {
+    const xFlipped = pose.map(lm => ({
         x: 1 - lm.x,
         y: lm.y,
         z: lm.z,
         visibility: (lm as any).visibility ?? 1,
     }));
+
+    SwapMultipleArrayElements(xFlipped, [
+        [PoseLandmarkIds.leftEyeInner, PoseLandmarkIds.rightEyeInner],
+        [PoseLandmarkIds.leftEye, PoseLandmarkIds.rightEye],
+        [PoseLandmarkIds.leftEyeOuter, PoseLandmarkIds.rightEyeOuter],
+        [PoseLandmarkIds.leftEar, PoseLandmarkIds.rightEar],
+        [PoseLandmarkIds.mouthLeft, PoseLandmarkIds.mouthRight],
+        [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder],
+        [PoseLandmarkIds.leftElbow, PoseLandmarkIds.rightElbow],
+        [PoseLandmarkIds.leftWrist, PoseLandmarkIds.rightWrist],
+        [PoseLandmarkIds.leftPinky, PoseLandmarkIds.rightPinky],
+        [PoseLandmarkIds.leftIndex, PoseLandmarkIds.rightIndex],
+        [PoseLandmarkIds.leftThumb, PoseLandmarkIds.rightThumb],
+        [PoseLandmarkIds.leftHip, PoseLandmarkIds.rightHip],
+        [PoseLandmarkIds.leftKnee, PoseLandmarkIds.rightKnee],
+        [PoseLandmarkIds.leftAnkle, PoseLandmarkIds.rightAnkle],
+        [PoseLandmarkIds.leftHeel, PoseLandmarkIds.rightHeel],
+        [PoseLandmarkIds.leftFootIndex, PoseLandmarkIds.rightFootIndex],
+    ]);
+
+    return xFlipped;
 }
 
 export function GetPixelLandmarksFromNormalizedLandmarks(normalizedLandmarks: NormalizedLandmark[], srcWidth: number, srcHeight: number): Pose2DPixelLandmarks | null {
