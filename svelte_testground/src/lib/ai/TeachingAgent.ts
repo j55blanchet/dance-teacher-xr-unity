@@ -17,6 +17,6 @@ export function GeneratePracticeActivity(
         startTime: danceTreeNode.start_time,
         endTime: danceTreeNode.end_time,
         activityTypes: ['drill'], // 'watch', 'mark', 'drill', 'fullout']
-        playbackSpeed: 0.10,
+        playbackSpeed: 0.50,
     }
 }
