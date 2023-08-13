@@ -13,12 +13,15 @@ import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
 import { getDanceVideoSrc, loadPoseInformation } from "$lib/dances-store";
 import { onMount } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
-import { FlipXNormalizedPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
+import { MirrorXNormalizedPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
-export let mirrorForEvaluation: boolean = false;
+export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
+export let pageActive = false;
+export let flipVideo: boolean = false;
+
 let fitVideoToFlexbox = true;
 
 let state: "waitWebcam" | "waitStart" | "countdown" | "playing" | "feedback" = "waitWebcam";
@@ -36,9 +39,6 @@ let beatDuration = 1;
 $: {
     beatDuration = dance?.bpm ? 60 / dance.bpm : 1;
 }
-
-export let pageActive = false;
-export let flipVideo: boolean = false;
 
 let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
 let virtualMirrorElement: VirtualMirror;
@@ -207,7 +207,7 @@ function poseEstimationFrameReceived(e: any) {
     // Flip normalized pose, since the user will be mirroring the dance
     let evaluationPose = GetPixelLandmarksFromNormalizedLandmarks(userNormalizedPose, srcWidth, srcHeight);
     if (mirrorForEvaluation) {
-        const userDanceFlippedNormalizedPose = FlipXNormalizedPose(userNormalizedPose);
+        const userDanceFlippedNormalizedPose = MirrorXNormalizedPose(userNormalizedPose);
         const userDanceFlippedPixelPose = GetPixelLandmarksFromNormalizedLandmarks(userDanceFlippedNormalizedPose, srcWidth, srcHeight);
         evaluationPose = userDanceFlippedPixelPose;
     }
