@@ -1,13 +1,27 @@
 # Dance Teacher XR
 
 ## About
-This repo houses work for the 2nd iteration of a system for teaching short dance choreographies from video. 
+
+This repo houses work for the 2nd iteration of a system for teaching short dance choreographies from video.
 
 The first iteration of the system is presented and described in this demo paper: [Automatic Generation and Teaching of Dance Lessons from Video (HotMobile '23)](https://dl.acm.org/doi/abs/10.1145/3572864.3581592). The extended jounrnal version of this paper is currently in progress.
 
 There are two main components to this system:  
 * An offline motion-processing module, under the folder `motion-pipeline`. This python module performs computationally intensive processing tasks offline, such as pose estimation, music analysis, and compexity calculation, and bundles the final output files for the consumption of the web frontend. It also performs retargeting of motions for robot demonstration. 
 * A javascript webapp for teaching dance lessons, written using the [Svelte](https://svelte.dev/) framework, under the folder `svelte-web-frontend`. This we
+
+## Development Process
+
+The main branch is protected. To work on this site, we follow a pull request workflow. To make changes, create a new branch from the main branch, make changes, and then open a pull request to merge your branch into the main branch.
+
+Example:
+* `git checkout -b j55blanchet/update-homepage-ui` # create a new branch
+* (make changes)
+* `git add .` # add your changes
+* `git commit -m "refined homepage typography"` # commit your changes
+* `git push origin j55blanchet/update-homepage-ui` # push your changes to the remote branch
+* Open a pull request on github to merge your branch into the main branch
+  * Or, use the vscode pull requests extension to open a pull request
 
 ## Getting Started
 
