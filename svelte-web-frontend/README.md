@@ -1,38 +1,48 @@
-# create-svelte
+# Svelte Web Frontend
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
-
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+This is a web app for teaching short dance choreographies, built using the svelte framework.
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+For all development on the frontend, we assume you're in this directory. `cd` into it if you're not.
+
+I recommend using Visual Studio Code as your editor, with the [svelte extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) installed.
+
+1. Install [Node.js](https://nodejs.org)
+2. (recommended) install [pnpm](https://pnpm.js.org/en/installation)
 
 ```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+npm install -g pnpm
 ```
+
+3. Ensure that the motion processing pipeline has been run, so that the `static/bundle` directory and `src/lib/data/bundle` folders are populated with the necessary files. See the [motion pipeline README](../motion-pipeline/README.md) for more information.
+
+4. Install the dependencies:
+
+```bash
+pnpm install
+```
+
+5. Run the app:
+
+```bash
+pnpm run dev
+```
+
+6. Navigate to [localhost:5173](http://localhost:5173)
 
 ## Building
 
-To create a production version of your app:
+To create a production version of the app:
 
 ```bash
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+This will leave a production-ready version of the app in the `../docs` folder, which github pages will pick up when you merged into the `main` branch.
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+You can preview the production build with:
+
+```bash
+npm run preview
+```

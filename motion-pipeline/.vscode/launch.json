@@ -5,6 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run DanceTree Pipeline",
+            "type": "python",
+            "request": "launch",
+            "module": "motion_extraction.dancetree.run_dancetree_pipeline",
+            "args": [
+                "--database_csv_path=${workspaceFolder}/data/db.csv",
+                "--video_srcdir=${workspaceFolder}/data/source_videos",
+                "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
+                "--pose2d_data_srcdir=${workspaceFolder}/data/pose2d_data",
+                "--temp_dir=${workspaceFolder}/data/temp",
+                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
+                "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
+                "--rename_mp4s_to_mp4v",
+                "--delete_old_export_folder",
+                // "--include_thumbnail_in_bundle",
+                // "--include_audio_in_bundle",
+
+                // Feel free to comment out any of the following
+                // "--rewrite_existing_holistic_data",
+                "--skip_existing_cumulative_complexity",
+                "--skip_existing_audioanalysis"
+            ]
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
@@ -250,30 +274,6 @@
                 "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
                 "--rename_mp4s_to_mp4v",
                 "--exclude_test"
-            ]
-        },
-        {
-            "name": "Run DanceTree Pipeline",
-            "type": "python",
-            "request": "launch",
-            "module": "motion_extraction.dancetree.run_dancetree_pipeline",
-            "args": [
-                "--database_csv_path=${workspaceFolder}/data/db.csv",
-                "--video_srcdir=${workspaceFolder}/data/source_videos",
-                "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
-                "--pose2d_data_srcdir=${workspaceFolder}/data/pose2d_data",
-                "--temp_dir=${workspaceFolder}/data/temp",
-                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
-                "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
-                "--rename_mp4s_to_mp4v",
-                "--delete_old_export_folder",
-                // "--include_thumbnail_in_bundle",
-                // "--include_audio_in_bundle",
-
-                // Feel free to comment out any of the following
-                // "--rewrite_existing_holistic_data",
-                "--skip_existing_cumulative_complexity",
-                "--skip_existing_audioanalysis"
             ]
         },
         {
