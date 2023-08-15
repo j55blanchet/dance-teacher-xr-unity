@@ -1,4 +1,35 @@
+# Motion Pipeline
 
+This is a python module for performing a host of processing tasks on dance videos. This package performs tasks such as:
+
+* Keeping track of a database of dance videos and their metadata (in `data/db.csv`).
+* Running offline pose-estimation on videos using mediapipe, and storing the results in CSV for further analysis.
+* Analyzing the audio of videos to extract signals (beats, bpm, cross-similarities, etc.) that may be useful for structuring teaching.
+* Calculating metrics for dance complexity (e.g. plots of the accumulated complexity over time, typically base on kinematic features).
+* Preparing data bundles for the web frontend (incorporates several components already mentioned)
+  * Running pose-estimation
+  * Running audio analysis, generating recurisve tree-like decompositions of dances
+  * Calculating complexity metrics for the dance /
+  * Incorporating complexity into the dance trees.
+  * Creating symbolic links from the web frontend to the static media files (pose, holistic data, videos).
+  * Packaging dance and dancetree information into JSON files for the web frontend.
+* Inferring joint angles from 3D landmark data (mediapipe) and storing the results in BVH format for use in animation software.
+* Retargeting motions present in dance videos for performance by the Nao robot
+
+## Getting Started
+
+While working on the motion-pipeline,your working directory should be in this folder (`motion-pipeline`).
+
+1. Install python >= 3.8
+1. Install ffmpeg (for video transcoding, audio extraction, etc.). Ensure it's available in commmand line (added to PATH).
+1. Create a virtual environment: `python -m venv .env`
+1. Activate the virtual environment: `source .env/bin/activate` (or similar, depending on your shell).active
+1. Install dependencies: `pip install -r requirements.txt`
+
+## Running the pipeline
+
+There are numerous tasks that can be run within this module, and they're all defined in the VSCode launch file (`.vscode/launch.json`). To run a script, select it from the dropdown in the top left of the VSCode window, and click the green play button.
+* The single most important task is `Run DanceTree Pipeline`. This consolidates several processing steps into a single script, making it easy to run the entire pipeline, and bundles the output for use for the frontend. Data is cached along the way, meaning that the pipeline will run faster the 2nd and subsequent times it's run (you can force a full re-run by altering the `launch.json` arguments for this task, or by deleting the temp folders).
 
 ## Video -> BVH Process
 
@@ -23,13 +54,13 @@ $$pos_j = R_{P(j)}offset_j + pos_{P(j)}$$
 Therefore, the orientation of a joint affects the position of it's children.
 
 ## NAO Teleoperation
+
 1. Start listener from the nao6-experiments repo.
 1. Select Nao Teleoperation debug config and run it.
     * On windows, you can see available webcams in settings > cameras. The indexes should line up with what's visible there. Change the webcam index in the launch file.
 
+## USEFUL SH COMMANDS
 
-
-
-# USEFUL ZSH COMMANDS
-
-    for file in ./*; do ffmpeg -i $file -vcodec copy -acodec copy -tag:v hvc1 ./redone/$file -y; done
+```sh
+for file in ./*; do ffmpeg -i $file -vcodec copy -acodec copy -tag:v hvc1 ./redone/$file -y; done
+```
