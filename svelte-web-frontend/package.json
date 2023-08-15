@@ -29,7 +29,7 @@
 		"prettier-plugin-svelte": "^2.8.1",
 		"sass": "^1.63.4",
 		"svelte": "^3.54.0",
-		"svelte-check": "^3.0.1",
+		"svelte-check": "^3.5.0",
 		"tslib": "^2.6.1",
 		"typescript": "^5.0.0",
 		"uuid": "^9.0.0",
