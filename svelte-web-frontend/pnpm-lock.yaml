@@ -63,8 +63,8 @@ devDependencies:
     specifier: ^3.0.1
     version: 3.1.4(sass@1.63.4)(svelte@3.57.0)
   tslib:
-    specifier: ^2.4.1
-    version: 2.5.0
+    specifier: ^2.6.1
+    version: 2.6.1
   typescript:
     specifier: ^5.0.0
     version: 5.0.2
@@ -1742,8 +1742,8 @@ packages:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
     dev: true
 
-  /tslib@2.5.0:
-    resolution: {integrity: sha512-336iVw3rtn2BUK7ORdIAHTyxHGRIHVReokCR3XjbckJMK7ms8FysBfhLR8IXnAgy7T0PTPNBWKiH514FOW/WSg==}
+  /tslib@2.6.1:
+    resolution: {integrity: sha512-t0hLfiEKfMUoqhG+U1oid7Pva4bbDPHYfJNiB7BiIjRkj1pyC++4N3huJfqY6aRH6VTB0rvtzQwjM4K6qpfOig==}
     dev: true
 
   /tsutils@3.21.0(typescript@5.0.2):
