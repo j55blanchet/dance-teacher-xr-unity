@@ -154,7 +154,7 @@ def update_database(
     discarding_clipnames = old_db_clipnames - clip_names_set
     adding_clipnames = clip_names_set - old_db_clipnames
 
-    discarded_entries = old_db_by_clipname.loc[discarding_clipnames] # type: ignore
+    discarded_entries = old_db_by_clipname.loc[list(discarding_clipnames)] # type: ignore
     count_new_entries = len(clip_names_set) - len(old_db_by_clipname)
         
     out_db = {}

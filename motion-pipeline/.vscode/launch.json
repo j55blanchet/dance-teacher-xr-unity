@@ -15,8 +15,8 @@
                 "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
                 "--pose2d_data_srcdir=${workspaceFolder}/data/pose2d_data",
                 "--temp_dir=${workspaceFolder}/data/temp",
-                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
-                "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
+                "--bundle_export_path=${workspaceFolder}/../svelte-web-frontend/src/lib/data/bundle",
+                "--bundle_media_export_path=${workspaceFolder}/../svelte-web-frontend/static/bundle/",
                 "--rename_mp4s_to_mp4v",
                 "--delete_old_export_folder",
                 // "--include_thumbnail_in_bundle",
@@ -270,8 +270,8 @@
                 "--dancetree_srcdir=${workspaceFolder}/data/dancetrees_with_complexity",
                 "--source_videos_dir=${workspaceFolder}/data/source_videos",
                 "--db_csv_path=${workspaceFolder}/data/db.csv",
-                "--bundle_export_path=${workspaceFolder}/../svelte_testground/src/lib/data/bundle",
-                "--bundle_media_export_path=${workspaceFolder}/../svelte_testground/static/bundle/",
+                "--bundle_export_path=${workspaceFolder}/../svelte-web-frontend/src/lib/data/bundle",
+                "--bundle_media_export_path=${workspaceFolder}/../svelte-web-frontend/static/bundle/",
                 "--rename_mp4s_to_mp4v",
                 "--exclude_test"
             ]
