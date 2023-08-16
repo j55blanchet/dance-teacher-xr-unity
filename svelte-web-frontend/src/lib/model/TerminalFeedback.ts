@@ -21,5 +21,6 @@ export type TerminalFeedback = {
         achieved: number;
         maximumPossible: number;
     };
-    incorrectBodyParts?: TerminalFeedbackBodyPart[];
+    incorrectBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
+    correctBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
 };
