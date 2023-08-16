@@ -24,6 +24,11 @@ $: {
 }
 let pageState: PracticePageState = initialState;
 
+const StatesWithHiddenBackButton = new Set(["countdown", "playing", "paused"]);
+let hideBackButton = false;
+$: {
+    hideBackButton = StatesWithHiddenBackButton.has(pageState)
+}
 </script>
 
 
@@ -35,7 +40,7 @@ let pageState: PracticePageState = initialState;
         on:continue-clicked={() => goto(parentURL)}
         on:stateChanged={(e) => pageState = e.detail}
     />
-    {#if pageState !== "playing" && pageState !== "countdown"}
+    {#if !hideBackButton}
         <a href={parentURL} class="button outlined back">&lt; {danceTree.tree_name}</a>
     {/if}
 </section>

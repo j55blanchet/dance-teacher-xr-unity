@@ -1,4 +1,4 @@
-import type { NormalizedLandmark, PoseLandmarkerResult } from '@mediapipe/tasks-vision'
+import type { Landmark, NormalizedLandmark, PoseLandmarkerResult } from '@mediapipe/tasks-vision'
 import { SwapMultipleArrayElements } from '$lib/utils/array';
 import type { ValueOf } from '$lib/dances-store';
 
@@ -43,6 +43,7 @@ export const PoseLandmarkKeys = Object.freeze(Object.getOwnPropertyNames(PoseLan
 
 export type Pose3DLandmarks = PoseLandmarkerResult["worldLandmarks"];
 export type Pose2DNormalizedLandmarks = PoseLandmarkerResult["landmarks"]
+export type AnyLandmark = NormalizedLandmark | Landmark | PixelLandmark;
 
 /**
  * Represents a pixel landmark
@@ -77,15 +78,9 @@ function convertCamelcaseStringToSnakeCase(camelCaseString: string): string {
 
 export const PoseLandmarkKeysUpperSnakeCase = Object.freeze(PoseLandmarkKeys.map(k => convertCamelcaseStringToSnakeCase(k).toUpperCase()));
 
-export function MirrorXNormalizedPose(pose: NormalizedLandmark[]): NormalizedLandmark[] {
-    const xFlipped = pose.map(lm => ({
-        x: 1 - lm.x,
-        y: lm.y,
-        z: lm.z,
-        visibility: (lm as any).visibility ?? 1,
-    }));
-
-    SwapMultipleArrayElements(xFlipped, [
+export function SwapLeftRightLandmarks<T extends AnyLandmark>(pose: T[]) {
+    const copiedPose = [...pose]
+    SwapMultipleArrayElements(copiedPose, [
         [PoseLandmarkIds.leftEyeInner, PoseLandmarkIds.rightEyeInner],
         [PoseLandmarkIds.leftEye, PoseLandmarkIds.rightEye],
         [PoseLandmarkIds.leftEyeOuter, PoseLandmarkIds.rightEyeOuter],
@@ -103,8 +98,16 @@ export function MirrorXNormalizedPose(pose: NormalizedLandmark[]): NormalizedLan
         [PoseLandmarkIds.leftHeel, PoseLandmarkIds.rightHeel],
         [PoseLandmarkIds.leftFootIndex, PoseLandmarkIds.rightFootIndex],
     ]);
+    return copiedPose;
+}
 
-    return xFlipped;
+export function MirrorXNormalizedPose<T extends AnyLandmark>(pose: T[]): T[] {
+    const xFlipped = pose.map(lm => ({
+        ...lm,
+        x: 1 - lm.x,
+    }));
+
+    return SwapLeftRightLandmarks(xFlipped);
 }
 
 export function GetPixelLandmarksFromNormalizedLandmarks(normalizedLandmarks: NormalizedLandmark[], srcWidth: number, srcHeight: number): Pose2DPixelLandmarks | null {

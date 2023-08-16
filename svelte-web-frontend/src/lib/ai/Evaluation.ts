@@ -2,6 +2,7 @@ import type { Pose2DReferenceData } from "$lib/dances-store";
 import { TerminalFeedbackBodyParts, type TerminalFeedback, type TerminalFeedbackAction, type TerminalFeedbackBodyPart, type TerminalFeedbackBodyPartIndex } from "$lib/model/TerminalFeedback";
 import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys, type PoseLandmarkIndex } from "$lib/webcam/mediapipe-utils";
 import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./Feedback";
+import { lerp } from "$lib/utils/math";
 
 export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, PoseLandmarkIndex]>> = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
@@ -22,12 +23,6 @@ export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.ma
 });
 
 const QijiaMethodComparisionVectorNamesToIndexMap = new Map(QijiaMethodComparisionVectorNames.map((name, i) => [name, i]))
-
-function lerp(val: number, srcMin: number, srcMax: number, destMin: number, destMax: number) {
-    const srcRange = srcMax - srcMin
-    const destRange = destMax - destMin
-    return destMin + (destRange * ((val - srcMin) / srcRange))
-}
 
 function getMagnitude(v: [number, number]) {
     return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2), 0.5)

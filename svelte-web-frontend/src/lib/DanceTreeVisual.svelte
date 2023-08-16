@@ -1,5 +1,5 @@
 <script lang="ts">
-import { debugMode } from './utils/debugMode';
+import { debugMode } from './model/settings';
 import { createEventDispatcher } from 'svelte';
 import type { DanceTreeNode } from '$lib/dances-store';
 
