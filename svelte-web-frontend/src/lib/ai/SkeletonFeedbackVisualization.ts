@@ -2,9 +2,7 @@ import { DrawingUtils, type NormalizedLandmark, type LandmarkData } from "@media
 import { QijiaMethodComparisonVectors, type EvaluationV1Result } from "./Evaluation";
 import { SwapLeftRightLandmarks } from "$lib/webcam/mediapipe-utils";
 
-
-const GREEN_MINSCORE = 4.2;
-const YELLOW_MINSCORE = 3.0;
+import {feedback_YellowThreshold, feedback_GreenThreshold} from '$lib/model/Settings';
 
 const QijiaMethodVectorConnections = QijiaMethodComparisonVectors.map(([lm1, lm2]) => {
     return {
@@ -24,12 +22,21 @@ const QijiaMethodVectorConnections = QijiaMethodComparisonVectors.map(([lm1, lm2
 //     return null
 // }
 
+let greenThreshold = 0;
+feedback_GreenThreshold.subscribe((val) => {
+    greenThreshold = val;
+});
+let yellowThreshold = 0;
+feedback_YellowThreshold.subscribe((val) => {
+    yellowThreshold = val;
+});
+
 function getVectorColor(lmData: LandmarkData, evaluationResult: EvaluationV1Result | null) {
     const score = evaluationResult?.qijiaByVectorScores[lmData.index ?? -1];
     if (score === undefined) return 'white';
     
-    if (score >= GREEN_MINSCORE) return 'green';
-    if (score >= YELLOW_MINSCORE) return 'yellow';
+    if (score >= greenThreshold) return 'green';
+    if (score >= yellowThreshold) return 'yellow';
     return 'red';
 }
 
