@@ -1,5 +1,5 @@
 import type { Pose2DReferenceData } from "$lib/dances-store";
-import type { TerminalFeedback, TerminalFeedbackAction, TerminalFeedbackBodyPart, TerminalFeedbackBodyPartIndex } from "$lib/model/TerminalFeedback";
+import { TerminalFeedbackBodyParts, type TerminalFeedback, type TerminalFeedbackAction, type TerminalFeedbackBodyPart, type TerminalFeedbackBodyPartIndex } from "$lib/model/TerminalFeedback";
 import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys, type PoseLandmarkIndex } from "$lib/webcam/mediapipe-utils";
 import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./Feedback";
 
@@ -14,7 +14,7 @@ export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, Po
     [PoseLandmarkIds.rightElbow,    PoseLandmarkIds.rightWrist]
 ])
 
-export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.map((vec, i) => {
+export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.map((vec) => {
     const [lmSrc, lmDest] = vec;
     const [srcName, destName] = [PoseLandmarkKeys[lmSrc], PoseLandmarkKeys[lmDest]];
     const key = `${srcName} -> ${destName}`
@@ -146,6 +146,7 @@ type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> {
 
     public tracks: Map<string, PerformanceEvaluationTrack<EvaluationType>> = new Map();
@@ -153,8 +154,9 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
     recordEvaluationFrame(id: string, frameTime: number, userPose: Pose2DPixelLandmarks, evaluationResult: EvaluationType) {
         const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
 
+        let track: PerformanceEvaluationTrack<EvaluationType>
         if(!this.tracks.has(id)) {
-            this.tracks.set(id, {
+            track = {
                 creationDate: new Date(),
                 frameTimes: [],
                 recordTimesMs: [],
@@ -163,15 +165,20 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
                     acc[key] = []
                     return acc
                 }, {} as ArrayVersions<EvaluationType>)
-            })
-        } 
+            }
+            this.tracks.set(id, track)
+        } else {
+            // We know the track exists, since we just checked it
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            track = this.tracks.get(id)!
+        }
 
         const lastFrameTime = this.tracks.get(id)?.frameTimes.slice(-1)[0] ?? -Infinity
         if (frameTime < lastFrameTime) {
             throw new Error("Frame time must be increasing")
         }
 
-        const track = this.tracks.get(id)!
+        
         track.frameTimes.push(frameTime)
         track.recordTimesMs.push(new Date().getTime());
         track.userPoses.push(userPose)
@@ -303,7 +310,8 @@ export class UserDanceEvaluatorV1 {
         let headline: string;
         let subHeadline: string;
         let suggestedAction: TerminalFeedbackAction;
-        let incorrectBodyParts: TerminalFeedbackBodyPart[] | undefined;
+        let incorrectBodyPartsToHighlight: TerminalFeedbackBodyPart[] | undefined;
+        let correctBodyPartsToHighlight: TerminalFeedbackBodyPart[] | undefined;
 
         const [worstComparisonVectorIndex, worstVectorScore] = [... qijiaByVectorScores.keys()].map((vectorName) => {
             const vectorIndex = QijiaMethodComparisionVectorNamesToIndexMap.get(vectorName);
@@ -324,6 +332,7 @@ export class UserDanceEvaluatorV1 {
             headline = getRandomGoodTrialHeadline();
             subHeadline = "You did great on that trial! Would you like to move on now?";
             suggestedAction = "next";
+            correctBodyPartsToHighlight = [...Object.keys(TerminalFeedbackBodyParts) as TerminalFeedbackBodyPart[]];
         } else {
             headline = getRandomBadTrialHeadline();
             subHeadline = "Want to try again?";
@@ -332,7 +341,7 @@ export class UserDanceEvaluatorV1 {
             // Call out the worst body part
             const bodyPartToCallOut = ComparisonVectorToTerminalFeedbackBodyPartMap.get(worstComparisonVectorIndex);
             if (!bodyPartToCallOut) { throw new Error("Unexpected vector index: " + worstComparisonVectorIndex); }
-            incorrectBodyParts = [bodyPartToCallOut];
+            incorrectBodyPartsToHighlight = [bodyPartToCallOut];
         }
 
         return {
@@ -343,7 +352,8 @@ export class UserDanceEvaluatorV1 {
                 maximumPossible: 5.0,
             },
             suggestedAction: suggestedAction,
-            incorrectBodyParts
+            incorrectBodyPartsToHighlight,
+            correctBodyPartsToHighlight
         }
     }
 }

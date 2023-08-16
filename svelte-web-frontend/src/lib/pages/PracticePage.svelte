@@ -336,17 +336,6 @@ section {
     }
 }
 
-.shrinkingVideo {
-    flex-grow: 1;
-    flex-shrink: 1;
-    max-width: 100%;
-    max-height: 100%;
-}
-
-.flipped {
-    transform: scaleX(-1);
-}
-
 .countdown {
     position: absolute;
     top: 0;

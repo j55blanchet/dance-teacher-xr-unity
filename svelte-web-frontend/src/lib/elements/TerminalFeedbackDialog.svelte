@@ -4,6 +4,7 @@
 // A component for offering feedback after a user has completed a
 // practice attempt of a dance. This content can be delivered through 
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
+import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
 import { createEventDispatcher } from 'svelte';
 
@@ -33,6 +34,16 @@ function secondaryButtonClicked() {
         dispatch("repeat-clicked");
     }
 }
+
+let skeletonHighlights: BodyPartHighlight[] = [];
+$: skeletonHighlights = [
+    ...(feedback?.incorrectBodyPartsToHighlight ?? []).map((bodyPart) => {
+        return { bodyPart, outlineColor: "#F00" }
+    }),
+    ...(feedback?.correctBodyPartsToHighlight ?? []).map((bodyPart) => {
+        return { bodyPart, outlineColor: "#0F0" }
+    })
+]; 
 </script>
 
 <div class="feedbackForm">
@@ -41,12 +52,12 @@ function secondaryButtonClicked() {
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
     {/if}
-    {#each feedback?.incorrectBodyParts ?? [] as badbodypart}
+    {#each feedback?.incorrectBodyPartsToHighlight ?? [] as badbodypart}
         <p>Try focusing on your {badbodypart} next time.</p>
     {/each}
     <div class="skeleton">
         <StaticSkeletonVisual 
-            highlightBodyParts={feedback?.incorrectBodyParts ?? []}
+            highlights={skeletonHighlights}
         />
     </div>
     <button class="outlined" on:click={primaryButtonClicked}>{primaryButtonTitle}</button>
