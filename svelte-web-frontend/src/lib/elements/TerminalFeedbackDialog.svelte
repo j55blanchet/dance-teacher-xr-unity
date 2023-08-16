@@ -39,7 +39,7 @@ function secondaryButtonClicked() {
     <h2>{feedback?.headline}</h2>
     <p class="sub-headline">{feedback?.subHeadline}</p>
     {#if feedback?.score}
-        <p><code>Score: {feedback.score.toFixed(2)}</code></p>
+        <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
     {/if}
     {#each feedback?.incorrectBodyParts ?? [] as badbodypart}
         <p>Try focusing on your {badbodypart} next time.</p>

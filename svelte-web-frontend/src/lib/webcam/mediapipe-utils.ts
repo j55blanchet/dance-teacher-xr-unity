@@ -1,5 +1,6 @@
 import type { NormalizedLandmark, PoseLandmarkerResult } from '@mediapipe/tasks-vision'
 import { SwapMultipleArrayElements } from '$lib/utils/array';
+import type { ValueOf } from '$lib/dances-store';
 
 export const PoseLandmarkIds = Object.freeze({
     nose: 0,
@@ -36,6 +37,7 @@ export const PoseLandmarkIds = Object.freeze({
     leftFootIndex: 31,
     rightFootIndex: 32,
 });
+export type PoseLandmarkIndex = ValueOf<typeof PoseLandmarkIds>;
 type PoseLandmarkName = keyof typeof PoseLandmarkIds;
 export const PoseLandmarkKeys = Object.freeze(Object.getOwnPropertyNames(PoseLandmarkIds)) as readonly PoseLandmarkName[];
 
