@@ -23,4 +23,5 @@ export type TerminalFeedback = {
     };
     incorrectBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     correctBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
+    debugJson?: object;
 };
