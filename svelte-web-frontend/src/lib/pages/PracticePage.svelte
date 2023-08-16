@@ -1,3 +1,7 @@
+<script context="module" lang="ts">
+export type PracticePageState = "waitWebcam" | "waitStart" | "countdown" | "playing" | "feedback";
+export const initialState = "waitWebcam";
+</script>
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -24,13 +28,13 @@ export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
 
-
 const dispatch = createEventDispatcher();
 
 let fitVideoToFlexbox = true;
 
-let state: "waitWebcam" | "waitStart" | "countdown" | "playing" | "feedback" = "waitWebcam";
+let state: PracticePageState = initialState;
 $: console.log("PracticePage state", state);
+$: dispatch('stateChanged', state); 
 
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
