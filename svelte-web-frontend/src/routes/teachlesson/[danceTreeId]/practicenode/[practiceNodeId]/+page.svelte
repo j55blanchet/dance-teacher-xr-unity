@@ -1,7 +1,9 @@
 <script lang="ts">
+import { goto } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/dances-store';
 import PracticePage from '$lib/pages/PracticePage.svelte';
+
 
 /** @type {import('./$types').PageData} */    
 export let data;
@@ -29,6 +31,7 @@ $: {
         {dance} 
         {practiceActivity}
         pageActive={true}
+        on:continue-clicked={() => goto(parentURL)}
     />
     <a href={parentURL} class="button outlined back">&lt; {danceTree.tree_name}</a>
 </section>
