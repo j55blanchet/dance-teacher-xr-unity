@@ -3,7 +3,7 @@ import { goto } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/dances-store';
 import PracticePage from '$lib/pages/PracticePage.svelte';
-
+import { initialState, type PracticePageState } from '$lib/pages/PracticePage.svelte';
 
 /** @type {import('./$types').PageData} */    
 export let data;
@@ -22,6 +22,7 @@ let parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
 $: {
     parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
 }
+let pageState: PracticePageState = initialState;
 
 </script>
 
@@ -32,8 +33,11 @@ $: {
         {practiceActivity}
         pageActive={true}
         on:continue-clicked={() => goto(parentURL)}
+        on:stateChanged={(e) => pageState = e.detail}
     />
-    <a href={parentURL} class="button outlined back">&lt; {danceTree.tree_name}</a>
+    {#if pageState !== "playing" && pageState !== "countdown"}
+        <a href={parentURL} class="button outlined back">&lt; {danceTree.tree_name}</a>
+    {/if}
 </section>
 
 
