@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="./favicon.png" />
+		<meta name="viewport" content="width=device-width" />
+
+		<!-- <script 
+		src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js"
+		crossorigin="anonymous">
+		</script> -->
+		
+		<link rel="modulepreload" href="./_app/immutable/entry/start.2f4b0b2d.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.eec1637c.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.2bfcf5bd.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.58f9a949.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/control.f5b05b5f.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.d1353fdf.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+			<script>
+				{
+					__sveltekit_1tpglfh = {
+						base: new URL(".", location).pathname.slice(0, -1),
+						env: {}
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("./_app/immutable/entry/start.2f4b0b2d.js"),
+						import("./_app/immutable/entry/app.d1353fdf.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>
