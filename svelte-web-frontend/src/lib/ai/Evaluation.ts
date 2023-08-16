@@ -1,5 +1,7 @@
 import type { Pose2DReferenceData } from "$lib/dances-store";
+import type { TerminalFeedback, TerminalFeedbackAction, TerminalFeedbackBodyPart } from "$lib/model/TerminalFeedback";
 import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys } from "$lib/webcam/mediapipe-utils";
+import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./Feedback";
 
 export const QijiaMethodComparisonVectors = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
@@ -12,12 +14,25 @@ export const QijiaMethodComparisonVectors = Object.freeze([
     [PoseLandmarkIds.rightElbow,    PoseLandmarkIds.rightWrist]
 ])
 
+const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<number, TerminalFeedbackBodyPart>([
+    [0, "torso"], // leftShoulder -> rightShoulder
+    [1, "torso"], // leftShoulder -> leftHip
+    [2, "torso"], // leftHip -> rightHip
+    [3, "torso"], // rightHip -> rightShoulder
+    [4, "leftarm"], // leftShoulder -> leftElbow
+    [5, "leftarm"], // leftElbow -> leftWrist
+    [6, "rightarm"], // rightShoulder -> rightElbow
+    [7, "rightarm"], // rightElbow -> rightWrist
+]);
+
 export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.map((vec, i) => {
     const [lmSrc, lmDest] = vec;
     const [srcName, destName] = [PoseLandmarkKeys[lmSrc], PoseLandmarkKeys[lmDest]];
     const key = `${srcName} -> ${destName}`
     return key;
 });
+
+const QijiaMethodComparisionVectorNamesToIndexMap = new Map(QijiaMethodComparisionVectorNames.map((name, i) => [name, i]))
 
 function lerp(val: number, srcMin: number, srcMax: number, destMin: number, destMax: number) {
     const srcRange = srcMax - srcMin
@@ -53,7 +68,7 @@ export function computeSkeleton2DSimilarityJulienMethod(
     refLandmarks: Pose2DPixelLandmarks,
     userLandmarks: Pose2DPixelLandmarks
 ) {
-    let score = 0
+    const score = 0
 
     // Idea: 2D vector comparison should look at both angle and magnitude, since angle
     //       changes are only meaningful when a vectors is perpendicular to the camera.
@@ -191,7 +206,6 @@ export type EvaluationV1Result = {
 export class UserDanceEvaluatorV1 {
 
     public recorder = new UserEvaluationRecorder<EvaluationV1Result>();
-
     constructor(private referenceData: Pose2DReferenceData) {
     };
 
@@ -233,8 +247,9 @@ export class UserDanceEvaluatorV1 {
         return evaluationResult;
     }
 
-    getPerformanceSummary(id: string): Record<string, any> | null {
-        const track = this.recorder.tracks.get(id)!
+    getPerformanceSummary(id: string) {
+
+        const track = this.recorder.tracks.get(id)
         if (!track) {
             return null;
         }
@@ -247,10 +262,9 @@ export class UserDanceEvaluatorV1 {
         });
 
         // const evaluationKeys = Object.keys(track.evaluation) as Array<keyof EvaluationV1>
-        let performanceSummary: Record<string, any> = {
-            qijiaOverallScore: getArrayMean(track.evaluation.qijiaOverallScore),
-            qijiaByVectorScores: new Map(vectorScoreKeyValues),
-        }
+        
+        const qijiaOverallScore = getArrayMean(track.evaluation.qijiaOverallScore);
+        const qijiaByVectorScores = new Map(vectorScoreKeyValues)
         
         // evaluationKeys.reduce((summary, key) => {
         //     const sumOfMetric = track.evaluation[key].reduce((runningTotal, frameValue) => runningTotal + frameValue, 0)
@@ -265,12 +279,69 @@ export class UserDanceEvaluatorV1 {
         const danceTimeFps = frameCount / danceTimeDurationSecs
         const realTimeFps = frameCount / realtimeDurationSecs
 
-        performanceSummary["frameCount"] = frameCount
-        performanceSummary["danceTimeDurationSecs"] = danceTimeDurationSecs
-        performanceSummary["realtimeDurationSecs"] = realtimeDurationSecs
-        performanceSummary["danceTimeFps"] = danceTimeFps
-        performanceSummary["realTimeFps"] = realTimeFps
+        return {
+            frameCount,
+            danceTimeDurationSecs,
+            realtimeDurationSecs,
+            danceTimeFps,
+            realTimeFps,
+            qijiaOverallScore,
+            qijiaByVectorScores
+        }
+    }
 
-        return performanceSummary
+    generateTerminalFeedback(performanceSummary: ReturnType<typeof this.getPerformanceSummary>): TerminalFeedback {
+        if (!performanceSummary) {
+            return {
+                headline: "Try Again?",
+                subHeadline: "We don't have any feedback for you.",
+                suggestedAction: "repeat",
+            };
+        }
+
+        const { qijiaOverallScore, qijiaByVectorScores } = performanceSummary;
+        let headline: string;
+        let subHeadline: string;
+        let suggestedAction: TerminalFeedbackAction;
+        let incorrectBodyParts: TerminalFeedbackBodyPart[] | undefined;
+
+        const [worstComparisonVectorIndex, worstVectorScore] = [... qijiaByVectorScores.keys()].map((vectorName) => {
+            const vectorIndex = QijiaMethodComparisionVectorNamesToIndexMap.get(vectorName);
+            if (vectorIndex === undefined) { throw new Error("Unexpected vector name: " + vectorName); }
+            const vectorScore = qijiaByVectorScores.get(vectorName);
+            if (vectorScore === undefined) { throw new Error("Unable to retrieve score for " + vectorName); }
+
+            return [vectorIndex, vectorScore] as [number, number];
+        }).reduce(([worstVectorSoFar, worstScoreSoFar], [vectorIndex, vectorScore]) => {
+            if (vectorScore < worstScoreSoFar) {
+                return [vectorIndex, vectorScore] as [number, number];
+            } else {
+                return [worstVectorSoFar, worstScoreSoFar] as [number, number];
+            }
+        }, [-1, Infinity] as [number, number]);
+
+        if (qijiaOverallScore > 4.0) {
+            headline = getRandomGoodTrialHeadline();
+            subHeadline = "You did great on that trial! Would you like to move on now?";
+            suggestedAction = "next";
+        } else {
+            headline = getRandomBadTrialHeadline();
+            subHeadline = "Want to try again?";
+            suggestedAction = "repeat";
+
+            // Call out the worst body part
+            const bodyPartToCallOut = ComparisonVectorToTerminalFeedbackBodyPartMap.get(worstComparisonVectorIndex);
+            if (!bodyPartToCallOut) { throw new Error("Unexpected vector index: " + worstComparisonVectorIndex); }
+            incorrectBodyParts = [bodyPartToCallOut];
+        }
+
+        return {
+            headline: headline,
+            subHeadline: subHeadline,
+            score: qijiaOverallScore,
+            suggestedAction: suggestedAction,
+            incorrectBodyParts
+        }
     }
 }
+

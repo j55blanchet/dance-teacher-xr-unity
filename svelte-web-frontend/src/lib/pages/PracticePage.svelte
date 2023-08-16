@@ -6,21 +6,26 @@ import type PracticeActivity from "../model/PracticeActivity";
 import type { Dance, DanceTreeNode, Pose2DReferenceData } from "../dances-store";
 import * as evalAI from '$lib/ai/Evaluation';
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
-
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
 import { getDanceVideoSrc, loadPoseInformation } from "$lib/dances-store";
-import { onMount } from "svelte";
+import { onMount, createEventDispatcher } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXNormalizedPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
+import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
+import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
+import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
 
 export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
+
+
+const dispatch = createEventDispatcher();
 
 let fitVideoToFlexbox = true;
 
@@ -55,7 +60,8 @@ let referenceDancePoses: Pose2DReferenceData | null = null;
 let lastEvaluationResult: evalAI.EvaluationV1Result | null = null;
 let evaluator: evalAI.UserDanceEvaluatorV1 | null = null;
 let trialId = generateUUIDv4();
-let performanceSummary: Record<string, any> | null = null;
+let performanceSummary: ReturnType<evalAI.UserDanceEvaluatorV1["getPerformanceSummary"]> | null = null;
+let terminalFeedback: TerminalFeedback | null = null;
 
 let countdown = -1;
 let countdownActive = false;
@@ -77,6 +83,7 @@ $: {
         (videoDuration > 0 && videoCurrentTime >= videoDuration)) {
         isVideoPaused = true;
         performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
+        terminalFeedback = evaluator?.generateTerminalFeedback(performanceSummary) ?? null;
         state = "feedback";
     }
 }
@@ -255,7 +262,7 @@ onMount(() => {
             flipHorizontal={flipVideo}
             fitToFlexbox={fitVideoToFlexbox}
             poseData={referenceDancePoses}
-            drawSkeleton={true}
+            drawSkeleton={false}
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
@@ -270,9 +277,13 @@ onMount(() => {
     </div>
     {#if state === "feedback"}
     <div>
-        <h1>Feedback</h1>
-        <button class="button outlined thin" on:click={reset}>Play Again</button>
-        <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+        <TerminalFeedbackDialog 
+            feedback={terminalFeedback}
+            on:repeat-clicked={reset}
+            on:continue-clicked={() => dispatch('continue-clicked')}
+
+        />
+        <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
     </div>
     {/if}
     <div style:display={state === "feedback" ? 'none' : 'flex'}>
