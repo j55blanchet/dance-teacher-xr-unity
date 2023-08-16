@@ -1,9 +1,9 @@
 import type { Pose2DReferenceData } from "$lib/dances-store";
-import type { TerminalFeedback, TerminalFeedbackAction, TerminalFeedbackBodyPart } from "$lib/model/TerminalFeedback";
-import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys } from "$lib/webcam/mediapipe-utils";
+import type { TerminalFeedback, TerminalFeedbackAction, TerminalFeedbackBodyPart, TerminalFeedbackBodyPartIndex } from "$lib/model/TerminalFeedback";
+import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys, type PoseLandmarkIndex } from "$lib/webcam/mediapipe-utils";
 import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./Feedback";
 
-export const QijiaMethodComparisonVectors = Object.freeze([
+export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, PoseLandmarkIndex]>> = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.leftHip],
     [PoseLandmarkIds.leftHip,       PoseLandmarkIds.rightHip],
@@ -13,17 +13,6 @@ export const QijiaMethodComparisonVectors = Object.freeze([
     [PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightElbow],
     [PoseLandmarkIds.rightElbow,    PoseLandmarkIds.rightWrist]
 ])
-
-const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<number, TerminalFeedbackBodyPart>([
-    [0, "torso"], // leftShoulder -> rightShoulder
-    [1, "torso"], // leftShoulder -> leftHip
-    [2, "torso"], // leftHip -> rightHip
-    [3, "torso"], // rightHip -> rightShoulder
-    [4, "leftarm"], // leftShoulder -> leftElbow
-    [5, "leftarm"], // leftElbow -> leftWrist
-    [6, "rightarm"], // rightShoulder -> rightElbow
-    [7, "rightarm"], // rightElbow -> rightWrist
-]);
 
 export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.map((vec, i) => {
     const [lmSrc, lmDest] = vec;
@@ -200,6 +189,17 @@ export type EvaluationV1Result = {
     julienScore: number;
 };
 
+const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<TerminalFeedbackBodyPartIndex, TerminalFeedbackBodyPart>([
+    [0, "torso"], // leftShoulder -> rightShoulder
+    [1, "torso"], // leftShoulder -> leftHip
+    [2, "torso"], // leftHip -> rightHip
+    [3, "torso"], // rightHip -> rightShoulder
+    [4, "leftarm"], // leftShoulder -> leftElbow
+    [5, "leftarm"], // leftElbow -> leftWrist
+    [6, "rightarm"], // rightShoulder -> rightElbow
+    [7, "rightarm"], // rightElbow -> rightWrist
+]);
+
 /**
  * Evaluates a user's dance performance against a reference dance.
  */
@@ -338,7 +338,10 @@ export class UserDanceEvaluatorV1 {
         return {
             headline: headline,
             subHeadline: subHeadline,
-            score: qijiaOverallScore,
+            score: {
+                achieved: qijiaOverallScore,
+                maximumPossible: 5.0,
+            },
             suggestedAction: suggestedAction,
             incorrectBodyParts
         }

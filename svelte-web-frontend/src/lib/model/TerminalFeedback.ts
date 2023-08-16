@@ -1,3 +1,4 @@
+import type { ValueOf } from "$lib/dances-store";
 
 
 export const TerminalFeedbackBodyParts = {
@@ -9,12 +10,16 @@ export const TerminalFeedbackBodyParts = {
     'rightleg': 5
 };
 export type TerminalFeedbackBodyPart = keyof typeof TerminalFeedbackBodyParts;
+export type TerminalFeedbackBodyPartIndex = ValueOf<typeof TerminalFeedbackBodyParts>;
 
 export type TerminalFeedbackAction = 'repeat' | 'next';
 export type TerminalFeedback = {
     headline: string;
     subHeadline: string;
     suggestedAction: TerminalFeedbackAction;
-    score?: number;
+    score?: {
+        achieved: number;
+        maximumPossible: number;
+    };
     incorrectBodyParts?: TerminalFeedbackBodyPart[];
 };
