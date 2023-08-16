@@ -1,9 +1,10 @@
 import { DrawingUtils, type NormalizedLandmark, type LandmarkData } from "@mediapipe/tasks-vision";
 import { QijiaMethodComparisonVectors, type EvaluationV1Result } from "./Evaluation";
+import { SwapLeftRightLandmarks } from "$lib/webcam/mediapipe-utils";
 
 
-const GREEN_MINSCORE = 4.5;
-const YELLOW_MINSCORE = 3.5;
+const GREEN_MINSCORE = 4.2;
+const YELLOW_MINSCORE = 3.0;
 
 const QijiaMethodVectorConnections = QijiaMethodComparisonVectors.map(([lm1, lm2]) => {
     return {
@@ -32,8 +33,17 @@ function getVectorColor(lmData: LandmarkData, evaluationResult: EvaluationV1Resu
     return 'red';
 }
 
-export function DrawColorCodedSkeleton(ctx: CanvasRenderingContext2D, pose: null | NormalizedLandmark[], evaluationResult: EvaluationV1Result | null) {
+export function DrawColorCodedSkeleton(
+    ctx: CanvasRenderingContext2D, 
+    pose: null | NormalizedLandmark[], 
+    evaluationResult: EvaluationV1Result | null,
+    flipLeftRight = false) 
+{
     if (!pose) return;
+
+    if (flipLeftRight) {
+        pose = SwapLeftRightLandmarks(pose);
+    }
     
     // We'll color code only the vectors with the lowest score
     const drawUtils = new DrawingUtils(ctx);

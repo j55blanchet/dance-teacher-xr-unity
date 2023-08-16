@@ -1,13 +1,14 @@
 <script context="module" lang="ts">
-export type PracticePageState = "waitWebcam" | "waitStart" | "countdown" | "playing" | "feedback";
+export type PracticePageState = "waitWebcam" | "waitStart" | "countdown" | "playing" | "paused" | "feedback";
 export const initialState = "waitWebcam";
 </script>
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
-import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
+// import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
+import { pauseInPracticePage, debugPauseDurationSecs } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks } from '$lib/webcam/mediapipe-utils';
-import type PracticeActivity from "../model/PracticeActivity";
-import type { Dance, DanceTreeNode, Pose2DReferenceData } from "../dances-store";
+import type PracticeActivity from "$lib/model/PracticeActivity";
+import type { Dance, Pose2DReferenceData } from "$lib/dances-store";
 import * as evalAI from '$lib/ai/Evaluation';
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
@@ -19,7 +20,6 @@ import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXNormalizedPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
-import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
 
 export let mirrorForEvaluation: boolean = true;
@@ -55,7 +55,7 @@ let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
 let videoDuration: number = 0;
 $: console.log("VideoDuration", videoDuration);
-let isVideoPaused: boolean = true;
+let isVideoPausedBinding: boolean = true;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
@@ -70,25 +70,45 @@ let terminalFeedback: TerminalFeedback | null = null;
 let countdown = -1;
 let countdownActive = false;
 
+const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
+let currentPlaybackEndtime = practiceActivity?.endTime ?? 0;
+
 $: {
     danceSrc = getDanceVideoSrc(dance);
 }
 
 $: {
-    poseEstimationEnabled = pageActive && (countdownActive || !isVideoPaused) && currentActivityType === 'drill';
+    poseEstimationEnabled = pageActive && (countdownActive || !isVideoPausedBinding || state==="paused") && currentActivityType === 'drill';
 }
 $: {
     videoPlaybackSpeed = practiceActivity?.playbackSpeed ?? 1.0;
 }
 
+let unpauseVideoTimeout: number | null  = null;
+function unPauseVideo() {
+    unpauseVideoTimeout = null;
+    currentPlaybackEndtime = practiceActivity?.endTime ?? videoDuration;
+    isVideoPausedBinding = false;
+    state = "playing";
+}
+
 // Auto-pause the video when the practice activity is over
 $: {
-    if ((practiceActivity?.endTime && videoCurrentTime >= practiceActivity.endTime) || 
+    if ((practiceActivity?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
         (videoDuration > 0 && videoCurrentTime >= videoDuration)) {
-        isVideoPaused = true;
-        performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
-        terminalFeedback = evaluator?.generateTerminalFeedback(performanceSummary) ?? null;
-        state = "feedback";
+        isVideoPausedBinding = true;
+
+        if (currentPlaybackEndtime === practiceActivity?.endTime) {
+            performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
+            terminalFeedback = evaluator?.generateTerminalFeedback(performanceSummary) ?? null;
+            state = "feedback";
+        }
+        else {
+            state = "paused"
+            if (unpauseVideoTimeout === null) {
+                unpauseVideoTimeout = window.setTimeout(unPauseVideo, 1000 * $debugPauseDurationSecs);
+            }
+        }
     }
 }
 
@@ -113,7 +133,7 @@ function playClickSound() {
 async function startCountdown() {
     if (countdownActive) return;
 
-    isVideoPaused = true;
+    isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     trialId = generateUUIDv4();
 
@@ -145,17 +165,22 @@ async function startCountdown() {
 
     state = "playing"
     countdown = -1;
-    isVideoPaused = false;
+    isVideoPausedBinding = false;
     countdownActive = false;
 }
 
 export async function reset() {
     
+    if (unpauseVideoTimeout !== null) {
+        clearTimeout(unpauseVideoTimeout);
+    }
     currentActivityStepIndex = 0;
     state = "waitWebcam";
     lastEvaluationResult = null;
-    isVideoPaused = true;
+    isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
+    const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
+    currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
     
     referenceDancePoses = await loadPoseInformation(dance);
     await virtualMirrorElement.webcamStartedPromise;    
@@ -184,7 +209,10 @@ function poseEstimationFrameSent(e: any) {
 }
 
 function shouldSendNextPoseEstimationFrame() {
-    if (lastPoseEstimationVideoTime === videoCurrentTime && lastPoseEstimationSentTimestamp.getTime() > Date.now() - minimumPoseEsstimationIntervalMs) {
+    if (
+        lastPoseEstimationVideoTime === videoCurrentTime && 
+        lastPoseEstimationSentTimestamp.getTime() > Date.now() - minimumPoseEsstimationIntervalMs
+    ) {
         return false;
     }
     return true;
@@ -193,7 +221,7 @@ function shouldSendNextPoseEstimationFrame() {
 function poseEstimationFrameReceived(e: any) {
     // console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
 
-    if (state !== 'playing') {
+    if (state !== 'playing' && state !== 'paused') {
         return;
     }
 
@@ -232,6 +260,12 @@ function poseEstimationFrameReceived(e: any) {
     }
 }
 
+let drawReferenceDanceSkeleton = false;
+let toggleSkeletonInvervel: null | number = null;
+//  window.setInterval(() => {
+//     drawReferenceDanceSkeleton = !drawReferenceDanceSkeleton;
+// }, 1000);
+
 onMount(() => {
     // Prepare pose estimation, so that it'll be ready 
     // when we need it, as opposed to creating the model
@@ -240,7 +274,14 @@ onMount(() => {
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
 
-    return {}
+    return () => {
+        if (unpauseVideoTimeout) {
+            clearTimeout(unpauseVideoTimeout);
+        }
+        if (toggleSkeletonInvervel) {
+            clearInterval(toggleSkeletonInvervel);
+        }
+    }
 })
 
 </script>
@@ -261,12 +302,12 @@ onMount(() => {
         <VideoWithSkeleton
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
-            bind:paused={isVideoPaused}
+            bind:paused={isVideoPausedBinding}
             bind:duration={videoDuration}
             flipHorizontal={flipVideo}
             fitToFlexbox={fitVideoToFlexbox}
             poseData={referenceDancePoses}
-            drawSkeleton={false}
+            drawSkeleton={drawReferenceDanceSkeleton}
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
@@ -296,7 +337,7 @@ onMount(() => {
             {poseEstimationEnabled}
             drawSkeleton={false}
             poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
-            customDrawFn={(ctx, pose) => DrawColorCodedSkeleton(ctx, pose, lastEvaluationResult)}
+            customDrawFn={(ctx, pose) => DrawColorCodedSkeleton(ctx, pose, lastEvaluationResult, mirrorForEvaluation)}
             on:poseEstimationFrameSent={poseEstimationFrameSent}
             on:poseEstimationResult={poseEstimationFrameReceived}
         />
