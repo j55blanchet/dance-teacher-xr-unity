@@ -1,5 +1,12 @@
 <script lang="ts">
-import { debugMode, pauseInPracticePage, debugPauseDurationSecs } from "$lib/model/settings";
+import { 
+    debugMode, 
+    pauseInPracticePage, 
+    debugPauseDurationSecs,
+    evaluation_GoodBadTrialThreshold,
+    feedback_YellowThreshold,
+    feedback_GreenThreshold 
+} from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
 
@@ -21,6 +28,9 @@ $: pauseDurationStep = Math.round(10 * lerp(
     true
 )) / 10;
 
+
+const qijiaScoreMin = 0;
+const qijiaScoreMax = 5;
 </script>
 
 <section class="settingsPage">
@@ -41,7 +51,18 @@ $: pauseDurationStep = Math.round(10 * lerp(
         <label for="debugPauseDuration">Debug Pause Duration</label>
         <input type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
     </div>
-
+    <div>
+        <label for="evaluation_GoodBadTrialThreshold">Good/Bad Trial Threshold</label>
+        <input type="number" name="evaluation_GoodBadTrialThreshold" bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+    </div>
+    <div>
+        <label for="feedback_YellowThreshold">Yellow Threshold</label>
+        <input type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+    </div>
+    <div>
+        <label for="feedback_GreenThreshold">Green Threshold</label>
+        <input type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+    </div>
 </section>
 
 
@@ -54,6 +75,7 @@ $: pauseDurationStep = Math.round(10 * lerp(
     align-items: center;
     justify-content: start;
     height: 100vh;
+    gap: 0.5rem;
 }
 
 nav {

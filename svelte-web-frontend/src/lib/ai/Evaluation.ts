@@ -3,6 +3,7 @@ import { TerminalFeedbackBodyParts, type TerminalFeedback, type TerminalFeedback
 import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys, type PoseLandmarkIndex } from "$lib/webcam/mediapipe-utils";
 import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./Feedback";
 import { lerp } from "$lib/utils/math";
+import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 
 export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, PoseLandmarkIndex]>> = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
@@ -323,7 +324,7 @@ export class UserDanceEvaluatorV1 {
             }
         }, [-1, Infinity] as [number, number]);
 
-        if (qijiaOverallScore > 4.0) {
+        if (qijiaOverallScore > $evaluation_GoodBadTrialThreshold) {
             headline = getRandomGoodTrialHeadline();
             subHeadline = "You did great on that trial! Would you like to move on now?";
             suggestedAction = "next";
