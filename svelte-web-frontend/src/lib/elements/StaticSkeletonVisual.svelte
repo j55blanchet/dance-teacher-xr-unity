@@ -70,5 +70,7 @@ $: {
 svg {
     max-height: 100%;
     max-width: 100%;
+    min-height: 150px;
+    min-width: calc(150px * 14 / 55);
 }
 </style>

@@ -65,13 +65,18 @@ function secondaryButtonClicked() {
     flex-shrink: 1;
     flex-grow: 1;
     gap: 0.25rem;
+    overflow: hidden;
 }
 .skeleton {
+    // min-height: 0;
     width: 100%;
-    flex-grow: 1;
+    // flex-grow: 1;
+    flex-shrink: 1;
     max-height: 400px;
     text-align: center;
     padding: 1rem;
+    flex-basis: auto;
+    overflow: hidden;
 }
 h2, p {
     margin : 0;
