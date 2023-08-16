@@ -1,17 +1,17 @@
 import type { Dance, DanceTree, DanceTreeNode } from '../dances-store'
 import type PracticeActivity from '$lib/model/PracticeActivity';
 
-export interface UserDancePerformanceLog {
-    // markingByNode: Map<DanceTreeNode["id"], number>;
-    // similarityByNode: Map<DanceTreeNode["id"], number>;
-}
+// export interface UserDancePerformanceLog {
+//     // markingByNode: Map<DanceTreeNode["id"], number>;
+//     // similarityByNode: Map<DanceTreeNode["id"], number>;
+// }
 
 
 export function GeneratePracticeActivity(
     dance: Dance,
     danceTree: DanceTree,
     danceTreeNode: DanceTreeNode,
-    userDancePerformanceLog: UserDancePerformanceLog
+    // userDancePerformanceLog: UserDancePerformanceLog
 ): PracticeActivity {
     return {
         startTime: danceTreeNode.start_time,

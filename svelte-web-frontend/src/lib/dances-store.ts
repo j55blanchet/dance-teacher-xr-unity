@@ -1,5 +1,4 @@
-import { readable, writable, derived } from 'svelte/store';
-import Papa from 'papaparse';
+import Papa, { type ParseResult } from 'papaparse';
 
 import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 
@@ -40,11 +39,10 @@ export function makeDanceTreeSlug(danceTree: DanceTree): string {
 
 export function getDanceAndDanceTreeFromDanceTreeId(slug: string): [Dance | null, DanceTree | null] {
     const [clipRelativeStem, tree_name] = decodeURIComponent(slug).split(URI_COMPONENT_SEPARATOR);
-    // @ts-ignore
+    
     const matchingDance: Dance | null = dances.find((dance) => dance.clipRelativeStem === clipRelativeStem) ?? null;
 
-    // @ts-ignore
-    const matchingDanceTrees: DanceTrees = danceTrees[clipRelativeStem] ?? []
+    const matchingDanceTrees: DanceTrees = danceTrees[clipRelativeStem as keyof typeof danceTrees] ?? []
     const matchingDanceTree = matchingDanceTrees.find(danceTree => danceTree.tree_name === tree_name) ?? null;    
     return [matchingDance, matchingDanceTree];
     
@@ -53,11 +51,9 @@ export function getDanceAndDanceTreeFromDanceTreeId(slug: string): [Dance | null
 function FindDanceTreeNodeRecursive(node: DanceTreeNode, nodeId: string): DanceTreeNode | null {
     for (const child of node.children) {
         if (child.id === nodeId) {
-            // @ts-ignore
-            return child;
+            return child as unknown as DanceTreeNode;
         }
-        // @ts-ignore
-        const foundNode = FindDanceTreeNodeRecursive(child, nodeId);
+        const foundNode = FindDanceTreeNodeRecursive(child as unknown as DanceTreeNode, nodeId);
         if (foundNode) {
             return foundNode;
         }
@@ -120,7 +116,7 @@ export class Pose2DReferenceData {
      */
     getReferencePoseAtTime(timestamp: number): Pose2DPixelLandmarks | null {
 
-        let targetFrameIndex = Math.floor(timestamp * this.fps);
+        const targetFrameIndex = Math.floor(timestamp * this.fps);
 
         // Starting at the estimated frame, search backward for the closest frame with pose information. 
         //   * We're making the assumption that the data may omit frames, but does not contain any duplicate frames. 
@@ -138,8 +134,6 @@ export class Pose2DReferenceData {
     }
 }
 
-type Pose2DCSV = any;
-type Pose2DCSVRow = any;
 /**
  * Get the pose information for a dance. This is a CSV file with the pose information for 
  * each frame of the dance. It's returned in the form of an array of objects, where each object
@@ -168,13 +162,14 @@ export async function loadPoseInformation(dance: Dance): Promise<Pose2DReference
     const text = await response.text();
 
     // parse csv file
-    const data: any = await new Promise((res, rej) => {       
+    const data: ParseResult<Record<string, never>> = await new Promise((res, rej) => {       
         Papa.parse(text, {
             header: true,
             worker: true,
             // download: true,
             dynamicTyping: true,
             complete: res,
+            error: rej,
         })
     });
 
@@ -182,15 +177,16 @@ export async function loadPoseInformation(dance: Dance): Promise<Pose2DReference
     return new Pose2DReferenceData(
         dance.clipRelativeStem,
         dance.fps, 
-        data.data.map((row: any) => +row[`frame`]), 
-        data.data.map((row: any) => GetPixelLandmarksFromPose2DRow(row))
+        data.data.map((row) => +row[`frame`]), 
+        data.data.map((row) => GetPixelLandmarksFromPose2DRow(row))
+            .filter((pose) => pose !== null) as Pose2DPixelLandmarks[]
     )
 }
 
-function GetPixelLandmarksFromPose2DRow(pose2drow: any): Pose2DPixelLandmarks | null {
+function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>): Pose2DPixelLandmarks | null {
     if (!pose2drow) return null;
 
-    return PoseLandmarkKeysUpperSnakeCase.map((key, i) => {
+    return PoseLandmarkKeysUpperSnakeCase.map((key) => {
         return {
             x: pose2drow[`${key}_x`],
             y: pose2drow[`${key}_y`],

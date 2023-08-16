@@ -2,11 +2,14 @@
 // TerminalFeedbackDialog.svelte
 //
 // A component for offering feedback after a user has completed a
-// practice attempt of a dance. This content can be delivered through 
+// practice attempt of a dance. 
+import { reset } from 'microlight';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
-import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher, onMount } from 'svelte';
+import { debugMode } from '$lib/model/settings';
+	import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 
 const dispatch = createEventDispatcher();
 
@@ -44,6 +47,13 @@ $: skeletonHighlights = [
         return { bodyPart, outlineColor: "#0F0" }
     })
 ]; 
+
+$: $debugMode, feedback?.debugJson, reset('microlight'); // re-run microlight syntax highlighting
+
+onMount(() => {
+    reset('microlight');
+});
+
 </script>
 
 <div class="feedbackForm">
@@ -60,6 +70,9 @@ $: skeletonHighlights = [
             highlights={skeletonHighlights}
         />
     </div>
+    {#if $debugMode && feedback?.debugJson}
+    <pre class="microlight">{JSON.stringify(feedback.debugJson, replaceJSONForStringifyDisplay, 2)}</pre>
+    {/if}
     <button class="outlined" on:click={primaryButtonClicked}>{primaryButtonTitle}</button>
     <button class="outlined thin" on:click={secondaryButtonClicked}>{secondaryButtonTitle}</button>
 </div>
@@ -96,6 +109,10 @@ h2 {
     margin-top: 1rem;
     font-weight: 600;
     font-size: 1.5rem;
+}
+
+pre {
+    font-size: 0.75rem;
 }
 
 .sub-headline {

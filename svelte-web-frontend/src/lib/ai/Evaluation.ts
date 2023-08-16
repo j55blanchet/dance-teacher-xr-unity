@@ -5,6 +5,22 @@ import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./Feedbac
 import { lerp } from "$lib/utils/math";
 import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 
+let evaluation_GoodBadTrialThresholdValue = 1.0;
+evaluation_GoodBadTrialThreshold.subscribe((value) => {
+    evaluation_GoodBadTrialThresholdValue = value;
+});
+
+function GetScaleIndicator(pixelLandmarks: Pose2DPixelLandmarks){
+
+    const leftTorsoHeight = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip))
+    const rightTorsoHeight = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightHip))
+    const shoulderWidth = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder))
+    
+    return 0.25 * leftTorsoHeight + 
+           0.25 * rightTorsoHeight +
+           0.5 * shoulderWidth
+}
+
 export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, PoseLandmarkIndex]>> = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.leftHip],
@@ -23,10 +39,21 @@ export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.ma
     return key;
 });
 
+const MinVectorMagnitudeForReliableAngleDetermination = 50;
+const TargetVectorMagnitudeForReliableAngleDetermination = 100;
+
 const QijiaMethodComparisionVectorNamesToIndexMap = new Map(QijiaMethodComparisionVectorNames.map((name, i) => [name, i]))
 
 function getMagnitude(v: [number, number]) {
     return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2), 0.5)
+}
+
+function getInnerAngle(v1: [number, number], v2: [number, number]) {
+    return Math.acos((v1[0] * v2[0] + v1[1] * v2[1]) / (getMagnitude(v1) * getMagnitude(v2)))
+}
+
+function addVectors(v1: [number, number], v2: [number, number]) {
+    return [v1[0] + v2[0], v1[1] + v2[1]]
 }
 
 function getArraySum(v: Array<number>) {
@@ -36,15 +63,23 @@ function getArrayMean(v: Array<number>) {
     return getArraySum(v) / v.length
 }
 
+function GetVector(    
+    pixelLandmarks: Pose2DPixelLandmarks,
+    srcLandmark: number,
+    destLandmark: number
+) {
+    const {x: sx, y: sy } = pixelLandmarks[srcLandmark]
+    const {x: dx, y: dy } = pixelLandmarks[destLandmark]
+    return [dx - sx, dy - sy] as [number, number]
+}
+
 function GetNormalizedVector(
     pixelLandmarks: Pose2DPixelLandmarks,
     srcLandmark: number,
     destLandmark: number, 
 ){
     // TODO: utilize a vector arithmetic library?
-    const {x: sx, y: sy } = pixelLandmarks[srcLandmark]
-    const {x: dx, y: dy } = pixelLandmarks[destLandmark]
-    const [vec_x, vec_y] = [dx - sx, dy - sy]
+    const [vec_x, vec_y] = GetVector(pixelLandmarks, srcLandmark, destLandmark)
     const mag = getMagnitude([vec_x, vec_y]);
     return [vec_x / mag, vec_y / mag]
 }
@@ -53,7 +88,6 @@ export function computeSkeleton2DSimilarityJulienMethod(
     refLandmarks: Pose2DPixelLandmarks,
     userLandmarks: Pose2DPixelLandmarks
 ) {
-    const score = 0
 
     // Idea: 2D vector comparison should look at both angle and magnitude, since angle
     //       changes are only meaningful when a vectors is perpendicular to the camera.
@@ -69,8 +103,52 @@ export function computeSkeleton2DSimilarityJulienMethod(
     // Another idea: Mediapipe includes an approximate z-value for each landmark. We can use this
     //               to simply compute angle changes in 3D space. This is a simpler approach, but
     //               should work so long as mediapipe's z-values are accurate enough.
+    const vectorScoreInfos = QijiaMethodComparisonVectors.map((vecLandmarkIds, i) => {
+        const [srcLandmark, destLandmark] = vecLandmarkIds
+        const [refX, refY] = GetVector(refLandmarks, srcLandmark, destLandmark)
+        const [usrX, usrY] = GetVector(userLandmarks, srcLandmark, destLandmark)
 
-    return score
+        const scaleRef = GetScaleIndicator(refLandmarks)
+        const scaleUsr = GetScaleIndicator(userLandmarks)
+
+        const [magnitudeRef, magnitudeUsr] = [getMagnitude([refX, refY]), getMagnitude([usrX, usrY])]
+        const adjustedMagnitudeUsr = magnitudeUsr * scaleRef / scaleUsr
+        const magnitudePercentileDifferential = Math.abs(magnitudeRef - adjustedMagnitudeUsr) / Math.max(magnitudeRef, adjustedMagnitudeUsr)
+
+        const innerAngle = getInnerAngle([refX, refY], [usrX, usrY]);
+        const innerAnglePercentileDifferential = innerAngle / Math.PI
+
+        const pAngleRef = lerp(
+            magnitudeRef, 
+            MinVectorMagnitudeForReliableAngleDetermination, 
+            TargetVectorMagnitudeForReliableAngleDetermination,
+            0.0,
+            1.0
+        )
+        const pAngleUsr = lerp(
+            magnitudeUsr,
+            MinVectorMagnitudeForReliableAngleDetermination,
+            TargetVectorMagnitudeForReliableAngleDetermination,
+            0.0,
+            1.0
+        )
+
+        const pAngle = Math.min(pAngleRef, pAngleUsr)
+        const percentileDissimilar = pAngle * innerAnglePercentileDifferential + (1 - pAngle) * magnitudePercentileDifferential
+
+        return {
+            magnitude: magnitudePercentileDifferential, 
+            angle: innerAnglePercentileDifferential,
+            pAngle,
+            score: percentileDissimilar
+        };
+    });
+
+
+    return {
+        score: getArrayMean(vectorScoreInfos.map((s) => s.score)),
+        infoByVetor: vectorScoreInfos
+    };
 }
 
 type Vec8 = [number, number, number, number, number, number, number, number]
@@ -186,11 +264,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
 }
 
 
-export type EvaluationV1Result = {
-    qijiaOverallScore: number;
-    qijiaByVectorScores: Vec8;
-    julienScore: number;
-};
+export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["evaluateFrame"]>>;
 
 const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<TerminalFeedbackBodyPartIndex, TerminalFeedbackBodyPart>([
     [0, "torso"], // leftShoulder -> rightShoulder
@@ -218,7 +292,7 @@ export class UserDanceEvaluatorV1 {
      * @param frameTime Frame time in seconds
      * @param userPose User's pose at the given frame time
      */
-    evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks): EvaluationV1Result | null {
+    evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks) {
 
         const referencePose = this.referenceData.getReferencePoseAtTime(frameTime);
         if (!referencePose) {
@@ -238,7 +312,8 @@ export class UserDanceEvaluatorV1 {
         const evaluationResult = { 
             qijiaOverallScore,
             qijiaByVectorScores,
-            julienScore: julienScore
+            julienScore: julienScore.score,
+            julienByVectorInfo: julienScore.infoByVetor
          }
 
         this.recorder.recordEvaluationFrame(
@@ -274,7 +349,15 @@ export class UserDanceEvaluatorV1 {
         //     summary[key] = sumOfMetric / track.evaluation[key].length
         //     return summary
         // }, {} as Record<string, number>)
-        
+
+        const julienOverallScore = getArrayMean(track.evaluation.julienScore);
+        const julienVectorScoreKeyValues = QijiaMethodComparisonVectors.map((vec, i) => {
+            const key = QijiaMethodComparisionVectorNames[i];
+            const vecScores = track.evaluation.julienByVectorInfo.map((scores) => scores[i].score);
+            const meanScore = getArrayMean(vecScores);
+            return [key, meanScore] as [string, number];
+        });
+        const julienByVectorScores = new Map(julienVectorScoreKeyValues)
         
         const frameCount = track.frameTimes.length
         const realtimeDurationSecs = (track.recordTimesMs[frameCount - 1] - track.recordTimesMs[0]) / 1000
@@ -289,7 +372,9 @@ export class UserDanceEvaluatorV1 {
             danceTimeFps,
             realTimeFps,
             qijiaOverallScore,
-            qijiaByVectorScores
+            qijiaByVectorScores,
+            julienOverallScore,
+            julienByVectorScores
         }
     }
 
@@ -324,7 +409,7 @@ export class UserDanceEvaluatorV1 {
             }
         }, [-1, Infinity] as [number, number]);
 
-        if (qijiaOverallScore > $evaluation_GoodBadTrialThreshold) {
+        if (qijiaOverallScore > evaluation_GoodBadTrialThresholdValue) {
             headline = getRandomGoodTrialHeadline();
             subHeadline = "You did great on that trial! Would you like to move on now?";
             suggestedAction = "next";
@@ -349,7 +434,8 @@ export class UserDanceEvaluatorV1 {
             },
             suggestedAction: suggestedAction,
             incorrectBodyPartsToHighlight,
-            correctBodyPartsToHighlight
+            correctBodyPartsToHighlight,
+            debugJson: performanceSummary
         }
     }
 }

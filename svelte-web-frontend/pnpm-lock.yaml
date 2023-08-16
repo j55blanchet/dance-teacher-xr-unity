@@ -23,6 +23,9 @@ devDependencies:
   '@types/cookie':
     specifier: ^0.5.1
     version: 0.5.1
+  '@types/microlight':
+    specifier: ^0.0.0
+    version: 0.0.0
   '@types/papaparse':
     specifier: ^5.3.7
     version: 5.3.7
@@ -44,6 +47,9 @@ devDependencies:
   eslint-plugin-svelte3:
     specifier: ^4.0.0
     version: 4.0.0(eslint@8.36.0)(svelte@3.57.0)
+  microlight:
+    specifier: ^0.0.7
+    version: 0.0.7
   papaparse:
     specifier: ^5.4.1
     version: 5.4.1
@@ -474,6 +480,10 @@ packages:
 
   /@types/json-schema@7.0.11:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
+    dev: true
+
+  /@types/microlight@0.0.0:
+    resolution: {integrity: sha512-PhPnbZkunal+hvIwXKct4KimoQIwiYvBx9yQRBR+kC302420pGRYGZEnLtY1seR/bjlV7bUUs7na4Z5tu3060w==}
     dev: true
 
   /@types/node@20.4.5:
@@ -1261,6 +1271,10 @@ packages:
   /merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
+    dev: true
+
+  /microlight@0.0.7:
+    resolution: {integrity: sha512-kigwsJYoy4mAMkGZpS839/KZ5WWQQm4TzD+eIjR5leS5H0j+EhExvK0Z2Or2ewkBR/t7/AHHhxRyeXi1kurG0g==}
     dev: true
 
   /micromatch@4.0.5:
