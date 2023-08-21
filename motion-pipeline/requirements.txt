@@ -1,6 +1,6 @@
 mediapipe ~= 0.8.10
 pandas ~= 2.0
-protobuf ~= 3.20
+protobuf ~= 4.24
 pytransform3d ~=3.4
 open3d ~=0.17
 moviepy ~= 1.0.3
