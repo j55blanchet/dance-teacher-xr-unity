@@ -27,12 +27,11 @@ _VISIBILITY_THRESHOLD = 0.5
 _BGR_CHANNELS = 3
 from typing import List, Tuple, Mapping, Union
 DrawingSpec = mp_drawing.DrawingSpec
-from mediapipe.framework.formats import landmark_pb2
 RED_COLOR = (0, 0, 255)
 WHITE_COLOR = (224, 224, 224)
 def custom_draw_landmarks(
     image: np.ndarray,
-    landmark_list: landmark_pb2.NormalizedLandmarkList,
+    landmark_list: list,
     connections: t.Optional[List[Tuple[int, int]]] = None,
     landmark_drawing_spec: Union[DrawingSpec,
                                  Mapping[int, DrawingSpec]] = DrawingSpec(
