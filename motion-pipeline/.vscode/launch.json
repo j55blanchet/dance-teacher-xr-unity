@@ -285,6 +285,13 @@
                 "--srcdir=${workspaceFolder}/data/source_videos/study2/last-christmas-tutorial.mp4",
                 "--destdir=${workspaceFolder}/data/pyfeat",
             ]
+        },
+        {
+            "name": "Run ChatGPT",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/adhoc_analysis/",
+            "module": "chatgpt-test.test",
         }
     ]
 }
