@@ -58,6 +58,54 @@ def calculate_cross_similarity(y: np.ndarray, sr: float, segment_times: t.List[t
 
     return cross_similarity
 
+def compute_segment_groupings(similarity_matrix: t.List[t.List[float]]) -> t.List[t.List[int]]:
+    """
+    Calculates a grouping that places similar contiguous segments into groups. 
+
+    Parameters:
+    similarity_matrix (List[List[float]]): A 2D matrix of the cross similarity ratings between segments. 
+
+    Returns:
+    A list of grouped segments, represented by their indices, in increasing order.
+
+    Example:
+    groupings = compute_segment_groupings([
+        [1.00, 0.90, 0.50,  0.40],
+        [0.90, 1.00, 0.60,  0.35],
+        [0.50, 0.60, 1.00,  0.85],
+        [0.40, 0.35, 0.85,  1.00]
+    ])
+    # groupings == [[0, 1], [2, 3]]
+    """
+
+    similarity_matrix = np.array(similarity_matrix)
+    
+    GROUPING_THRESHOLD = 0.60
+    if len(similarity_matrix) == 0:
+        return 0
+    
+    groupings = []
+    current_group = [0]
+
+    for i in range(1, len(similarity_matrix)):
+        for j in range(i+1, len(similarity_matrix)):
+            mean_current_group_similarity = np.mean([
+                similarity_matrix[current_group_index][i]
+                for current_group_index in current_group
+            ])
+            if mean_current_group_similarity > GROUPING_THRESHOLD:
+                current_group.append(i)
+                continue
+            else:
+                groupings.append(current_group)
+                current_group = [j]
+                break
+            
+    if len(current_group) > 0:
+        groupings.append(current_group)
+
+    return groupings
+
 def plot_cross_similarity(
     cross_similarity: t.Union[np.ndarray, t.Sequence[t.Sequence[float]]], 
     ax=None
