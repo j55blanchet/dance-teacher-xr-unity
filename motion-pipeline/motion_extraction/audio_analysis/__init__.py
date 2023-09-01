@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from .audio_tools import calculate_8beat_segments_with_midpoints, load_audio, save_audio_from_video
 from .tempo_analysis import TempoInfo, calculate_tempo_info
-from .similarity_analysis import calculate_cross_similarity
+from .similarity_analysis import calculate_cross_similarity, compute_segment_groupings
 from ..dancetree import DanceTree, DanceTreeNode
 
 @dc.dataclass
@@ -14,6 +14,7 @@ class AudioAnalysisResult(dcj.DataClassJsonMixin):
         sample_rate: int
         tempo_info: TempoInfo
         eight_beat_segments: t.List[t.List[float]]
+        segment_groupings: t.List[int]
         cross_similarity: t.List[t.List[float]]
 
 def analyze_audio_file(filepath: Path) -> AudioAnalysisResult:
@@ -32,14 +33,16 @@ def analyze_audio(audio_array: np.ndarray, sample_rate: int) -> AudioAnalysisRes
     eight_beat_segments_with_midpoints = list(calculate_8beat_segments_with_midpoints(tempo_info.bpm, tempo_info.starting_beat_timestamp, duration))
     eight_beat_segments = [(times[0], times[-1]) for times in eight_beat_segments_with_midpoints]
 
-    # Compute similarity of 8-bar segments.
+    # Compute similarity of 8-bar segments, then group them into larger components.
     cross_similarity  = calculate_cross_similarity(audio_array, sample_rate, eight_beat_segments)
+    segment_groupings = compute_segment_groupings(cross_similarity)
     
     return AudioAnalysisResult(
         duration=duration,
         sample_rate=sample_rate,
         tempo_info=tempo_info,
         eight_beat_segments=eight_beat_segments_with_midpoints,
+        segment_groupings=segment_groupings,
         cross_similarity=cross_similarity.tolist()
     )
 
@@ -53,23 +56,36 @@ def create_dance_tree_from_audioanalysis(tree_name: str, clip_relativepath: str,
             id='wholesong',
             start_time=0,
             end_time=analysis.duration,
-            children=[DanceTreeNode(
-                id=f"phrase{seg_i}",
-                start_time=segment_timestamps[0],
-                end_time=segment_timestamps[-1],
-                metrics={
-                    f'similarity-to-phrase{j}': analysis.cross_similarity[seg_i][j]
-                    for j in range(len(analysis.cross_similarity[seg_i]))
-                },
-                events={},
-                children=[
-                    DanceTreeNode(
-                        id=f"phrase{seg_i}-bar{bar_i}",
-                        start_time=bar_start,
-                        end_time=bar_end,
-                    )
-                    for bar_i, (bar_start, bar_end) in enumerate(zip(segment_timestamps[:-1], segment_timestamps[1:]))
-                ],
-            ) for seg_i, segment_timestamps in enumerate(analysis.eight_beat_segments)]
+            children=[
+                 DanceTreeNode(
+                id=f"grouping{group_i}",
+                start_time=analysis.eight_beat_segments[grouping[0]][0]],
+                end_time=analysis.eight_beat_segments[grouping[-1]][-1],
+                metrics={},
+                events={},     
+                 children=
+                    [
+                        DanceTreeNode(
+                        id=f"phrase{seg_i}",
+                        start_time=segment_timestamps[0],
+                        end_time=segment_timestamps[-1],
+                        metrics={
+                            f'similarity-to-phrase{j}': analysis.cross_similarity[seg_i][j]
+                            for j in range(len(analysis.cross_similarity[seg_i]))
+                        },
+                        events={},
+                        children=[
+                            DanceTreeNode(
+                                id=f"phrase{seg_i}-bar{bar_i}",
+                                start_time=bar_start,
+                                end_time=bar_end,
+                            )
+                            for bar_i, (bar_start, bar_end) in enumerate(zip(segment_timestamps[:-1], segment_timestamps[1:]))
+                        ],
+                        ) 
+                        for seg_i, segment_timestamps in enumerate(analysis.eight_beat_segments[grouping[0]:grouping[-1]+1])
+                    ])
+                for group_i, grouping in enumerate(analysis.segment_groupings)
+            ]
         )
     )
