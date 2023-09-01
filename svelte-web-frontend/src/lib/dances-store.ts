@@ -13,7 +13,7 @@ export type DanceTrees = ValueOf<DanceTreeDict>;
 export type DanceTree = DanceTrees[0];
 export type DanceTreeNode = DanceTree["root"];
 
-export const dances = dancesData.sort((a: Dance, b: Dance) => a.clipPath.localeCompare(b.clipRelativeStem));
+export const dances = dancesData.sort((a: Dance, b: Dance) => a.clipRelativeStem.localeCompare(b.clipRelativeStem));
 // readable(
 //     dancesData,
 //     function start(set) {

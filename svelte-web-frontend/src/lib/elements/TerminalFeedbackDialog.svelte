@@ -9,7 +9,7 @@ import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelt
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
 import { createEventDispatcher, onMount } from 'svelte';
 import { debugMode } from '$lib/model/settings';
-	import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
+import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 
 const dispatch = createEventDispatcher();
 
