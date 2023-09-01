@@ -87,10 +87,11 @@ def add_complexities_to_dancetrees(
             print(' - no database entry found!')
             continue
 
-        tree = None
-        with dance_tree_file.open('r+') as f:
-            tree = DanceTree.from_dict(json.load(f))    
-
+        
+        tree_text = dance_tree_file.read_text()
+        tree = json.loads(tree_text)
+        tree = DanceTree.from_dict(tree)
+        
         fps = matching_db_entry['fps']
         tree = add_complexity_to_dancetree(tree, complexity, fps)
             
