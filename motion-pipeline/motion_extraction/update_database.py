@@ -22,11 +22,16 @@ def write_db(db: pd.DataFrame, db_csv_path: PathLike):
     db['tags'] = db['tags'].apply(lambda x: json.dumps(x))
     db['landmarkScope'] = db['landmarkScope'].apply(lambda x: json.dumps(x))
     
-    def roundFloatList(x, decimals=3):
+    float_rounding_decimals = 3
+    def roundFloatList(x, decimals=float_rounding_decimals):
         return json.dumps([round(v, decimals) for v in x])
     
     if 'beatTimes' in db.columns:
         db['beatTimes'] = db['beatTimes'].apply(roundFloatList)
+
+    # Get all columns of type float, and round them
+    float_columns = db.select_dtypes(include='float').columns
+    db[float_columns] = db[float_columns].round(float_rounding_decimals)
 
     db.sort_index(inplace=True)
     db.to_csv(str(db_csv_path))
