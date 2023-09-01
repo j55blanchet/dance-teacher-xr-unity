@@ -31,6 +31,8 @@ function barClicked () {
        class:button={enableClick} 
        class:active={showProgress}
        on:click={barClicked}
+       role="menuitem"
+       tabindex="0"
     >   
         {#if $debugMode}
         <span class="complexity">
@@ -119,7 +121,6 @@ function barClicked () {
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        justify-content: center;
         gap: 0.25em;
         flex-basis: 0;
         flex-grow: var(--node-duration);

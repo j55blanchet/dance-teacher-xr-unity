@@ -118,15 +118,20 @@ def perform_audio_analysis(
 
         # Save the analysis information (with same relative path as input file)
         analysis_destdir = get_audio_result_dir(destdir, input_type, 'analysis')
-        output_file = analysis_destdir / relative_filepath.with_suffix('.json')
+        output_file: Path = analysis_destdir / relative_filepath.with_suffix('.json')
         
         analysis_result = None
         already_exists = False
         if skip_existing and output_file.exists():
             print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {output_file.relative_to(destdir)}")
-            analysis_result = AudioAnalysisResult.from_dict(json.load(open(output_file)))
-            already_exists = True
-        else:
+            try:
+                preexisting_analysis_filetext = output_file.read_text()
+                analysis_result = AudioAnalysisResult.from_dict(json.loads(preexisting_analysis_filetext))
+                already_exists = True
+            except Exception as e:
+                print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Error loading: {output_file.relative_to(destdir)}: {e}. ")
+                
+        if not already_exists:
             print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Analyzing: {relative_filepath}")
             analysis_result = analyze_audio_file(audio_filepath)
             output_file.parent.mkdir(parents=True, exist_ok=True)

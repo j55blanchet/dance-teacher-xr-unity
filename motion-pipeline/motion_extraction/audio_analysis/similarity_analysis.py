@@ -87,23 +87,19 @@ def compute_segment_groupings(similarity_matrix: t.List[t.List[float]]) -> t.Lis
     groupings = []
     current_group = [0]
 
-    for i in range(1, len(similarity_matrix)):
-        for j in range(i+1, len(similarity_matrix)):
-            mean_current_group_similarity = np.mean([
-                similarity_matrix[current_group_index][i]
-                for current_group_index in current_group
-            ])
-            if mean_current_group_similarity > GROUPING_THRESHOLD:
-                current_group.append(i)
-                continue
-            else:
-                groupings.append(current_group)
-                current_group = [j]
-                break
+    for segment_index in range(1, len(similarity_matrix)):
+        segment_crosssimilarities = similarity_matrix[segment_index]
+        similarities_to_current_group = segment_crosssimilarities[current_group]
+        mean_current_group_similarity = np.mean(similarities_to_current_group)
+        if mean_current_group_similarity > GROUPING_THRESHOLD:
+            current_group.append(segment_index)
+            continue
+        else:
+            groupings.append(current_group)
+            current_group = [segment_index]
+            continue
             
-    if len(current_group) > 0:
-        groupings.append(current_group)
-
+    groupings.append(current_group)
     return groupings
 
 def plot_cross_similarity(
