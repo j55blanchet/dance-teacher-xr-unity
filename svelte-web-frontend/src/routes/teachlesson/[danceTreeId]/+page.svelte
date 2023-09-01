@@ -7,7 +7,6 @@ export let data;
 const dance: Dance = data.dance;
 const danceTree: DanceTree = data.danceTree;
 
-
 </script>
 
 <DanceTreePage {dance} {danceTree} />
