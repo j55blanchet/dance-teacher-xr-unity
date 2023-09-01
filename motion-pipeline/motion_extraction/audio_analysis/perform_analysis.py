@@ -58,6 +58,7 @@ def perform_audio_analysis(
         print(f"{print_prefix()}{s}", **kwargs)
 
     print_with_prefix(f"Running audio analysis...")
+    force_redo_analysis = not skip_existing
 
     # Get the paths of the audio or video files (search recursively)
     input_video_filepaths = []
@@ -121,52 +122,54 @@ def perform_audio_analysis(
         output_file: Path = analysis_destdir / relative_filepath.with_suffix('.json')
         
         analysis_result = None
-        already_exists = False
+        should_reanalyze_audio = True
         if skip_existing and output_file.exists():
             print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {output_file.relative_to(destdir)}")
+            # Try-catch is necessary because sometimes we update the format of the AudioAnalysisResult,
+            # and the json files can be out of date, causing the AudioAnalysisResult.from_dict() to fail.
+            # In this case, we'll reanalyze the audio.
             try:
                 preexisting_analysis_filetext = output_file.read_text()
                 analysis_result = AudioAnalysisResult.from_dict(json.loads(preexisting_analysis_filetext))
-                already_exists = True
+                should_reanalyze_audio = False
             except Exception as e:
                 print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Error loading: {output_file.relative_to(destdir)}: {e}. ")
                 
-        if not already_exists:
-            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Analyzing: {relative_filepath}")
+        if should_reanalyze_audio:
+            is_reanalyzing = output_file.exists()
+            print_verb = "Re-Analyzing" if is_reanalyzing else "Analyzing   "
+            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] {print_verb}: {relative_filepath}")
             analysis_result = analyze_audio_file(audio_filepath)
             output_file.parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 json.dump(analysis_result.to_dict(), f, indent=4)
-
             
         bpms.append(analysis_result.tempo_info.bpm)
         beat_times.append(np.array(analysis_result.tempo_info.beat_times).tolist())
         beat_offsets.append(analysis_result.tempo_info.starting_beat_timestamp)
 
-        if not already_exists:
-            # Plot cross similarity matrix
+        # Plot cross similarity matrix (if it doesn't already exist)
+        similarity_dir = get_audio_result_dir(destdir, input_type, 'segmentsimilarity')
+        figpath = similarity_dir / relative_filepath.with_suffix('.png')
+        if force_redo_analysis or not figpath.exists():
             fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
             ax.set_title(f"{filepath.stem} Cross Similarity")
-            similarity_dir = get_audio_result_dir(destdir, input_type, 'segmentsimilarity')
-            similarity_dir.mkdir(parents=True, exist_ok=True)
-            figpath = similarity_dir / relative_filepath.with_suffix('.png')
             figpath.parent.mkdir(parents=True, exist_ok=True)
             fig.savefig(figpath)
             plt.close(fig)
 
-        if not already_exists:
-            # Create dance trees
+        # Create / save dance tree files
+        dance_tree_dir = get_audio_result_dir(destdir, input_type, 'dancetrees')
+        dance_tree_filepath: Path = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
+        if force_redo_analysis or not dance_tree_filepath.exists():
             dance_tree = create_dance_tree_from_audioanalysis(
                 tree_name=filepath.stem + " audio tree",
                 clip_relativepath=relative_filepath.with_suffix('').as_posix(),
                 analysis=analysis_result
             )
-            dance_tree_dir = get_audio_result_dir(destdir, input_type, 'dancetrees')
-            dance_tree_filepath = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
             dance_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
-            with dance_tree_filepath.open('w') as f:
-                json.dump(dance_tree.to_dict(), f, indent=4) # type: ignore
-
+            dance_tree_filepath.write_text(json.dumps(dance_tree.to_dict(), indent=4))
+            
         # Append summary data (for the CSV file)
         analysis_summary.append(pd.Series({
             'start_beat': analysis_result.tempo_info.starting_beat_timestamp,
