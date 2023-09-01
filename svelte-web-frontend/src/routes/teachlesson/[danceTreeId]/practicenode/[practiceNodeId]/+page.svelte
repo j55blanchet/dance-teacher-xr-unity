@@ -15,7 +15,7 @@ const practiceActivity = GeneratePracticeActivity (
     dance,
     danceTree,
     node,
-    {} // UserDancePerformanceLog
+    // {} //  UserDancePerformanceLog
 )
 
 let parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
