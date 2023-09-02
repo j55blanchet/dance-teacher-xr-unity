@@ -342,26 +342,40 @@ def calculate_cumulative_complexities(
     print(f"{print_prefix()}Output: saving output dance trees to {destdir}.")
     destdir.mkdir(parents=True, exist_ok=True)
 
+    measure_weighting_choice = measure_weighting
+    measure_weighting_weights = measure_weighting_choice.get_weighting()
+    landmark_weighting_choice = landmark_weighting
+    landmark_weighting_weights = landmark_weighting_choice.get_weighting(include_base=include_base)
+    complexity_calculation_parameters_string = get_complexity_creationmethod_name(
+        measure_weighting_choice,
+        landmark_weighting_choice,
+        weigh_by_visibility,
+        include_base,
+    )
+
     filename_stems = [file.stem.replace('.holisticdata', '') for file in input_files]
     relative_filename_stems = [
         str(file.relative_to(relative_dir).parent / file.stem.replace('.holisticdata', ''))
         for file, relative_dir 
         in zip(input_files, relative_dirs)
     ]
+    complexity_csv_output_paths = [
+        (destdir / 'byfile' / relative_filename_stem).with_suffix(".complexity.csv")
+        for relative_filename_stem in relative_filename_stems
+    ]
+    can_skip_complexity_calculation = False
+    if skip_existing:
+        print(f"{print_prefix()} Checking for existing complexity calculations...")
+        can_skip_complexity_calculation = np.all([
+            complexity_csv_output_path.exists() and
+            complexity_calculation_parameters_string in pd.read_csv((complexity_csv_output_path), nrows=2, index_col=0).columns
+            for complexity_csv_output_path in complexity_csv_output_paths
+        ]) 
+        if can_skip_complexity_calculation:
+            print(f"{print_prefix()} Skipping complexity calculation because an existing complexity calculation using this parameters has been found for all input files.")
+            return
 
-    measure_weighting_choice = measure_weighting
-    measure_weighting_weights = measure_weighting_choice.get_weighting()
-
-    landmark_weighting_choice = landmark_weighting
-    landmark_weighting_weights = landmark_weighting_choice.get_weighting(include_base=include_base)
-
-    creation_method = get_complexity_creationmethod_name(
-        measure_weighting_choice,
-        landmark_weighting_choice,
-        weigh_by_visibility,
-        include_base,
-    )
-    sup_title = creation_method
+    sup_title = complexity_calculation_parameters_string
 
     debug_dir = destdir / "debug" / sup_title
     debug_dir.mkdir(parents=True, exist_ok=True)
@@ -566,21 +580,20 @@ def calculate_cumulative_complexities(
     save_debug_fig(f"scaled_complexities.png", lambda ax: scaled_complexities_df.plot(title=f"Scaled Complexity", ax=ax))
 
     # Save complexity by file
-    for i, relative_filename_stem in enumerate(tqdm(relative_filename_stems)): # type: ignore
-        perfile_complexity_path = (destdir / 'byfile' / relative_filename_stem).with_suffix(".complexity.csv")
+    for i, (complexity_csv_output_path) in enumerate(tqdm(complexity_csv_output_paths)): # type: ignore
         
-        if perfile_complexity_path.exists():
-            existing_complexity = pd.read_csv(perfile_complexity_path, index_col=0)
-            if creation_method in existing_complexity.columns:
+        if (complexity_csv_output_path).exists():
+            existing_complexity = pd.read_csv((complexity_csv_output_path), index_col=0)
+            if complexity_calculation_parameters_string in existing_complexity.columns:
                 # Drop to ensure no rows are retained from previous runs
-                existing_complexity.drop(columns=[creation_method], inplace=True)
-            existing_complexity[creation_method] = scaled_complexities[i]
-            existing_complexity.to_csv(str(perfile_complexity_path))
+                existing_complexity.drop(columns=[complexity_calculation_parameters_string], inplace=True)
+            existing_complexity[complexity_calculation_parameters_string] = scaled_complexities[i]
+            existing_complexity.to_csv(str((complexity_csv_output_path)))
         else:
-            perfile_complexity_path.parent.mkdir(parents=True, exist_ok=True)
+            (complexity_csv_output_path).parent.mkdir(parents=True, exist_ok=True)
             csv_data = scaled_complexities[i].copy()
-            csv_data.name = creation_method
-            csv_data.to_csv(str(perfile_complexity_path))
+            csv_data.name = complexity_calculation_parameters_string
+            csv_data.to_csv(str((complexity_csv_output_path)))
 
     update_data = pd.DataFrame({
         "stem": filename_stems,
@@ -592,7 +605,7 @@ def calculate_cumulative_complexities(
     },
         index=[
             relative_filename_stems,
-            [creation_method for _ in filename_stems]
+            [complexity_calculation_parameters_string for _ in filename_stems]
         ]
     )    
     update_data.index.names = ["path", "creation_method"]

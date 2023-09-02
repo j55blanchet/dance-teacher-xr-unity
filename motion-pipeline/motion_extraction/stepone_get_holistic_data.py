@@ -286,37 +286,23 @@ def _perform_by_frame(video_path: Path, on_frame: t.Callable[[cv2.Mat, int], T])
         cap.release()
 
 def process_video(
-    video_path: Path, 
-    parent_folder: Path,
-    output_root: Path, 
+    input_video_path: Path, 
     holistic_solution: mp.solutions.holistic.Holistic,
-    pose_2d_output_root: t.Optional[Path] = None,
+    holistic_data_output_filepath: Path,
+    pose_2d_data_output_filepath: t.Optional[Path] = None,
     frame_output_folder: t.Optional[Path] = None,
-    rewrite_existing: bool = False,
     print_progress_context: t.Callable[[],str] = lambda: '',
 ):
-    video_file_relative = video_path.relative_to(parent_folder)
-    video_file_relative_stem = video_file_relative.with_suffix('')
-
     @throttle(seconds=1)
     def print_progress(i, frame_count):
         percent_done = i / frame_count
-        print(f'{print_progress_context()}{video_file_relative_stem}: {i}/{frame_count} {percent_done:.1%}')
-
-    holistic_data_filepath = output_root / video_file_relative.with_suffix(".holisticdata.csv")
-    pose_2d_data_filepath = (pose_2d_output_root / video_file_relative.with_suffix(".pose2d.csv")) if pose_2d_output_root is not None else None
-
-    if holistic_data_filepath.exists() and \
-       (pose_2d_data_filepath is None or pose_2d_data_filepath.exists()) and \
-       not rewrite_existing:
-        print(f'{print_progress_context()}Skipping (already exists): {video_file_relative}')
-        return
+        print(f'{print_progress_context()}: {i}/{frame_count} {percent_done:.1%}')
 
     # Reset graph for this new file
     holistic_solution.reset()
 
     # Get video width / height
-    cap = cv2.VideoCapture(str(video_path))
+    cap = cv2.VideoCapture(str(input_video_path))
     video_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     video_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     cap.release()
@@ -325,19 +311,19 @@ def process_video(
     header_row = construct_header_row()
     pose2d_header_row = construct_pose2d_header_row()
 
-    holistic_data_filepath.parent.mkdir(parents=True, exist_ok=True)
+    holistic_data_output_filepath.parent.mkdir(parents=True, exist_ok=True)
     pose_2d_file = None
     pose_2d_csv_writer = None
-    if (pose_2d_data_filepath):
-       pose_2d_data_filepath.parent.mkdir(parents=True, exist_ok=True)
-       pose_2d_file = pose_2d_data_filepath.open('w', encoding='utf-8', newline='')
+    if pose_2d_data_output_filepath:
+       pose_2d_data_output_filepath.parent.mkdir(parents=True, exist_ok=True)
+       pose_2d_file = pose_2d_data_output_filepath.open('w', encoding='utf-8', newline='')
        pose_2d_csv_writer = csv.writer(pose_2d_file)
 
     with(
-        holistic_data_filepath.open('w', encoding='utf-8', newline='') as holistic_file,
+        holistic_data_output_filepath.open('w', encoding='utf-8', newline='') as holistic_file,
     ):
         holistic_csv_writer = csv.writer(holistic_file)
-        for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(video_path, holistic_solution.process)):
+        for frame_i, (_, frame_count, frame_data, image) in enumerate(_perform_by_frame(input_video_path, holistic_solution.process)):
 
 
             # cv2.imshow(f'Frame {frame_i}', image)
@@ -389,17 +375,17 @@ def process_video(
                     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
                 )
                 frame_output_folder.mkdir(parents=True, exist_ok=True)
-                out_path_2d = f'{frame_output_folder}/{video_path.stem}_2d/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.jpg'
+                out_path_2d = f'{frame_output_folder}/{input_video_path.stem}_2d/{input_video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.jpg'
                 Path(out_path_2d).parent.mkdir(parents=True, exist_ok=True)
                 cv2.imwrite(out_path_2d, image)
 
                 if frame_data.pose_world_landmarks is not None:
                     plot_3d_pose(
                         holistic_series_row, 
-                        title=f'{holistic_data_filepath.name}-frame{frame_i}'
+                        title=f'{holistic_data_output_filepath.name}-frame{frame_i}'
                     )
 
-                    out_path = f'{frame_output_folder}/{video_path.stem}_3d/{video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.png'
+                    out_path = f'{frame_output_folder}/{input_video_path.stem}_3d/{input_video_path.stem}_{frame_i:0{len(str(int(frame_count)))}}.png'
                     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
 
                     ax = plt.gca()
@@ -435,11 +421,7 @@ def compute_holistic_data(
     rewrite_existing: bool = False,
     print_prefix: t.Callable[[], str]=lambda: '',
 ):
-    holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic = mp.solutions.holistic.Holistic(
-        static_image_mode=False,
-        model_complexity=model_complexity,
-        enable_segmentation=False
-    )
+    holistic_solution: mp.solutions.mediapipe.python.solutions.holistic.Holistic = None
 
     if not output_folder.exists():
         output_folder.mkdir(parents=True)
@@ -456,17 +438,37 @@ def compute_holistic_data(
         
     video_paths = list(video_paths)
 
+    skipped_count = 0
+    processed_count = 0
     for i, video_path in enumerate(video_paths):
-        process_video(
-            video_path, 
-            parent_folder,
-            holistic_solution=holistic_solution, 
-            output_root=output_folder,
-            pose_2d_output_root=pose2d_output_folder,
-            frame_output_folder=frame_output_folder,
-            rewrite_existing=rewrite_existing,
-            print_progress_context=lambda: f"{print_prefix()} Video {i+1}/{len(video_paths)} ")
+        video_file_relative = video_path.relative_to(parent_folder)
+        video_file_relative_stem = video_file_relative.with_suffix('')
+        holistic_data_filepath = output_folder / video_file_relative.with_suffix(".holisticdata.csv")
+        pose_2d_data_filepath = (pose2d_output_folder / video_file_relative.with_suffix(".pose2d.csv")) if pose2d_output_folder is not None else None
 
+        if not rewrite_existing and holistic_data_filepath.exists() and pose_2d_data_filepath is None or pose_2d_data_filepath.exists():
+            skipped_count += 1
+            continue
+        else:
+           processed_count += 1
+
+        # Lazily initialize the holistic solution (to avoid initializing it if we end up skipping all videos)
+        if holistic_solution is None:
+            holistic_solution = mp.solutions.holistic.Holistic(
+                static_image_mode=False,
+                model_complexity=model_complexity,
+                enable_segmentation=False
+            )
+
+        process_video(
+            input_video_path=video_path, 
+            holistic_solution=holistic_solution, 
+            holistic_data_output_filepath=holistic_data_filepath,
+            pose_2d_data_output_filepath=pose_2d_data_filepath,
+            frame_output_folder=frame_output_folder,
+            print_progress_context=lambda: f"{print_prefix()} Video {i+1}/{len(video_paths)} {video_file_relative_stem}")
+
+    print(f"{print_prefix()} Processed {processed_count} videos, skipped {skipped_count} videos")
 
 if __name__ == "__main__":
     import argparse

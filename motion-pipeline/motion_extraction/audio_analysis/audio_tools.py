@@ -22,13 +22,14 @@ def standardize_bpm_range(bpm_in: float, bpm_min: float = 80.0, bpm_max: float =
     Parameters:
     bpm_in (float): The input BPM value.
     bpm_min (float): The minimum BPM value allowed. Default is 80.0.
-    bpm_max (float): The maximum BPM value allowed. Default is 160.0.
+    bpm_max (float): The maximum BPM value allowed. Default is 200.0.
 
     Returns:
     The standardized BPM value within the specified range.
     """
     if bpm_in <= 0:
         raise ValueError('BPM must be greater than 0.')
+    assert bpm_max >= bpm_min * 2, 'Maximum BPM must be at least twice the minimum BPM.'
         
     bpm = bpm_in
     while bpm < bpm_min:
