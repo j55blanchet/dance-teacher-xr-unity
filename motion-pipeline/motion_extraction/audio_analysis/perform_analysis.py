@@ -73,12 +73,12 @@ def perform_audio_analysis(
             if filepath.suffix.lower() in ACCEPT_AUDIO_FILES:
                 input_audio_filepaths.append(filepath)
 
-    print(f"Found {len(input_video_filepaths)} input video files and {len(input_audio_filepaths)} input audio files.")
+    print_with_prefix(f"Found {len(input_video_filepaths)} input video files and {len(input_audio_filepaths)} input audio files.")
 
     start_time = time.time()
     def print_with_time(s: str, **kwargs):
-        mem_usage_str = f'{get_memory_usage()}\t' if include_mem_usage else ''
-        print_with_prefix(f"{time.time() - start_time:.2f}s:\t{mem_usage_str}{s}", **kwargs)
+        mem_usage_str = f'\t{get_memory_usage()}\t' if include_mem_usage else ' '
+        print_with_prefix(f"{time.time() - start_time:.2f}s:{mem_usage_str}{s}", **kwargs)
 
     analysis_summary = []
 
@@ -88,14 +88,12 @@ def perform_audio_analysis(
         for i, filepath in enumerate(input_video_filepaths):
             relative_filepath = filepath.relative_to(videosrcdir)
             # print_with_time(f"Extracting cached audio {i+1}/{len(input_video_filepaths)}: {relative_filepath}")
-            print_with_time(f"\t{i+1}/{len(input_video_filepaths)} ", end='')
+            # print_with_time(f"\t{i+1}/{len(input_video_filepaths)} ", end='')
 
             # Check if the audio file has already been cached
             cached_audio_filepath = find_cached_audiofile(filepath, videosrcdir, audiocachedir)
-            if cached_audio_filepath:
-                print(f"\tFound cached audio: {cached_audio_filepath.relative_to(audiocachedir)}")
-            else:
-                print(f"\tExtracting audio from video --> ", end='')
+            if cached_audio_filepath is None:
+                print_with_time(f"\t{i+1}/{len(input_video_filepaths)} Extracting audio from video --> ", end='')
                 # Extract the audio from the video file
                 cached_audio_filepath = audiocachedir / filepath.relative_to(videosrcdir).with_suffix('.mp3')
                 save_audio_from_video(filepath, cached_audio_filepath, as_mono=True)
@@ -120,6 +118,7 @@ def perform_audio_analysis(
         # Save the analysis information (with same relative path as input file)
         analysis_destdir = get_audio_result_dir(destdir, input_type, 'analysis')
         output_file: Path = analysis_destdir / relative_filepath.with_suffix('.json')
+        plots_folder: Path = analysis_destdir / 'plots'
         
         analysis_result = None
         should_reanalyze_audio = True
@@ -139,7 +138,7 @@ def perform_audio_analysis(
             is_reanalyzing = output_file.exists()
             print_verb = "Re-Analyzing" if is_reanalyzing else "Analyzing   "
             print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] {print_verb}: {relative_filepath}")
-            analysis_result = analyze_audio_file(audio_filepath)
+            analysis_result = analyze_audio_file(audio_filepath, output_plot_folder=plots_folder)
             output_file.parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 json.dump(analysis_result.to_dict(), f, indent=4)
@@ -150,7 +149,7 @@ def perform_audio_analysis(
 
         # Plot cross similarity matrix (if it doesn't already exist)
         similarity_dir = get_audio_result_dir(destdir, input_type, 'segmentsimilarity')
-        figpath = similarity_dir / relative_filepath.with_suffix('.png')
+        figpath = similarity_dir / relative_filepath.with_suffix('.pdf')
         if force_redo_analysis or not figpath.exists():
             fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
             ax.set_title(f"{filepath.stem} Cross Similarity")

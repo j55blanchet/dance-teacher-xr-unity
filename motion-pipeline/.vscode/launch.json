@@ -25,7 +25,7 @@
                 // Feel free to comment out any of the following
                 // "--rewrite_existing_holistic_data",
                 "--skip_existing_cumulative_complexity",
-                "--skip_existing_audioanalysis"
+                // "--skip_existing_audioanalysis"
             ]
         },
         {

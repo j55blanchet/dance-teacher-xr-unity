@@ -171,7 +171,7 @@ def update_database(
 
         relative_path = video_path.relative_to(videos_dir)
         
-        print_with_prefix(f'Processing {relative_path.as_posix()}')
+        # print_with_prefix(f'Processing {relative_path.as_posix()}')
         clip_name = relative_path.stem
         relative_clip_stem = (relative_path.parent / relative_path.stem).as_posix()
 
