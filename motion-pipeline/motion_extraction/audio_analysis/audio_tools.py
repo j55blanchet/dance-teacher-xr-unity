@@ -3,6 +3,14 @@ import numpy as np
 import typing as t
 import moviepy.editor as mpe
 from pathlib import Path
+import dataclasses as dc
+import dataclasses_json as dcj
+
+@dc.dataclass
+class MusicPhrase(dcj.DataClassJsonMixin):
+    start_time: float
+    midpoints: t.List[float]
+    end_time: float
 
 def standardize_bpm_range(bpm_in: float, bpm_min: float = 80.0, bpm_max: float = 200.0) -> float:
     """
@@ -30,7 +38,19 @@ def standardize_bpm_range(bpm_in: float, bpm_min: float = 80.0, bpm_max: float =
     return bpm
 
 
-def calculate_8beat_segments_with_midpoints(bpm: float, beat_offset: float, duration: float) -> t.Iterable[t.List[float]]:
+def calculate_8beat_segments_with_midpoints(bpm: float, beat_offset: float, duration: float) -> t.Iterable[MusicPhrase]:
+    """Calculate musical phrases (based on 8-beat segments), aligned to the beat.
+    The phrases include midpoints that divide the phrase into individual bars.
+    Takes care not to subdivide into bars when the musical phrase is too short.
+
+    Parameters:
+    bpm (float): The tempo of the music in beats per minute.
+    beat_offset (float): The offset of the first beat in seconds.
+    duration (float): The duration of the music in seconds.
+
+    Returns:
+    A generator that yields a MusicPhrase for each 8-beat segment.
+    """
     sec_per_beat = 60 / bpm
     beats_per_bar = 4
     secs_per_bar = sec_per_beat * beats_per_bar
@@ -38,26 +58,36 @@ def calculate_8beat_segments_with_midpoints(bpm: float, beat_offset: float, dura
     secs_per_segment = secs_per_bar * bars_per_segment
 
     ## Generate first segment
-    # Edge case: single segment (< 1.5 segments)
+    # Edge case: single segment (< 1.5 segments; < 3 bars)
     if duration < beat_offset + secs_per_segment * 1.5:
 
-        # Generate up to two mid-points
         mid_points = []
+
         if duration > beat_offset + secs_per_bar * 0.75:
+            # Add a midpoint at the end of the first bar
             mid_points.append(beat_offset + secs_per_bar)
         if duration > beat_offset + secs_per_bar * 1.25:
+            # Add a midpoint at the end of the second bar
             mid_points.append(beat_offset + secs_per_segment)
 
-        yield [0., *mid_points, duration]
+        yield MusicPhrase(beat_offset, mid_points, duration)
         return
     
-    # Typical case: multiple segments
-    yield [0., secs_per_bar + beat_offset, secs_per_segment + beat_offset]
+    # Typical case: multiple segments. Yield the first segment (special case to start at t=0).
+    yield MusicPhrase(
+        start_time=0, 
+        midpoints=[beat_offset + secs_per_bar], 
+        end_time=beat_offset + secs_per_segment
+    )
 
     ## Generate middle segments (stop if we're within a segment and a half of the end)
     segment_start = secs_per_segment + beat_offset
     while segment_start + (1.5 * secs_per_segment) < duration:
-        yield [segment_start, segment_start + secs_per_bar, segment_start + secs_per_segment]
+        yield MusicPhrase(
+            start_time=segment_start, 
+            midpoints=[segment_start + secs_per_bar], # subdivide into two 4-beat bars
+            end_time=segment_start + secs_per_segment
+        )
         segment_start += secs_per_segment
 
     ## Generate last segment. This last one can be between 50% and 150% the length of a normal segment.
@@ -68,7 +98,7 @@ def calculate_8beat_segments_with_midpoints(bpm: float, beat_offset: float, dura
     if duration_left > beat_offset + secs_per_bar * 1.25:
         mid_points.append(segment_start + beat_offset + secs_per_segment)
 
-    yield [segment_start, *mid_points, duration]
+    yield MusicPhrase(segment_start, mid_points, duration)
 
 def save_audio_from_video(video_path: Path, output_audio_path: Path, as_mono: bool = False):
     """

@@ -295,16 +295,6 @@ def process_video(
     rewrite_existing: bool = False,
     print_progress_context: t.Callable[[],str] = lambda: '',
 ):
-
-    # Reset graph for this new file
-    holistic_solution.reset()
-
-    # Get video width / height
-    cap = cv2.VideoCapture(str(video_path))
-    video_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    video_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-    cap.release()
-
     video_file_relative = video_path.relative_to(parent_folder)
     video_file_relative_stem = video_file_relative.with_suffix('')
 
@@ -321,6 +311,16 @@ def process_video(
        not rewrite_existing:
         print(f'{print_progress_context()}Skipping (already exists): {video_file_relative}')
         return
+
+    # Reset graph for this new file
+    holistic_solution.reset()
+
+    # Get video width / height
+    cap = cv2.VideoCapture(str(video_path))
+    video_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    video_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    cap.release()
+
     
     header_row = construct_header_row()
     pose2d_header_row = construct_pose2d_header_row()
@@ -440,8 +440,6 @@ def compute_holistic_data(
         model_complexity=model_complexity,
         enable_segmentation=False
     )
-
-    
 
     if not output_folder.exists():
         output_folder.mkdir(parents=True)
