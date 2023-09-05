@@ -14,7 +14,7 @@
 		"@mediapipe/tasks-vision": "^0.10.3",
 		"@neoconfetti/svelte": "^1.0.0",
 		"@sveltejs/adapter-auto": "^2.1.0",
-		"@sveltejs/adapter-static": "^2.0.2",
+		"@sveltejs/adapter-static": "^2.0.3",
 		"@sveltejs/kit": "^1.24.0",
 		"@types/cookie": "^0.5.1",
 		"@types/microlight": "^0.0.0",
