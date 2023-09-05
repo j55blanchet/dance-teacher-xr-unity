@@ -25,6 +25,7 @@ While working on the motion-pipeline,your working directory should be in this fo
 1. Create a virtual environment: `python -m venv .env`
 1. Activate the virtual environment: `source .env/bin/activate` (or similar, depending on your shell).active
 1. Install dependencies: `pip install -r requirements.txt`
+1. If you're on windows, ensure that Developer Mode is enabled (so that symlinks can be created).
 
 ## Running the pipeline
 
