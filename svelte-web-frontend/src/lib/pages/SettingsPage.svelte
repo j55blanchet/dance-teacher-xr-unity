@@ -31,6 +31,16 @@ $: pauseDurationStep = Math.round(10 * lerp(
 
 const qijiaScoreMin = 0;
 const qijiaScoreMax = 5;
+
+// Reset all variables to their default values
+function resetSettings() {
+    $debugMode = true;
+    $pauseInPracticePage = false;
+    $debugPauseDurationSecs = 1.0;
+    $evaluation_GoodBadTrialThreshold = 4.0;
+    $feedback_YellowThreshold = 3.0;
+    $feedback_GreenThreshold = 4.2;
+}
 </script>
 
 <section class="settingsPage">
@@ -63,6 +73,9 @@ const qijiaScoreMax = 5;
         <label for="feedback_GreenThreshold">Green Threshold</label>
         <input type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
     </div>
+    <div>
+        <button on:click={resetSettings}>Reset Settings</button>
+    </div>    
 </section>
 
 
