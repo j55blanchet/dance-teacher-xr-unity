@@ -6,12 +6,14 @@ import shutil
 from ..update_database import load_db
 from .DanceTree import DanceTree, DanceTreeNode
 
+from ..audio_analysis.perform_analysis import get_audio_analysis_filepath, get_audio_result_subdirectory
 
 def bundle_data(
     holistic_data_srcdir: Path,
     pose2d_data_srcdir: Path,
     dancetree_srcdir: Path,
     db_csv_path: Path,
+    audio_results_dir: Path,
     bundle_export_path: Path,
     bundle_media_export_path: Path,
     source_videos_dir: Path,
@@ -41,7 +43,7 @@ def bundle_data(
             print_with_prefix(f'Warning: No database info for dancetree at: {tree.clip_relativepath}')
             continue
         db_info = db.loc[tree.clip_relativepath]
-        if exclude_test and db_info['is_test']:
+        if exclude_test and db_info['isTest']:
             continue
 
         dancetree_dict[tree.clip_relativepath].append(tree.to_dict())
@@ -56,7 +58,7 @@ def bundle_data(
             video_export_path = video_export_path.with_suffix('.mp4v')
             dances[tree.clip_relativepath]['clipPath'] = Path(video_relativepath).with_suffix('.mp4v').as_posix()
 
-        print_with_prefix(f'Linking files for video {i+1}/{len(dancetrees)}: {video_relativepath}')
+        print_with_prefix(f'Linking files for dancetree {i+1}/{len(dancetrees)}: {video_relativepath}')
 
         def linkFile(src_file_path: Path, dest_path: Path):
             if src_file_path.exists() and not dest_path.exists():
@@ -78,6 +80,21 @@ def bundle_data(
     
     dances = list(dances.values())
 
+    print('Saving dance and dancetree json files...')
+    for dance in dances:
+        relativeStem = Path(dance['clipRelativeStem'])
+
+        if "Charlene" in relativeStem.name:
+            breakpoint()
+            
+        audio_analysis_dir = get_audio_result_subdirectory(audio_results_dir, result_type='analysis')
+        audio_analysis_filepath = get_audio_analysis_filepath(audio_analysis_dir, relativeStem)
+        if audio_analysis_filepath.exists():
+            data = json.loads(audio_analysis_filepath.read_text(encoding='utf-8'))
+            dance['audioAnalysis'] = data
+        else:
+            print_with_prefix(f'\tWarning: No audio analysis for {relativeStem}')
+
     dances_export_path = bundle_export_path / 'dances.json'
     dancetrees_export_path = bundle_export_path / 'dancetrees.json'
 
@@ -93,6 +110,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dancetree_srcdir', type=Path, required=True)
     parser.add_argument('--db_csv_path', type=Path, required=True)
+    parser.add_argument('--audio_results_dir', type=Path, required=True)
     parser.add_argument('--source_videos_dir', type=Path, required=True)
     parser.add_argument('--bundle_export_path', type=Path, required=True)
     parser.add_argument('--bundle_media_export_path', type=Path, required=True)
@@ -104,6 +122,7 @@ if __name__ == "__main__":
     bundle_data(
         dancetree_srcdir=args.dancetree_srcdir,
         db_csv_path=args.db_csv_path,
+        audio_results_dir=args.audio_results_dir,
         bundle_export_path=args.bundle_export_path,
         bundle_media_export_path=args.bundle_media_export_path,
         source_videos_dir=args.source_videos_dir,

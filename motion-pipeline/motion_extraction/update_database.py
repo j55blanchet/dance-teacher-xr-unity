@@ -5,6 +5,7 @@ import json
 import cv2
 import typing as t
 from enum import Enum
+import unicodedata
 
 class ClipType(str, Enum):
     video = 'video'
@@ -46,7 +47,7 @@ def load_db(db_csv_path: PathLike):
         db['beatTimes'] = db.get('beatTimes', '[]').apply(lambda x: json.loads(x.replace("'",'"')))
 
     # convert is_test to bool
-    db['is_test'] = db['is_test'].astype(bool)
+    db['isTest'] = db['isTest'].astype(bool)
 
     # convert clipType to enum
     db['clipType'] = db['clipType'].apply(lambda x: ClipType[x])
@@ -71,8 +72,7 @@ def update_create_videoentry(
     out_entry['clipPath'] = Path(clip_path).as_posix()
     out_entry['clipRelativeStem'] = relative_clip_stem
     out_entry['clipType'] = ClipType.video.name
-    out_entry['is_test'] = is_test
-
+    out_entry['isTest'] = is_test
 
     vid_data = cv2.VideoCapture(video_path.as_posix())
     frame_count = vid_data.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -140,6 +140,17 @@ def update_database(
     video_paths: t.List[Path] = []
     for file_ending in valid_file_endings:
         video_paths.extend(videos_dir.rglob(f'*.{file_ending}'))    
+
+    # Safety measure: ensure all paths are normalized (no unexpected unicode characters)
+    invalid_video_paths = []
+    for video_path in video_paths:
+        if not unicodedata.is_normalized('NFKC', video_path.as_posix()):
+            print_with_prefix(f'ERROR: Video path {video_path.as_posix()} is not normalized. This may cause problems with the database.')
+            normalized_version = Path(unicodedata.normalize('NFKC', video_path.as_posix()))
+            print_with_prefix(f'This is the normalized form: {normalized_version.as_posix()}')
+            invalid_video_paths.append(video_path)
+    if len(invalid_video_paths) > 0:
+        raise Exception(f'Found {len(invalid_video_paths)} video paths that are not normalized. See above for details.')    
 
     old_db = pd.DataFrame()
     if database_csv_path.exists():

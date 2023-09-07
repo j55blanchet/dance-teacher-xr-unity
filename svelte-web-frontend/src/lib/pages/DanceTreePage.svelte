@@ -21,7 +21,8 @@ let danceSrc: string = '';
 $: {
     danceSrc = getDanceVideoSrc(dance);
 }
-
+let danceBeatTimes: number[] = [];
+$: danceBeatTimes = dance?.audioAnalysis?.tempo_info?.beat_times ?? [];
 let videoPaused: boolean = true;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
@@ -97,7 +98,7 @@ async function practiceClicked() {
                 node={danceTree.root}
                 showProgressNodes={showProgressNodes}
                 currentTime={videoCurrentTime}
-                beatTimes={dance.beatTimes || []}
+                beatTimes={danceBeatTimes}
             /> 
         </div>
     </div>

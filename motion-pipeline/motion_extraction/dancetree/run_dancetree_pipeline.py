@@ -3,7 +3,7 @@ import typing as t
 from ..stepone_get_holistic_data import compute_holistic_data
 from ..update_database import update_database
 from ..complexity_analysis import calculate_cumulative_complexity as cmplxty
-from ..audio_analysis.perform_analysis import perform_audio_analysis, get_audio_result_dir
+from ..audio_analysis.perform_analysis import perform_audio_analysis, get_audio_result_subdirectory
 from ..complexity_analysis.add_complexity_to_dancetree import add_complexities_to_dancetrees
 from .bundle_data import bundle_data
 import shutil
@@ -26,12 +26,12 @@ def run_dancetree_pipeline(
 
 ):
     complexities_temp_dir = temp_dir / 'complexities'
-    audio_analysis_temp_dir = temp_dir / 'audio_analysis'
-    audio_analysis_tree_dir = get_audio_result_dir(audio_analysis_temp_dir, 'video', 'dancetrees')
+    audio_results_temp_dir = temp_dir / 'audio_analysis'
+    audio_analysis_tree_dir = get_audio_result_subdirectory(audio_results_temp_dir, 'video', 'dancetrees')
     trees_with_complexity_dir = temp_dir / 'trees_with_complexity'
 
     audio_cache_dir =  bundle_media_export_path / 'audio' if include_audio_in_bundle \
-                        else audio_analysis_temp_dir / 'audio'
+                        else audio_results_temp_dir / 'audio'
     
     thumbnails_outdir = bundle_media_export_path / 'thumbnails' if include_thumbnail_in_bundle \
                         else None
@@ -94,10 +94,9 @@ def run_dancetree_pipeline(
     perform_audio_analysis(
         videosrcdir=video_srcdir,
         audiosrcdir=None,
-        database_csv_path=database_csv_path,
-        destdir=audio_analysis_temp_dir,
+        destdir=audio_results_temp_dir,
         audiocachedir=audio_cache_dir if audio_cache_dir else temp_dir / 'audio_cache',
-        analysis_summary_out=audio_analysis_temp_dir / 'audio_analysis_summary.csv',
+        analysis_summary_out=audio_results_temp_dir / 'audio_analysis_summary.csv',
         include_mem_usage=False,
         skip_existing=skip_existing_audioanalysis,
         print_prefix=lambda: f'{step()} audio analysis:',
@@ -119,6 +118,7 @@ def run_dancetree_pipeline(
         pose2d_data_srcdir=pose2d_data_srcdir,
         dancetree_srcdir=trees_with_complexity_dir,
         db_csv_path=database_csv_path,
+        audio_results_dir=audio_results_temp_dir,
         bundle_export_path=bundle_export_path,
         bundle_media_export_path=bundle_media_export_path,
         source_videos_dir=video_srcdir,
