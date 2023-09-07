@@ -5,7 +5,12 @@ import {
     debugPauseDurationSecs,
     evaluation_GoodBadTrialThreshold,
     feedback_YellowThreshold,
-    feedback_GreenThreshold 
+    feedback_GreenThreshold,
+    resetSettingsToDefault,
+    pauseDurationMin,
+    pauseDurationMax,
+    stepMin,
+    stepMax
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -14,10 +19,6 @@ import { lerp } from "$lib/utils/math";
 // increase as the value increases. This is to make it easier to select a value
 // precisely when the value is small, and easier to select a value quickly when
 // the value is large.
-const pauseDurationMin = 0.1;
-const pauseDurationMax = 120;
-const stepMin = 0.1;
-const stepMax = 5;
 let pauseDurationStep = 0.1;
 $: pauseDurationStep = Math.round(10 * lerp(
     $debugPauseDurationSecs, 
@@ -27,7 +28,6 @@ $: pauseDurationStep = Math.round(10 * lerp(
     stepMax, 
     true
 )) / 10;
-
 
 const qijiaScoreMin = 0;
 const qijiaScoreMax = 5;
@@ -63,6 +63,9 @@ const qijiaScoreMax = 5;
         <label for="feedback_GreenThreshold">Green Threshold</label>
         <input type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
     </div>
+    <div>
+        <button on:click={resetSettingsToDefault}>Reset Settings</button>
+    </div>    
 </section>
 
 
