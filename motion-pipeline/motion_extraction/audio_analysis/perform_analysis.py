@@ -163,13 +163,12 @@ def perform_audio_analysis(
             input_type=input_type, 
             result_type='segmentsimilarity'
         )
-
-        figpath = similarity_dir / relative_filepath.with_suffix('.pdf')
-        if force_redo_analysis or not figpath.exists():
+        cross_similarity_figpath = similarity_dir / relative_filepath.with_suffix('.pdf')
+        if force_redo_analysis or not cross_similarity_figpath.exists():
             fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
             ax.set_title(f"{filepath.stem} Cross Similarity")
-            figpath.parent.mkdir(parents=True, exist_ok=True)
-            fig.savefig(figpath)
+            cross_similarity_figpath.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(cross_similarity_figpath)
             plt.close(fig)
 
         # Create / save dance tree files
