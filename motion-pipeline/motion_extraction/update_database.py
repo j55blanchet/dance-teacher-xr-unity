@@ -74,6 +74,8 @@ def update_create_videoentry(
     out_entry['clipType'] = ClipType.video.name
     out_entry['isTest'] = is_test
 
+    out_entry['manualBPM'] = entry.get('manualBPM', 0.0)
+
     vid_data = cv2.VideoCapture(video_path.as_posix())
     frame_count = vid_data.get(cv2.CAP_PROP_FRAME_COUNT)
     out_entry['frameCount'] = int(frame_count)
