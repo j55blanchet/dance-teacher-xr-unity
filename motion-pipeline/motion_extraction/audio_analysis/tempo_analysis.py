@@ -7,12 +7,16 @@ import dataclasses as dc
 import dataclasses_json as dcj
 from . import audio_tools
 
-@dcj.dataclass_json
 @dc.dataclass
-class TempoInfo:
+class TempoInfo(dcj.DataClassJsonMixin):
     bpm: float
+    raw_bpm: float
+    plp_bpm: float
+    raw_plp_bpm: float
     starting_beat_timestamp: float
-    beat_times: t.List[float] = dc.field(default_factory=list)
+    beat_offset: float = 0.0
+    audible_beats: t.List[float] = dc.field(default_factory=list)
+    all_beats: t.List[float] = dc.field(default_factory=list)
 
 # https://stackoverflow.com/questions/11686720/is-there-a-numpy-builtin-to-reject-outliers-from-a-list
 def reject_outliers(data, m = 2.):
@@ -63,7 +67,9 @@ def find_typical_beat_interval(beats: np.ndarray):
 def get_indices_of_beat_interval_changes(beats: np.ndarray, m):
     """Find and return the indices in an array where the interval between beats changes.
     
-    This is useful for identifying tempo changes in a song. It returns the indices of the beats when a new tempo has started."""
+    This is useful for identifying tempo changes in a song. 
+    It returns the indices of the beats when a new tempo has started.
+    """
     beat_intervals = np.diff(beats)
     beat_interval_changes = np.diff(beat_intervals)
 
@@ -83,7 +89,8 @@ def plot_tempo_analysis(
     plp_raw_bpm,
     beat_track_bpm,
     beat_times_observed_bpm,
-    beat_track_beats,
+    beat_times,
+    all_beats,
     figure_output_filepath: t.Optional[Path] = None,
     audio_name: t.Optional[str]=None, 
 ):
@@ -117,8 +124,8 @@ def plot_tempo_analysis(
 
     ax[2].plot(times, librosa.util.normalize(onset_env),
          label='Onset strength')
-    ax[2].vlines(times[beat_track_beats], 0, 1, alpha=0.5, color='r',
-           linestyle='--', label=f'Beats')
+    ax[2].vlines(all_beats, 0, 1, alpha=0.2, color='b', linestyle='--', label='All Beats')
+    ax[2].vlines(beat_times, 0, 1, alpha=0.5, color='r', linestyle='--', label=f'Beats')
     ax[2].legend()
     ax[2].set(title=f'librosa.beat.beat_times (bpm: {beat_track_bpm:.2f}, observed: {beat_times_observed_bpm:.2f})')
     ax[2].label_outer()
@@ -132,6 +139,83 @@ def plot_tempo_analysis(
         figure_output_filepath.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(str(figure_output_filepath))
         plt.close(fig)
+
+def fill_in_missing_beat_times(
+    beat_times: np.ndarray,
+    bpm: float,
+    song_duration: float,
+    BPM_TOLERANCE_PERCENT: float = 0.20,
+):
+    """This function creates an array of beat times that covers the entire duration of the song, 
+    including any periods of silence or weak onsets. 
+    
+    Beat times arrays, as derived from `librosa.beat.beat_track` or from plp peaks, only contain the
+    beat times that have strong onsets. They do not contain the beat times that occur during periods
+    of silence or weak onsets. This function fills in those gaps by calculating the beat times that 
+    would occur during those gaps.
+
+    This is preferable to simply calculating the first beat duration and extrapolating from there,
+    because songs performed by humans will have some variaition in the exact timing of the beats, 
+    leading to a drift in the beat times over time. By aligning the beat times with the observed
+    strong-onset beats, we can avoid this drift.
+
+    Parameters:
+    beat_times (np.ndarray): The beat times array, as derived from `librosa.beat.beat_track` or from plp peaks. (in seconds)
+    bpm (float): The BPM of the song.
+    song_duration (float): The duration of the song (in seconds).
+
+    Returns:
+    np.ndarray: The beat times array, with the gaps filled in.
+    """
+    
+    # Special case: if there are no beats, return an empty array
+    if len(beat_times) == 0:
+        return np.array([])
+    
+    target_beat_duration = 60 / bpm
+    out_beats = []
+
+    # First, extrapolate any beats prior to the first observed beat
+    starting_beats = []
+    extrapolated_first_beat = beat_times[0] - target_beat_duration
+    while extrapolated_first_beat > 0:
+        starting_beats.append(extrapolated_first_beat)
+        extrapolated_first_beat -= target_beat_duration
+    starting_beats.reverse()
+    out_beats.extend(starting_beats)
+
+    # Now, fill in the gaps between observed beats.
+    for i in range(len(beat_times) - 1): # stop at the second-to-last beat
+        current_audible_beat = beat_times[i]
+        next_audible_beat = beat_times[i+1]
+
+        out_beats.append(current_audible_beat)
+        current_beat = current_audible_beat
+
+        audible_beat_interval = (next_audible_beat - current_audible_beat)
+        audible_beat_interval_remainder = audible_beat_interval % target_beat_duration
+        audible_beat_interval_tempo_accuracy_percentage = audible_beat_interval_remainder / target_beat_duration
+        if audible_beat_interval_tempo_accuracy_percentage > BPM_TOLERANCE_PERCENT and \
+           audible_beat_interval_tempo_accuracy_percentage < (1 - BPM_TOLERANCE_PERCENT):
+            if audible_beat_interval < 1.5 * target_beat_duration:
+                continue
+            else:
+                raise ValueError(f"Cannot interpolate beat time - beat times are not evenly spaced. Current beat: {current_audible_beat:.3f}, next beat: {next_audible_beat}, interval: {audible_beat_interval:.3f}, target interval: {target_beat_duration:.3f}, percentage: {audible_beat_interval_tempo_accuracy_percentage:.2f}")
+
+
+        while (next_audible_beat - current_beat) > (target_beat_duration * (1 + BPM_TOLERANCE_PERCENT)):
+            # Add a beat to fill-in the gap.
+            current_beat += target_beat_duration
+            out_beats.append(current_audible_beat)
+
+    # Finally, extrapolate any beats after the last observed beat
+    extrapolated_last_beat = beat_times[-1] + target_beat_duration
+    while extrapolated_last_beat < song_duration:
+        out_beats.append(extrapolated_last_beat)
+        extrapolated_last_beat += target_beat_duration
+
+    return np.array(out_beats)
+
 
 def calculate_tempo_info(
     audio_array: np.ndarray, 
@@ -155,20 +239,33 @@ def calculate_tempo_info(
 
     onset_env = librosa.onset.onset_strength(y=audio_array, sr=sample_rate)
     times = librosa.times_like(onset_env, sr=sample_rate)
+    song_duration = len(audio_array) / sample_rate
+
     pulse__plp = librosa.beat.plp(onset_envelope=onset_env, sr=sample_rate)
-    
-    bpm__beat_track, beats__beat_track = librosa.beat.beat_track(onset_envelope=onset_env, sr=sample_rate)
     beats_plp = np.flatnonzero(librosa.util.localmax(pulse__plp))
     beat_times_plp = times[beats_plp]
     plp_interval_time_secs = find_typical_beat_interval(beat_times_plp)
     plp_raw_bpm = 60 / plp_interval_time_secs
     plp_bpm = audio_tools.standardize_bpm_range(plp_raw_bpm) if standardize_bpm else plp_raw_bpm
 
+    bpm__raw_beat_track, beats__beat_track = librosa.beat.beat_track(
+        onset_envelope=onset_env, 
+        sr=sample_rate,
+        start_bpm=plp_bpm,
+        trim=False,
+        tightness=50, # default is 100.  
+        units='frames',
+    )
+    bpm_beat_track = audio_tools.standardize_bpm_range(bpm__raw_beat_track) if standardize_bpm else bpm__raw_beat_track
+
     # Calculate the starting beat offset
     beat_times = times[beats__beat_track]
     beat_times_intervals = find_typical_beat_interval(beat_times)
     beat_times_observed_bpm = 60 / beat_times_intervals
-    starting_beat_offset = beat_times[0]
+    starting_beat_timestamp = beat_times[0]
+    secs_between_beats = 60 / bpm_beat_track
+    beat_offset = starting_beat_timestamp % secs_between_beats
+    all_beats = fill_in_missing_beat_times(beat_times, bpm_beat_track, song_duration)
 
     plot_tempo_analysis(
         times=times, 
@@ -177,15 +274,21 @@ def calculate_tempo_info(
         plp_beats=beats_plp,
         plp_bpm=plp_bpm,
         plp_raw_bpm=plp_raw_bpm,
-        beat_track_bpm=bpm__beat_track,
+        beat_track_bpm=bpm_beat_track,
         beat_times_observed_bpm=beat_times_observed_bpm,
-        beat_track_beats=beats__beat_track,
+        beat_times=beat_times,
+        all_beats=all_beats,
         figure_output_filepath=figure_output_filepath,
         audio_name=audio_name,
     )
 
     return TempoInfo(
-        bpm__beat_track, 
-        starting_beat_offset, 
-        beat_times.tolist()
+        bpm=bpm_beat_track, 
+        raw_bpm=bpm__raw_beat_track,
+        plp_bpm=plp_bpm,
+        raw_plp_bpm=plp_raw_bpm,
+        beat_offset=beat_offset,
+        starting_beat_timestamp=starting_beat_timestamp, 
+        audible_beats=beat_times.tolist(),
+        all_beats=all_beats.tolist(),
     )

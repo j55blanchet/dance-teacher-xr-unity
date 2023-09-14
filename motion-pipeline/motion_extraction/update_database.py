@@ -34,7 +34,11 @@ def write_db(db: pd.DataFrame, db_csv_path: PathLike):
     float_columns = db.select_dtypes(include='float').columns
     db[float_columns] = db[float_columns].round(float_rounding_decimals)
 
-    db.sort_index(inplace=True)
+    lowercased_index = db.index.str.lower()
+    db['lowercased_index'] = lowercased_index
+    db.sort_values('lowercased_index', inplace=True)
+    db.drop(columns=['lowercased_index'], inplace=True)
+
     db.to_csv(str(db_csv_path))
 
 def load_db(db_csv_path: PathLike):
