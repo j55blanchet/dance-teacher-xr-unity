@@ -22,7 +22,8 @@ $: {
     danceSrc = getDanceVideoSrc(dance);
 }
 let danceBeatTimes: number[] = [];
-$: danceBeatTimes = dance?.audioAnalysis?.tempo_info?.beat_times ?? [];
+
+$: danceBeatTimes = dance?.all_beat_times ?? [];
 let videoPaused: boolean = true;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;

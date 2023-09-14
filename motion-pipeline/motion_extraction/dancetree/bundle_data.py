@@ -6,7 +6,7 @@ import shutil
 from ..update_database import load_db
 from .DanceTree import DanceTree, DanceTreeNode
 
-from ..audio_analysis.perform_analysis import get_audio_analysis_filepath, get_audio_result_subdirectory
+from ..audio_analysis.perform_analysis import get_audio_analysis_filepath, get_audio_result_subdirectory, AudioAnalysisResult
 
 def bundle_data(
     holistic_data_srcdir: Path,
@@ -91,7 +91,12 @@ def bundle_data(
         audio_analysis_filepath = get_audio_analysis_filepath(audio_analysis_dir, relativeStem)
         if audio_analysis_filepath.exists():
             data = json.loads(audio_analysis_filepath.read_text(encoding='utf-8'))
-            dance['audioAnalysis'] = data
+            audio_analysis = AudioAnalysisResult.from_dict(data)
+            dance['debugAudioAnalysis'] = data
+            dance['all_beat_times'] = audio_analysis.tempo_info.all_beats
+            dance['audible_beat_times'] = audio_analysis.tempo_info.audible_beats
+            dance['bpm'] = audio_analysis.tempo_info.bpm
+            dance['beat_offset'] = audio_analysis.tempo_info.beat_offset
         else:
             print_with_prefix(f'\tWarning: No audio analysis for {relativeStem}')
 
