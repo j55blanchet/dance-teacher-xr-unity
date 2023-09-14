@@ -5,13 +5,12 @@ import time
 import json
 import pandas as pd
 import numpy as np
-from dataclasses import asdict
 import matplotlib.pyplot as plt
 
-from . import AudioAnalysisResult, analyze_audio_file, create_dance_tree_from_audioanalysis
+from .audio_analysis import AudioAnalysisResult, analyze_audio_file
+from .audio_dance_tree import  create_dance_tree_from_audioanalysis
 from .audio_tools import save_audio_from_video
 from .similarity_analysis import plot_cross_similarity
-from ..update_database import load_db, write_db
 
 ACCEPT_AUDIO_FILES = ['.mp3', '.wav', '.m4a', '.flac']
 ACCEPT_VIDEO_FILES = ['.mp4', '.mov', '.avi', '.mkv']
@@ -111,10 +110,6 @@ def perform_audio_analysis(
     input_types: t.List[t.Literal["audio", "video"]] = ["audio"] * len(input_audio_filepaths) + ["video"] * len(input_video_filepaths) # type: ignore
     src_dirs = [audiosrcdir] * len(input_audio_filepaths) + [videosrcdir] * len(input_video_filepaths)
 
-    bpms = []
-    beat_times = []
-    beat_offsets = []
-
     print_with_time('Analyzing audio...')
     for i, (filepath, audio_filepath, input_type, src_dir) in enumerate(zip(all_input_filepaths, all_input_audiopaths, input_types, src_dirs)):
 
@@ -153,10 +148,6 @@ def perform_audio_analysis(
             with open(analysis_output_filepath, 'w') as f:
                 json.dump(analysis_result.to_dict(), f, indent=4)
             
-        bpms.append(analysis_result.tempo_info.bpm)
-        beat_times.append(np.array(analysis_result.tempo_info.beat_times).tolist())
-        beat_offsets.append(analysis_result.tempo_info.starting_beat_timestamp)
-
         # Plot cross similarity matrix (if it doesn't already exist)
         similarity_dir = get_audio_result_subdirectory(
             results_dir=destdir, 
@@ -178,11 +169,12 @@ def perform_audio_analysis(
             result_type='dancetrees'
         )
 
+        clip_relativepath = relative_filepath.with_suffix('').as_posix()
         dance_tree_filepath: Path = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
         if force_redo_analysis or not dance_tree_filepath.exists():
             dance_tree = create_dance_tree_from_audioanalysis(
                 tree_name=filepath.stem + " audio tree",
-                clip_relativepath=relative_filepath.with_suffix('').as_posix(),
+                clip_relativepath=clip_relativepath,
                 analysis=analysis_result
             )
             dance_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -190,15 +182,20 @@ def perform_audio_analysis(
             
         # Append summary data (for the CSV file)
         analysis_summary.append(pd.Series({
-            'start_beat': analysis_result.tempo_info.starting_beat_timestamp,
             'bpm': analysis_result.tempo_info.bpm,
+            'raw_bpm': analysis_result.tempo_info.raw_bpm,
+            'plp_bpm': analysis_result.tempo_info.plp_bpm,
+            'raw_plp_bpm': analysis_result.tempo_info.raw_plp_bpm,
+            'beat_offset': analysis_result.tempo_info.beat_offset,
+            'first_actual_beat': analysis_result.tempo_info.starting_beat_timestamp,
             'type': input_type,
-        }, name=filepath.stem)) # type: ignore
+        }, name=clip_relativepath)) # type: ignore
 
     # Save the analysis summary
     analysis_summary_out.parent.mkdir(parents=True, exist_ok=True)
     summary_df = pd.concat(analysis_summary, axis=1).T
     summary_df.index.name = 'filename'
+    summary_df.sort_index(inplace=True)
     summary_df.to_csv(str(analysis_summary_out))
 
     print_with_time("Finished")

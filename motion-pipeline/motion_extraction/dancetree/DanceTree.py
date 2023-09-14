@@ -16,7 +16,5 @@ class DanceTreeNode(dcj.DataClassJsonMixin):
 class DanceTree(dcj.DataClassJsonMixin):
     tree_name: str
     clip_relativepath: str
-    bpm: float
-    first_beat: float
     root: DanceTreeNode
     generation_data: t.Dict[str, t.Any] = dc.field(default_factory=dict)
