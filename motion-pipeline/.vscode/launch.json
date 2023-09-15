@@ -11,14 +11,12 @@
             "module": "motion_extraction.dancetree.run_dancetree_pipeline",
             "args": [
                 "--database_csv_path=${workspaceFolder}/data/db.csv",
-                "--video_srcdir=${workspaceFolder}/data/source_videos",
-                "--holistic_data_srcdir=${workspaceFolder}/data/holistic_data",
-                "--pose2d_data_srcdir=${workspaceFolder}/data/pose2d_data",
+                "--video_srcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/source_videos",
+                "--holistic_data_srcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data",
+                "--pose2d_data_srcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/pose2d_data",
                 "--temp_dir=${workspaceFolder}/data/temp",
                 "--bundle_export_path=${workspaceFolder}/../svelte-web-frontend/src/lib/data/bundle",
                 "--bundle_media_export_path=${workspaceFolder}/../svelte-web-frontend/static/bundle/",
-                "--rename_mp4s_to_mp4v",
-                "--delete_old_export_folder",
                 // "--include_thumbnail_in_bundle",
                 // "--include_audio_in_bundle",
 
@@ -43,9 +41,9 @@
             "module": "motion_extraction.stepone_get_holistic_data",
             "justMyCode": true,
             "args": [
-                "--video_folder=${workspaceFolder}/data/source_videos/",
-                // "--video_folder=${workspaceFolder}/data/source_videos/tpose2.mp4",
-                "--output_folder=${workspaceFolder}/data/holistic_data",
+                "--video_folder=${workspaceFolder}/../svelte-web-frontend/static/bundle/source_videos/",
+                // "--video_folder=${workspaceFolder}/../svelte-web-frontend/static/bundle/source_videos/tpose2.mp4",
+                "--output_folder=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data",
                 "--log_level=INFO",
                 "--model-complexity=2",
                 // "--frame_output_folder=${workspaceFolder}/temp/frames",
@@ -64,12 +62,12 @@
                 "--csv_output_folder=${workspaceFolder}/data/bvhcsv",
                 "--log_level=INFO",
                 "--frame_limit=-1",
-                // "${workspaceFolder}/data/holistic_data/debbieallenchallenge.holisticdata.csv"
-                // "${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv"
-                // "${workspaceFolder}/data/holistic_data/ArmShuffle.holisticdata.csv"
-                // "${workspaceFolder}/data/holistic_data/last-christmas-tutorial.holisticdata.csv"
-                "${workspaceFolder}/data/holistic_data/mad-at-disney.holisticdata.csv"
-                // "${workspaceFolder}/data/holistic_data/"
+                // "${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/debbieallenchallenge.holisticdata.csv"
+                // "${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/tpose2.holisticdata.csv"
+                // "${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/ArmShuffle.holisticdata.csv"
+                // "${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/last-christmas-tutorial.holisticdata.csv"
+                "${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/mad-at-disney.holisticdata.csv"
+                // "${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/"
             ],
         },
         {
@@ -81,7 +79,7 @@
             "args": [
                 "--output_folder=${workspaceFolder}/data/jointspace_data",
                 "--log_level=INFO",
-                "${workspaceFolder}/data/holistic_data/tpose.holisticdata.csv"
+                "${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/tpose.holisticdata.csv"
             ],
         },
         {
@@ -91,8 +89,8 @@
             "module": "motion_extraction.pose_visualization",
             "justMyCode": true,
             "args": [
-                "--pose_file=${workspaceFolder}/data/holistic_data/supalonely.holisticdata.csv",
-                "--hand_file=${workspaceFolder}/data/holistic_data/supalonely.holisticdata.csv",
+                "--pose_file=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/supalonely.holisticdata.csv",
+                "--hand_file=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/supalonely.holisticdata.csv",
             ],
         },
         {
@@ -102,7 +100,7 @@
             "module": "motion_extraction.MecanimHumanoid",
             "justMyCode": true,
             "args": [
-                "--skeleton_file=${workspaceFolder}/data/holistic_data/tpose2.holisticdata.csv",
+                "--skeleton_file=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/tpose2.holisticdata.csv",
             ],
         },
         {
@@ -170,7 +168,7 @@
             "request": "launch",
             "module": "motion_extraction.complexity_analysis.uist_complexityanalysis",
             "args": [
-                "--srcdir=${workspaceFolder}/data/holistic_data/",
+                "--srcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/",
                 "--destination=${workspaceFolder}/data/complexity.csv",
                 "--db=${workspaceFolder}/data/db.csv",
                 "-wl", "bartender",
@@ -185,7 +183,7 @@
             "request": "launch",
             "module": "motion_extraction.complexity_analysis.calculate_cumulative_complexity",
             "args": [
-                "--srcdir=${workspaceFolder}/data/holistic_data/",
+                "--srcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/",
                 "--destdir=${workspaceFolder}/data/complexities/",
                 // "--plot_figs",
                 // "--measure_weighting=decreasing_by_half",
@@ -207,7 +205,7 @@
             "request": "launch",
             "module": "motion_extraction.complexity_analysis.calculate_cumulative_complexity",
             "args": [
-                "--srcdir=${workspaceFolder}/data/holistic_data/tests",
+                "--srcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/holistic_data/tests",
                 "--destdir=${workspaceFolder}/data/test_complexities/",
                 // "--plot_figs",
                 // "--measure_weighting=decreasing_by_half",
@@ -229,7 +227,7 @@
             "request": "launch",
             "module": "motion_extraction.audio_analysis",
             "args": [
-                "--videosrcdir=${workspaceFolder}/data/source_videos",
+                "--videosrcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/source_videos",
                 "--audiosrcdir=${workspaceFolder}/data/source_audio",
                 "--destdir=${workspaceFolder}/data/audio_analysis",
                 "--analysis_summary_out=${workspaceFolder}/data/summary/audio_analysis.csv",
@@ -243,7 +241,7 @@
             "request": "launch",
             "module": "motion_extraction.update_database",
             "args": [
-                "--videos_dir=${workspaceFolder}/data/source_videos",
+                "--videos_dir=${workspaceFolder}/../svelte-web-frontend/static/bundle/source_videos",
                 "--thumbnails_dir=${workspaceFolder}/data/thumbnails",
                 "--database_csv_path=${workspaceFolder}/data/db.csv",
             ]
@@ -268,12 +266,9 @@
             "module": "motion_extraction.dancetree.bundle_data",
             "args": [
                 "--dancetree_srcdir=${workspaceFolder}/data/dancetrees_with_complexity",
-                "--source_videos_dir=${workspaceFolder}/data/source_videos",
                 "--db_csv_path=${workspaceFolder}/data/db.csv",
                 "--audio_results_dir=${workspaceFolder}/data/audio_analysis",
                 "--bundle_export_path=${workspaceFolder}/../svelte-web-frontend/src/lib/data/bundle",
-                "--bundle_media_export_path=${workspaceFolder}/../svelte-web-frontend/static/bundle/",
-                "--rename_mp4s_to_mp4v",
                 "--exclude_test"
             ]
         },
@@ -283,7 +278,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/adhoc_analysis/pyfeat.py",
             "args": [
-                "--srcdir=${workspaceFolder}/data/source_videos/study2/last-christmas-tutorial.mp4",
+                "--srcdir=${workspaceFolder}/../svelte-web-frontend/static/bundle/source_videos/study2/last-christmas-tutorial.mp4",
                 "--destdir=${workspaceFolder}/data/pyfeat",
             ]
         },
