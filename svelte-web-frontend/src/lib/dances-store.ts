@@ -69,14 +69,14 @@ export function findDanceTreeNode(danceTree: DanceTree, nodeId: string): DanceTr
 }
 
 export function getDanceVideoSrc(dance: Dance): string {
-    return `/bundle/videos/${dance.clipPath}`;
+    return `/bundle/source_videos/${dance.clipPath}`;
 }
 
 export function getHolisticDataSrc(dance: Dance): string {
-    return `/bundle/holisticdata/${dance.clipRelativeStem}.holisticdata.csv`;
+    return `/bundle/holistic_data/${dance.clipRelativeStem}.holisticdata.csv`;
 }
 export function get2DPoseDataSrc(dance: Dance): string {
-    return `/bundle/pose2d/${dance.clipRelativeStem}.pose2d.csv`
+    return `/bundle/pose2d_data/${dance.clipRelativeStem}.pose2d.csv`
 }
 
 /**
