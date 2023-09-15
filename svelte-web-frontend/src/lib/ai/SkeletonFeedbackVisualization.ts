@@ -2,7 +2,7 @@ import { DrawingUtils, type NormalizedLandmark, type LandmarkData } from "@media
 import { QijiaMethodComparisonVectors, type EvaluationV1Result } from "./Evaluation";
 import { SwapLeftRightLandmarks } from "$lib/webcam/mediapipe-utils";
 
-import {feedback_YellowThreshold, feedback_GreenThreshold} from '$lib/model/Settings';
+import {feedback_YellowThreshold, feedback_GreenThreshold} from '$lib/model/settings';
 
 const QijiaMethodVectorConnections = QijiaMethodComparisonVectors.map(([lm1, lm2]) => {
     return {
