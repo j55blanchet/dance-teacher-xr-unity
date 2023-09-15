@@ -84,7 +84,7 @@ function GetNormalizedVector(
     return [vec_x / mag, vec_y / mag]
 }
 
-export function computeSkeleton2DSimilarityJulienMethod(
+export function computeSkeleton2DDissimilarityJulienMethod(
     refLandmarks: Pose2DPixelLandmarks,
     userLandmarks: Pose2DPixelLandmarks
 ) {
@@ -118,34 +118,41 @@ export function computeSkeleton2DSimilarityJulienMethod(
         const innerAngle = getInnerAngle([refX, refY], [usrX, usrY]);
         const innerAnglePercentileDifferential = innerAngle / Math.PI
 
-        const pAngleRef = lerp(
+        // Idea: if either the user or the reference pose is substantially othogonal to the
+        // plane of the image, we want to prioritize mangitude comparison (because slight changes in 
+        // angle would result in large changes in the normalized 2D projection of the vector). So we 
+        // compute a "angle weighting factor" for both the user and reference pose, and use the 
+        // minimum of the two
+        const percentOfMetricToComputeFromAngleBasedOnReferencePose = lerp(
             magnitudeRef, 
             MinVectorMagnitudeForReliableAngleDetermination, 
             TargetVectorMagnitudeForReliableAngleDetermination,
             0.0,
             1.0
         )
-        const pAngleUsr = lerp(
+        const percentOfMetricToComputeFromAngleBasedOnUserPose = lerp(
             magnitudeUsr,
             MinVectorMagnitudeForReliableAngleDetermination,
             TargetVectorMagnitudeForReliableAngleDetermination,
             0.0,
             1.0
         )
-
-        const pAngle = Math.min(pAngleRef, pAngleUsr)
-        const percentileDissimilar = pAngle * innerAnglePercentileDifferential + (1 - pAngle) * magnitudePercentileDifferential
+        // Use the minimum of the two "angle weighing factors". If both are within image plane, this
+        // weighting factors will be closer to 1.0, but if either is orthogonal to the image plane,
+        // it will be closer to 0.0
+        const percentOfMetricToComputeFromAngle = Math.min(percentOfMetricToComputeFromAngleBasedOnReferencePose, percentOfMetricToComputeFromAngleBasedOnUserPose)
+        const compoundDissimilarityPercentile = percentOfMetricToComputeFromAngle * innerAnglePercentileDifferential + (1 - percentOfMetricToComputeFromAngle) * magnitudePercentileDifferential
 
         return {
             magnitude: magnitudePercentileDifferential, 
             angle: innerAnglePercentileDifferential,
-            pAngle,
-            score: percentileDissimilar
+            pAngle: percentOfMetricToComputeFromAngle,
+            score: compoundDissimilarityPercentile
         };
     });
 
-
     return {
+        // Score is scaled between 0 and 1 - 0 is the best and 1 is the worst.
         score: getArrayMean(vectorScoreInfos.map((s) => s.score)),
         infoByVetor: vectorScoreInfos
     };
@@ -153,10 +160,14 @@ export function computeSkeleton2DSimilarityJulienMethod(
 
 type Vec8 = [number, number, number, number, number, number, number, number]
 /**
- * 
+ * Compute the similarity of two poses based on a 2D projection, looking at a set of 8 upper body
+ * comparison vectors, as described by our JLS paper. The similarity is computed by normalizing each
+ * of these comparison vectors and computing the distance between the corresponding normalized vectors,
+ * (a value between good=0 and bad=2), remaiing to 0=bad, 5=good, then taking the average across the 
+ * comparison vectors.
  * @param refLandmarks Reference landmarks (expert)
  * @param userLandmarks Evaluation landmarks (learner)
- * @returns Tuple of scores between 0 and 5, where 0 is the worst and 5 is the best. First is a scalar with the overall score, next is a vector by vector score of the 8 comparison vectors.
+ * @returns Tuple of scores between 0 and 5, where 0 is the worst and 5 is the best. First is a scalar with the overall score, next is array of the scores of the 8 comparison vectors.
  */
 export function computeSkeletonDissimilarityQijiaMethod(
     refLandmarks: Pose2DPixelLandmarks, 
@@ -304,7 +315,7 @@ export class UserDanceEvaluatorV1 {
             userPose
         )
 
-        const julienScore = computeSkeleton2DSimilarityJulienMethod(
+        const julienScore = computeSkeleton2DDissimilarityJulienMethod(
             referencePose,
             userPose
         )
