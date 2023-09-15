@@ -5,6 +5,7 @@ import json
 import cv2
 import typing as t
 from enum import Enum
+import unicodedata
 
 class ClipType(str, Enum):
     video = 'video'
@@ -33,7 +34,11 @@ def write_db(db: pd.DataFrame, db_csv_path: PathLike):
     float_columns = db.select_dtypes(include='float').columns
     db[float_columns] = db[float_columns].round(float_rounding_decimals)
 
-    db.sort_index(inplace=True)
+    lowercased_index = db.index.str.lower()
+    db['lowercased_index'] = lowercased_index
+    db.sort_values('lowercased_index', inplace=True)
+    db.drop(columns=['lowercased_index'], inplace=True)
+
     db.to_csv(str(db_csv_path))
 
 def load_db(db_csv_path: PathLike):
@@ -46,7 +51,7 @@ def load_db(db_csv_path: PathLike):
         db['beatTimes'] = db.get('beatTimes', '[]').apply(lambda x: json.loads(x.replace("'",'"')))
 
     # convert is_test to bool
-    db['is_test'] = db['is_test'].astype(bool)
+    db['isTest'] = db['isTest'].astype(bool)
 
     # convert clipType to enum
     db['clipType'] = db['clipType'].apply(lambda x: ClipType[x])
@@ -71,8 +76,9 @@ def update_create_videoentry(
     out_entry['clipPath'] = Path(clip_path).as_posix()
     out_entry['clipRelativeStem'] = relative_clip_stem
     out_entry['clipType'] = ClipType.video.name
-    out_entry['is_test'] = is_test
+    out_entry['isTest'] = is_test
 
+    out_entry['manualBPM'] = entry.get('manualBPM', 0.0)
 
     vid_data = cv2.VideoCapture(video_path.as_posix())
     frame_count = vid_data.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -141,6 +147,17 @@ def update_database(
     for file_ending in valid_file_endings:
         video_paths.extend(videos_dir.rglob(f'*.{file_ending}'))    
 
+    # Safety measure: ensure all paths are normalized (no unexpected unicode characters)
+    invalid_video_paths = []
+    for video_path in video_paths:
+        if not unicodedata.is_normalized('NFKC', video_path.as_posix()):
+            print_with_prefix(f'ERROR: Video path {video_path.as_posix()} is not normalized. This may cause problems with the database.')
+            normalized_version = Path(unicodedata.normalize('NFKC', video_path.as_posix()))
+            print_with_prefix(f'This is the normalized form: {normalized_version.as_posix()}')
+            invalid_video_paths.append(video_path)
+    if len(invalid_video_paths) > 0:
+        raise Exception(f'Found {len(invalid_video_paths)} video paths that are not normalized. See above for details.')    
+
     old_db = pd.DataFrame()
     if database_csv_path.exists():
         old_db = load_db(database_csv_path)
@@ -171,7 +188,7 @@ def update_database(
 
         relative_path = video_path.relative_to(videos_dir)
         
-        print_with_prefix(f'Processing {relative_path.as_posix()}')
+        # print_with_prefix(f'Processing {relative_path.as_posix()}')
         clip_name = relative_path.stem
         relative_clip_stem = (relative_path.parent / relative_path.stem).as_posix()
 

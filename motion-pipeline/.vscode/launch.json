@@ -267,6 +267,7 @@
             "args": [
                 "--dancetree_srcdir=${workspaceFolder}/data/dancetrees_with_complexity",
                 "--db_csv_path=${workspaceFolder}/data/db.csv",
+                "--audio_results_dir=${workspaceFolder}/data/audio_analysis",
                 "--bundle_export_path=${workspaceFolder}/../svelte-web-frontend/src/lib/data/bundle",
                 "--exclude_test"
             ]

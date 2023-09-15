@@ -34,11 +34,6 @@ function barClicked () {
        role="menuitem"
        tabindex="0"
     >   
-        {#if $debugMode}
-        <span class="complexity">
-            {node.complexity.toFixed(2)}
-        </span>
-        {/if}
         {#if showProgress}<span class="progress outlined" style="width:{progressPercent*100}%">
             <!-- {currentTime.toFixed(1)} -->
         </span>{/if}
@@ -50,6 +45,11 @@ function barClicked () {
                     </span>
                 {/if}
             {/each}
+        {/if}
+        {#if $debugMode}
+        <span class="complexity">
+            {(node.complexity / (node.end_time - node.start_time)).toFixed(2)}/s ({node.complexity.toFixed(2)} total)
+        </span>
         {/if}
     </a>
     {#if node.children.length > 0}
@@ -94,6 +94,14 @@ function barClicked () {
 
     .complexity {
         position: absolute;
+        left: 0;
+        right: 0;
+        font-size: 0.9rem;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .beat-line {
@@ -101,7 +109,7 @@ function barClicked () {
         top: 0;
         bottom: 0;
         width: 2px;
-        background: greenyellow;
+        background: lightskyblue;
         border: none;
     }
 

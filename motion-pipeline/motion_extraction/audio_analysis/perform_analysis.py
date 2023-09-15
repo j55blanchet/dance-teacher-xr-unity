@@ -5,13 +5,12 @@ import time
 import json
 import pandas as pd
 import numpy as np
-from dataclasses import asdict
 import matplotlib.pyplot as plt
 
-from . import AudioAnalysisResult, analyze_audio_file, create_dance_tree_from_audioanalysis
+from .audio_analysis import AudioAnalysisResult, analyze_audio_file
+from .audio_dance_tree import  create_dance_tree_from_audioanalysis
 from .audio_tools import save_audio_from_video
 from .similarity_analysis import plot_cross_similarity
-from ..update_database import load_db, write_db
 
 ACCEPT_AUDIO_FILES = ['.mp3', '.wav', '.m4a', '.flac']
 ACCEPT_VIDEO_FILES = ['.mp4', '.mov', '.avi', '.mkv']
@@ -36,17 +35,22 @@ def get_memory_usage() -> str:
     available_memory_MB = available_memory / 1024 / 1024
     return f"{memory_usage_MB:,.2f} / {available_memory_MB:,.2f} MB"
 
-def get_audio_result_dir(
-    analysis_dir: Path,
-    input_type: t.Literal['audio', 'video'],
+def get_audio_result_subdirectory(
+    results_dir: Path,
     result_type: t.Literal['analysis', 'dancetrees', 'segmentsimilarity'],
+    input_type: t.Literal['audio', 'video'] = 'video'
 ):
-    return analysis_dir / result_type / input_type
+    return results_dir / result_type / input_type
+
+def get_audio_analysis_filepath(
+    analysis_dir: Path,
+    relative_stem: Path,
+):
+    return analysis_dir / relative_stem.with_suffix('.json')
 
 def perform_audio_analysis(
         videosrcdir: t.Optional[Path],
         audiosrcdir: t.Optional[Path],
-        database_csv_path: Path,
         destdir: Path,
         audiocachedir: Path,
         analysis_summary_out: Path,
@@ -73,12 +77,12 @@ def perform_audio_analysis(
             if filepath.suffix.lower() in ACCEPT_AUDIO_FILES:
                 input_audio_filepaths.append(filepath)
 
-    print(f"Found {len(input_video_filepaths)} input video files and {len(input_audio_filepaths)} input audio files.")
+    print_with_prefix(f"Found {len(input_video_filepaths)} input video files and {len(input_audio_filepaths)} input audio files.")
 
     start_time = time.time()
     def print_with_time(s: str, **kwargs):
-        mem_usage_str = f'{get_memory_usage()}\t' if include_mem_usage else ''
-        print_with_prefix(f"{time.time() - start_time:.2f}s:\t{mem_usage_str}{s}", **kwargs)
+        mem_usage_str = f'\t{get_memory_usage()}\t' if include_mem_usage else ' '
+        print_with_prefix(f"{time.time() - start_time:.2f}s:{mem_usage_str}{s}", **kwargs)
 
     analysis_summary = []
 
@@ -88,14 +92,12 @@ def perform_audio_analysis(
         for i, filepath in enumerate(input_video_filepaths):
             relative_filepath = filepath.relative_to(videosrcdir)
             # print_with_time(f"Extracting cached audio {i+1}/{len(input_video_filepaths)}: {relative_filepath}")
-            print_with_time(f"\t{i+1}/{len(input_video_filepaths)} ", end='')
+            # print_with_time(f"\t{i+1}/{len(input_video_filepaths)} ", end='')
 
             # Check if the audio file has already been cached
             cached_audio_filepath = find_cached_audiofile(filepath, videosrcdir, audiocachedir)
-            if cached_audio_filepath:
-                print(f"\tFound cached audio: {cached_audio_filepath.relative_to(audiocachedir)}")
-            else:
-                print(f"\tExtracting audio from video --> ", end='')
+            if cached_audio_filepath is None:
+                print_with_time(f"\t{i+1}/{len(input_video_filepaths)} Extracting audio from video --> ", end='')
                 # Extract the audio from the video file
                 cached_audio_filepath = audiocachedir / filepath.relative_to(videosrcdir).with_suffix('.mp3')
                 save_audio_from_video(filepath, cached_audio_filepath, as_mono=True)
@@ -108,63 +110,71 @@ def perform_audio_analysis(
     input_types: t.List[t.Literal["audio", "video"]] = ["audio"] * len(input_audio_filepaths) + ["video"] * len(input_video_filepaths) # type: ignore
     src_dirs = [audiosrcdir] * len(input_audio_filepaths) + [videosrcdir] * len(input_video_filepaths)
 
-    bpms = []
-    beat_times = []
-    beat_offsets = []
-
     print_with_time('Analyzing audio...')
     for i, (filepath, audio_filepath, input_type, src_dir) in enumerate(zip(all_input_filepaths, all_input_audiopaths, input_types, src_dirs)):
 
         relative_filepath = filepath.relative_to(src_dir)
 
         # Save the analysis information (with same relative path as input file)
-        analysis_destdir = get_audio_result_dir(destdir, input_type, 'analysis')
-        output_file: Path = analysis_destdir / relative_filepath.with_suffix('.json')
+        analysis_destdir = get_audio_result_subdirectory(
+            results_dir=destdir, 
+            input_type=input_type, 
+            result_type='analysis'
+        )
+        analysis_output_filepath: Path = get_audio_analysis_filepath(analysis_dir=analysis_destdir, relative_stem=relative_filepath)
+        analysis_destdir / relative_filepath.with_suffix('.json')
+        plots_folder: Path = analysis_destdir / 'plots'
         
         analysis_result = None
         should_reanalyze_audio = True
-        if skip_existing and output_file.exists():
-            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {output_file.relative_to(destdir)}")
+        if skip_existing and analysis_output_filepath.exists():
+            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {analysis_output_filepath.relative_to(destdir)}")
             # Try-catch is necessary because sometimes we update the format of the AudioAnalysisResult,
             # and the json files can be out of date, causing the AudioAnalysisResult.from_dict() to fail.
             # In this case, we'll reanalyze the audio.
             try:
-                preexisting_analysis_filetext = output_file.read_text()
+                preexisting_analysis_filetext = analysis_output_filepath.read_text()
                 analysis_result = AudioAnalysisResult.from_dict(json.loads(preexisting_analysis_filetext))
                 should_reanalyze_audio = False
             except Exception as e:
-                print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Error loading: {output_file.relative_to(destdir)}: {e}. ")
+                print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Error loading: {analysis_output_filepath.relative_to(destdir)}: {e}. ")
                 
         if should_reanalyze_audio:
-            is_reanalyzing = output_file.exists()
+            is_reanalyzing = analysis_output_filepath.exists()
             print_verb = "Re-Analyzing" if is_reanalyzing else "Analyzing   "
             print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] {print_verb}: {relative_filepath}")
-            analysis_result = analyze_audio_file(audio_filepath)
-            output_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_file, 'w') as f:
+            analysis_result = analyze_audio_file(audio_filepath, output_plot_folder=plots_folder)
+            analysis_output_filepath.parent.mkdir(parents=True, exist_ok=True)
+            with open(analysis_output_filepath, 'w') as f:
                 json.dump(analysis_result.to_dict(), f, indent=4)
             
-        bpms.append(analysis_result.tempo_info.bpm)
-        beat_times.append(np.array(analysis_result.tempo_info.beat_times).tolist())
-        beat_offsets.append(analysis_result.tempo_info.starting_beat_timestamp)
-
         # Plot cross similarity matrix (if it doesn't already exist)
-        similarity_dir = get_audio_result_dir(destdir, input_type, 'segmentsimilarity')
-        figpath = similarity_dir / relative_filepath.with_suffix('.png')
-        if force_redo_analysis or not figpath.exists():
+        similarity_dir = get_audio_result_subdirectory(
+            results_dir=destdir, 
+            input_type=input_type, 
+            result_type='segmentsimilarity'
+        )
+        cross_similarity_figpath = similarity_dir / relative_filepath.with_suffix('.pdf')
+        if force_redo_analysis or not cross_similarity_figpath.exists():
             fig, ax = plot_cross_similarity(analysis_result.cross_similarity)
             ax.set_title(f"{filepath.stem} Cross Similarity")
-            figpath.parent.mkdir(parents=True, exist_ok=True)
-            fig.savefig(figpath)
+            cross_similarity_figpath.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(cross_similarity_figpath)
             plt.close(fig)
 
         # Create / save dance tree files
-        dance_tree_dir = get_audio_result_dir(destdir, input_type, 'dancetrees')
+        dance_tree_dir = get_audio_result_subdirectory(
+            results_dir=destdir, 
+            input_type=input_type, 
+            result_type='dancetrees'
+        )
+
+        clip_relativepath = relative_filepath.with_suffix('').as_posix()
         dance_tree_filepath: Path = dance_tree_dir / relative_filepath.with_suffix('.dancetree.json')
         if force_redo_analysis or not dance_tree_filepath.exists():
             dance_tree = create_dance_tree_from_audioanalysis(
                 tree_name=filepath.stem + " audio tree",
-                clip_relativepath=relative_filepath.with_suffix('').as_posix(),
+                clip_relativepath=clip_relativepath,
                 analysis=analysis_result
             )
             dance_tree_filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -172,22 +182,20 @@ def perform_audio_analysis(
             
         # Append summary data (for the CSV file)
         analysis_summary.append(pd.Series({
-            'start_beat': analysis_result.tempo_info.starting_beat_timestamp,
             'bpm': analysis_result.tempo_info.bpm,
+            'raw_bpm': analysis_result.tempo_info.raw_bpm,
+            'plp_bpm': analysis_result.tempo_info.plp_bpm,
+            'raw_plp_bpm': analysis_result.tempo_info.raw_plp_bpm,
+            'beat_offset': analysis_result.tempo_info.beat_offset,
+            'first_actual_beat': analysis_result.tempo_info.starting_beat_timestamp,
             'type': input_type,
-        }, name=filepath.stem)) # type: ignore
+        }, name=clip_relativepath)) # type: ignore
 
     # Save the analysis summary
     analysis_summary_out.parent.mkdir(parents=True, exist_ok=True)
     summary_df = pd.concat(analysis_summary, axis=1).T
     summary_df.index.name = 'filename'
+    summary_df.sort_index(inplace=True)
     summary_df.to_csv(str(analysis_summary_out))
-
-    # Save database csv
-    dance_db = load_db(database_csv_path)
-    dance_db['bpm'] = bpms
-    dance_db['beatTimes'] = beat_times
-    dance_db['bpmOffset'] = beat_offsets
-    write_db(dance_db, database_csv_path)
 
     print_with_time("Finished")
