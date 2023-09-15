@@ -26,7 +26,7 @@
                   "similarity-to-phrase2": 0.36787944117144233
                 },
                 "events": {},
-                "complexity": 1.3395118137691675
+                "complexity": 1.3395118137691673
               },
               {
                 "id": "phrase1",
@@ -39,7 +39,7 @@
                   "similarity-to-phrase2": 0.38626953891326893
                 },
                 "events": {},
-                "complexity": 1.09898554173216
+                "complexity": 1.0989855417321601
               }
             ],
             "metrics": {},
@@ -115,12 +115,12 @@
                   "similarity-to-phrase7": 0.24423157471320983
                 },
                 "events": {},
-                "complexity": 1.781494783645983
+                "complexity": 1.7814947836459833
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 3.2954313058092803
+            "complexity": 3.295431305809281
           },
           {
             "id": "group1",
@@ -129,7 +129,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.897607908713908
+            "complexity": 1.8976079087139084
           },
           {
             "id": "group2",
@@ -138,7 +138,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.7319639676311995
+            "complexity": 1.7319639676312022
           },
           {
             "id": "group3",
@@ -147,7 +147,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.5084998805947727
+            "complexity": 2.508499880594769
           },
           {
             "id": "group4",
@@ -156,7 +156,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.769063296087621
+            "complexity": 2.7690632960876194
           },
           {
             "id": "group5",
@@ -165,7 +165,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.425942421941583
+            "complexity": 1.4259424219415866
           },
           {
             "id": "group6",
@@ -179,7 +179,7 @@
         ],
         "metrics": {},
         "events": {},
-        "complexity": 13.628508780778365
+        "complexity": 13.628508780778366
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -230,7 +230,7 @@
                   "similarity-to-phrase4": 0.3741434114145114
                 },
                 "events": {},
-                "complexity": 1.9091404568356518
+                "complexity": 1.9091404568356514
               },
               {
                 "id": "phrase2",
@@ -245,7 +245,7 @@
                   "similarity-to-phrase4": 0.36787944117144233
                 },
                 "events": {},
-                "complexity": 1.531271388075191
+                "complexity": 1.5312713880751923
               },
               {
                 "id": "phrase3",
@@ -260,7 +260,7 @@
                   "similarity-to-phrase4": 0.34698993002622835
                 },
                 "events": {},
-                "complexity": 1.174228567418342
+                "complexity": 1.174228567418341
               }
             ],
             "metrics": {},
@@ -340,12 +340,12 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.22435786459058482
+            "complexity": 0.22435786459058527
           }
         ],
         "metrics": {},
         "events": {},
-        "complexity": 2.3827993505520406
+        "complexity": 2.382799350552041
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -381,7 +381,7 @@
                   "similarity-to-phrase4": 0.4032969719000036
                 },
                 "events": {},
-                "complexity": 0.9252409613399168
+                "complexity": 0.9252409613399166
               },
               {
                 "id": "phrase1",
@@ -396,12 +396,12 @@
                   "similarity-to-phrase4": 0.36787944117144245
                 },
                 "events": {},
-                "complexity": 1.093246252516553
+                "complexity": 1.0932462525165536
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 2.01848721385647
+            "complexity": 2.0184872138564702
           },
           {
             "id": "group1",
@@ -410,7 +410,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.7631829305347213
+            "complexity": 0.7631829305347209
           },
           {
             "id": "group2",
@@ -419,7 +419,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.027431542155393
+            "complexity": 1.0274315421553921
           },
           {
             "id": "group3",
@@ -428,7 +428,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.6319973632911235
+            "complexity": 0.6319973632911244
           }
         ],
         "metrics": {},
@@ -471,7 +471,7 @@
                   "similarity-to-phrase6": 0.35971376330578214
                 },
                 "events": {},
-                "complexity": 1.6797013098995457
+                "complexity": 1.6797013098995452
               },
               {
                 "id": "phrase1",
@@ -488,7 +488,7 @@
                   "similarity-to-phrase6": 0.3293400610540531
                 },
                 "events": {},
-                "complexity": 1.6307379809801548
+                "complexity": 1.6307379809801552
               },
               {
                 "id": "phrase2",
@@ -618,12 +618,12 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.979131886253787
+            "complexity": 0.9791318862537879
           }
         ],
         "metrics": {},
         "events": {},
-        "complexity": 4.21513497430871
+        "complexity": 4.215134974308711
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -684,7 +684,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.2094773282862175
+            "complexity": 1.2094773282862192
           },
           {
             "id": "group5",
@@ -693,7 +693,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.9013410597118243
+            "complexity": 1.9013410597118225
           },
           {
             "id": "group6",
@@ -729,7 +729,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.04342263904576
+            "complexity": 2.0434226390457546
           },
           {
             "id": "group10",
@@ -738,7 +738,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.0077987646109303
+            "complexity": 2.0077987646109356
           },
           {
             "id": "group11",
@@ -795,7 +795,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.804810402302788
+            "complexity": 2.804810402302789
           },
           {
             "id": "group2",
@@ -814,7 +814,7 @@
                   "similarity-to-phrase3": 0.6582711299139041
                 },
                 "events": {},
-                "complexity": 2.5343138564789083
+                "complexity": 2.5343138564789074
               },
               {
                 "id": "phrase3",
@@ -833,7 +833,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 5.262953596041331
+            "complexity": 5.2629535960413305
           }
         ],
         "metrics": {},
@@ -863,7 +863,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.412800873616511
+            "complexity": 2.4128008736165105
           },
           {
             "id": "group1",
@@ -872,7 +872,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.9875452629980148
+            "complexity": 1.9875452629980144
           },
           {
             "id": "group2",
@@ -881,7 +881,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.266913459724158
+            "complexity": 2.26691345972416
           },
           {
             "id": "group3",
@@ -890,12 +890,12 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.0707014600223994
+            "complexity": 2.0707014600223967
           }
         ],
         "metrics": {},
         "events": {},
-        "complexity": 8.737961056361083
+        "complexity": 8.737961056361081
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -939,7 +939,7 @@
                   "similarity-to-phrase3": 0.4988442694396012
                 },
                 "events": {},
-                "complexity": 0.8975430230006531
+                "complexity": 0.8975430230006534
               },
               {
                 "id": "phrase2",
@@ -953,12 +953,12 @@
                   "similarity-to-phrase3": 0.4630721508412067
                 },
                 "events": {},
-                "complexity": 0.8490476334485784
+                "complexity": 0.8490476334485777
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 1.7465906564492315
+            "complexity": 1.746590656449231
           },
           {
             "id": "group2",
@@ -967,7 +967,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.8760018705208656
+            "complexity": 0.8760018705208661
           }
         ],
         "metrics": {},
@@ -1024,7 +1024,7 @@
                   "similarity-to-phrase11": 0.09446652620362356
                 },
                 "events": {},
-                "complexity": 3.3476747979646397
+                "complexity": 3.3476747979646415
               },
               {
                 "id": "phrase2",
@@ -1046,7 +1046,7 @@
                   "similarity-to-phrase11": 0.11297267012329444
                 },
                 "events": {},
-                "complexity": 2.6214550322594743
+                "complexity": 2.6214550322594725
               }
             ],
             "metrics": {},
@@ -1100,7 +1100,7 @@
                   "similarity-to-phrase11": 0.13158037340161888
                 },
                 "events": {},
-                "complexity": 2.9550458039496306
+                "complexity": 2.955045803949636
               },
               {
                 "id": "phrase5",
@@ -1122,7 +1122,7 @@
                   "similarity-to-phrase11": 0.14381071907614998
                 },
                 "events": {},
-                "complexity": 2.2618780715024425
+                "complexity": 2.261878071502437
               },
               {
                 "id": "phrase6",
@@ -1207,7 +1207,7 @@
                   "similarity-to-phrase11": 0.18067999779061333
                 },
                 "events": {},
-                "complexity": 0.145491689817689
+                "complexity": 0.14549168981769256
               },
               {
                 "id": "phrase10",
@@ -1229,7 +1229,7 @@
                   "similarity-to-phrase11": 0.1534269752051304
                 },
                 "events": {},
-                "complexity": 0.18403960717805745
+                "complexity": 0.1840396071780539
               }
             ],
             "metrics": {},
@@ -1442,7 +1442,7 @@
                   "similarity-to-phrase18": 0.08535542516548791
                 },
                 "events": {},
-                "complexity": 1.6391926584964427
+                "complexity": 1.6391926584964445
               },
               {
                 "id": "phrase7",
@@ -1471,7 +1471,7 @@
                   "similarity-to-phrase18": 0.09029447146922567
                 },
                 "events": {},
-                "complexity": 3.2076515908165426
+                "complexity": 3.207651590816541
               }
             ],
             "metrics": {},
@@ -1539,12 +1539,12 @@
                   "similarity-to-phrase18": 0.06991521488619767
                 },
                 "events": {},
-                "complexity": 2.4367392926302323
+                "complexity": 2.4367392926302287
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 5.917307524222863
+            "complexity": 5.91730752422286
           },
           {
             "id": "group5",
@@ -1553,7 +1553,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.198942334146011
+            "complexity": 2.1989423341460075
           },
           {
             "id": "group6",
@@ -1587,7 +1587,7 @@
                   "similarity-to-phrase18": 0.1165366127060339
                 },
                 "events": {},
-                "complexity": 1.9098954581148284
+                "complexity": 1.9098954581148355
               },
               {
                 "id": "phrase12",
@@ -1616,12 +1616,12 @@
                   "similarity-to-phrase18": 0.1361594241997082
                 },
                 "events": {},
-                "complexity": 1.596003553514457
+                "complexity": 1.5960035535144677
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 3.5058990116292854
+            "complexity": 3.505899011629303
           },
           {
             "id": "group7",
@@ -1655,7 +1655,7 @@
                   "similarity-to-phrase18": 0.14808817555182469
                 },
                 "events": {},
-                "complexity": 1.8385512344317014
+                "complexity": 1.8385512344316979
               },
               {
                 "id": "phrase14",
@@ -1689,7 +1689,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 4.263666793947703
+            "complexity": 4.263666793947699
           },
           {
             "id": "group8",
@@ -1698,7 +1698,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.739529566133541
+            "complexity": 1.7395295661335268
           },
           {
             "id": "group9",
@@ -1707,7 +1707,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.232573909413368
+            "complexity": 2.232573909413375
           },
           {
             "id": "group10",
@@ -1716,7 +1716,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.3232552553711017
+            "complexity": 1.3232552553711088
           },
           {
             "id": "group11",
@@ -1725,7 +1725,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.19153156539685057
+            "complexity": 0.19153156539684346
           }
         ],
         "metrics": {},
@@ -1755,7 +1755,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.4955697195804962
+            "complexity": 0.4955697195804961
           },
           {
             "id": "group1",
@@ -1764,7 +1764,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.3485109125318826
+            "complexity": 3.348510912531884
           },
           {
             "id": "group2",
@@ -1773,7 +1773,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.157289121769167
+            "complexity": 3.157289121769166
           },
           {
             "id": "group3",
@@ -1791,7 +1791,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.9365800202609833
+            "complexity": 3.9365800202609815
           },
           {
             "id": "group5",
@@ -1800,7 +1800,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.428416563020514
+            "complexity": 3.4284165630205123
           },
           {
             "id": "group6",
@@ -1835,7 +1835,7 @@
                   "similarity-to-phrase19": 0.01249541108547518
                 },
                 "events": {},
-                "complexity": 3.579693559848266
+                "complexity": 3.5796935598482698
               },
               {
                 "id": "phrase7",
@@ -1870,7 +1870,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 8.68438676655986
+            "complexity": 8.684386766559864
           },
           {
             "id": "group7",
@@ -1888,7 +1888,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.028250215001545
+            "complexity": 4.028250215001538
           },
           {
             "id": "group9",
@@ -1906,7 +1906,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.75749127870386
+            "complexity": 3.757491278703874
           },
           {
             "id": "group11",
@@ -1915,7 +1915,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.109280935251867
+            "complexity": 4.10928093525186
           },
           {
             "id": "group12",
@@ -1924,7 +1924,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.0847024271957437
+            "complexity": 3.084702427195751
           },
           {
             "id": "group13",
@@ -1933,7 +1933,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.867685278240238
+            "complexity": 4.867685278240231
           },
           {
             "id": "group14",
@@ -1984,6 +1984,215 @@
         "metrics": {},
         "events": {},
         "complexity": 66.53372773761643
+      },
+      "generation_data": {
+        "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
+      }
+    }
+  ],
+  "selena/Classical-Ballet-Solo-Charlene-Quek-Woo-Nim-\ud835\ude0a\ud835\ude29\ud835\ude30\ud835\ude33\ud835\ude26\ud835\ude30\ud835\ude28\ud835\ude33\ud835\ude22\ud835\ude31\ud835\ude29\ud835\ude26\ud835\ude25-\ud835\ude23\ud835\ude3a-\ud835\ude14\ud835\ude34-\ud835\ude12\ud835\ude30\ud835\ude2c-\ud835\ude0f\ud835\ude36\ud835\ude2a\ud835\ude34\ud835\ude29\ud835\ude2a": [
+    {
+      "tree_name": "Classical-Ballet-Solo-Charlene-Quek-Woo-Nim-\ud835\ude0a\ud835\ude29\ud835\ude30\ud835\ude33\ud835\ude26\ud835\ude30\ud835\ude28\ud835\ude33\ud835\ude22\ud835\ude31\ud835\ude29\ud835\ude26\ud835\ude25-\ud835\ude23\ud835\ude3a-\ud835\ude14\ud835\ude34-\ud835\ude12\ud835\ude30\ud835\ude2c-\ud835\ude0f\ud835\ude36\ud835\ude2a\ud835\ude34\ud835\ude29\ud835\ude2a audio tree",
+      "clip_relativepath": "selena/Classical-Ballet-Solo-Charlene-Quek-Woo-Nim-\ud835\ude0a\ud835\ude29\ud835\ude30\ud835\ude33\ud835\ude26\ud835\ude30\ud835\ude28\ud835\ude33\ud835\ude22\ud835\ude31\ud835\ude29\ud835\ude26\ud835\ude25-\ud835\ude23\ud835\ude3a-\ud835\ude14\ud835\ude34-\ud835\ude12\ud835\ude30\ud835\ude2c-\ud835\ude0f\ud835\ude36\ud835\ude2a\ud835\ude34\ud835\ude29\ud835\ude2a",
+      "bpm": 126.04801829268293,
+      "first_beat": 0.11609977324263039,
+      "root": {
+        "id": "wholesong",
+        "start_time": 0.0,
+        "end_time": 60.07,
+        "children": [
+          {
+            "id": "group0",
+            "start_time": 0.0,
+            "end_time": 3.924172335600907,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.634321222946709
+          },
+          {
+            "id": "group1",
+            "start_time": 3.924172335600907,
+            "end_time": 7.732244897959184,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 1.061638623320607
+          },
+          {
+            "id": "group2",
+            "start_time": 7.732244897959184,
+            "end_time": 11.54031746031746,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 1.9816458625469169
+          },
+          {
+            "id": "group3",
+            "start_time": 11.54031746031746,
+            "end_time": 15.348390022675737,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 4.442141365173039
+          },
+          {
+            "id": "group4",
+            "start_time": 15.348390022675737,
+            "end_time": 19.156462585034014,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.88946863093331
+          },
+          {
+            "id": "group5",
+            "start_time": 19.156462585034014,
+            "end_time": 26.772607709750567,
+            "children": [
+              {
+                "id": "phrase5",
+                "start_time": 19.156462585034014,
+                "end_time": 22.96453514739229,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.0001661831235769327,
+                  "similarity-to-phrase1": 0.5462860708912636,
+                  "similarity-to-phrase2": 0.36976011428064803,
+                  "similarity-to-phrase3": 0.3298870588726433,
+                  "similarity-to-phrase4": 0.34707709672844433,
+                  "similarity-to-phrase5": 1.0,
+                  "similarity-to-phrase6": 0.6173007166301376,
+                  "similarity-to-phrase7": 0.17053662513495735,
+                  "similarity-to-phrase8": 0.4083854136645137,
+                  "similarity-to-phrase9": 0.6279135229338195,
+                  "similarity-to-phrase10": 0.49669756370911905,
+                  "similarity-to-phrase11": 0.39917412053221013,
+                  "similarity-to-phrase12": 0.21945520858823495,
+                  "similarity-to-phrase13": 0.36400898950351346,
+                  "similarity-to-phrase14": 0.2429020468387057,
+                  "similarity-to-phrase15": 0.008250735578314844
+                },
+                "events": {},
+                "complexity": 3.35243351190206
+              },
+              {
+                "id": "phrase6",
+                "start_time": 22.96453514739229,
+                "end_time": 26.772607709750567,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.00013345953536203216,
+                  "similarity-to-phrase1": 0.6115410024400768,
+                  "similarity-to-phrase2": 0.4484616209688087,
+                  "similarity-to-phrase3": 0.2768968482715275,
+                  "similarity-to-phrase4": 0.31614141162258813,
+                  "similarity-to-phrase5": 0.6173007166301376,
+                  "similarity-to-phrase6": 1.0,
+                  "similarity-to-phrase7": 0.17242763295966088,
+                  "similarity-to-phrase8": 0.338388762554689,
+                  "similarity-to-phrase9": 0.5288678058994339,
+                  "similarity-to-phrase10": 0.502111019689902,
+                  "similarity-to-phrase11": 0.3679937764673936,
+                  "similarity-to-phrase12": 0.20835594924253487,
+                  "similarity-to-phrase13": 0.349711769299855,
+                  "similarity-to-phrase14": 0.22395903094531902,
+                  "similarity-to-phrase15": 0.008886244293531435
+                },
+                "events": {},
+                "complexity": 1.9471040070430305
+              }
+            ],
+            "metrics": {},
+            "events": {},
+            "complexity": 5.29953751894509
+          },
+          {
+            "id": "group6",
+            "start_time": 26.772607709750567,
+            "end_time": 30.580680272108843,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 1.542322136023131
+          },
+          {
+            "id": "group7",
+            "start_time": 30.580680272108843,
+            "end_time": 34.38875283446712,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.7970791174668754
+          },
+          {
+            "id": "group8",
+            "start_time": 34.38875283446712,
+            "end_time": 38.196825396825396,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.2640451698965016
+          },
+          {
+            "id": "group9",
+            "start_time": 38.196825396825396,
+            "end_time": 42.00489795918367,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 3.3026092810885928
+          },
+          {
+            "id": "group10",
+            "start_time": 42.00489795918367,
+            "end_time": 45.81297052154195,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 1.571659009385634
+          },
+          {
+            "id": "group11",
+            "start_time": 45.81297052154195,
+            "end_time": 49.621043083900226,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 1.8780104443392283
+          },
+          {
+            "id": "group12",
+            "start_time": 49.621043083900226,
+            "end_time": 53.4291156462585,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 1.4701755098955722
+          },
+          {
+            "id": "group13",
+            "start_time": 53.4291156462585,
+            "end_time": 57.23718820861678,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 1.7238977646831941
+          },
+          {
+            "id": "group14",
+            "start_time": 57.23718820861678,
+            "end_time": 60.07,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 0.9262993726309787
+          }
+        ],
+        "metrics": {},
+        "events": {},
+        "complexity": 35.78485102927538
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -2044,7 +2253,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.2658819544340183
+            "complexity": 2.265881954434011
           },
           {
             "id": "group5",
@@ -2053,7 +2262,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.853666182714029
+            "complexity": 4.853666182714036
           },
           {
             "id": "group6",
@@ -2107,7 +2316,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.6045648476532222
+            "complexity": 1.604564847653208
           },
           {
             "id": "group12",
@@ -2116,7 +2325,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.1733244004412313
+            "complexity": 1.1733244004412455
           },
           {
             "id": "group13",
@@ -2182,7 +2391,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.8458775773297704
+            "complexity": 0.8458775773297709
           },
           {
             "id": "group4",
@@ -2262,7 +2471,7 @@
                   "similarity-to-phrase64": 0.008075639963870309
                 },
                 "events": {},
-                "complexity": 1.2032733871791295
+                "complexity": 1.203273387179129
               },
               {
                 "id": "phrase5",
@@ -2337,12 +2546,12 @@
                   "similarity-to-phrase64": 0.006842574494817042
                 },
                 "events": {},
-                "complexity": 1.455702205040514
+                "complexity": 1.455702205040513
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 2.6589755922196434
+            "complexity": 2.658975592219642
           },
           {
             "id": "group5",
@@ -2351,7 +2560,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.9876466949669487
+            "complexity": 0.9876466949669496
           },
           {
             "id": "group6",
@@ -2524,12 +2733,12 @@
                   "similarity-to-phrase64": 0.006385734173576066
                 },
                 "events": {},
-                "complexity": 1.0601747788544085
+                "complexity": 1.0601747788544067
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 2.9559771411426397
+            "complexity": 2.955977141142638
           },
           {
             "id": "group9",
@@ -2538,7 +2747,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.5599202585828156
+            "complexity": 1.5599202585828138
           },
           {
             "id": "group10",
@@ -2547,7 +2756,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.3341338197237889
+            "complexity": 1.334133819723787
           },
           {
             "id": "group11",
@@ -2556,7 +2765,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.1402679517840362
+            "complexity": 1.1402679517840415
           },
           {
             "id": "group12",
@@ -2574,7 +2783,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.7192794360197432
+            "complexity": 1.7192794360197503
           },
           {
             "id": "group14",
@@ -2729,7 +2938,7 @@
                   "similarity-to-phrase64": 0.0009611380058610171
                 },
                 "events": {},
-                "complexity": 2.08239324297638
+                "complexity": 2.0823932429763765
               },
               {
                 "id": "phrase18",
@@ -2804,7 +3013,7 @@
                   "similarity-to-phrase64": 0.0008584230311886769
                 },
                 "events": {},
-                "complexity": 1.526102901298998
+                "complexity": 1.5261029012989944
               },
               {
                 "id": "phrase19",
@@ -3184,7 +3393,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 12.51544072574374
+            "complexity": 12.515440725743733
           },
           {
             "id": "group15",
@@ -3238,7 +3447,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.139688911335753
+            "complexity": 2.1396889113357602
           },
           {
             "id": "group21",
@@ -3256,7 +3465,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.4158605014978036
+            "complexity": 1.4158605014977965
           },
           {
             "id": "group23",
@@ -3283,7 +3492,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.5646542157659553
+            "complexity": 1.5646542157659482
           },
           {
             "id": "group26",
@@ -3292,7 +3501,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.5072344148139791
+            "complexity": 1.5072344148139862
           },
           {
             "id": "group27",
@@ -3372,7 +3581,7 @@
                   "similarity-to-phrase64": 0.0011356425065861188
                 },
                 "events": {},
-                "complexity": 1.8091531968499623
+                "complexity": 1.8091531968499766
               },
               {
                 "id": "phrase37",
@@ -3447,7 +3656,7 @@
                   "similarity-to-phrase64": 0.00107422607425617
                 },
                 "events": {},
-                "complexity": 1.9452068774196931
+                "complexity": 1.945206877419679
               },
               {
                 "id": "phrase38",
@@ -3522,7 +3731,7 @@
                   "similarity-to-phrase64": 0.0007719439908753482
                 },
                 "events": {},
-                "complexity": 1.5219695646272484
+                "complexity": 1.5219695646272413
               },
               {
                 "id": "phrase39",
@@ -3597,7 +3806,7 @@
                   "similarity-to-phrase64": 0.0010474455039557785
                 },
                 "events": {},
-                "complexity": 1.0424475128690887
+                "complexity": 1.0424475128691242
               },
               {
                 "id": "phrase40",
@@ -3672,7 +3881,7 @@
                   "similarity-to-phrase64": 0.0008197134945487526
                 },
                 "events": {},
-                "complexity": 0.6693973962818234
+                "complexity": 0.669397396281795
               },
               {
                 "id": "phrase41",
@@ -3897,12 +4106,12 @@
                   "similarity-to-phrase64": 0.001312741581835129
                 },
                 "events": {},
-                "complexity": 1.5268532971987483
+                "complexity": 1.526853297198734
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 12.270118853801755
+            "complexity": 12.27011885380174
           },
           {
             "id": "group28",
@@ -3911,7 +4120,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.9351867670820013
+            "complexity": 0.9351867670820155
           },
           {
             "id": "group29",
@@ -3920,7 +4129,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.4672475597865002
+            "complexity": 1.467247559786486
           },
           {
             "id": "group30",
@@ -3929,7 +4138,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.7536695263055293
+            "complexity": 1.753669526305515
           },
           {
             "id": "group31",
@@ -3938,7 +4147,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.5300595797828151
+            "complexity": 1.5300595797828436
           },
           {
             "id": "group32",
@@ -4093,7 +4302,7 @@
                   "similarity-to-phrase64": 0.000924284290098102
                 },
                 "events": {},
-                "complexity": 1.7986622275391682
+                "complexity": 1.798662227539154
               },
               {
                 "id": "phrase50",
@@ -4168,7 +4377,7 @@
                   "similarity-to-phrase64": 0.0008603102740263277
                 },
                 "events": {},
-                "complexity": 1.1813326514343174
+                "complexity": 1.1813326514343316
               },
               {
                 "id": "phrase51",
@@ -4328,7 +4537,7 @@
                   "similarity-to-phrase64": 0.0007216793133650543
                 },
                 "events": {},
-                "complexity": 3.2879199219173643
+                "complexity": 3.28791992191735
               },
               {
                 "id": "phrase53",
@@ -4403,7 +4612,7 @@
                   "similarity-to-phrase64": 0.000510955679251859
                 },
                 "events": {},
-                "complexity": 1.7175501334571948
+                "complexity": 1.7175501334572232
               },
               {
                 "id": "phrase54",
@@ -4478,7 +4687,7 @@
                   "similarity-to-phrase64": 0.0007809614175466666
                 },
                 "events": {},
-                "complexity": 1.471394741568787
+                "complexity": 1.4713947415687727
               }
             ],
             "metrics": {},
@@ -4572,7 +4781,7 @@
                   "similarity-to-phrase64": 0.000846359787941797
                 },
                 "events": {},
-                "complexity": 2.194219674959996
+                "complexity": 2.1942196749599816
               },
               {
                 "id": "phrase57",
@@ -4647,7 +4856,7 @@
                   "similarity-to-phrase64": 0.0007816796017502043
                 },
                 "events": {},
-                "complexity": 2.144201161287654
+                "complexity": 2.1442011612876684
               }
             ],
             "metrics": {},
@@ -4670,7 +4879,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.7820141724003662
+            "complexity": 0.7820141724003804
           },
           {
             "id": "group38",
@@ -4679,7 +4888,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.11769508457403788
+            "complexity": 0.11769508457402367
           },
           {
             "id": "group39",
@@ -4772,7 +4981,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.777570539882002
+            "complexity": 1.7775705398819985
           },
           {
             "id": "group4",
@@ -4781,7 +4990,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.4853430793847124
+            "complexity": 2.485343079384716
           },
           {
             "id": "group5",
@@ -4799,7 +5008,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.303678695429639
+            "complexity": 2.3036786954296424
           },
           {
             "id": "group7",
@@ -4808,7 +5017,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.3373388597206564
+            "complexity": 2.3373388597206493
           },
           {
             "id": "group8",
@@ -4826,7 +5035,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.2479725104112447
+            "complexity": 2.2479725104112482
           },
           {
             "id": "group10",
@@ -4835,7 +5044,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.117500130912749
+            "complexity": 2.117500130912756
           },
           {
             "id": "group11",
@@ -4844,7 +5053,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.1626385624046804
+            "complexity": 2.1626385624046733
           },
           {
             "id": "group12",
@@ -4880,7 +5089,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.9480103651173337
+            "complexity": 1.948010365117323
           },
           {
             "id": "group16",
@@ -4889,7 +5098,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.7091792337993823
+            "complexity": 2.709179233799393
           },
           {
             "id": "group17",
@@ -5015,7 +5224,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.067373048282519
+            "complexity": 2.067373048282512
           },
           {
             "id": "group31",
@@ -5024,7 +5233,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.262854338053053
+            "complexity": 2.26285433805306
           },
           {
             "id": "group32",
@@ -5033,7 +5242,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.9690109889109948
+            "complexity": 1.9690109889109806
           },
           {
             "id": "group33",
@@ -5042,7 +5251,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.6801495269076128
+            "complexity": 2.6801495269075986
           },
           {
             "id": "group34",
@@ -5051,7 +5260,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.2774698275835163
+            "complexity": 2.2774698275835448
           },
           {
             "id": "group35",
@@ -5108,6 +5317,361 @@
       }
     }
   ],
+  "selena/Tinashe--Party-Favors-ft-Young-Thug--Cheshir-Choreo-Class\u00a0-Justjerk-Dance-Academy-trimmed": [
+    {
+      "tree_name": "Tinashe--Party-Favors-ft-Young-Thug--Cheshir-Choreo-Class\u00a0-Justjerk-Dance-Academy-trimmed audio tree",
+      "clip_relativepath": "selena/Tinashe--Party-Favors-ft-Young-Thug--Cheshir-Choreo-Class\u00a0-Justjerk-Dance-Academy-trimmed",
+      "bpm": 95.703125,
+      "first_beat": 0.09287981859410431,
+      "root": {
+        "id": "wholesong",
+        "start_time": 0.0,
+        "end_time": 90.01,
+        "children": [
+          {
+            "id": "group0",
+            "start_time": 0.0,
+            "end_time": 5.108390022675737,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.816639347428965
+          },
+          {
+            "id": "group1",
+            "start_time": 5.108390022675737,
+            "end_time": 10.12390022675737,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.745908444405204
+          },
+          {
+            "id": "group2",
+            "start_time": 10.12390022675737,
+            "end_time": 15.139410430839002,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 3.0719395065197377
+          },
+          {
+            "id": "group3",
+            "start_time": 15.139410430839002,
+            "end_time": 20.154920634920636,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.8961638416147366
+          },
+          {
+            "id": "group4",
+            "start_time": 20.154920634920636,
+            "end_time": 25.170430839002268,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 3.597549685401507
+          },
+          {
+            "id": "group5",
+            "start_time": 25.170430839002268,
+            "end_time": 30.1859410430839,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 4.238268074955684
+          },
+          {
+            "id": "group6",
+            "start_time": 30.1859410430839,
+            "end_time": 35.20145124716554,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.715412474763067
+          },
+          {
+            "id": "group7",
+            "start_time": 35.20145124716554,
+            "end_time": 40.21696145124717,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 4.39239429677578
+          },
+          {
+            "id": "group8",
+            "start_time": 40.21696145124717,
+            "end_time": 45.23247165532881,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 3.0388250223475595
+          },
+          {
+            "id": "group9",
+            "start_time": 45.23247165532881,
+            "end_time": 50.247981859410444,
+            "children": [],
+            "metrics": {},
+            "events": {},
+            "complexity": 2.616904672363191
+          },
+          {
+            "id": "group10",
+            "start_time": 50.247981859410444,
+            "end_time": 75.32553287981862,
+            "children": [
+              {
+                "id": "phrase10",
+                "start_time": 50.247981859410444,
+                "end_time": 55.26349206349208,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.08724252147119892,
+                  "similarity-to-phrase1": 0.24910456580426685,
+                  "similarity-to-phrase2": 0.14417682331713297,
+                  "similarity-to-phrase3": 0.22880426420576047,
+                  "similarity-to-phrase4": 0.28554485563712856,
+                  "similarity-to-phrase5": 0.34088337099157007,
+                  "similarity-to-phrase6": 0.3552580548072505,
+                  "similarity-to-phrase7": 0.6113918511340344,
+                  "similarity-to-phrase8": 0.20965705530165515,
+                  "similarity-to-phrase9": 0.5282644485746201,
+                  "similarity-to-phrase10": 1.0,
+                  "similarity-to-phrase11": 0.7279200158441983,
+                  "similarity-to-phrase12": 0.6744078661277554,
+                  "similarity-to-phrase13": 0.663145759761767,
+                  "similarity-to-phrase14": 0.6829830238278941,
+                  "similarity-to-phrase15": 0.516858019366237,
+                  "similarity-to-phrase16": 0.5180478846301223,
+                  "similarity-to-phrase17": 0.46422017538958593
+                },
+                "events": {},
+                "complexity": 2.6040693250851703
+              },
+              {
+                "id": "phrase11",
+                "start_time": 55.26349206349208,
+                "end_time": 60.279002267573716,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.075263779195321,
+                  "similarity-to-phrase1": 0.2407567160616103,
+                  "similarity-to-phrase2": 0.13018083828378552,
+                  "similarity-to-phrase3": 0.20202104993447928,
+                  "similarity-to-phrase4": 0.25276915262604105,
+                  "similarity-to-phrase5": 0.3223505655180347,
+                  "similarity-to-phrase6": 0.31590628036675444,
+                  "similarity-to-phrase7": 0.6375110267663492,
+                  "similarity-to-phrase8": 0.18666801071533365,
+                  "similarity-to-phrase9": 0.5144546681567579,
+                  "similarity-to-phrase10": 0.7279200158441983,
+                  "similarity-to-phrase11": 1.0,
+                  "similarity-to-phrase12": 0.6469886401723418,
+                  "similarity-to-phrase13": 0.6592728266055986,
+                  "similarity-to-phrase14": 0.5903513335864317,
+                  "similarity-to-phrase15": 0.5520827200232631,
+                  "similarity-to-phrase16": 0.4935457374912788,
+                  "similarity-to-phrase17": 0.46614037653756524
+                },
+                "events": {},
+                "complexity": 2.675702370319023
+              },
+              {
+                "id": "phrase12",
+                "start_time": 60.279002267573716,
+                "end_time": 65.29451247165535,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.08271573164925215,
+                  "similarity-to-phrase1": 0.19425333492496305,
+                  "similarity-to-phrase2": 0.10465206118596802,
+                  "similarity-to-phrase3": 0.17523807847472564,
+                  "similarity-to-phrase4": 0.21334067281010088,
+                  "similarity-to-phrase5": 0.2561903986533082,
+                  "similarity-to-phrase6": 0.26704849892856397,
+                  "similarity-to-phrase7": 0.4869100852843621,
+                  "similarity-to-phrase8": 0.1661216110131063,
+                  "similarity-to-phrase9": 0.431134925671999,
+                  "similarity-to-phrase10": 0.6744078661277554,
+                  "similarity-to-phrase11": 0.6469886401723418,
+                  "similarity-to-phrase12": 1.0,
+                  "similarity-to-phrase13": 0.5364754692664331,
+                  "similarity-to-phrase14": 0.5527831273129675,
+                  "similarity-to-phrase15": 0.4087572508350822,
+                  "similarity-to-phrase16": 0.40590674062065435,
+                  "similarity-to-phrase17": 0.37079853633322557
+                },
+                "events": {},
+                "complexity": 3.543127552382643
+              },
+              {
+                "id": "phrase13",
+                "start_time": 65.29451247165535,
+                "end_time": 70.31002267573699,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.06984432788197804,
+                  "similarity-to-phrase1": 0.3254321793097121,
+                  "similarity-to-phrase2": 0.15734827146899913,
+                  "similarity-to-phrase3": 0.21341383545883938,
+                  "similarity-to-phrase4": 0.28539863480440264,
+                  "similarity-to-phrase5": 0.3376525468726849,
+                  "similarity-to-phrase6": 0.36498332645787723,
+                  "similarity-to-phrase7": 0.6263185268972381,
+                  "similarity-to-phrase8": 0.1938721158553139,
+                  "similarity-to-phrase9": 0.46712560292180466,
+                  "similarity-to-phrase10": 0.663145759761767,
+                  "similarity-to-phrase11": 0.6592728266055986,
+                  "similarity-to-phrase12": 0.5364754692664331,
+                  "similarity-to-phrase13": 1.0,
+                  "similarity-to-phrase14": 0.6405505611390552,
+                  "similarity-to-phrase15": 0.5933759739871617,
+                  "similarity-to-phrase16": 0.5793765684756373,
+                  "similarity-to-phrase17": 0.49238631207870454
+                },
+                "events": {},
+                "complexity": 3.192182044948254
+              },
+              {
+                "id": "phrase14",
+                "start_time": 70.31002267573699,
+                "end_time": 75.32553287981862,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.09625371861787925,
+                  "similarity-to-phrase1": 0.2955072680516415,
+                  "similarity-to-phrase2": 0.17838999766144673,
+                  "similarity-to-phrase3": 0.2798416454532868,
+                  "similarity-to-phrase4": 0.3572680943063595,
+                  "similarity-to-phrase5": 0.40691714360541675,
+                  "similarity-to-phrase6": 0.4433004047125965,
+                  "similarity-to-phrase7": 0.6313561429393424,
+                  "similarity-to-phrase8": 0.2617984548220695,
+                  "similarity-to-phrase9": 0.5634889065868862,
+                  "similarity-to-phrase10": 0.6829830238278941,
+                  "similarity-to-phrase11": 0.5903513335864317,
+                  "similarity-to-phrase12": 0.5527831273129675,
+                  "similarity-to-phrase13": 0.6405505611390552,
+                  "similarity-to-phrase14": 1.0,
+                  "similarity-to-phrase15": 0.5785887726817799,
+                  "similarity-to-phrase16": 0.6249873707799609,
+                  "similarity-to-phrase17": 0.5271694563163232
+                },
+                "events": {},
+                "complexity": 3.697933167734135
+              }
+            ],
+            "metrics": {},
+            "events": {},
+            "complexity": 15.713014460469225
+          },
+          {
+            "id": "group11",
+            "start_time": 75.32553287981862,
+            "end_time": 90.01,
+            "children": [
+              {
+                "id": "phrase15",
+                "start_time": 75.32553287981862,
+                "end_time": 80.34104308390026,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.07250229320921317,
+                  "similarity-to-phrase1": 0.35968069054616486,
+                  "similarity-to-phrase2": 0.1980252931100312,
+                  "similarity-to-phrase3": 0.2663079617415472,
+                  "similarity-to-phrase4": 0.35492485517602196,
+                  "similarity-to-phrase5": 0.4479629704274676,
+                  "similarity-to-phrase6": 0.4375079432611678,
+                  "similarity-to-phrase7": 0.6854312980716502,
+                  "similarity-to-phrase8": 0.24673197450035278,
+                  "similarity-to-phrase9": 0.5230533129172554,
+                  "similarity-to-phrase10": 0.516858019366237,
+                  "similarity-to-phrase11": 0.5520827200232631,
+                  "similarity-to-phrase12": 0.4087572508350822,
+                  "similarity-to-phrase13": 0.5933759739871617,
+                  "similarity-to-phrase14": 0.5785887726817799,
+                  "similarity-to-phrase15": 1.0,
+                  "similarity-to-phrase16": 0.6786864981443842,
+                  "similarity-to-phrase17": 0.625538233299116
+                },
+                "events": {},
+                "complexity": 3.3526813889055376
+              },
+              {
+                "id": "phrase16",
+                "start_time": 80.34104308390026,
+                "end_time": 85.3565532879819,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.07977824338669419,
+                  "similarity-to-phrase1": 0.40855100003057926,
+                  "similarity-to-phrase2": 0.21587170694440574,
+                  "similarity-to-phrase3": 0.28520193518023323,
+                  "similarity-to-phrase4": 0.40367947157483847,
+                  "similarity-to-phrase5": 0.43131949811588843,
+                  "similarity-to-phrase6": 0.5221288969744345,
+                  "similarity-to-phrase7": 0.5795889008124324,
+                  "similarity-to-phrase8": 0.2643505696331907,
+                  "similarity-to-phrase9": 0.4678681563746304,
+                  "similarity-to-phrase10": 0.5180478846301223,
+                  "similarity-to-phrase11": 0.4935457374912788,
+                  "similarity-to-phrase12": 0.40590674062065435,
+                  "similarity-to-phrase13": 0.5793765684756373,
+                  "similarity-to-phrase14": 0.6249873707799609,
+                  "similarity-to-phrase15": 0.6786864981443842,
+                  "similarity-to-phrase16": 1.0,
+                  "similarity-to-phrase17": 0.5949990435795038
+                },
+                "events": {},
+                "complexity": 4.199573876088962
+              },
+              {
+                "id": "phrase17",
+                "start_time": 85.3565532879819,
+                "end_time": 90.01,
+                "children": [],
+                "metrics": {
+                  "similarity-to-phrase0": 0.06741300076151151,
+                  "similarity-to-phrase1": 0.33306386583513276,
+                  "similarity-to-phrase2": 0.20111467618863568,
+                  "similarity-to-phrase3": 0.26877142288446143,
+                  "similarity-to-phrase4": 0.351264856880511,
+                  "similarity-to-phrase5": 0.4305757365548385,
+                  "similarity-to-phrase6": 0.42652076740710954,
+                  "similarity-to-phrase7": 0.5822906879237256,
+                  "similarity-to-phrase8": 0.2569019491496002,
+                  "similarity-to-phrase9": 0.48915024750865427,
+                  "similarity-to-phrase10": 0.46422017538958593,
+                  "similarity-to-phrase11": 0.46614037653756524,
+                  "similarity-to-phrase12": 0.37079853633322557,
+                  "similarity-to-phrase13": 0.49238631207870454,
+                  "similarity-to-phrase14": 0.5271694563163232,
+                  "similarity-to-phrase15": 0.625538233299116,
+                  "similarity-to-phrase16": 0.5949990435795038,
+                  "similarity-to-phrase17": 1.0
+                },
+                "events": {},
+                "complexity": 2.1546267737055516
+              }
+            ],
+            "metrics": {},
+            "events": {},
+            "complexity": 9.706882038700051
+          }
+        ],
+        "metrics": {},
+        "events": {},
+        "complexity": 57.54990186574471
+      },
+      "generation_data": {
+        "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
+      }
+    }
+  ],
   "selena/waacking-basic-freestyle": [
     {
       "tree_name": "waacking-basic-freestyle audio tree",
@@ -5135,7 +5699,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.6036132319367968
+            "complexity": 1.6036132319367973
           },
           {
             "id": "group2",
@@ -5144,7 +5708,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.3695113381211876
+            "complexity": 2.369511338121187
           },
           {
             "id": "group3",
@@ -5153,7 +5717,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.6783811600836573
+            "complexity": 1.6783811600836556
           },
           {
             "id": "group4",
@@ -5208,12 +5772,12 @@
                   "similarity-to-phrase14": 0.191185649254481
                 },
                 "events": {},
-                "complexity": 2.1689909386934083
+                "complexity": 2.1689909386934154
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 3.868416518334718
+            "complexity": 3.868416518334725
           },
           {
             "id": "group5",
@@ -5222,7 +5786,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.732350322806875
+            "complexity": 2.7323503228068695
           },
           {
             "id": "group6",
@@ -5231,7 +5795,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.3578954804459613
+            "complexity": 2.3578954804459595
           },
           {
             "id": "group7",
@@ -5261,7 +5825,7 @@
                   "similarity-to-phrase14": 0.137460257177626
                 },
                 "events": {},
-                "complexity": 2.2935788431584925
+                "complexity": 2.2935788431584943
               },
               {
                 "id": "phrase9",
@@ -5291,7 +5855,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 4.227230770403683
+            "complexity": 4.2272307704036844
           },
           {
             "id": "group8",
@@ -5300,7 +5864,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.109991004514267
+            "complexity": 2.1099910045142707
           },
           {
             "id": "group9",
@@ -5330,7 +5894,7 @@
                   "similarity-to-phrase14": 0.16997715550176778
                 },
                 "events": {},
-                "complexity": 2.2072950322710696
+                "complexity": 2.2072950322710625
               },
               {
                 "id": "phrase12",
@@ -5355,7 +5919,7 @@
                   "similarity-to-phrase14": 0.1581706920809428
                 },
                 "events": {},
-                "complexity": 1.5490061275266847
+                "complexity": 1.5490061275266953
               },
               {
                 "id": "phrase13",
@@ -5385,7 +5949,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 6.136502730612126
+            "complexity": 6.136502730612129
           },
           {
             "id": "group10",
@@ -5394,7 +5958,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.606682763975865
+            "complexity": 1.6066827639758579
           }
         ],
         "metrics": {},
@@ -5442,7 +6006,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.038859038509441
+            "complexity": 1.03885903850944
           },
           {
             "id": "group3",
@@ -5549,12 +6113,12 @@
                   "similarity-to-phrase40": 0.00018926127201152415
                 },
                 "events": {},
-                "complexity": 1.0394499157002013
+                "complexity": 1.039449915700204
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 3.0627833474616732
+            "complexity": 3.062783347461676
           },
           {
             "id": "group4",
@@ -5563,7 +6127,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.661708926515253
+            "complexity": 3.661708926515251
           },
           {
             "id": "group5",
@@ -5581,7 +6145,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.7462958879041253
+            "complexity": 1.7462958879041217
           },
           {
             "id": "group7",
@@ -5590,7 +6154,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.052900594222802
+            "complexity": 3.0529005942228054
           },
           {
             "id": "group8",
@@ -5738,7 +6302,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.7670571031589546
+            "complexity": 1.7670571031589617
           },
           {
             "id": "group13",
@@ -5747,7 +6311,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.0892807237039435
+            "complexity": 4.089280723703936
           },
           {
             "id": "group14",
@@ -5765,7 +6329,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.711559774069741
+            "complexity": 2.711559774069734
           },
           {
             "id": "group16",
@@ -5774,7 +6338,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.4347217813167106
+            "complexity": 3.4347217813167177
           },
           {
             "id": "group17",
@@ -5783,7 +6347,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.905396856233182
+            "complexity": 2.9053968562331605
           },
           {
             "id": "group18",
@@ -5792,7 +6356,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.6100940840752003
+            "complexity": 3.6100940840752216
           },
           {
             "id": "group19",
@@ -5801,7 +6365,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.341191697266737
+            "complexity": 3.341191697266723
           },
           {
             "id": "group20",
@@ -5810,7 +6374,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.4224155889568024
+            "complexity": 3.4224155889568166
           },
           {
             "id": "group21",
@@ -5884,7 +6448,7 @@
                   "similarity-to-phrase40": 8.941241489134421e-05
                 },
                 "events": {},
-                "complexity": 3.532648321945686
+                "complexity": 3.5326483219457003
               },
               {
                 "id": "phrase26",
@@ -5935,7 +6499,7 @@
                   "similarity-to-phrase40": 8.478121270789458e-05
                 },
                 "events": {},
-                "complexity": 4.043615378876552
+                "complexity": 4.043615378876538
               }
             ],
             "metrics": {},
@@ -5967,7 +6531,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 5.106517924094462
+            "complexity": 5.106517924094476
           },
           {
             "id": "group27",
@@ -5976,7 +6540,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.079004158859121
+            "complexity": 2.0790041588591066
           },
           {
             "id": "group28",
@@ -5994,7 +6558,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.7072823944010764
+            "complexity": 3.707282394401119
           },
           {
             "id": "group30",
@@ -6003,7 +6567,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.16872194124808
+            "complexity": 3.1687219412480374
           },
           {
             "id": "group31",
@@ -6012,7 +6576,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.7157715507829465
+            "complexity": 2.7157715507829607
           },
           {
             "id": "group32",
@@ -6021,7 +6585,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.055021279216902
+            "complexity": 2.055021279216888
           },
           {
             "id": "group33",
@@ -6039,7 +6603,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.021179546133013
+            "complexity": 4.021179546133041
           },
           {
             "id": "group35",
@@ -6048,7 +6612,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.585174689484461
+            "complexity": 2.5851746894844325
           },
           {
             "id": "group36",
@@ -6066,12 +6630,12 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.7113708708166371
+            "complexity": 0.7113708708166797
           }
         ],
         "metrics": {},
         "events": {},
-        "complexity": 116.76008642090456
+        "complexity": 116.7600864209046
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -6096,7 +6660,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.1747132756761192
+            "complexity": 1.174713275676119
           },
           {
             "id": "group1",
@@ -6105,7 +6669,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.4944143943161776
+            "complexity": 1.4944143943161778
           },
           {
             "id": "group2",
@@ -6123,7 +6687,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.093563440217932
+            "complexity": 4.09356344021793
           },
           {
             "id": "group4",
@@ -6132,7 +6696,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.431230352557618
+            "complexity": 3.4312303525576198
           },
           {
             "id": "group5",
@@ -6161,7 +6725,7 @@
                   "similarity-to-phrase13": 0.3111654355374048
                 },
                 "events": {},
-                "complexity": 4.492047000627863
+                "complexity": 4.49204700062786
               },
               {
                 "id": "phrase6",
@@ -6185,7 +6749,7 @@
                   "similarity-to-phrase13": 0.31487064905160916
                 },
                 "events": {},
-                "complexity": 3.4684957436501094
+                "complexity": 3.468495743650113
               }
             ],
             "metrics": {},
@@ -6208,7 +6772,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.642406741644791
+            "complexity": 3.6424067416447983
           },
           {
             "id": "group8",
@@ -6217,7 +6781,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.03877043477549
+            "complexity": 3.0387704347754827
           },
           {
             "id": "group9",
@@ -6235,7 +6799,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.042622886826088
+            "complexity": 3.042622886826095
           },
           {
             "id": "group11",
@@ -6244,7 +6808,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.161525496963492
+            "complexity": 4.161525496963485
           },
           {
             "id": "group12",
@@ -6319,7 +6883,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.14755469615761818
+            "complexity": 0.14755469615761996
           },
           {
             "id": "group5",
@@ -6328,7 +6892,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.245823781002696
+            "complexity": 2.245823781002694
           },
           {
             "id": "group6",
@@ -6337,7 +6901,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.8683337009218066
+            "complexity": 2.868333700921805
           },
           {
             "id": "group7",
@@ -6355,7 +6919,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.461640179384606
+            "complexity": 2.461640179384611
           },
           {
             "id": "group9",
@@ -6373,7 +6937,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.011558625641957
+            "complexity": 3.0115586256419533
           },
           {
             "id": "group11",
@@ -6382,7 +6946,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.0239580261150643
+            "complexity": 2.0239580261150607
           },
           {
             "id": "group12",
@@ -6391,7 +6955,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.483640335537764
+            "complexity": 2.4836403355377676
           },
           {
             "id": "group13",
@@ -6418,7 +6982,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.9059153832358824
+            "complexity": 2.9059153832358753
           },
           {
             "id": "group16",
@@ -6427,7 +6991,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.712305010680488
+            "complexity": 4.7123050106805024
           },
           {
             "id": "group17",
@@ -6481,7 +7045,7 @@
                   "similarity-to-phrase38": 0.013480028111036156
                 },
                 "events": {},
-                "complexity": 4.64982806411949
+                "complexity": 4.649828064119475
               },
               {
                 "id": "phrase18",
@@ -6530,12 +7094,12 @@
                   "similarity-to-phrase38": 0.013162228195841476
                 },
                 "events": {},
-                "complexity": 5.345211660058844
+                "complexity": 5.345211660058851
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 9.995039724178334
+            "complexity": 9.995039724178326
           },
           {
             "id": "group18",
@@ -6701,7 +7265,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.3774185545446969
+            "complexity": 1.3774185545446898
           },
           {
             "id": "group20",
@@ -6755,7 +7319,7 @@
                   "similarity-to-phrase38": 0.013359731128174446
                 },
                 "events": {},
-                "complexity": 2.3646049317272
+                "complexity": 2.3646049317272215
               },
               {
                 "id": "phrase24",
@@ -6804,7 +7368,7 @@
                   "similarity-to-phrase38": 0.015598144887546272
                 },
                 "events": {},
-                "complexity": 2.135697199019816
+                "complexity": 2.135697199019802
               },
               {
                 "id": "phrase25",
@@ -6853,7 +7417,7 @@
                   "similarity-to-phrase38": 0.01615842308111432
                 },
                 "events": {},
-                "complexity": 1.6985115069124035
+                "complexity": 1.6985115069124177
               },
               {
                 "id": "phrase26",
@@ -6907,7 +7471,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 9.615662535594197
+            "complexity": 9.615662535594218
           },
           {
             "id": "group21",
@@ -6961,7 +7525,7 @@
                   "similarity-to-phrase38": 0.01781602844045453
                 },
                 "events": {},
-                "complexity": 3.4309040461674982
+                "complexity": 3.430904046167484
               },
               {
                 "id": "phrase28",
@@ -7108,7 +7672,7 @@
                   "similarity-to-phrase38": 0.018604501325797787
                 },
                 "events": {},
-                "complexity": 2.212402282784552
+                "complexity": 2.2124022827845238
               },
               {
                 "id": "phrase31",
@@ -7157,7 +7721,7 @@
                   "similarity-to-phrase38": 0.01786271811591302
                 },
                 "events": {},
-                "complexity": 4.507625464813785
+                "complexity": 4.507625464813813
               },
               {
                 "id": "phrase32",
@@ -7358,7 +7922,7 @@
             ],
             "metrics": {},
             "events": {},
-            "complexity": 25.200251402467075
+            "complexity": 25.20025140246706
           },
           {
             "id": "group22",
@@ -7376,7 +7940,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.7862853994850809
+            "complexity": 0.7862853994851235
           },
           {
             "id": "group24",
@@ -7390,7 +7954,7 @@
         ],
         "metrics": {},
         "events": {},
-        "complexity": 94.74611050687284
+        "complexity": 94.74611050687288
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -7433,7 +7997,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.7602036405464396
+            "complexity": 0.76020364054644
           },
           {
             "id": "group3",
@@ -7442,7 +8006,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": -0.04614530112244353
+            "complexity": -0.046145301122443305
           },
           {
             "id": "group4",
@@ -7451,7 +8015,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.5440816592709563
+            "complexity": 3.5440816592709576
           },
           {
             "id": "group5",
@@ -7460,7 +8024,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.22909473028352
+            "complexity": 4.229094730283523
           },
           {
             "id": "group6",
@@ -7469,7 +8033,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.6914426177382804
+            "complexity": 2.691442617738275
           },
           {
             "id": "group7",
@@ -7478,7 +8042,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.169793602180981
+            "complexity": 3.1697936021809827
           },
           {
             "id": "group8",
@@ -7487,7 +8051,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 5.026386199539914
+            "complexity": 5.026386199539912
           },
           {
             "id": "group9",
@@ -7496,7 +8060,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.056889632471872
+            "complexity": 3.0568896324718793
           },
           {
             "id": "group10",
@@ -7505,7 +8069,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.932154223209018
+            "complexity": 3.932154223209011
           },
           {
             "id": "group11",
@@ -7514,7 +8078,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.7398466202550367
+            "complexity": 2.73984662025504
           },
           {
             "id": "group12",
@@ -7523,7 +8087,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 5.285027557667124
+            "complexity": 5.285027557667114
           },
           {
             "id": "group13",
@@ -7532,7 +8096,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.0887984669444393
+            "complexity": 3.0887984669444464
           },
           {
             "id": "group14",
@@ -7541,7 +8105,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 6.64737951691545
+            "complexity": 6.647379516915464
           },
           {
             "id": "group15",
@@ -7550,7 +8114,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 5.847500637452271
+            "complexity": 5.847500637452242
           },
           {
             "id": "group16",
@@ -7559,7 +8123,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.2041908732183515
+            "complexity": 4.204190873218366
           },
           {
             "id": "group17",
@@ -7586,7 +8150,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.0063410372499675
+            "complexity": 1.0063410372499604
           },
           {
             "id": "group20",
@@ -7595,7 +8159,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.789540552027738
+            "complexity": 4.789540552027731
           },
           {
             "id": "group21",
@@ -7604,7 +8168,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.948253502951019
+            "complexity": 2.948253502951033
           },
           {
             "id": "group22",
@@ -7768,7 +8332,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.7064720157809319
+            "complexity": 1.7064720157809035
           },
           {
             "id": "group27",
@@ -7777,7 +8341,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.556513485984624
+            "complexity": 3.5565134859846523
           },
           {
             "id": "group28",
@@ -8246,7 +8810,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 4.245038770433837
+            "complexity": 4.245038770433865
           },
           {
             "id": "group34",
@@ -8255,7 +8819,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 3.3043956838140787
+            "complexity": 3.3043956838140502
           },
           {
             "id": "group35",
@@ -8282,7 +8846,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.400930178388222
+            "complexity": 2.400930178388194
           },
           {
             "id": "group38",
@@ -8300,7 +8864,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.8943867905474576
+            "complexity": 1.894386790547486
           },
           {
             "id": "group40",
@@ -8309,7 +8873,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 2.530071904148855
+            "complexity": 2.5300719041488264
           },
           {
             "id": "group41",
@@ -8318,7 +8882,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 0.6900170081213446
+            "complexity": 0.690017008121373
           },
           {
             "id": "group42",
@@ -8457,12 +9021,12 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.9285975259895138
+            "complexity": 1.9285975259895143
           }
         ],
         "metrics": {},
         "events": {},
-        "complexity": 3.5309923956821563
+        "complexity": 3.5309923956821567
       },
       "generation_data": {
         "complexity": "mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase"
@@ -8506,7 +9070,7 @@
                   "similarity-to-phrase3": 0.5846232148846087
                 },
                 "events": {},
-                "complexity": 1.519461646647676
+                "complexity": 1.5194616466476756
               },
               {
                 "id": "phrase2",
@@ -8520,12 +9084,12 @@
                   "similarity-to-phrase3": 0.5628547898676661
                 },
                 "events": {},
-                "complexity": 1.2850187075018469
+                "complexity": 1.2850187075018464
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 2.804480354149523
+            "complexity": 2.804480354149522
           },
           {
             "id": "group2",
@@ -8534,7 +9098,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.5699391397515061
+            "complexity": 1.569939139751507
           }
         ],
         "metrics": {},
@@ -8584,7 +9148,7 @@
                   "similarity-to-phrase4": 0.3678794411714424
                 },
                 "events": {},
-                "complexity": 0.7717330492902157
+                "complexity": 0.7717330492902155
               },
               {
                 "id": "phrase2",
@@ -8599,7 +9163,7 @@
                   "similarity-to-phrase4": 0.4116729519990018
                 },
                 "events": {},
-                "complexity": 0.9669348488501397
+                "complexity": 0.9669348488501399
               },
               {
                 "id": "phrase3",
@@ -8614,12 +9178,12 @@
                   "similarity-to-phrase4": 0.3439083318943212
                 },
                 "events": {},
-                "complexity": 0.7309469701544735
+                "complexity": 0.730946970154474
               }
             ],
             "metrics": {},
             "events": {},
-            "complexity": 2.469614868294829
+            "complexity": 2.4696148682948293
           },
           {
             "id": "group2",
@@ -8628,7 +9192,7 @@
             "children": [],
             "metrics": {},
             "events": {},
-            "complexity": 1.0803938110582005
+            "complexity": 1.0803938110582
           }
         ],
         "metrics": {},
