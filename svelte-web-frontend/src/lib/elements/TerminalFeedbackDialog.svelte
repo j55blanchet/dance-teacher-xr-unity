@@ -66,8 +66,21 @@ onMount(() => {
 </script>
 
 <div class="feedbackForm">
-    <h2>{feedback?.headline}</h2>
-    <p class="sub-headline">{feedback?.subHeadline}</p>
+    {#if feedback?.coaching}
+        <h2>Coach Feedback</h2>
+    {:else}
+        <h2>{feedback?.headline}</h2>
+    {/if}
+    {#if feedback?.coaching}
+        {#await feedback.coaching.feedbackMessage}
+            <p>Coach is thinking</p>
+        {:then message} 
+            <p>{message}</p>
+        {/await}
+    {:else}
+        <p class="sub-headline">{feedback?.subHeadline}</p>
+    {/if}
+    
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
     {/if}
@@ -79,14 +92,7 @@ onMount(() => {
             highlights={skeletonHighlights}
         />
     </div>
-    {#if feedback?.coaching}
-        {#await feedback.coaching.feedbackMessage}
-            <p>Coach is thinking</p>
-        {:then message} 
-            <p>{message}</p>
 
-        {/await}
-    {/if}
     {#if $debugMode && feedback?.debugJson}
     <pre class="microlight">{JSON.stringify(feedback.debugJson, replaceJSONForStringifyDisplay, 2)}</pre>
     {/if}
