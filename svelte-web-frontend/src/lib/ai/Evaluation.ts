@@ -1,7 +1,7 @@
 import type { Pose2DReferenceData } from "$lib/dances-store";
 import { TerminalFeedbackBodyParts, type TerminalFeedback, type TerminalFeedbackAction, type TerminalFeedbackBodyPart, type TerminalFeedbackBodyPartIndex } from "$lib/model/TerminalFeedback";
 import { type Pose2DPixelLandmarks, PoseLandmarkIds, PoseLandmarkKeys, type PoseLandmarkIndex } from "$lib/webcam/mediapipe-utils";
-import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./Feedback";
+import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./basicFeedback";
 import { lerp } from "$lib/utils/math";
 import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 
@@ -436,12 +436,30 @@ export class UserDanceEvaluatorV1 {
             incorrectBodyPartsToHighlight = [bodyPartToCallOut];
         }
 
+        const llmDataPromise = fetch('/restapi/get_feedback', {
+            'headers': { 'Content-Type': 'application/json' },
+            'method': 'POST',
+            'body': JSON.stringify({ 
+                'performanceScore': qijiaOverallScore,
+                'performanceMaxScore': 5.0
+            }),
+        }).then((res) => res.json());
+
+        // const llmRawTextPromise = llmDataPromise.then((data) => data.rawText);
+        const llmFeedbackMessagePromise = llmDataPromise.then((data) => data.feedbackMessage);
+        const llmTryAgainPromise = llmDataPromise.then((data) => data.tryAgain);
+
         return {
             headline: headline,
             subHeadline: subHeadline,
             score: {
                 achieved: qijiaOverallScore,
                 maximumPossible: 5.0,
+            },
+            coaching: {
+                debug: llmDataPromise,
+                feedbackMessage: llmFeedbackMessagePromise,
+                tryAgain: llmTryAgainPromise,
             },
             suggestedAction: suggestedAction,
             incorrectBodyPartsToHighlight,

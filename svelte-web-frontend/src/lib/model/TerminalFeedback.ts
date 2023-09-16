@@ -21,6 +21,11 @@ export type TerminalFeedback = {
         achieved: number;
         maximumPossible: number;
     };
+    coaching?: {
+        debug?: Promise<unknown>;
+        feedbackMessage: Promise<string>;
+        tryAgain: Promise<boolean>;
+    };
     incorrectBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     correctBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     debugJson?: object;

@@ -15,8 +15,17 @@ const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
 
+let coachSuggestsRepeat: boolean | undefined = undefined;
 let suggestingRepeat = false;
-$: suggestingRepeat = feedback?.suggestedAction === "repeat";
+$: {
+    if (feedback?.coaching) {
+        feedback.coaching.tryAgain.then(suggestion => {
+            coachSuggestsRepeat = suggestion;
+        });
+    }
+    suggestingRepeat = coachSuggestsRepeat ?? feedback?.suggestedAction === "repeat";
+}
+
 
 let primaryButtonTitle = "";
 $: primaryButtonTitle = suggestingRepeat ? "Do Again 🔁" : "Continue ➡️";
@@ -70,6 +79,14 @@ onMount(() => {
             highlights={skeletonHighlights}
         />
     </div>
+    {#if feedback?.coaching}
+        {#await feedback.coaching.feedbackMessage}
+            <p>Coach is thinking</p>
+        {:then message} 
+            <p>{message}</p>
+
+        {/await}
+    {/if}
     {#if $debugMode && feedback?.debugJson}
     <pre class="microlight">{JSON.stringify(feedback.debugJson, replaceJSONForStringifyDisplay, 2)}</pre>
     {/if}
