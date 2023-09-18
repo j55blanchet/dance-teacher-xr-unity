@@ -70,14 +70,15 @@ export async function getFeedback(
     const feedbackMessage = claudeText.match(/<feedbackmessage>(.*)<\/feedbackmessage>/)?.[1];
     const tryAgain = claudeText.match(/<tryagain>(.*)<\/tryagain>/)?.[1];
 
-
+    if (!feedbackMessage || !tryAgain) {
+        throw new Error(`Invalid Claude Text (missing expected xml): ${claudeText}`);
+    }
     if (tryAgain !== 'yes' && tryAgain !== 'no') {
-        throw new Error(`Invalid try again value: ${tryAgain}`);
+        throw new Error(`Invalid try again value: ${tryAgain}. RawText: ${claudeText}`);
     }
     
     const tryAgainBoolean = tryAgain === 'yes' ? true : false;
-    return { 
-        rawText: claudeText, 
+    return {        
         feedbackMessage, 
         tryAgain: tryAgainBoolean
     };

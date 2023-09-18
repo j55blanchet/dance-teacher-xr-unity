@@ -1,8 +1,9 @@
 import { DrawingUtils, type NormalizedLandmark, type LandmarkData } from "@mediapipe/tasks-vision";
-import { QijiaMethodComparisonVectors, type EvaluationV1Result } from "./Evaluation";
+import type { EvaluationV1Result } from "./UserDanceEvaluator";
 import { SwapLeftRightLandmarks } from "$lib/webcam/mediapipe-utils";
 
 import {feedback_YellowThreshold, feedback_GreenThreshold} from '$lib/model/settings';
+import { QijiaMethodComparisonVectors } from "./EvaluationCommonUtils";
 
 const QijiaMethodVectorConnections = QijiaMethodComparisonVectors.map(([lm1, lm2]) => {
     return {

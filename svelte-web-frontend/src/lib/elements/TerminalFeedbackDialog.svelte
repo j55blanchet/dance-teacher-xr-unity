@@ -15,17 +15,10 @@ const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
 
-let coachSuggestsRepeat: boolean | undefined = undefined;
 let suggestingRepeat = false;
 $: {
-    if (feedback?.coaching) {
-        feedback.coaching.tryAgain.then(suggestion => {
-            coachSuggestsRepeat = suggestion;
-        });
-    }
-    suggestingRepeat = coachSuggestsRepeat ?? feedback?.suggestedAction === "repeat";
+    suggestingRepeat = feedback?.suggestedAction === "repeat";
 }
-
 
 let primaryButtonTitle = "";
 $: primaryButtonTitle = suggestingRepeat ? "Do Again 🔁" : "Continue ➡️";
@@ -66,20 +59,8 @@ onMount(() => {
 </script>
 
 <div class="feedbackForm">
-    {#if feedback?.coaching}
-        <h2>Coach Feedback</h2>
-    {:else}
-        <h2>{feedback?.headline}</h2>
-    {/if}
-    {#if feedback?.coaching}
-        {#await feedback.coaching.feedbackMessage}
-            <p>Coach is thinking</p>
-        {:then message} 
-            <p>{message}</p>
-        {/await}
-    {:else}
-        <p class="sub-headline">{feedback?.subHeadline}</p>
-    {/if}
+    <h2>{feedback?.headline ?? 'Thinking...'}</h2>
+    <p class="sub-headline">{feedback?.subHeadline}</p>
     
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
@@ -87,12 +68,13 @@ onMount(() => {
     {#each feedback?.incorrectBodyPartsToHighlight ?? [] as badbodypart}
         <p>Try focusing on your {badbodypart} next time.</p>
     {/each}
+    {#if skeletonHighlights.length > 0}
     <div class="skeleton">
         <StaticSkeletonVisual 
             highlights={skeletonHighlights}
         />
     </div>
-
+    {/if}
     {#if $debugMode && feedback?.debugJson}
     <pre class="microlight">{JSON.stringify(feedback.debugJson, replaceJSONForStringifyDisplay, 2)}</pre>
     {/if}

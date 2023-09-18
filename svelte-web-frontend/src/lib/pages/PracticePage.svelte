@@ -9,7 +9,8 @@ import { pauseInPracticePage, debugPauseDurationSecs } from '$lib/model/settings
 import { GetPixelLandmarksFromNormalizedLandmarks } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
 import type { Dance, Pose2DReferenceData } from "$lib/dances-store";
-import * as evalAI from '$lib/ai/Evaluation';
+import * as evalAI from '$lib/ai/UserDanceEvaluator';
+import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai/feedback';
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
@@ -21,6 +22,7 @@ import { MirrorXNormalizedPose, type Pose2DPixelLandmarks } from '$lib/webcam/me
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
+import { QIJIA_SKELETON_SIMILARITY_MAX_SCORE } from '$lib/ai/skeleton-similarity';
 
 export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
@@ -100,8 +102,21 @@ $: {
 
         if (currentPlaybackEndtime === practiceActivity?.endTime) {
             performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
-            terminalFeedback = evaluator?.generateTerminalFeedback(performanceSummary) ?? null;
+            terminalFeedback = null;
             state = "feedback";
+
+            const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
+            const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
+
+            generateFeedbackWithClaudeLLM(
+                qijiaOverallScore,
+                QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
+            ).then((feedback) => {
+                terminalFeedback = feedback;
+            }).catch((e) => {
+                console.warn("Error generating feedback", e);
+                terminalFeedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+            });
         }
         else {
             state = "paused"

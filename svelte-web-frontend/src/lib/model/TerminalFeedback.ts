@@ -1,6 +1,5 @@
 import type { ValueOf } from "$lib/dances-store";
 
-
 export const TerminalFeedbackBodyParts = {
     'head': 0,
     'torso': 1,
@@ -20,11 +19,6 @@ export type TerminalFeedback = {
     score?: {
         achieved: number;
         maximumPossible: number;
-    };
-    coaching?: {
-        debug?: Promise<unknown>;
-        feedbackMessage: Promise<string>;
-        tryAgain: Promise<boolean>;
     };
     incorrectBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     correctBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
