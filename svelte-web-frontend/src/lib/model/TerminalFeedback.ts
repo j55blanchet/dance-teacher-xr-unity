@@ -1,6 +1,5 @@
 import type { ValueOf } from "$lib/dances-store";
 
-
 export const TerminalFeedbackBodyParts = {
     'head': 0,
     'torso': 1,
