@@ -34,11 +34,6 @@ const qijiaScoreMax = 5;
 </script>
 
 <section class="settingsPage">
-    <nav>
-        <a class="button outlined" href="/">&lt; Home</a>
-    </nav>
-    <h1>Settings</h1>
-
     <div>
         <label for="debugMode">Debug Mode</label>
         <input type="checkbox" name="debugMode" bind:checked={$debugMode}>
@@ -77,7 +72,9 @@ const qijiaScoreMax = 5;
     flex-direction: column;
     align-items: center;
     justify-content: start;
-    height: 100vh;
+    height: var(--content_height);
+    padding: 1rem;
+    box-sizing: border-box;
     gap: 0.5rem;
 }
 

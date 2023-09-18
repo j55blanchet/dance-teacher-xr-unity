@@ -4,6 +4,7 @@ import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/dances-store';
 import PracticePage from '$lib/pages/PracticePage.svelte';
 import { initialState, type PracticePageState } from '$lib/pages/PracticePage.svelte';
+import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 /** @type {import('./$types').PageData} */    
 export let data;
@@ -25,14 +26,25 @@ $: {
 let pageState: PracticePageState = initialState;
 
 const StatesWithHiddenBackButton = new Set(["countdown", "playing", "paused"]);
-let hideBackButton = false;
+let hideNavBar = false;
 $: {
-    hideBackButton = StatesWithHiddenBackButton.has(pageState)
+    hideNavBar = StatesWithHiddenBackButton.has(pageState);
 }
+
+$: {
+    navbarProps.set({
+        collapsed: hideNavBar,
+        pageTitle: `${dance.title}: ${node.id}`,
+        back: {
+            url: parentURL,
+            title: 'Back',
+        },
+    });
+}
+
 </script>
 
-
-<section class="practiceNode">
+<section>
     <PracticePage 
         {dance} 
         {practiceActivity}
@@ -40,26 +52,13 @@ $: {
         on:continue-clicked={() => goto(parentURL)}
         on:stateChanged={(e) => pageState = e.detail}
     />
-    {#if !hideBackButton}
-        <a href={parentURL} class="button outlined back">&lt; {danceTree.tree_name}</a>
-    {/if}
 </section>
 
-
-
 <style lang="scss">
-
 section {
-    box-sizing: border-box;
-    height: 100vh;
+    height: var(--content_height);
     width: 100%;
     padding: 1rem;
-}
-
-.back {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    background-color: var(--color-bg-0);
+    box-sizing: border-box;
 }
 </style>

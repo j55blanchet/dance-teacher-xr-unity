@@ -80,8 +80,8 @@ onMount(() => {
     {#if $debugMode && feedback?.debugJson}
     <pre class="microlight">{JSON.stringify(feedback.debugJson, replaceJSONForStringifyDisplay, 2)}</pre>
     {/if}
-    <button class="outlined" on:click={primaryButtonClicked}>{primaryButtonTitle}</button>
-    <button class="outlined thin" on:click={secondaryButtonClicked}>{secondaryButtonTitle}</button>
+    <button class="button outlined thick primary" on:click={primaryButtonClicked}>{primaryButtonTitle}</button>
+    <button class="button outlined thin secondary" on:click={secondaryButtonClicked}>{secondaryButtonTitle}</button>
 </div>
 
 
@@ -97,6 +97,7 @@ onMount(() => {
     flex-grow: 1;
     gap: 0.25rem;
     overflow: hidden;
+    font-size: 1.5rem;
 }
 .skeleton {
     // min-height: 0;
@@ -115,14 +116,22 @@ h2, p {
 h2 {
     margin-top: 1rem;
     font-weight: 600;
-    font-size: 1.5rem;
+    font-size: 1.5em;
+}
+p {
+    margin-top: 1rem;
 }
 
 pre {
     font-size: 0.75rem;
 }
 
-.sub-headline {
-    margin-top: 0;
+button.primary {
+    font-weight: 800;
+    background: white;
+}
+button.secondary {
+    margin-top: 0.25rem;
+    font-size: 0.8em;
 }
 </style>

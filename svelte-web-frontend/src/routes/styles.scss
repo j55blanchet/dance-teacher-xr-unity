@@ -126,7 +126,7 @@ button:focus:not(:focus-visible) {
 	color: var(--color-text);
 }
 .button {
-	padding: 0.25em;
+	padding: 0.5em;
 	// margin: 0.25em;
 	display: inline-block;
 	text-decoration: none;
@@ -181,24 +181,6 @@ button:focus:not(:focus-visible) {
 }
 .margin-auto {
 	margin: auto;
-}
-
-nav {
-	/* padding: 0.5rem; */
-	padding: 0 0.5em;
-	display: flex;
-	flex-direction: row;
-	justify-content: space-between;
-	align-items: center;
-	background: rgba(0, 0, 0, .2);
-	width: 100%;
-	flex-grow: 0;
-}
-
-nav h1 {
-	margin: 0;
-	padding: 0;
-	font-size: 2rem;
 }
 
 .spinner {
