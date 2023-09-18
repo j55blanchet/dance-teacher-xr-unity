@@ -373,6 +373,8 @@ section {
     flex-direction: row;
     align-items: center;
     justify-content: stretch;
+    
+    box-sizing: border-box;
     height: 100%;
     width: 100%;
     gap: 1rem;

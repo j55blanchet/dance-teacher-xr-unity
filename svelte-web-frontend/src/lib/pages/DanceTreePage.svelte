@@ -1,6 +1,7 @@
 <script lang="ts">
 import { goto } from '$app/navigation';
-import { page } from '$app/stores'
+import { page, navigating } from '$app/stores'
+import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 import SketchButton from '$lib/elements/SketchButton.svelte';
 import type { DanceTree, Dance, DanceTreeNode } from '$lib/dances-store';
@@ -33,6 +34,14 @@ let showProgressNodes: Array<DanceTreeNode> = [];
 
 let videoDuration: number;
 
+$: navbarProps.set({
+    collapsed: false,
+    pageTitle: dance.title,
+    back: {
+        url: '/',
+        title: 'Home',
+    },
+});
 $: {
     showProgressNodes = currentPlayingNode !== null ? 
         [currentPlayingNode]:
@@ -40,6 +49,15 @@ $: {
 }
 $: if (videoCurrentTime > stopTime) {
     videoPaused = true;
+}
+
+$: {
+    navbarProps.update(props => ({
+        ...props,
+        pageTitle: dance.title,
+        backPageUrl: '/',
+        backPageTitle: 'Home',
+    }));
 }
 
 async function onNodeClicked(e: any) {
@@ -82,15 +100,6 @@ async function practiceClicked() {
 </svelte:head>
 
 <section>
-    <nav>
-        <a class="button" href="/">&lt; Home</a>
-        <h1 class="title">
-            {dance.title}
-        </h1>
-        <!-- Empty div, will take up the right side of the page -->
-        <div>
-        </div>
-    </nav>
     <div class="visual-tree">
         <div>
             <DanceTreeVisual 
@@ -107,7 +116,13 @@ async function practiceClicked() {
     <div class="ta-center">
         {#if currentPlayingNode}
         <span class="practiceLink">{currentPlayingNode.id}</span>
-        <SketchButton on:click={practiceClicked}>Practice</SketchButton>
+        <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
+            {#if $navigating}
+                Navigating <div class="spinner"></div>
+            {:else}
+                Practice
+            {/if}
+        </SketchButton>
         {/if}
     </div>
     
@@ -138,11 +153,11 @@ async function practiceClicked() {
 section {
     position: relative;
     width: 100vw;
-    height: 100vh;
+    height: var(--content_height);
     box-sizing: border-box;
     display: grid;
     overflow: hidden;
-    grid-template-rows: 3rem auto auto minmax(0, 1fr); 
+    grid-template-rows: auto auto minmax(0, 1fr); 
 }
 
 .preview {
