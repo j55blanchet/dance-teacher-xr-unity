@@ -5,22 +5,36 @@ import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./basicFe
 import { lerp } from "$lib/utils/math";
 import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 
+// Variable to store the value of the evaluation threshold, initialized to 1.0
 let evaluation_GoodBadTrialThresholdValue = 1.0;
+// Subscribe to changes in the evaluation threshold and update the variable
 evaluation_GoodBadTrialThreshold.subscribe((value) => {
     evaluation_GoodBadTrialThresholdValue = value;
 });
 
+/**
+ * Calculate a scale indicator for a set of 2D pose landmarks.
+ * The function computes a scale indicator based on the heights of the torso and shoulder width.
+ * @param pixelLandmarks - 2D pixel coordinates of pose landmarks
+ * @returns Scale indicator value
+ */
 function GetScaleIndicator(pixelLandmarks: Pose2DPixelLandmarks){
 
+    // Calculate torso heights and shoulder width
     const leftTorsoHeight = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip))
     const rightTorsoHeight = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightHip))
     const shoulderWidth = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder))
     
+    // Combine the measurements to compute the scale indicator
     return 0.25 * leftTorsoHeight + 
            0.25 * rightTorsoHeight +
            0.5 * shoulderWidth
 }
 
+/**
+ * Definition of comparison vectors for the Qijia method.
+ * These vectors represent pairs of pose landmarks used for similarity calculations.
+ */
 export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, PoseLandmarkIndex]>> = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.leftHip],
@@ -32,6 +46,10 @@ export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, Po
     [PoseLandmarkIds.rightElbow,    PoseLandmarkIds.rightWrist]
 ])
 
+/**
+ * Names of the comparison vectors for the Qijia method.
+ * These names are generated based on the landmark IDs.
+ */
 export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.map((vec) => {
     const [lmSrc, lmDest] = vec;
     const [srcName, destName] = [PoseLandmarkKeys[lmSrc], PoseLandmarkKeys[lmDest]];
@@ -39,30 +57,68 @@ export const QijiaMethodComparisionVectorNames = QijiaMethodComparisonVectors.ma
     return key;
 });
 
+// Constants for reliable angle determination
 const MinVectorMagnitudeForReliableAngleDetermination = 50;
 const TargetVectorMagnitudeForReliableAngleDetermination = 100;
 
+
+// Mapping of comparison vector names to their index in the comparison vectors array.
 const QijiaMethodComparisionVectorNamesToIndexMap = new Map(QijiaMethodComparisionVectorNames.map((name, i) => [name, i]))
 
+/**
+ * Calculate the magnitude of a 2D vector.
+ * @param v - 2D vector as an array [x, y]
+ * @returns Magnitude of the vector
+ */
 function getMagnitude(v: [number, number]) {
     return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2), 0.5)
 }
 
+/**
+ * Calculate the inner angle between two 2D vectors.
+ * @param v1 - First vector as an array [x, y]
+ * @param v2 - Second vector as an array [x, y]
+ * @returns Inner angle between the two vectors in radians
+ */
 function getInnerAngle(v1: [number, number], v2: [number, number]) {
     return Math.acos((v1[0] * v2[0] + v1[1] * v2[1]) / (getMagnitude(v1) * getMagnitude(v2)))
 }
 
+/**
+ * Add two 2D vectors element-wise.
+ * @param v1 - First vector as an array [x, y]
+ * @param v2 - Second vector as an array [x, y]
+ * @returns Resulting vector as an array [x, y]
+ */
 function addVectors(v1: [number, number], v2: [number, number]) {
     return [v1[0] + v2[0], v1[1] + v2[1]]
 }
 
+/**
+ * Calculate the sum of elements in an array of numbers.
+ * @param v - Array of numbers
+ * @returns Sum of the array elements
+ */
 function getArraySum(v: Array<number>) {
     return v.reduce((a, b) => a + b, 0)
 }
+
+/**
+ * Calculate the mean (average) of elements in an array of numbers.
+ * @param v - Array of numbers
+ * @returns Mean of the array elements
+ */
 function getArrayMean(v: Array<number>) {
     return getArraySum(v) / v.length
 }
 
+/**
+ * Calculate a 2D vector between two pose landmarks.
+ * @param pixelLandmarks - 2D pixel coordinates of pose landmarks
+ * @param srcLandmark - Index of the source landmark
+ * @param destLandmark - Index of the destination landmark
+ * @returns 2D vector as an array [x, y]
+ */
 function GetVector(    
     pixelLandmarks: Pose2DPixelLandmarks,
     srcLandmark: number,
@@ -73,6 +129,13 @@ function GetVector(
     return [dx - sx, dy - sy] as [number, number]
 }
 
+/**
+ * Calculate a normalized 2D vector between two pose landmarks.
+ * @param pixelLandmarks - 2D pixel coordinates of pose landmarks
+ * @param srcLandmark - Index of the source landmark
+ * @param destLandmark - Index of the destination landmark
+ * @returns Normalized 2D vector as an array [x, y]
+ */
 function GetNormalizedVector(
     pixelLandmarks: Pose2DPixelLandmarks,
     srcLandmark: number,
@@ -84,6 +147,13 @@ function GetNormalizedVector(
     return [vec_x / mag, vec_y / mag]
 }
 
+/**
+ * Compute the dissimilarity between two poses using the Julien method.
+ * This method calculates the dissimilarity based on angle and magnitude of comparison vectors.
+ * @param refLandmarks - Reference landmarks (expert)
+ * @param userLandmarks - User landmarks (learner)
+ * @returns Object containing the dissimilarity score and information by vector
+ */
 export function computeSkeleton2DDissimilarityJulienMethod(
     refLandmarks: Pose2DPixelLandmarks,
     userLandmarks: Pose2DPixelLandmarks
@@ -158,6 +228,10 @@ export function computeSkeleton2DDissimilarityJulienMethod(
     };
 }
 
+/**
+ * Type definition for an array of 8 numbers.
+ * Represents the scores for 8 upper body comparison vectors.
+ */
 type Vec8 = [number, number, number, number, number, number, number, number]
 /**
  * Compute the similarity of two poses based on a 2D projection, looking at a set of 8 upper body
@@ -219,6 +293,7 @@ export function computeSkeletonDissimilarityQijiaMethod(
     return [overallOutputScore, vectorOutputScores];
 }
 
+// Type definition for a performance evaluation track.
 export type PerformanceEvaluationTrack<EvaluationType> = {
     creationDate: Date;
     frameTimes: number[];
@@ -227,15 +302,27 @@ export type PerformanceEvaluationTrack<EvaluationType> = {
     evaluation: ArrayVersions<EvaluationType>;
 }
 
+// Used to represent evaluation data.
 type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
 }
 
+/**
+ * Class for recording user performance evaluations.
+ * @template EvaluationType - The type of evaluation data to be recorded.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> {
 
     public tracks: Map<string, PerformanceEvaluationTrack<EvaluationType>> = new Map();
 
+    /**
+     * Records a frame of user performance evaluation.
+     * @param id - Identifier of the current attempt, used to separate recordings into tracks
+     * @param frameTime - Frame time in seconds
+     * @param userPose - User's pose at the given frame time
+     * @param evaluationResult - Result of the evaluation for this frame
+     */
     recordEvaluationFrame(id: string, frameTime: number, userPose: Pose2DPixelLandmarks, evaluationResult: EvaluationType) {
         const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
 
@@ -272,11 +359,61 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
             track.evaluation[key].push(evaluationResult[key])
         }
     }
+
+    /**
+     * Retrieves user poses for a specified time range relative to the current frame time.
+     * @param id - Identifier of the current attempt (track)
+     * @param currentFrameTime - Current frame time in seconds
+     * @param frameOffsets - Array of frame offsets from the current frame time
+     * @returns User poses for the specified time range
+     */
+     getUserPosesForTimeRange(
+        id: string,
+        currentFrameTime: number,
+        frameOffsets: number[]
+    ): Pose2DPixelLandmarks[] {
+        const track = this.tracks.get(id);
+
+        if (!track) {
+            throw new Error(`Track with ID ${id} does not exist.`);
+        }
+
+        const frameCount = track.frameTimes.length;
+        const userPosesTrack = track.userPoses;
+
+        // Calculate frame times for the specified frame offsets relative to the current frame time.
+        const targetFrameTimes = frameOffsets.map(offset => currentFrameTime - offset);
+
+        // Find the closest frame time in the track for each target frame time.
+        const closestFrameIndices = targetFrameTimes.map(targetTime => {
+            let closestIndex = 0;
+            let closestDiff = Math.abs(targetTime - track.frameTimes[0]);
+
+            for (let i = 1; i < frameCount; i++) {
+                const diff = Math.abs(targetTime - track.frameTimes[i]);
+                if (diff < closestDiff) {
+                    closestIndex = i;
+                    closestDiff = diff;
+                }
+            }
+
+            return closestIndex;
+        });
+
+        // Retrieve user poses for the closest frames.
+        const userPosesForTimeRange = closestFrameIndices.map(index => userPosesTrack[index]);
+
+        return userPosesForTimeRange;
+    }
 }
 
-
+// Type definition for the result of evaluating a user's performance.
 export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["evaluateFrame"]>>;
 
+/**
+ * Map that associates comparison vector indices to terminal feedback body parts.
+ * Used for highlighting body parts in feedback.
+ */
 const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<TerminalFeedbackBodyPartIndex, TerminalFeedbackBodyPart>([
     [0, "torso"], // leftShoulder -> rightShoulder
     [1, "torso"], // leftShoulder -> leftHip
@@ -467,5 +604,51 @@ export class UserDanceEvaluatorV1 {
             debugJson: performanceSummary
         }
     }
+}
+
+
+/**
+ * Compute the jerk of a joint at a specific time using position data.
+ * @param positions Array of 2D joint positions over time.
+ * @param jointIndex Index of the joint to compute jerk for.
+ * @param currentTimeIndex Index of the current time t_i.
+ * @param deltaTime Time interval between data points (constant).
+ * @returns Jerk value for the specified joint and time.
+ */
+ function computeJerk(positions, jointIndex, currentTimeIndex, deltaTime) {
+    let rawJerkDisimilarityScore = 0
+
+    // Compare 8 Vectors
+    const vectorDissimilarityScores = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
+        const [srcLandmark, destLandmark] = vecLandmarkIds
+        const [refX, refY] = GetNormalizedVector(refLandmarks, srcLandmark, destLandmark)
+        const [usrX, usrY] = GetNormalizedVector(userLandmarks, srcLandmark, destLandmark)
+        const [dx, dy] = [refX - usrX, refY - usrY]
+        return getMagnitude([dx, dy]) || 0;
+    });
+
+
+    rawJerkDisimilarityScore = getArrayMean(vectorDissimilarityScores);
+
+    if (
+        currentTimeIndex < 2 ||
+        currentTimeIndex >= positions.length - 2 ||
+        jointIndex < 0 ||
+        jointIndex >= positions[0].length
+    ) {
+        return null; // Invalid input or insufficient data points.
+    }
+
+    const xi_plus_2 = positions[currentTimeIndex + 2][jointIndex];
+    const xi_plus_1 = positions[currentTimeIndex + 1][jointIndex];
+    const xi = positions[currentTimeIndex][jointIndex];
+    const xi_minus_1 = positions[currentTimeIndex - 1][jointIndex];
+    const xi_minus_2 = positions[currentTimeIndex - 2][jointIndex];
+
+    const jerk =
+        (xi_plus_2 - 2 * xi_plus_1 + 2 * xi_minus_1 - xi_minus_2) /
+        (2 * Math.pow(deltaTime, 3));
+
+    return jerk;
 }
 
