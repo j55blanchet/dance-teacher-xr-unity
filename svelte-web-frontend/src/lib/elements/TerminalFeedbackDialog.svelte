@@ -41,14 +41,16 @@ function secondaryButtonClicked() {
 }
 
 let skeletonHighlights: BodyPartHighlight[] = [];
-$: skeletonHighlights = [
-    ...(feedback?.incorrectBodyPartsToHighlight ?? []).map((bodyPart) => {
+
+$: {
+    const incorrectHighlights  = (feedback?.incorrectBodyPartsToHighlight ?? []).map((bodyPart) => {
         return { bodyPart, outlineColor: "#F00" }
-    }),
-    ...(feedback?.correctBodyPartsToHighlight ?? []).map((bodyPart) => {
+    })
+    const correctHighlights = (feedback?.correctBodyPartsToHighlight ?? []).map((bodyPart) => {
         return { bodyPart, outlineColor: "#0F0" }
     })
-]; 
+    skeletonHighlights = [...incorrectHighlights, ...correctHighlights];
+}
 
 $: $debugMode, feedback?.debugJson, reset('microlight'); // re-run microlight syntax highlighting
 
@@ -60,7 +62,7 @@ onMount(() => {
 
 <div class="feedbackForm">
     <h2>{feedback?.headline ?? 'Thinking...'}</h2>
-    <p class="sub-headline">{feedback?.subHeadline}</p>
+    <p class="sub-headline">{feedback?.subHeadline ?? ''}</p>
     
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
