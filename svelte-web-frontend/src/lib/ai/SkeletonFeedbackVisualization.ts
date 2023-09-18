@@ -1,5 +1,5 @@
 import { DrawingUtils, type NormalizedLandmark, type LandmarkData } from "@mediapipe/tasks-vision";
-import { QijiaMethodComparisonVectors, type EvaluationV1Result } from "./evaluation";
+import { QijiaMethodComparisonVectors, type EvaluationV1Result } from "./Evaluation";
 import { SwapLeftRightLandmarks } from "$lib/webcam/mediapipe-utils";
 
 import {feedback_YellowThreshold, feedback_GreenThreshold} from '$lib/model/settings';
