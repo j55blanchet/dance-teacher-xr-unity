@@ -18,7 +18,7 @@
 		"@types/cookie": "^0.5.1",
 		"@types/microlight": "^0.0.0",
 		"@types/papaparse": "^5.3.7",
-		"@types/uuid": "^9.0.2",
+		"@types/uuid": "^9.0.4",
 		"@typescript-eslint/eslint-plugin": "^5.62.0",
 		"@typescript-eslint/parser": "^5.62.0",
 		"eslint": "^8.49.0",
@@ -33,7 +33,7 @@
 		"svelte-check": "^3.5.1",
 		"tslib": "^2.6.1",
 		"typescript": "^5.2.2",
-		"uuid": "^9.0.0",
+		"uuid": "^9.0.1",
 		"vite": "^4.4.9",
 		"wasm-feature-detect": "^1.5.1"
 	},
