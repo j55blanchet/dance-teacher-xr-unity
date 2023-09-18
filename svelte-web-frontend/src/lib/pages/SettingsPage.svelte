@@ -77,9 +77,4 @@ const qijiaScoreMax = 5;
     box-sizing: border-box;
     gap: 0.5rem;
 }
-
-nav {
-    width: 100%;
-    padding: 1rem;
-}
 </style>
