@@ -18,7 +18,7 @@ module.exports = {
 		parser: 'svelte-eslint-parser',
 		// Parse the `<script>` in `.svelte` as TypeScript
 		parserOptions: {
-			parser: '@typescript-eslint/parser'
+			parser: '@typescript-eslint/parser',
 		} 
 	}],
 	settings: {
@@ -32,5 +32,9 @@ module.exports = {
 		browser: true,
 		es2017: true,
 		node: true
+	},
+	rules: {
+		'@typescript-eslint/no-explicit-any': 0, // allow explicit any
+		'@typescript-eslint/no-unused-vars': [2, { argsIgnorePattern: '^_' }], // allow unused vars that start with `_`
 	}
 };

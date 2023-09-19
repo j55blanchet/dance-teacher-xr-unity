@@ -50,11 +50,14 @@ async function loadPoseLandmarkerModel() {
     return poseLandmarker;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+function no_op(){}
+
 export default class PoseEstimationWorker {
 
     private poseLandmarker: null | PoseLandmarker = null;
 
-    public onmessage: (msg: any) => void = () => {};
+    public onmessage: (msg: any) => void = no_op;
 
     public ready: Promise<void>;
 
@@ -119,7 +122,7 @@ export default class PoseEstimationWorker {
         this.responseFunctions.get(msgData.type)?.(frameId, msgData);
     }
 
-    private handleReset(frameId: number, msgData: any) {
+    private handleReset(frameId: number, _msgData: any) {
         this.poseLandmarker?.close();
         this.poseLandmarker = null;
         this.ready = loadPoseLandmarkerModel().then((poseLandmarker) => {

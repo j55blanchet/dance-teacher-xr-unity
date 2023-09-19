@@ -14,7 +14,7 @@ import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
-import metronomeClickSoundSrc from '$lib/media/audio/metronome-click.mp3';
+import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
 
 import { onMount, createEventDispatcher } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
@@ -114,9 +114,11 @@ $: {
                 QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
             ).then((feedback) => {
                 terminalFeedback = feedback;
+                terminalFeedback.debugJson = performanceSummary ?? undefined;
             }).catch((e) => {
                 console.warn("Error generating feedback", e);
                 terminalFeedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+                terminalFeedback.debugJson = performanceSummary ?? undefined;
             });
         }
         else {

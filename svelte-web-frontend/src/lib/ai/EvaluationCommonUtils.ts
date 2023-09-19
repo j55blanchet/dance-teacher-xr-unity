@@ -1,5 +1,5 @@
 import type { TerminalFeedbackBodyPart, TerminalFeedbackBodyPartIndex } from "$lib/model/TerminalFeedback";
-import {PoseLandmarkIds, type PoseLandmarkIndex, type Pose2DPixelLandmarks, PoseLandmarkKeys } from  "$lib/webcam/mediapipe-utils";
+import {PoseLandmarkIds, type PoseLandmarkIndex, type Pose2DPixelLandmarks, PoseLandmarkKeys, type Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
 
 /**
  * Calculate a scale indicator for a set of 2D pose landmarks. The size of people in pixels
@@ -12,9 +12,9 @@ import {PoseLandmarkIds, type PoseLandmarkIndex, type Pose2DPixelLandmarks, Pose
 export function GetScaleIndicator(pixelLandmarks: Pose2DPixelLandmarks){
 
     // Calculate torso heights and shoulder width
-    const leftTorsoHeight = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip))
-    const rightTorsoHeight = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightHip))
-    const shoulderWidth = getMagnitude(GetVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder))
+    const leftTorsoHeight = getMagnitude2DVec(Get2DVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip))
+    const rightTorsoHeight = getMagnitude2DVec(Get2DVector(pixelLandmarks, PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightHip))
+    const shoulderWidth = getMagnitude2DVec(Get2DVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder))
     
     // Combine the measurements to compute the scale indicator
     return 0.25 * leftTorsoHeight + 
@@ -71,8 +71,17 @@ export const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<TerminalFee
  * @param v - 2D vector as an array [x, y]
  * @returns Magnitude of the vector
  */
-export function getMagnitude(v: [number, number]) {
+export function getMagnitude2DVec(v: [number, number]) {
     return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2), 0.5)
+}
+
+/**
+ * Calculate the magnitude of a 3D vector.
+ * @param v - 3D vector as an array [x, y, z]
+ * @returns Magnitude of the vector
+ */
+export function getMagnitude3DVec(v: [number, number, number]) {
+    return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2) + Math.pow(v[2], 2), 0.5)
 }
 
 /**
@@ -82,7 +91,7 @@ export function getMagnitude(v: [number, number]) {
  * @returns Inner angle between the two vectors in radians
  */
 export function getInnerAngle(v1: [number, number], v2: [number, number]) {
-    return Math.acos((v1[0] * v2[0] + v1[1] * v2[1]) / (getMagnitude(v1) * getMagnitude(v2)))
+    return Math.acos((v1[0] * v2[0] + v1[1] * v2[1]) / (getMagnitude2DVec(v1) * getMagnitude2DVec(v2)))
 }
 
 /**
@@ -120,7 +129,7 @@ export function getArrayMean(v: Array<number>) {
  * @param destLandmark - Index of the destination landmark
  * @returns 2D vector as an array [x, y]
  */
-export function GetVector(    
+export function Get2DVector(    
     pixelLandmarks: Pose2DPixelLandmarks,
     srcLandmark: number,
     destLandmark: number
@@ -131,19 +140,48 @@ export function GetVector(
 }
 
 /**
- * Calculate a normalized 2D vector between two pose landmarks.
+ * Calculate a normalized 2D vector between two pose landmarks. Note: this is distinct from the
+ * normalization that mediapipe does (which isn't useful since it skews that aspect ratio. In this
+ * case, normalization simply means scaling the vector to have a magnitude of 1.
  * @param pixelLandmarks - 2D pixel coordinates of pose landmarks
  * @param srcLandmark - Index of the source landmark
  * @param destLandmark - Index of the destination landmark
  * @returns Normalized 2D vector as an array [x, y]
  */
-export function GetNormalizedVector(
+export function GetNormalized2DVector(
     pixelLandmarks: Pose2DPixelLandmarks,
     srcLandmark: number,
     destLandmark: number, 
 ){
     // TODO: utilize a vector arithmetic library?
-    const [vec_x, vec_y] = GetVector(pixelLandmarks, srcLandmark, destLandmark)
-    const mag = getMagnitude([vec_x, vec_y]);
+    const [vec_x, vec_y] = Get2DVector(pixelLandmarks, srcLandmark, destLandmark)
+    const mag = getMagnitude2DVec([vec_x, vec_y]);
     return [vec_x / mag, vec_y / mag]
+}
+
+/**
+ * Calculates the 3D vector between two pose landmarks.
+ * @param landmarks - 3D coordinates of pose landmarks
+ * @param srcLandmark - Index of the source landmark
+ * @param destLandmark - Index of the destination landmark
+ * @returns Vector pointing from source to destination as an array [x, y, z]
+ */
+export function Get3DVector(
+    landmarks: Pose3DLandmarkFrame,
+    srcLandmark: number,
+    destLandmark: number
+) {
+    const {x: sx, y: sy, z: sz } = landmarks[srcLandmark]
+    const {x: dx, y: dy, z: dz } = landmarks[destLandmark]
+    return [dx - sx, dy - sy, dz - sz] as [number, number, number]
+}
+
+export function Get3DNormalizedVector(
+    landmarks: Pose3DLandmarkFrame,
+    srcLandmark: number,
+    destLandmark: number
+) {
+    const [vec_x, vec_y, vec_z] = Get3DVector(landmarks, srcLandmark, destLandmark)
+    const mag = getMagnitude3DVec([vec_x, vec_y, vec_z]);
+    return [vec_x / mag, vec_y / mag, vec_z / mag]
 }

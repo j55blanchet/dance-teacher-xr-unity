@@ -176,15 +176,15 @@
         }
     }
 
-    onMount(async () => {		
+    onMount(() => {		
 		
         // Start pose estimation, if enabled
         if (poseEstimationEnabled) {
             setupPoseEstimation();
         }
 
-        await tick()
-        resizeCanvas();
+        // Schedule a canvas resize
+        tick().then(resizeCanvas);
 
         const resizeObserver = new ResizeObserver(entries => {
             if (!containerElement) return;
