@@ -5,8 +5,10 @@ from enum import auto, Enum
 from functools import reduce
 from typing import Dict, Final, List, Optional, Set
 import pandas as pd
-from .mp_utils import PoseLandmark
 import numpy as np
+
+import mediapipe as mp
+PoseLandmark = mp.solutions.holistic.PoseLandmark
 
 from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt

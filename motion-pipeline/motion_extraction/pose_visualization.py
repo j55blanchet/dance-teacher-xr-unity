@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from numpy import isnan
 import pandas as pd
 import mediapipe as mp
-from .mp_utils import PoseLandmark, HandLandmark
 
 PoseLandmark = mp.solutions.holistic.PoseLandmark
 HandLandmark = mp.solutions.holistic.HandLandmark
