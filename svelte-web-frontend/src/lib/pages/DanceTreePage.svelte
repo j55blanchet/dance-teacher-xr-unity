@@ -4,8 +4,7 @@ import { page, navigating } from '$app/stores'
 import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 import SketchButton from '$lib/elements/SketchButton.svelte';
-import type { DanceTree, Dance, DanceTreeNode } from '$lib/dances-store';
-import { getDanceVideoSrc } from '$lib/dances-store';
+import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode } from '$lib/data/dances-store';
 import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 

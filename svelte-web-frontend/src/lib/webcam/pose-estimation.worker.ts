@@ -61,14 +61,9 @@ export default class PoseEstimationWorker {
     private responseFunctions: Map<PostMessages, (id: number, msg: any) => void> = new Map();
 
     constructor() {
-        this.ready = new Promise(async (res, rej) => {
-            try {
-                this.poseLandmarker = await loadPoseLandmarkerModel();
-                res();
-            } catch (e) {
-                rej(e);
-            }
-        })
+        this.ready = loadPoseLandmarkerModel().then((poseLandmarker) => {
+            this.poseLandmarker = poseLandmarker;
+        });
 
         this.responseFunctions.set(
             PostMessages.requestPoseEstimation, 
@@ -127,18 +122,14 @@ export default class PoseEstimationWorker {
     private handleReset(frameId: number, msgData: any) {
         this.poseLandmarker?.close();
         this.poseLandmarker = null;
-        this.ready = new Promise(async (res, rej) => {
-            try {
-                this.poseLandmarker = await loadPoseLandmarkerModel();
-                res();
-                this.respondWithMessage(ResponseMessages.resetComplete, frameId, {});
-            } catch (e) {
-                rej(e);
-                this.respondWithMessage(ResponseMessages.resetError, frameId, {
-                    error: e
-                });
-            }
-        })
+        this.ready = loadPoseLandmarkerModel().then((poseLandmarker) => {
+            this.poseLandmarker = poseLandmarker;
+            this.respondWithMessage(ResponseMessages.resetComplete, frameId, {});
+        }, (e) => {
+            this.respondWithMessage(ResponseMessages.resetError, frameId, {
+                error: e,
+            });
+        });
     }
 
     private handlePoseEstimationRequest(frameId: number, msgData: any) {
@@ -165,12 +156,8 @@ export default class PoseEstimationWorker {
             msgData.timestampMs
         )
 
-        const allNormalizedPoses = (poseLandmarkerResult?.landmarks ?? [])
-        const firstUserPose = allNormalizedPoses[0] ?? null;
-
         this.respondWithMessage(ResponseMessages.poseEstimation, frameId, {
             landmarkerResult: poseLandmarkerResult,
-            estimatedPose: firstUserPose,
             srcWidth: msgData.image.width,
             srcHeight: msgData.image.height
         });

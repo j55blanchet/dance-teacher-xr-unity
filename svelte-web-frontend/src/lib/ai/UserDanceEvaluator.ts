@@ -1,5 +1,5 @@
-import type { Pose2DReferenceData } from "$lib/dances-store";
-import type { Pose2DPixelLandmarks } from  "$lib/webcam/mediapipe-utils";
+import type { PoseReferenceData } from "$lib/data/dances-store";
+import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
 import { QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean } from './EvaluationCommonUtils';
 import { computeSkeleton2DDissimilarityJulienMethod, computeSkeletonDissimilarityQijiaMethod } from "./skeleton-similarity";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
@@ -13,30 +13,34 @@ export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["ev
 export class UserDanceEvaluatorV1 {
 
     public recorder = new UserEvaluationRecorder<EvaluationV1Result>();
-    constructor(private referenceData: Pose2DReferenceData) {
-    };
+
+    constructor(
+        private reference2DData: PoseReferenceData<Pose2DPixelLandmarks>, 
+        private reference3DData: PoseReferenceData<Pose3DLandmarkFrame>
+    ) {};
 
     /**
      * Evaluates a single frame of a user's dance performance.
      * @param trialId Identifier of the current attempt, used to separate recordings into tracks
      * @param frameTime Frame time in seconds
-     * @param userPose User's pose at the given frame time
+     * @param userPose2D User's pose at the given frame time
      */
-    evaluateFrame(trialId: string, frameTime: number, userPose: Pose2DPixelLandmarks) {
+    evaluateFrame(trialId: string, frameTime: number, userPose2D: Pose2DPixelLandmarks, userPose3D: Pose3DLandmarkFrame) {
 
-        const referencePose = this.referenceData.getReferencePoseAtTime(frameTime);
-        if (!referencePose) {
+        const referencePose2D = this.reference2DData.getReferencePoseAtTime(frameTime);
+        const referencePose3D = this.reference3DData.getReferencePoseAtTime(frameTime);
+        if (!referencePose2D || !referencePose3D) {
             return null;
         }
 
         const [qijiaOverallScore, qijiaByVectorScores] = computeSkeletonDissimilarityQijiaMethod(
-            referencePose, 
-            userPose
+            referencePose2D, 
+            userPose2D
         )
 
         const julienScore = computeSkeleton2DDissimilarityJulienMethod(
-            referencePose,
-            userPose
+            referencePose2D,
+            userPose2D
         )
 
         const evaluationResult = { 
@@ -49,7 +53,7 @@ export class UserDanceEvaluatorV1 {
         this.recorder.recordEvaluationFrame(
             trialId,
             frameTime,
-            userPose,
+            userPose2D,
             evaluationResult
         )
         return evaluationResult;

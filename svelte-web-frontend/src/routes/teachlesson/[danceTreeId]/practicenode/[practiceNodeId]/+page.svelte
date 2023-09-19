@@ -1,7 +1,7 @@
 <script lang="ts">
 import { goto } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
-import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/dances-store';
+import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/data/dances-store';
 import PracticePage from '$lib/pages/PracticePage.svelte';
 import { initialState, type PracticePageState } from '$lib/pages/PracticePage.svelte';
 import { navbarProps } from '$lib/elements/NavBar.svelte';

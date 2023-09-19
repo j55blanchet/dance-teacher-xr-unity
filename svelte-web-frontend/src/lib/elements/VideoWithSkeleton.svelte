@@ -1,6 +1,6 @@
 <script lang="ts">
 
-import type { Dance, Pose2DReferenceData } from "$lib/dances-store";
+import type { Dance, PoseReferenceData } from "$lib/data/dances-store";
 import { onDestroy, onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import { DrawingUtils, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
@@ -30,7 +30,7 @@ export let duration = 0;
 export let ended: boolean = false;
 
 export let dance: Dance | null = null;
-export let poseData: Pose2DReferenceData | null = null;
+export let poseData: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
 export let drawSkeleton: boolean = true;
 
 let videoElementWidth: number = 0;
