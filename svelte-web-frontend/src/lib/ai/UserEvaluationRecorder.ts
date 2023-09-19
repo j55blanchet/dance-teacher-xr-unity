@@ -34,6 +34,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
         const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
 
         let track: PerformanceEvaluationTrack<EvaluationType>
+
         if(!this.tracks.has(id)) {
             track = {
                 creationDate: new Date(),
@@ -65,51 +66,5 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
         for(const key of evaluationkeys) {
             track.evaluation[key].push(evaluationResult[key])
         }
-    }
-
-    /**
-     * Retrieves user poses for a specified time range relative to the current frame time.
-     * @param id - Identifier of the current attempt (track)
-     * @param currentFrameTime - Current frame time in seconds
-     * @param frameOffsets - Array of frame offsets from the current frame time
-     * @returns User poses for the specified time range
-     */
-     getUserPosesForTimeRange(
-        id: string,
-        currentFrameTime: number,
-        frameOffsets: number[]
-    ): Pose2DPixelLandmarks[] {
-        const track = this.tracks.get(id);
-
-        if (!track) {
-            throw new Error(`Track with ID ${id} does not exist.`);
-        }
-
-        const frameCount = track.frameTimes.length;
-        const userPosesTrack = track.userPoses;
-
-        // Calculate frame times for the specified frame offsets relative to the current frame time.
-        const targetFrameTimes = frameOffsets.map(offset => currentFrameTime - offset);
-
-        // Find the closest frame time in the track for each target frame time.
-        const closestFrameIndices = targetFrameTimes.map(targetTime => {
-            let closestIndex = 0;
-            let closestDiff = Math.abs(targetTime - track.frameTimes[0]);
-
-            for (let i = 1; i < frameCount; i++) {
-                const diff = Math.abs(targetTime - track.frameTimes[i]);
-                if (diff < closestDiff) {
-                    closestIndex = i;
-                    closestDiff = diff;
-                }
-            }
-
-            return closestIndex;
-        });
-
-        // Retrieve user poses for the closest frames.
-        const userPosesForTimeRange = closestFrameIndices.map(index => userPosesTrack[index]);
-
-        return userPosesForTimeRange;
     }
 }

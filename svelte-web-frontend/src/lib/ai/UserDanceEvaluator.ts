@@ -3,6 +3,7 @@ import type { Pose2DPixelLandmarks } from  "$lib/webcam/mediapipe-utils";
 import { QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean } from './EvaluationCommonUtils';
 import { computeSkeleton2DDissimilarityJulienMethod, computeSkeletonDissimilarityQijiaMethod } from "./skeleton-similarity";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
+import { calculateSDJerks } from "./compute-motion-descriptors";
 
 // Type definition for the result of evaluating a user's performance.
 export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["evaluateFrame"]>>;
@@ -87,8 +88,11 @@ export class UserDanceEvaluatorV1 {
             const meanScore = getArrayMean(vecScores);
             return [key, meanScore] as [string, number];
         });
+
+        const sdJerks = calculateSDJerks(track.userPoses, this.referenceData.get2DLandmarks(track.frameTimes), track.frameTimes);
+
+
         const julienByVectorScores = new Map(julienVectorScoreKeyValues)
-        
         const frameCount = track.frameTimes.length
         const realtimeDurationSecs = (track.recordTimesMs[frameCount - 1] - track.recordTimesMs[0]) / 1000
         const danceTimeDurationSecs = track.frameTimes[frameCount - 1] - track.frameTimes[0]
@@ -104,7 +108,9 @@ export class UserDanceEvaluatorV1 {
             qijiaOverallScore,
             qijiaByVectorScores,
             julienOverallScore,
-            julienByVectorScores
+            julienByVectorScores,
+            sdJerks
         }
     }
 }
+

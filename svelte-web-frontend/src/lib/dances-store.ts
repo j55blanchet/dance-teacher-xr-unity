@@ -132,6 +132,24 @@ export class Pose2DReferenceData {
 
         return pose;
     }
+
+    /**
+     * Get the reference pose information for an array of dance timestamps.
+     * @param frameTimes Array of dance timestamps for which to get the pose information
+     * @returns Array of pose information for the frames at the given timestamps, or an empty array if no pose information is available for any frame
+     */
+    get2DLandmarks(frameTimes: number[]): Pose2DPixelLandmarks[] {
+        const poses: Pose2DPixelLandmarks[] = [];
+
+        for (const timestamp of frameTimes) {
+            const pose = this.getReferencePoseAtTime(timestamp);
+            if (pose !== null) {
+                poses.push(pose);
+            }
+        }
+
+        return poses;
+    }
 }
 
 /**
