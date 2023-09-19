@@ -22,10 +22,10 @@ import { GetNormalizedVector, GetScaleIndicator, GetVector, QijiaMethodCompariso
 
     const jerks: number[][][] = [];
 
-    for (let i = 2; i < numFrames - 1; i++) {
-        const dt1 = frameTimes[i] - frameTimes[i - 1];
-        const dt2 = frameTimes[i - 1] - frameTimes[i - 2];
-        const dt3 = frameTimes[i - 2] - frameTimes[i - 3];
+    for (let i = 2; i < numFrames - 3; i++) {
+        const dt1 = frameTimes[i + 2] - frameTimes[i + 1];
+        const dt2 = frameTimes[i + 1] - frameTimes[i - 1];
+        const dt3 = frameTimes[i - 1] - frameTimes[i - 2];
 
         const vectorDissimilarityScores = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
             const [srcLandmark, destLandmark] = vecLandmarkIds
