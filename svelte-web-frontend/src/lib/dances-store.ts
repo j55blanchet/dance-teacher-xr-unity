@@ -130,7 +130,7 @@ export class Pose2DReferenceData {
         // const frameIndex = this.frameIndices[searchIndex];
         const pose = this.poses[searchIndex];
 
-        return pose;
+        return pose ?? null;
     }
 
     /**
