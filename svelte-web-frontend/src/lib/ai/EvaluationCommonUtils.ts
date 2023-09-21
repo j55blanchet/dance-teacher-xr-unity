@@ -1,6 +1,9 @@
 import type { TerminalFeedbackBodyPart, TerminalFeedbackBodyPartIndex } from "$lib/model/TerminalFeedback";
 import {PoseLandmarkIds, type PoseLandmarkIndex, type Pose2DPixelLandmarks, PoseLandmarkKeys, type Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
 
+export type PoseVectorIdPair = [PoseLandmarkIndex, PoseLandmarkIndex]
+export type VectorAngleComparisonInfo = { vec1: PoseVectorIdPair, vec2: PoseVectorIdPair, rangeOfMotion: number};
+
 /**
  * Calculate a scale indicator for a set of 2D pose landmarks. The size of people in pixels
  * can vary greatly, so we need to standardize the measurements based on the user's body size.
@@ -26,7 +29,7 @@ export function GetScaleIndicator(pixelLandmarks: Pose2DPixelLandmarks){
  * Definition of comparison vectors for the Qijia method.
  * These vectors represent pairs of pose landmarks used for similarity calculations.
  */
-export const QijiaMethodComparisonVectors: Readonly<Array<[PoseLandmarkIndex, PoseLandmarkIndex]>> = Object.freeze([
+export const QijiaMethodComparisonVectors: Readonly<Array<PoseVectorIdPair>> = Object.freeze([
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.rightShoulder],
     [PoseLandmarkIds.leftShoulder,  PoseLandmarkIds.leftHip],
     [PoseLandmarkIds.leftHip,       PoseLandmarkIds.rightHip],
@@ -65,6 +68,93 @@ export const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<TerminalFee
     [6, "rightarm"], // rightShoulder -> rightElbow
     [7, "rightarm"], // rightElbow -> rightWrist
 ]);
+
+/**
+ * A set of angles between adjacent body parts that are used for similarity calculations. Each angle
+ * can be calculated as the inner angle between two vectors. The vectors are defined by pairs of
+ * pose landmarks.
+ * 
+ * Different body joints may be capable of different ranges of motion, so the range of motion of 
+ * joint is included in the comparison info, to allow for normalization of the angle values if needed.
+ */
+export const BodyInnerAnglesComparisons: Readonly<Record<string, VectorAngleComparisonInfo>> = Object.freeze({
+   'left-shoulder-pitch': {
+        vec1: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftElbow], 
+        vec2: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip],
+        // we can roughly pitch the shoulder from 90 degrees (beside hip) 
+        // to -90 degrees (straight up), for a total range of 180 degrees
+        rangeOfMotion: Math.PI 
+   },
+   'left-shoudler-yaw': {
+        vec1: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftElbow],
+        vec2: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder],
+        // we can roughtly pivot the shoulder from +90 degrees (pointing forward)
+        // to -90 degrees (pointing backward), for a total range of 180 degrees
+        rangeOfMotion: Math.PI
+   },
+   'left-elbow-bend': {
+        vec1: [PoseLandmarkIds.leftElbow, PoseLandmarkIds.leftShoulder],
+        vec2: [PoseLandmarkIds.leftElbow, PoseLandmarkIds.leftWrist],
+        // we can roughly bend the elbow from 0 degrees (straight) to 180 degrees (fully bent)
+        // for a total range of 180 degrees
+        rangeOfMotion: Math.PI
+   },
+   'neck-shoulderline-angle': {
+        vec1: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder],
+        vec2: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.nose],
+        // we can roughtly bend the neck from -90 degrees (on right shoulder) 
+        // to 90 deg (on left shoulder)
+        rangeOfMotion: Math.PI
+   },
+   'right-shoulder-pitch': {
+        vec1: [PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightElbow],
+        vec2: [PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightHip],
+        rangeOfMotion: Math.PI,
+   },
+    'right-shoulder-yaw': {
+        vec1: [PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightElbow],
+        vec2: [PoseLandmarkIds.rightShoulder, PoseLandmarkIds.leftShoulder],
+        rangeOfMotion: Math.PI,
+    },
+    'right-elbow-bend': {
+        vec1: [PoseLandmarkIds.rightElbow, PoseLandmarkIds.rightShoulder],
+        vec2: [PoseLandmarkIds.rightElbow, PoseLandmarkIds.rightWrist],
+        rangeOfMotion: Math.PI
+    },
+});
+
+/**
+ * Calculate the inner angle between two 3D vectors, in radians. 
+ * 
+ * The inner angle is the smallest possible angle between the two vectors, measured from the first 
+ * vector to the second, in the range [0, pi]. This angle is on the plane defined by the two vectors.
+ * 
+ * @param vec1 The first vector as an array [x, y, z]
+ * @param vec2 The second vector as an array [x, y, z]
+ * @returns The inner angle between the two vectors in radians
+ */
+export function getInnerAngleBetweenVectors(vec1: [number, number, number], vec2: [number, number, number]) {
+    const [x1, y1, z1] = vec1;
+    const [x2, y2, z2] = vec2;
+    const dotProduct = x1 * x2 + y1 * y2 + z1 * z2;
+    const mag1 = Math.pow(x1 * x1 + y1 * y1 + z1 * z1, 0.5);
+    const mag2 = Math.pow(x2 * x2 + y2 * y2 + z2 * z2, 0.5);
+    const cosTheta = dotProduct / (mag1 * mag2);
+    return Math.acos(cosTheta);    
+}
+
+/**
+ * Calcualte the inner angle between two 3D vectors, in radians, from a given pose frame.
+ * @param frame Pose estimation result frame
+ * @param srcVectorIds IDs of the source vector landmarks
+ * @param destVectorIDs IDs of the destination vector landmarks
+ * @returns The inner angle between the two vectors in radians
+ */
+export function getInnerAngleFromFrame(frame: Pose3DLandmarkFrame, srcVectorIds: PoseVectorIdPair, destVectorIDs: PoseVectorIdPair) {
+    const vec1 = Get3DNormalizedVector(frame, srcVectorIds[0], srcVectorIds[1]);
+    const vec2 = Get3DNormalizedVector(frame, destVectorIDs[0], destVectorIDs[1]);
+    return getInnerAngleBetweenVectors(vec1, vec2);
+}
 
 /**
  * Calculate the magnitude of a 2D vector.
@@ -183,5 +273,5 @@ export function Get3DNormalizedVector(
 ) {
     const [vec_x, vec_y, vec_z] = Get3DVector(landmarks, srcLandmark, destLandmark)
     const mag = getMagnitude3DVec([vec_x, vec_y, vec_z]);
-    return [vec_x / mag, vec_y / mag, vec_z / mag]
+    return [vec_x / mag, vec_y / mag, vec_z / mag] as [number, number, number]
 }

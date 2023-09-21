@@ -1,6 +1,6 @@
 import { lerp } from "$lib/utils/math";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
-import { GetNormalized2DVector, GetScaleIndicator, Get2DVector, QijiaMethodComparisonVectors, getArrayMean, getInnerAngle, getMagnitude2DVec, Get3DNormalizedVector, getMagnitude3DVec } from "./EvaluationCommonUtils";
+import { GetNormalized2DVector, GetScaleIndicator, Get2DVector, QijiaMethodComparisonVectors, getArrayMean, getInnerAngle, getMagnitude2DVec, Get3DNormalizedVector, getMagnitude3DVec, getInnerAngleFromFrame, BodyInnerAnglesComparisons } from "./EvaluationCommonUtils";
 
 /**
  * Type definition for an array of 8 numbers.
@@ -158,32 +158,35 @@ export function computeSkeleton2DDissimilarityJulienMethod(
 }
 
 /**
- * Calculate the similarity of two 3D poses, looking at a set of 8 upper body comparison vectors.The 
- * similarity is computed by normalizing each of these comparison vectors and computing the distance
- * between the corresponding normalized vectors, (a value between good=0 and bad=2), then remapping
- * to a value between 0 (worst) and 1 (best), and taking the average across the comparison vectors.
- * 
- * The end result is a measure of how well the user's pose shape matches the expert's pose. By 
- * normalizing the vectors, we can compare poses of different sizes and distances from the camera.
+ * Calculate the similarity of two 3D poses, based on inner angle between preset pairs of  
+ * body comparison vectors (as opposed to Qijia's method, which directly compares the orientation of 
+ * vectors to the camera reference frame).
  * @param refLandmarks 3D pose of the expert
  * @param userLandmarks 3D pose of the user
  * @returns An object containing the overall similarity score, and an array of the similarity scores for each vector
  */
 export function computeSkeleton3DVectorAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame) {
 
-    const vectorByVectorScores = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
-        const [srcLandmark, destLandmark] = vecLandmarkIds
-        const [refX, refY, refZ] = Get3DNormalizedVector(refLandmarks, srcLandmark, destLandmark)
-        const [usrX, usrY, usrZ] = Get3DNormalizedVector(userLandmarks, srcLandmark, destLandmark)
-        const [dx, dy, dz] = [refX - usrX, refY - usrY, refZ - usrZ];
-        const vectorEndpointDistance = getMagnitude3DVec([dx, dy, dz]); // a value between 0 (best) and 2 (worst)
-        return lerp(vectorEndpointDistance, 0, 2, 1, 0); // map to a value between 0 (worst) and 1 (best)
-    });
+    const results = Object.fromEntries(
+        Object.entries(BodyInnerAnglesComparisons).map(([key, comparison]) => {
+            const userInnerAngle = getInnerAngleFromFrame(userLandmarks, comparison.vec1, comparison.vec2);
+            const refInnerAngle = getInnerAngleFromFrame(refLandmarks, comparison.vec1, comparison.vec2);
+            const angleDiff = Math.abs(userInnerAngle - refInnerAngle);
+            const scaledAngleDiff = angleDiff / comparison.rangeOfMotion;
+            return [key, { 
+                user: userInnerAngle, 
+                ref: refInnerAngle, 
+                diff: angleDiff,
+                diffDegrees: angleDiff * 180 / Math.PI,
+                score: (1 - scaledAngleDiff)
+            }];
+        })
+    );
 
-    const overallScore = getArrayMean(vectorByVectorScores);
+    const meanScore = getArrayMean(Object.values(results).map((r) => r.score));
 
     return {
-        overallScore,
-        vectorByVectorScores
+        overallScore: meanScore,
+        individualScores: results,
     }
 }
