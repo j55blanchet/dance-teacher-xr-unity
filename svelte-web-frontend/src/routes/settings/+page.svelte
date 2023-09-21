@@ -12,6 +12,7 @@ onMount(() => {
             url: "/",
             title: "Home",
         },
+        hideSettings: true,
     });
 });
 
