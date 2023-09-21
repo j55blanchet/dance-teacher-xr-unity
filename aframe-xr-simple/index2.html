@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene id="scene">
+<!--       <a-sphere color="black" radius="0.1"></a-sphere> -->
+<!--       <a-sphere color="red" position="1 0 0" radius="0.1"></a-sphere> -->
+<!--       <a-sphere color="green" position="0 1 0" radius="0.1"></a-sphere> -->
+<!--       <a-sphere color="blue" position="0 0 1" radius="0.1"></a-sphere> -->
+<!--       <a-cylinder color="gray" height="1" radius="0.2" position="0 1 0"></a-cylinder> -->
+<!--       <a-plane color="#7BC8A4" rotation="0 0 0" width="4" height="4" ></a-plane> -->
+ <a-plane position="0 0 0" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+      
+    </a-scene>
+    
+    <script>
+    const sceneEl = document.getElementById('scene');
+      
+    const lm1 = [0,0,0];
+    const lm2 = [1, 1, 1];
+    const vec = [lm2[0] - lm1[0], lm2[1] - lm1[1], lm2[2] - lm1[2]];
+    
+    const landmarkStart = lm1;
+    const landmarkEnd = lm2;
+    const x = 0;//(landmarkStart[0] + landmarkEnd[0]) / 2;
+    const y = 0;//(landmarkStart[1] + landmarkEnd[1]) / 2;
+    const z = 0;//(landmarkStart[2] + landmarkEnd[2]) / 2;
+
+      
+    var el1 = document.createElement('a-sphere');
+    el1.setAttribute('color', 'blue');
+    el1.setAttribute('position', `${lm1[0]} ${lm1[1]} ${lm1[2]}`);
+    el1.setAttribute('radius', 0.11);
+    sceneEl.appendChild(el1);
+      
+    var el2 = document.createElement('a-sphere');
+    el2.setAttribute('color', 'red');
+    el2.setAttribute('position', `${lm2[0]} ${lm2[1]} ${lm2[2]}`);
+    el2.setAttribute('radius', 0.11);
+    sceneEl.appendChild(el2);
+      
+    const vectorSquared = vec.map(e => Math.pow(e, 2));
+    const vecSquaredSum = vectorSquared.reduce((a, b) => a + b, 0);
+    const vectorLength = Math.sqrt(vecSquaredSum);
+    
+    function toDegrees(rads) {
+      return rads * 180 / Math.PI;
+    }
+    
+    function getMagnitude(x, y) {
+      return Math.sqrt(x * x + y * y);
+    }
+    
+    const rotY = toDegrees(Math.atan2(vec[0], vec[2]));
+    const rotX = toDegrees(Math.atan2(vec[1], getMagnitude(vec[0], vec[2])));
+    const rotZ = 0.0;
+
+    var cylParent = document.createElement('a-entity');
+    var cyl = document.createElement('a-cylinder');
+    cyl.setAttribute('color', 'gray');
+    cyl.setAttribute('height', vectorLength * 2);
+    cyl.setAttribute('radius', 0.04);
+    cyl.setAttribute('position', `${x} ${y} ${z}`)
+    cyl.setAttribute('rotation', `${rotX} 0 0`);
+    cylParent.setAttribute('rotation', `0 ${rotY} 0`);
+    var cylY = document.createElement('a-sphere');
+    cylY.setAttribute('color', 'darkred');
+    cylY.setAttribute('position', `0 1 0`);
+    cylY.setAttribute('radius', 0.06);
+    cyl.appendChild(cylY)
+    var cylX = document.createElement('a-sphere');
+    cylX.setAttribute('color', 'darkgreen');
+    cylX.setAttribute('position', `0.2 0 0`);
+    cylX.setAttribute('radius', 0.06);
+    cyl.appendChild(cylX)
+      
+    cylParent.appendChild(cyl);
+    sceneEl.appendChild(cylParent);
+    </script>
+  </body>
+</html>
