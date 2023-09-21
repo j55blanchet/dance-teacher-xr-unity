@@ -1,6 +1,6 @@
 <script lang="ts">
 import DanceTreePage from "$lib/pages/DanceTreePage.svelte";
-import type { DanceTree, Dance } from '$lib/dances-store';
+import type { DanceTree, Dance } from '$lib/data/dances-store';
 
 /** @type {import('./$types').PageData} */    
 export let data;

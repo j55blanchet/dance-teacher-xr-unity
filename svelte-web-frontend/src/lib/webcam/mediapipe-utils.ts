@@ -1,6 +1,6 @@
 import type { Landmark, NormalizedLandmark, PoseLandmarkerResult } from '@mediapipe/tasks-vision'
 import { SwapMultipleArrayElements } from '$lib/utils/array';
-import type { ValueOf } from '$lib/dances-store';
+import type { ValueOf } from '$lib/data/dances-store';
 
 export const PoseLandmarkIds = Object.freeze({
     nose: 0,
@@ -41,25 +41,68 @@ export type PoseLandmarkIndex = ValueOf<typeof PoseLandmarkIds>;
 type PoseLandmarkName = keyof typeof PoseLandmarkIds;
 export const PoseLandmarkKeys = Object.freeze(Object.getOwnPropertyNames(PoseLandmarkIds)) as readonly PoseLandmarkName[];
 
-export type Pose3DLandmarks = PoseLandmarkerResult["worldLandmarks"];
-export type Pose2DNormalizedLandmarks = PoseLandmarkerResult["landmarks"]
-export type AnyLandmark = NormalizedLandmark | Landmark | PixelLandmark;
+/**
+ * Represents a frame with 32 normalized 2D landmarks, corresponding to different parts of the body as
+ * specified by [mediapipe's documentation](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), 
+ * with coordinates between 0 and 1. (0, 0) is the left, top of the image, and (1, 1) is the right, 
+ * bottom of the image. Note that this normalization doesn't take into account the aspect ratio of 
+ * the image, so the scales of the x and y components of thelandmark are of different scales.
+ * 
+ * There is a z component, which at the same scale as the x component, corresponding to the distance
+ * from the camera.
+ * 
+ * @
+ * 
+ * @see [Output Format](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker/web_js#handle_and_display_results)
+ */
+export type Pose2DNormalizedLandmarkFrame = PoseLandmarkerResult["landmarks"][0];
 
 /**
- * Represents a pixel landmark
+ * Represents a 3d landmark, returned as part of mediapipe's `worldLandmarks` output. The scale here
+ * is approximately in meters, but the exact scale is unknown. These are not normalized.
+ */
+export type Landmark3D = Landmark;
+
+/**
+ * Represents a 3d landmark, returned as part of mediapipe's `worldLandmarks` output, with an added
+ * visibiltiy component between [0, 1]. The scale here is approximately in meters, but the exact 
+ * scale is unknown. These are not normalized.
+ */
+export type Landmark3DWithVisibility = Landmark3D & {
+    vis: number;
+}
+
+/**
+ * A frame with 32 3D landmarks, corresponding to different parts of the body as specified by
+ * [mediapipe's documentation](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker).
+ */
+export type Pose3DLandmarkFrame = Landmark3D[];
+
+/**
+ * A frame with 32 3D landmarks, corresponding to different parts of the body as specified by
+ * [mediapipe's documentation](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker).
+ * These landmarks also have a visibility component, which is a number between 0 and 1, where 0
+ * means the landmark is not visible, and 1 means the landmark is fully visible.
+ * This is returned as part of mediapipe's `worldLandmarks` output in the python solution, and is
+ * stored in our .holisticdata CSV files.
+ */
+export type Pose3DLandmarkWithVisibilityFrame = Landmark3D[];
+
+/**
+ * Represents any landmark.
+ */
+export type AnyLandmark = NormalizedLandmark | PixelLandmark | Landmark3D;
+
+/**
+ * Represents a 2d landmark, converted to pixel coordinates. 
  */
 type PixelLandmark = {
     x: number;
     y: number;
     dist_from_camera: number;
-    visibility: number;
+    visibility?: number;
 }
 export type Pose2DPixelLandmarks = PixelLandmark[]
-
-
-// export function Get3DLandmarksFromHolisticRow(holisticRow: any): Pose3DLandmarks {
-//     return [];
-// }
 
 /**
  * Convert a string from camelCase to snake_case
@@ -101,8 +144,15 @@ export function SwapLeftRightLandmarks<T extends AnyLandmark>(pose: T[]) {
     return copiedPose;
 }
 
-export function MirrorXNormalizedPose<T extends AnyLandmark>(pose: T[]): T[] {
-    const xFlipped = pose.map(lm => ({
+/**
+ * Mirror a pose frame along the x axis. This is useful for mirroring a pose frame of a user
+ * in a webcam, so that the user's left side is on the left side of the frame, and the user's
+ * right side is on the right side of the frame.
+ * @param pose Pose Frame to mirror
+ * @returns Mirrored pose frame
+ */
+export function MirrorXPose<T extends AnyLandmark>(poseFrame: T[]): T[] {
+    const xFlipped = poseFrame.map(lm => ({
         ...lm,
         x: 1 - lm.x,
     }));
@@ -113,12 +163,21 @@ export function MirrorXNormalizedPose<T extends AnyLandmark>(pose: T[]): T[] {
 export function GetPixelLandmarksFromNormalizedLandmarks(normalizedLandmarks: NormalizedLandmark[], srcWidth: number, srcHeight: number): Pose2DPixelLandmarks | null {
     if ((normalizedLandmarks?.length ?? 0) <= 0) return null;
     
-    return normalizedLandmarks.map((lm, i) => ({
-        x: lm.x * srcWidth,
-        y: lm.y * srcHeight,
-        dist_from_camera: lm.z * srcWidth,
-        visibility: (lm as any)["visibility"] ?? 1.0,
-    }));
+    return normalizedLandmarks.map((lm) => {
+        const landmark = {
+            x: lm.x * srcWidth,
+            y: lm.y * srcHeight,
+            dist_from_camera: lm.z * srcWidth,
+        }
+        const visibility_value = (lm as unknown as Record<string, number>)["visibility"];
+        if (visibility_value !== undefined) {
+            return {
+                ...landmark,
+                visibility: visibility_value,
+            }
+        };
+        return landmark;
+    });
 }
 
 export function GetNormalizedLandmarksFromPixelLandmarks(

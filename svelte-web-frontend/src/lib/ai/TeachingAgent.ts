@@ -1,4 +1,4 @@
-import type { Dance, DanceTree, DanceTreeNode } from '../dances-store'
+import type { Dance, DanceTree, DanceTreeNode } from '../data/dances-store'
 import type PracticeActivity from '$lib/model/PracticeActivity';
 
 // export interface UserDancePerformanceLog {
