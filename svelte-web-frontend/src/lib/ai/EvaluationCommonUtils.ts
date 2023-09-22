@@ -213,6 +213,24 @@ export function getArrayMean(v: Array<number>) {
 }
 
 /**
+ * Calculates the standard deviation of an array of numbers.
+ * @param {Array<number>} v - The array of numbers
+ * @returns {number} - The standard deviation
+ */
+ export function getArraySD(v: Array<number>) {
+    if (v.length === 0) {
+      return 0; // Handle empty array case
+    }
+  
+    const mean = v.reduce((sum, value) => sum + value, 0) / v.length;
+    const squaredDifferences = v.map(value => Math.pow(value - mean, 2));
+    const variance = squaredDifferences.reduce((sum, squaredDiff) => sum + squaredDiff, 0) / v.length;
+    const standardDeviation = Math.sqrt(variance);
+  
+    return standardDeviation;
+  }
+
+/**
  * Calculate a 2D vector between two pose landmarks.
  * @param pixelLandmarks - 2D pixel coordinates of pose landmarks
  * @param srcLandmark - Index of the source landmark

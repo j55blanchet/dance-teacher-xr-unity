@@ -1,18 +1,43 @@
 import type { Pose2DPixelLandmarks } from  "$lib/webcam/mediapipe-utils";
-import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
-import { GetNormalizedVector, GetScaleIndicator, GetVector, QijiaMethodComparisonVectors, getArrayMean, getInnerAngle, getMagnitude } from "./EvaluationCommonUtils";
+import { GetScaleIndicator, Get2DVector, QijiaMethodComparisonVectors, getArrayMean, getArraySD } from "./EvaluationCommonUtils";
 
+/**
+ * Removes duplicate frame times from an array of user poses and corresponding frame times.
+ * @param {Pose2DPixelLandmarks[]} userPoses - Array of user poses.
+ * @param {number[]} frameTimes - Array of frame times corresponding to the poses.
+ * @returns {{ adjUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] }} An object containing adjusted user poses and unique frame times.
+ */
+export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], frameTimes: number[]): { adjUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] } {
+    const uniqueFrameTimes = [];
+    const adjUserPoses = [];
+
+    for (let i = 0; i < frameTimes.length; i++) {
+        const currentTime = frameTimes[i];
+
+        // Check if the current frame time is not the same as the previous one
+        if (i === 0 || currentTime !== frameTimes[i - 1]) {
+            uniqueFrameTimes.push(currentTime);
+            adjUserPoses.push(userPoses[i]);
+        }
+    }
+
+    return { adjUserPoses, uniqueFrameTimes };
+}
 
 /**
  * Calculates the jerk (third derivative) of the poses at every frame.
- * @param poses - Array of poses at different frames (either user or reference poses)
- * @param frameTimes - Array of frame times corresponding to the poses
- * @returns Array of jerks (third derivatives) of poses
+ *
+ * @param {Pose2DPixelLandmarks[]} poses - Array of poses at different frames (either user or reference poses).
+ * @param {number[]} frameTimes - Array of frame times corresponding to the poses.
+ * @param {number} scale - Scaling factor for jerk calculation.
+ * @returns {number[][][]} Array of jerks (third derivatives) of poses.
+ *
+ * @throws {Error} Throws an error if there are insufficient frames for calculating the third derivative.
  */
  function calculateJerks(
     poses: Pose2DPixelLandmarks[],
     frameTimes: number[],
-    scale: number
+    scale: number, 
 ): number[][][] {
     const numFrames = poses.length;
 
@@ -29,21 +54,20 @@ import { GetNormalizedVector, GetScaleIndicator, GetVector, QijiaMethodCompariso
 
         const vectorDissimilarityScores = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
             const [srcLandmark, destLandmark] = vecLandmarkIds
-            const [refX_ip, refY_ip] = GetVector(poses[i-1], srcLandmark, destLandmark);
-            const [refX_ipp, refY_ipp] = GetVector(poses[i-2], srcLandmark, destLandmark);
-            const [refX_in, refY_in] = GetVector(poses[i+1], srcLandmark, destLandmark);
-            const [refX_inn, refY_inn] = GetVector(poses[i+2], srcLandmark, destLandmark);
+            const [refX_ip, refY_ip] = Get2DVector(poses[i-1], srcLandmark, destLandmark);
+            const [refX_ipp, refY_ipp] = Get2DVector(poses[i-2], srcLandmark, destLandmark);
+            const [refX_in, refY_in] = Get2DVector(poses[i+1], srcLandmark, destLandmark);
+            const [refX_inn, refY_inn] = Get2DVector(poses[i+2], srcLandmark, destLandmark);
             
             const d3x = (
                 (refX_inn - 2 * refX_in + 2 * refX_ip - refX_ipp) /
                 (dt1 * dt2 * dt3)
-            ) * scale; // Apply scaling factor here
+            ) / scale;
     
             const d3y = (
                 (refY_inn - 2 * refY_in + 2 * refY_ip - refY_ipp) /
                 (dt1 * dt2 * dt3)
-            ) * scale; // Apply scaling factor here
-
+            ) / scale;
 
             return [d3x, d3y];
         });
@@ -55,59 +79,63 @@ import { GetNormalizedVector, GetScaleIndicator, GetVector, QijiaMethodCompariso
 }
 
 /**
- * Calculates the standard deviation of the differences between user and reference jerks.
- * @param userPoses - Array of user poses
- * @param referencePoses - Array of reference poses
- * @param frameTimes - Array of frame times corresponding to the poses
- * @returns Standard deviation of the differences between user and reference jerks
+ * Calculates the standard deviation of the differences between adjusted user jerks and reference jerks.
+ *
+ * @param {Pose2DPixelLandmarks[]} adjUserPoses - Array of adjusted user poses.
+ * @param {Pose2DPixelLandmarks[]} referencePoses - Array of reference poses.
+ * @param {number[]} uniqueFrameTimes - Array of unique frame times corresponding to the poses.
+ * @returns {number} Standard deviation of the differences between user and reference jerks.
+ *
+ * @throws {Error} Throws an error if there is invalid input data, mismatched array lengths,
+ * or if jerks calculation fails.
  */
-export function calculateSDJerks(
-    userPoses: Pose2DPixelLandmarks[],
+ export function calculateSDJerks(
+    adjUserPoses: Pose2DPixelLandmarks[],
     referencePoses: Pose2DPixelLandmarks[],
-    frameTimes: number[]
+    uniqueFrameTimes: number[]
 ): number {
-    let usrScale = GetScaleIndicator(userPoses[0]);
-    let refScale = GetScaleIndicator(referencePoses[0]);
+    if (!adjUserPoses || adjUserPoses.length === 0 || !referencePoses || referencePoses.length === 0) {
+        throw new Error("Invalid input data. Both adjUserPoses and referencePoses must be non-empty arrays.");
+    }
 
-    let userJerks = calculateJerks(userPoses, frameTimes, usrScale);
-    let referenceJerks = calculateJerks(referencePoses, frameTimes, refScale);
+    if (adjUserPoses.length !== referencePoses.length) {
+        throw new Error("Mismatched array lengths between adjUserPoses and referencePoses.");
+    }
 
-    const squaredDifferences = userJerks.map((userJerk, index) => {
-        const referenceJerk = referenceJerks[index];
+    const usrScale = GetScaleIndicator(adjUserPoses[0]);
+    const refScale = GetScaleIndicator(referencePoses[0]);
 
-        const frameSquaredDiff = userJerk.map((usrVector, vectorIndex) => {
-            const refVector = referenceJerk[vectorIndex];
+    if (!uniqueFrameTimes || uniqueFrameTimes.length === 0) {
+        throw new Error("Bad uniqueFrameTimes");
+    }
 
-            // Ensure that both user and reference vectors have the same length (x and y components)
-            if (usrVector.length !== refVector.length) {
-                throw new Error("User and reference vectors have different dimensions.");
+    const userJerks = calculateJerks(adjUserPoses, uniqueFrameTimes, usrScale);
+    if (!userJerks || userJerks.length === 0) {
+        throw new Error("Failed to calculate user jerks.");
+    }
+
+    const referenceJerks = calculateJerks(referencePoses, uniqueFrameTimes, refScale);
+    if (!referenceJerks || referenceJerks.length === 0) {
+        throw new Error("Failed to calculate reference jerks.");
+    }
+
+    let jerkDifference: number[] = [];
+
+    for (let time = 0; time < uniqueFrameTimes.length; time++) {
+        if (userJerks[time] && referenceJerks[time]) {
+            for (let vec = 0; vec < userJerks[time].length; vec++) {
+                if (userJerks[time][vec] && referenceJerks[time][vec]) {
+                    for (let coord = 0; coord < userJerks[time][vec].length; coord++) {
+                        if (referenceJerks[time][vec][coord] !== 0) {
+                            // console.log(`userJerks[${time}][${vec}][${coord}] = ${userJerks[time][vec][coord]}`);
+                            // console.log(`referenceJerks[${time}][${vec}][${coord}] = ${referenceJerks[time][vec][coord]}`);
+                            jerkDifference.push(userJerks[time][vec][coord] - referenceJerks[time][vec][coord]);
+                        }
+                    }
+                }
             }
+        }
+    }
 
-            // Calculate squared difference for each vector component
-            const vectorSquaredDiff = usrVector.reduce((total, usrComponent, componentIndex) => {
-                const refComponent = refVector[componentIndex];
-                const squaredComponentDiff = Math.pow(usrComponent - refComponent, 2);
-                return total + squaredComponentDiff;
-            }, 0);
-
-            // Calculate the average squared difference for the vector
-            return vectorSquaredDiff / usrVector.length;
-        });
-
-        // Calculate the mean squared difference for the frame
-        const meanSquaredDifference = frameSquaredDiff.reduce((total, frameDiff) => total + frameDiff, 0) / frameSquaredDiff.length;
-
-        return meanSquaredDifference;
-    });
-
-    // Calculate the overall mean squared difference across all frames
-    const overallMeanSquaredDifference = squaredDifferences.reduce(
-        (total, frameDiff) => total + frameDiff,
-        0
-    ) / squaredDifferences.length;
-
-    // Calculate the standard deviation as the square root of the mean squared difference
-    const standardDeviation = Math.sqrt(overallMeanSquaredDifference);
-
-    return standardDeviation;
+    return getArraySD(jerkDifference);
 }
