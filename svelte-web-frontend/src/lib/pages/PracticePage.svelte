@@ -103,7 +103,7 @@ function unPauseVideo() {
     state = "playing";
 }
 
-async function getFeedback(performanceSummary: evalAI.PerformanceSummary, recordedTrack:  PerformanceEvaluationTrack<evalAI.EvaluationV1Result> | null) {
+async function getFeedback(performanceSummary: evalAI.PerformanceSummary | null, recordedTrack:  PerformanceEvaluationTrack<evalAI.EvaluationV1Result> | null) {
     const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
     const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
     webcamRecorder?.stop();

@@ -1,8 +1,20 @@
-import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
+import { PoseLandmarkKeys, type Pose2DPixelLandmarks, type Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
+import Papa from "papaparse";
 
 // Used to represent evaluation data.
 type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
+}
+
+function camelCaseToCAPITALIZED_SNAKE_CASE(camelCaseString: string): string {
+    return camelCaseString
+        // Add an underscore before all capital letters 
+        // (other than one occuring as the first character)
+        .replace(
+            /(?<!^)[A-Z]/g, 
+            (letter) => `_${letter.toUpperCase()}`
+        )
+        .toUpperCase()
 }
 
 // Type definition for a performance evaluation track.
@@ -45,6 +57,59 @@ export class PerformanceEvaluationTrack<EvaluationType extends object> {
         for(const key of evaluationkeys) {
             this.evaluation[key].push(evaluationResult[key])
         }
+    }
+
+    getUserPose2DCsv(): string {
+        
+        const pose2dHeaderCols = ['frameTime', 
+            ... PoseLandmarkKeys.flatMap((key, i) => {
+                const landmarkName = camelCaseToCAPITALIZED_SNAKE_CASE(key)
+                return [
+                    `${landmarkName}_x`,
+                    `${landmarkName}_y`,
+                    `${landmarkName}_dist_from_camera`,
+                ]
+            })
+        ]
+        
+        return Papa.unparse([
+            pose2dHeaderCols, 
+            ...this.user2dPoses.map(
+                (pose, frame_i) => 
+                [   
+                    this.frameTimes[frame_i],
+                    ...pose.flatMap((lm) => [
+                        [lm.x], [lm.y], [lm.dist_from_camera]
+                    ])
+                ]
+            )
+        ])
+    }
+
+    getUserPose3DCsv(): string {
+        const pose3dHeaderCols = ['frameTime', 
+            ... PoseLandmarkKeys.flatMap((key) => {
+                const landmarkName = camelCaseToCAPITALIZED_SNAKE_CASE(key)
+                return [
+                    `${landmarkName}_x`,
+                    `${landmarkName}_y`,
+                    `${landmarkName}_z`,
+                ]
+            })
+        ]
+        
+        return Papa.unparse([
+            pose3dHeaderCols, 
+            ...this.user3dPoses.map(
+                (pose, frame_i) => 
+                [   
+                    this.frameTimes[frame_i],
+                    ...pose.flatMap((lm) => [
+                        [lm.x], [lm.y], [lm.z]
+                    ])
+                ]
+            )
+        ])
     }
 }
 

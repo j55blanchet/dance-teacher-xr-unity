@@ -66,19 +66,30 @@ function promptDownload(objUrl: string, filename: string) {
 }
 
 function exportRecordings() {
+
+    const filename = prompt('Please enter a filename');
+    if (!filename?.length){
+        return;
+    }
     const track = feedback?.debug?.recordedTrack;
     if (track) {
-        // Create json file with track recording
-        let recording = JSON.stringify(track);
-        let blob = new Blob([recording], {type: "application/json"});
-        let url = URL.createObjectURL(blob);
-        
-        promptDownload(url, "evaluation-track.json")
-        URL.revokeObjectURL(url);
+        // Create pose2d csv file with track
+        let blob2d = new Blob([track.getUserPose2DCsv()], {type: "text/csv"});
+        let url2d = URL.createObjectURL(blob2d);
+        promptDownload(url2d, `${filename}-pose2d.csv`)
+        URL.revokeObjectURL(url2d);
+
+        // Create pose3d csv file with track
+        let blob3d = new Blob([track.getUserPose3DCsv()], {type: "text/csv"});
+        let url3d = URL.createObjectURL(blob3d);
+        promptDownload(url3d, `${filename}-pose3d.csv`)
+        URL.revokeObjectURL(url3d);
     }
+
+    
     const webcamRecording = feedback?.debug?.recordedVideoUrl;
     if (webcamRecording) {
-        promptDownload(webcamRecording, "evaluation-webcam.webm")
+        promptDownload(webcamRecording, `${filename}.webm`)
     }
 }
 
