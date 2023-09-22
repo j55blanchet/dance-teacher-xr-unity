@@ -1,3 +1,5 @@
+import type { EvaluationV1Result, PerformanceSummary } from "$lib/ai/UserDanceEvaluator";
+import type { PerformanceEvaluationTrack } from "$lib/ai/UserEvaluationRecorder";
 import type { ValueOf } from "$lib/data/dances-store";
 
 export const TerminalFeedbackBodyParts = {
@@ -14,7 +16,7 @@ export type TerminalFeedbackBodyPartIndex = ValueOf<typeof TerminalFeedbackBodyP
 export type TerminalFeedbackAction = 'repeat' | 'next';
 export type TerminalFeedback = {
     headline: string;
-    subHeadline: string;
+    subHeadline: string; 
     suggestedAction: TerminalFeedbackAction;
     score?: {
         achieved: number;
@@ -22,5 +24,9 @@ export type TerminalFeedback = {
     };
     incorrectBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     correctBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
-    debugJson?: object;
+    debug?: {
+        performanceSummary?: PerformanceSummary;
+        recordedTrack?: PerformanceEvaluationTrack<EvaluationV1Result>;
+        recordedVideoUrl?: string;
+    }
 };

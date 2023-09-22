@@ -5,7 +5,7 @@ export const initialState = "waitWebcam";
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { pauseInPracticePage, debugPauseDurationSecs } from '$lib/model/settings';
+import { pauseInPracticePage, debugPauseDurationSecs, debugMode } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
 import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation } from "$lib/data/dances-store";
@@ -23,6 +23,7 @@ import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
 import { QIJIA_SKELETON_SIMILARITY_MAX_SCORE } from '$lib/ai/skeleton-similarity';
+import type { PerformanceEvaluationTrack } from '$lib/ai/UserEvaluationRecorder';
 
 export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
@@ -76,6 +77,13 @@ let countdownActive = false;
 const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
 let currentPlaybackEndtime = practiceActivity?.endTime ?? 0;
 
+let webcamRecorder: MediaRecorder | null = null;
+let webcamRecordedChunks: Blob[] = [];
+
+let resolveWebcamRecordedObjectUrl: ((url: string) => void) | null = null;  
+let rejectWebcamRecordedObjectUrl: ((reason?: any) => void) | null = null;
+let webcamRecordedObjectURL: Promise<string> | null = null;
+
 $: {
     danceSrc = getDanceVideoSrc(dance);
 }
@@ -95,6 +103,35 @@ function unPauseVideo() {
     state = "playing";
 }
 
+async function getFeedback(performanceSummary: evalAI.PerformanceSummary, recordedTrack:  PerformanceEvaluationTrack<evalAI.EvaluationV1Result> | null) {
+    const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
+    const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
+    webcamRecorder?.stop();
+    let videoURL: undefined | string = undefined;
+    if (webcamRecordedObjectURL) {
+        videoURL = await webcamRecordedObjectURL;
+    }
+
+    let feedback: TerminalFeedback
+    try {
+        feedback = await generateFeedbackWithClaudeLLM(
+        qijiaOverallScore,
+        QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
+        )
+    } catch(e) {
+        console.warn("Error generating feedback", e);
+        feedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+    }
+    
+    feedback.debug = {
+        performanceSummary: performanceSummary ?? undefined,
+        recordedTrack: recordedTrack ?? undefined,
+        recordedVideoUrl: videoURL,
+    }
+
+    return feedback;
+}
+
 // Auto-pause the video when the practice activity is over
 $: {
     if ((practiceActivity?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
@@ -102,24 +139,14 @@ $: {
         isVideoPausedBinding = true;
 
         if (currentPlaybackEndtime === practiceActivity?.endTime) {
+            const recordedTrack = evaluator?.recorder.tracks.get(trialId);
             performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
             terminalFeedback = null;
             state = "feedback";
-
-            const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
-            const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
-
-            generateFeedbackWithClaudeLLM(
-                qijiaOverallScore,
-                QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
-            ).then((feedback) => {
-                terminalFeedback = feedback;
-                terminalFeedback.debugJson = performanceSummary ?? undefined;
-            }).catch((e) => {
-                console.warn("Error generating feedback", e);
-                terminalFeedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
-                terminalFeedback.debugJson = performanceSummary ?? undefined;
-            });
+            getFeedback(performanceSummary, recordedTrack ?? null)
+                .then(feedback => {
+                    terminalFeedback = feedback;
+                });
         }
         else {
             state = "paused"
@@ -183,6 +210,31 @@ async function startCountdown() {
 
     state = "playing"
     countdown = -1;
+
+    resolveWebcamRecordedObjectUrl = null;
+    rejectWebcamRecordedObjectUrl = null;
+    webcamRecordedObjectURL = null;
+    webcamRecorder?.stop();
+    webcamRecorder = null;
+    webcamRecordedChunks = [];
+
+    if ($debugMode) {
+        webcamRecordedObjectURL = new Promise((resolve, reject) => {
+            resolveWebcamRecordedObjectUrl = resolve;
+            rejectWebcamRecordedObjectUrl = reject;
+        });
+        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: 'video/webm' });
+        webcamRecordedChunks = [];
+        webcamRecorder.addEventListener('dataavailable', (e) => {
+            webcamRecordedChunks.push(e.data);
+        });
+        webcamRecorder.addEventListener('stop', () => {
+            let recordedVideoURL = URL.createObjectURL(new Blob(webcamRecordedChunks));
+            resolveWebcamRecordedObjectUrl?.(recordedVideoURL);
+        });
+        webcamRecorder.start();
+    }
+
     isVideoPausedBinding = false;
     countdownActive = false;
 }
@@ -314,12 +366,17 @@ onMount(() => {
         if (toggleSkeletonInvervel) {
             clearInterval(toggleSkeletonInvervel);
         }
+        if (webcamRecorder) {
+            webcamRecorder.stop();
+            webcamRecorder = null;
+        }
     }
 })
 
 </script>
 
 <section class="practicePage">
+    {#if state !== "feedback"}
     <div>
         <!-- <video 
                bind:currentTime={videoCurrentTime}
@@ -331,7 +388,6 @@ onMount(() => {
                >
             <source src={danceSrc} type="video/mp4" />
         </video> -->
-
         <VideoWithSkeleton
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
@@ -344,7 +400,6 @@ onMount(() => {
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-
         {#if countdown >= 0}
             <div class="countdown">
                 <span class="count">
@@ -353,6 +408,7 @@ onMount(() => {
             </div>
         {/if}
     </div>
+    {/if}
     {#if state === "feedback"}
     <div>
         <TerminalFeedbackDialog 

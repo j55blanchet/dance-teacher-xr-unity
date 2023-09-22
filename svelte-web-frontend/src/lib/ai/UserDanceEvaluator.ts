@@ -6,7 +6,7 @@ import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
 
 // Type definition for the result of evaluating a user's performance.
 export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["evaluateFrame"]>>;
-
+export type PerformanceSummary = NonNullable<ReturnType<UserDanceEvaluatorV1["getPerformanceSummary"]>>;
 /**
  * Evaluates a user's dance performance against a reference dance.
  */
@@ -67,6 +67,7 @@ export class UserDanceEvaluatorV1 {
             trialId,
             frameTime,
             userPose2D,
+            userPose3D,
             evaluationResult
         )
         return evaluationResult;

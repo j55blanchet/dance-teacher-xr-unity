@@ -52,11 +52,35 @@ $: {
     skeletonHighlights = [...incorrectHighlights, ...correctHighlights];
 }
 
-$: $debugMode, feedback?.debugJson, reset('microlight'); // re-run microlight syntax highlighting
+$: $debugMode, feedback?.debug?.performanceSummary, reset('microlight'); // re-run microlight syntax highlighting
 
 onMount(() => {
     reset('microlight');
 });
+
+function promptDownload(objUrl: string, filename: string) {
+    const link = document.createElement('a');
+    link.href = objUrl;
+    link.download = filename;
+    link.click();
+}
+
+function exportRecordings() {
+    const track = feedback?.debug?.recordedTrack;
+    if (track) {
+        // Create json file with track recording
+        let recording = JSON.stringify(track);
+        let blob = new Blob([recording], {type: "application/json"});
+        let url = URL.createObjectURL(blob);
+        
+        promptDownload(url, "evaluation-track.json")
+        URL.revokeObjectURL(url);
+    }
+    const webcamRecording = feedback?.debug?.recordedVideoUrl;
+    if (webcamRecording) {
+        promptDownload(webcamRecording, "evaluation-webcam.webm")
+    }
+}
 
 </script>
 
@@ -77,11 +101,16 @@ onMount(() => {
         />
     </div>
     {/if}
-    {#if $debugMode && feedback?.debugJson}
-    <pre class="microlight">{JSON.stringify(feedback.debugJson, replaceJSONForStringifyDisplay, 2)}</pre>
+    {#if $debugMode && feedback?.debug?.performanceSummary}
+    <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
     {/if}
     <button class="button outlined thick primary" on:click={primaryButtonClicked}>{primaryButtonTitle}</button>
     <button class="button outlined thin secondary" on:click={secondaryButtonClicked}>{secondaryButtonTitle}</button>
+    {#if $debugMode && feedback?.debug?.recordedTrack}
+    <button class="button" on:click={exportRecordings}>
+        Export Recorded Track
+    </button>
+    {/if}
 </div>
 
 

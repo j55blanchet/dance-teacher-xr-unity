@@ -1,17 +1,51 @@
-import type { Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-
-// Type definition for a performance evaluation track.
-export type PerformanceEvaluationTrack<EvaluationType> = {
-    creationDate: Date;
-    frameTimes: number[];
-    recordTimesMs: number[];
-    userPoses: Pose2DPixelLandmarks[];
-    evaluation: ArrayVersions<EvaluationType>;
-}
+import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 
 // Used to represent evaluation data.
 type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
+}
+
+// Type definition for a performance evaluation track.
+export class PerformanceEvaluationTrack<EvaluationType extends object> {
+    public creationDate: Date;
+    public frameTimes: number[];
+    public recordTimesMs: number[];
+    public user2dPoses: Pose2DPixelLandmarks[];
+    public user3dPoses: Pose3DLandmarkFrame[];
+    public evaluation: ArrayVersions<EvaluationType>;
+
+    constructor(public id: string, frameTime: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
+        this.creationDate = new Date();
+        this.frameTimes = [frameTime];
+        this.recordTimesMs = [new Date().getTime()];
+        this.user2dPoses = [user2dPose];
+        this.user3dPoses = [user3dPose];
+
+        const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
+        
+        this.evaluation = evaluationkeys.reduce((acc, key) => {
+            acc[key] = [evaluationResult[key]]
+            return acc
+        }, {} as ArrayVersions<EvaluationType>)
+    }
+
+    recordEvaluationFrame(frameTime: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
+        const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
+
+        const lastFrameTime = this.frameTimes.slice(-1)[0] ?? -Infinity
+        if (frameTime < lastFrameTime) {
+            throw new Error("Frame time must be increasing")
+        }
+
+        this.frameTimes.push(frameTime)
+        this.recordTimesMs.push(new Date().getTime());
+        this.user2dPoses.push(user2dPose)
+        this.user3dPoses.push(user3dPose)
+
+        for(const key of evaluationkeys) {
+            this.evaluation[key].push(evaluationResult[key])
+        }
+    }
 }
 
 /**
@@ -27,44 +61,16 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
      * Records a frame of user performance evaluation.
      * @param id - Identifier of the current attempt, used to separate recordings into tracks
      * @param frameTime - Frame time in seconds
-     * @param userPose - User's pose at the given frame time
+     * @param user2dPose - User's pose at the given frame time
      * @param evaluationResult - Result of the evaluation for this frame
      */
-    recordEvaluationFrame(id: string, frameTime: number, userPose: Pose2DPixelLandmarks, evaluationResult: EvaluationType) {
-        const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
-
-        let track: PerformanceEvaluationTrack<EvaluationType>
-        if(!this.tracks.has(id)) {
-            track = {
-                creationDate: new Date(),
-                frameTimes: [],
-                recordTimesMs: [],
-                userPoses: [],
-                evaluation: evaluationkeys.reduce((acc, key) => {
-                    acc[key] = []
-                    return acc
-                }, {} as ArrayVersions<EvaluationType>)
-            }
-            this.tracks.set(id, track)
-        } else {
-            // We know the track exists, since we just checked it
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            track = this.tracks.get(id)!
+    recordEvaluationFrame(id: string, frameTime: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
+        let track = this.tracks.get(id);
+        if (!track) {
+            track = new PerformanceEvaluationTrack(id, frameTime, user2dPose, user3dPose, evaluationResult);
+            this.tracks.set(id, track);
         }
-
-        const lastFrameTime = this.tracks.get(id)?.frameTimes.slice(-1)[0] ?? -Infinity
-        if (frameTime < lastFrameTime) {
-            throw new Error("Frame time must be increasing")
-        }
-
-        
-        track.frameTimes.push(frameTime)
-        track.recordTimesMs.push(new Date().getTime());
-        track.userPoses.push(userPose)
-
-        for(const key of evaluationkeys) {
-            track.evaluation[key].push(evaluationResult[key])
-        }
+        track.recordEvaluationFrame(frameTime, user2dPose, user3dPose, evaluationResult);
     }
 
     /**
@@ -86,7 +92,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
         }
 
         const frameCount = track.frameTimes.length;
-        const userPosesTrack = track.userPoses;
+        const userPosesTrack = track.user2dPoses;
 
         // Calculate frame times for the specified frame offsets relative to the current frame time.
         const targetFrameTimes = frameOffsets.map(offset => currentFrameTime - offset);
