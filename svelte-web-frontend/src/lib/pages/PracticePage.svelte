@@ -6,19 +6,19 @@ export const initialState = "waitWebcam";
 import { v4 as generateUUIDv4 } from 'uuid';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { pauseInPracticePage, debugPauseDurationSecs } from '$lib/model/settings';
-import { GetPixelLandmarksFromNormalizedLandmarks } from '$lib/webcam/mediapipe-utils';
+import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
-import type { Dance, Pose2DReferenceData } from "$lib/dances-store";
+import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation } from "$lib/data/dances-store";
 import * as evalAI from '$lib/ai/UserDanceEvaluator';
 import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai/feedback';
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
-import { getDanceVideoSrc, loadPoseInformation } from "$lib/dances-store";
+
 import { onMount, createEventDispatcher } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
-import { MirrorXNormalizedPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
+import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
@@ -61,7 +61,8 @@ let isVideoPausedBinding: boolean = true;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
-let referenceDancePoses: Pose2DReferenceData | null = null;
+let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
+let referneceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
 let lastEvaluationResult: evalAI.EvaluationV1Result | null = null;
 let evaluator: evalAI.UserDanceEvaluatorV1 | null = null;
@@ -113,9 +114,11 @@ $: {
                 QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
             ).then((feedback) => {
                 terminalFeedback = feedback;
+                terminalFeedback.debugJson = performanceSummary ?? undefined;
             }).catch((e) => {
                 console.warn("Error generating feedback", e);
                 terminalFeedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+                terminalFeedback.debugJson = performanceSummary ?? undefined;
             });
         }
         else {
@@ -197,11 +200,23 @@ export async function reset() {
     const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
     
-    referenceDancePoses = await loadPoseInformation(dance);
-    await virtualMirrorElement.webcamStartedPromise;    
+    // Start doing these 3d tasks in parallel, wait for them
+    // all to complete betore continuing.
+    const [ref2dPoses, ref3dPoses, ignore_value] = await Promise.all([
+        load2DPoseInformation(dance),
+        load3DPoseInformation(dance),
+        virtualMirrorElement.webcamStartedPromise,
+    ]);    
+
+    referenceDancePoses2D = ref2dPoses;
+    referneceDancePoses3D = ref3dPoses;
+
     state = "waitStart";
 
-    evaluator = new evalAI.UserDanceEvaluatorV1(referenceDancePoses);
+    evaluator = new evalAI.UserDanceEvaluatorV1(
+        ref2dPoses,
+        ref3dPoses
+    );
     // console.log("DancePoseInformation", referenceDancePoses);
     await poseEstimationReady;
 
@@ -240,7 +255,7 @@ function poseEstimationFrameReceived(e: any) {
         return;
     }
 
-    if (!referenceDancePoses) {
+    if (!referenceDancePoses2D) {
         console.log("No dance pose information", e);
         return;
     };
@@ -255,19 +270,22 @@ function poseEstimationFrameReceived(e: any) {
 
     const srcWidth = e?.detail?.srcWidth;
     const srcHeight = e?.detail?.srcHeight;
-    const userNormalizedPose = (e?.detail?.estimatedPose ?? null) as NormalizedLandmark[] | null;
-    if (!userNormalizedPose) { return; }
+    const userNormalizedPose = (e?.detail?.estimated2DPose ?? null) as NormalizedLandmark[] | null;
+    const user3DPose = (e?.detail?.estimated3DPose ?? null) as Pose3DLandmarkFrame | null;
+    if (!userNormalizedPose || !user3DPose) { return; }
 
     // Flip normalized pose, since the user will be mirroring the dance
-    let evaluationPose = GetPixelLandmarksFromNormalizedLandmarks(userNormalizedPose, srcWidth, srcHeight);
+    let evaluation2DPose = GetPixelLandmarksFromNormalizedLandmarks(userNormalizedPose, srcWidth, srcHeight);
+    let evaluation3DPose = user3DPose;MirrorXPose
     if (mirrorForEvaluation) {
-        const userDanceFlippedNormalizedPose = MirrorXNormalizedPose(userNormalizedPose);
+        const userDanceFlippedNormalizedPose = MirrorXPose(userNormalizedPose);
         const userDanceFlippedPixelPose = GetPixelLandmarksFromNormalizedLandmarks(userDanceFlippedNormalizedPose, srcWidth, srcHeight);
-        evaluationPose = userDanceFlippedPixelPose;
+        evaluation2DPose = userDanceFlippedPixelPose;
+        evaluation3DPose = MirrorXPose(user3DPose);
     }
-    if (!evaluationPose) { return; }
+    if (!evaluation2DPose) { return; }
     try {
-        lastEvaluationResult = evaluator?.evaluateFrame(trialId, videoTimestamp, evaluationPose) ?? null;
+        lastEvaluationResult = evaluator?.evaluateFrame(trialId, videoTimestamp, evaluation2DPose, evaluation3DPose) ?? null;
     }
     catch (e) {
         lastEvaluationResult = null;
@@ -321,7 +339,7 @@ onMount(() => {
             bind:duration={videoDuration}
             flipHorizontal={flipVideo}
             fitToFlexbox={fitVideoToFlexbox}
-            poseData={referenceDancePoses}
+            poseData={referenceDancePoses2D}
             drawSkeleton={drawReferenceDanceSkeleton}
         >
             <source src={danceSrc} type="video/mp4" />
@@ -373,6 +391,8 @@ section {
     flex-direction: row;
     align-items: center;
     justify-content: stretch;
+    
+    box-sizing: border-box;
     height: 100%;
     width: 100%;
     gap: 1rem;

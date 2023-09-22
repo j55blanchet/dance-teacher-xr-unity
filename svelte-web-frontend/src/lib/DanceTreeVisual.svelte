@@ -1,7 +1,7 @@
 <script lang="ts">
 import { debugMode } from './model/settings';
 import { createEventDispatcher } from 'svelte';
-import type { DanceTreeNode } from '$lib/dances-store';
+import type { DanceTreeNode } from '$lib/data/dances-store';
 
 export let enableClick: boolean = false;
 export let currentTime: number = 0;

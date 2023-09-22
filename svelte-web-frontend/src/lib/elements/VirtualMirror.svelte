@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PoseLandmarkKeys } from '$lib/webcam/mediapipe-utils';
+	import { PoseLandmarkKeys, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/pose-estimation.worker';
     import { DrawingUtils, PoseLandmarker, type NormalizedLandmark, type PoseLandmarkerResult } from "@mediapipe/tasks-vision";
@@ -48,7 +48,7 @@
     let lastFrameDecoded = -1;
     const poseEstimationInterFrameIdleTime = 50; // wait 50ms before dispatching the next frame.
 
-    let lastEstimatedPose: null | NormalizedLandmark[] = null;
+    let lastEstimated2DPose: null | NormalizedLandmark[] = null;
 
     let videoWidth = 1;
     let videoHeight = 1;
@@ -105,11 +105,18 @@
                 }
 
                 lastFrameDecoded = msg.data.frameId;
-                lastEstimatedPose = msg.data.estimatedPose;
+                const landmarkerResult = msg.data.landmarkerResult as PoseLandmarkerResult | null;
+                const allDetectedPersonsNormalizedLandmarks = landmarkerResult?.landmarks ?? [];
+                const estimated2DPose = allDetectedPersonsNormalizedLandmarks[0] ?? null; // get the pose of the first detected person
+                lastEstimated2DPose = estimated2DPose
+
+                const allDetectedPersons3DLandmarks = landmarkerResult?.worldLandmarks ?? [];
+                const estimated3DPose = allDetectedPersons3DLandmarks[0] ?? null; // get the pose of the first detected person
                 
                 const eventDetail = {
                     frameId: msg.data.frameId as number,
-                    estimatedPose: msg.data.estimatedPose as NormalizedLandmark[] | null,
+                    estimated2DPose: lastEstimated2DPose as NormalizedLandmark[] | null,
+                    estimated3DPose: estimated3DPose as Pose3DLandmarkFrame | null,
                     srcWidth: msg.data.srcWidth as number,
                     srcHeight: msg.data.srcHeight as number,
                 }
@@ -123,12 +130,12 @@
 
                 if (msg.data.frameId === lastFrameSent) {
                     lastFrameSent = -1;
-                    lastEstimatedPose = null;
+                    lastEstimated2DPose = null;
                 }
             } else if (msg.data.type == PoseEsimationResponses.resetComplete) {
                 console.log("Pose Estimation Reset Complete");
                 lastFrameSent = -1;
-                lastEstimatedPose = null;
+                lastEstimated2DPose = null;
             }
         };
 
@@ -169,15 +176,15 @@
         }
     }
 
-    onMount(async () => {		
+    onMount(() => {		
 		
         // Start pose estimation, if enabled
         if (poseEstimationEnabled) {
             setupPoseEstimation();
         }
 
-        await tick()
-        resizeCanvas();
+        // Schedule a canvas resize
+        tick().then(resizeCanvas);
 
         const resizeObserver = new ResizeObserver(entries => {
             if (!containerElement) return;
@@ -279,7 +286,7 @@
         }
 
         // Use the custom draw function. This allows for higher specificity
-        customDrawFn?.(canvasContext, lastEstimatedPose);
+        customDrawFn?.(canvasContext, lastEstimated2DPose);
 
         // Leave early if we're not drawing the skeleton
         if (!drawSkeleton) {
@@ -297,13 +304,13 @@
         // canvasContext.scale(drawWidth / videoElement.videoWidth, drawHeight / videoElement.videoHeight);
         // canvasContext.translate(drawX, drawY);
 
-        if(lastEstimatedPose && lastEstimatedPose.length === PoseLandmarkKeys.length) {
+        if(lastEstimated2DPose && lastEstimated2DPose.length === PoseLandmarkKeys.length) {
             drawingUtils?.drawConnectors(
-                lastEstimatedPose,
+                lastEstimated2DPose,
                 PoseLandmarker.POSE_CONNECTIONS
             )
             drawingUtils?.drawLandmarks(
-                lastEstimatedPose, {
+                lastEstimated2DPose, {
                     radius: (data) => DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1)
                 }
             );

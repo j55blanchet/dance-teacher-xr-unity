@@ -1,40 +1,16 @@
 <script>
-	import VirtualMirror from '$lib/elements/VirtualMirror.svelte';
-	import SketchButton from '$lib/elements/SketchButton.svelte';
-
+	import { writable } from 'svelte/store';
+	import { setContext } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
-
+	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
-	import { onMount } from "svelte";
-
-
-	let webcamStarted = false;
-	// const dispatch = createEventDispatcher();
-
-	// function handleWebcamStarted();
-	// 	dispatch('webcamStarted', webcamStarted);
-	// }
 
 </script>
 
-<div class="app">
-	<!-- <div class="background"> -->
-		<!-- <VirtualMirror bind:webcamStarted /> -->
-	<!-- </div> -->
-	<!-- <Header /> -->
-
-	<!-- {#if webcamStarted}
-		<main>
-			<SketchButton>Hi</SketchButton>
-			<slot />
-		</main>
-	{/if} -->
+<div class="app" class:noNavBar={$navbarProps.collapsed}>
+	<NavBar />
 
 	<slot />
-
-	<!--  <footer>
-		<p>visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to learn SvelteKit</p>
-	</footer> -->
 
 	<div class="debug">
 		{$webcamStream}
@@ -49,6 +25,12 @@
 		min-height: 100vh;
 		align-items: start;
 		justify-content: center;
+		--navbar_height: 3rem;
+		--content_height: calc(100vh - var(--navbar_height));
+	}
+
+	.app.noNavBar {
+		--content_height: 100vh;
 	}
 
 	.debug {

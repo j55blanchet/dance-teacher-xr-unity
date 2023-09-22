@@ -1,7 +1,8 @@
 <script lang="ts">
+export let disabled: boolean = false
 </script>
 
-<button on:click>
+<button on:click disabled={disabled}>
     <span>
         <slot></slot>
     </span>

@@ -1,6 +1,6 @@
 <script lang="ts">
-import { dances, danceTrees, makeDanceTreeSlug } from '$lib/dances-store';
-import type { DanceTree, Dance } from '$lib/dances-store';
+import { dances, danceTrees, makeDanceTreeSlug } from '$lib/data/dances-store';
+import type { DanceTree, Dance } from '$lib/data/dances-store';
 import FolderMenu from '$lib/elements/FolderMenu.svelte';
 import type { FolderContents, FolderMenuItem, FileMenuItem, MenuItem } from '$lib/elements/FolderMenu.svelte';
 

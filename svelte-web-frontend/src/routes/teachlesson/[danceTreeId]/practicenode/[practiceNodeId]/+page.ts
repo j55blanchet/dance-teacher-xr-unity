@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 
-import { getDanceAndDanceTreeFromDanceTreeId, findDanceTreeNode } from '$lib/dances-store.js';
+import { getDanceAndDanceTreeFromDanceTreeId, findDanceTreeNode } from '$lib/data/dances-store.js';
 
 import type { PageLoad } from './$types';
 

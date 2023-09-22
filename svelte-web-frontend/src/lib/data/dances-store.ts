@@ -1,6 +1,6 @@
 import Papa, { type ParseResult } from 'papaparse';
 
-import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
+import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 
 // import json data
 import dancesData from '$lib/data/bundle/dances.json';
@@ -93,7 +93,7 @@ function constrain(val: number, min: number, max: number) {
 /**
  * Reference data for a dance, in the form of an array of 2D pose landmarks for each frame of the dance.
  */
-export class Pose2DReferenceData {
+export class PoseReferenceData<T extends Pose2DPixelLandmarks | Pose3DLandmarkFrame> {
     
     /**
      * Create a new Pose2DReferenceData object
@@ -102,10 +102,9 @@ export class Pose2DReferenceData {
      * @param poses 2D pose landmarks for each frame of the reference data
      */
     constructor(
-        private danceId: string,
         private fps: number, 
         private frameIndices: number[],
-        private poses: Pose2DPixelLandmarks[]
+        private poses: T[]
     ) {
     }
 
@@ -114,7 +113,7 @@ export class Pose2DReferenceData {
      * @param timestamp Dance timestamp of the frame to get the pose for
      * @returns Pose information for the frame at the given timestamp, or null if no pose information is available for that frame
      */
-    getReferencePoseAtTime(timestamp: number): Pose2DPixelLandmarks | null {
+    getReferencePoseAtTime(timestamp: number): T | null {
 
         const targetFrameIndex = Math.floor(timestamp * this.fps);
 
@@ -152,34 +151,9 @@ export class Pose2DReferenceData {
     }
 }
 
-/**
- * Get the pose information for a dance. This is a CSV file with the pose information for 
- * each frame of the dance. It's returned in the form of an array of objects, where each object
- * is a frame of the dance, with keys corresponding to column names in the CSV file.
- * 
- * Example: 
- * ```
- * [{
- *  "frame": 0,
- *   "NOSE_x": 0.12,
- *   "NOSE_y": 0.34,
- *   "NOSE_z": 0.56,
- *    NOSE_vis": 0.98,
- *    "LEFT_EYE_INNER_x": 0.12,
- *    ...
- * },
- * ...]
- * ```
- * 
- * @param dance The dance to load the pose information for
- * @returns The pose information for the dance
- */
-export async function loadPoseInformation(dance: Dance): Promise<Pose2DReferenceData> {
-    const poseCsvPath = get2DPoseDataSrc(dance);
-    const response = await fetch(poseCsvPath);
+async function loadPoseInformation<T extends Pose2DPixelLandmarks | Pose3DLandmarkFrame>(csvpath: string, fps: number, rowToPose: (row: Record<string, number>) => T | null) {
+    const response = await fetch(csvpath);
     const text = await response.text();
-
-    // parse csv file
     const data: ParseResult<Record<string, never>> = await new Promise((res, rej) => {       
         Papa.parse(text, {
             header: true,
@@ -192,16 +166,38 @@ export async function loadPoseInformation(dance: Dance): Promise<Pose2DReference
     });
 
     // convert to array of pose information
-    return new Pose2DReferenceData(
-        dance.clipRelativeStem,
-        dance.fps, 
+    return new PoseReferenceData(
+        fps, 
         data.data.map((row) => +row[`frame`]), 
-        data.data.map((row) => GetPixelLandmarksFromPose2DRow(row))
-            .filter((pose) => pose !== null) as Pose2DPixelLandmarks[]
+        data.data.map((row) => rowToPose(row))
+                        .filter((pose) => pose !== null) as T[]
     )
 }
 
-function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>): Pose2DPixelLandmarks | null {
+/**
+ * Get the 2d pose information for a dance. It downloads a CSV file with the pose2d data, then converts
+ * the data into a 2d pixel landmark format
+ * @param dance The dance to load the pose information for
+ * @returns The pose information for the dance
+ */
+export async function load2DPoseInformation(dance: Dance): Promise<PoseReferenceData<Pose2DPixelLandmarks>> {
+    const pose2dCsvPath = get2DPoseDataSrc(dance);
+    return await loadPoseInformation(pose2dCsvPath, dance.fps, GetPixelLandmarksFromPose2DRow);
+}
+
+/**
+ * Get the 3d pose information for a dance. It downloads a CSV file with the holistic data, then converts
+ * the data into the 3d landmark format that mediapipe uses (but with the added visiblity component that as
+ * of 2023-09-18 is only present in the python solution).
+ * @param dance The dance to load the pose information for
+ * @returns The pose information for the dance.
+ */
+export async function load3DPoseInformation(dance: Dance): Promise<PoseReferenceData<Pose3DLandmarkFrame>> {
+    const pose3dCsvPath = getHolisticDataSrc(dance);
+    return await loadPoseInformation(pose3dCsvPath, dance.fps, GetPixelLandmarksFromPose3DRow);
+}
+
+function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) {
     if (!pose2drow) return null;
 
     return PoseLandmarkKeysUpperSnakeCase.map((key) => {
@@ -210,6 +206,19 @@ function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>): Pose
             y: pose2drow[`${key}_y`],
             dist_from_camera: pose2drow[`${key}_distance`],
             visibility: pose2drow[`${key}_vis`]
+        }
+    });
+}
+
+function GetPixelLandmarksFromPose3DRow(pose3drow: Record<string, number>) {
+    if (!pose3drow) return null;
+    
+    return PoseLandmarkKeysUpperSnakeCase.map((key) => {
+        return {
+            x: pose3drow[`${key}_x`],
+            y: pose3drow[`${key}_y`],
+            z: pose3drow[`${key}_z`],
+            vis: pose3drow[`${key}_vis`]
         }
     });
 }

@@ -1,4 +1,4 @@
-import type { ValueOf } from "$lib/dances-store";
+import type { ValueOf } from "$lib/data/dances-store";
 
 export const TerminalFeedbackBodyParts = {
     'head': 0,

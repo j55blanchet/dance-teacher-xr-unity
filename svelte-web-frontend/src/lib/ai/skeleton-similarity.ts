@@ -1,6 +1,6 @@
 import { lerp } from "$lib/utils/math";
-import type { Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-import { GetNormalizedVector, GetScaleIndicator, GetVector, QijiaMethodComparisonVectors, getArrayMean, getInnerAngle, getMagnitude } from "./EvaluationCommonUtils";
+import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
+import { GetNormalized2DVector, GetScaleIndicator, Get2DVector, QijiaMethodComparisonVectors, getArrayMean, getInnerAngle, getMagnitude2DVec, Get3DNormalizedVector, getMagnitude3DVec, getInnerAngleFromFrame, BodyInnerAnglesComparisons } from "./EvaluationCommonUtils";
 
 /**
  * Type definition for an array of 8 numbers.
@@ -23,7 +23,7 @@ export const QIJIA_SKELETON_SIMILARITY_MAX_SCORE = 5.0;
 export function computeSkeletonDissimilarityQijiaMethod(
     refLandmarks: Pose2DPixelLandmarks, 
     userLandmarks: Pose2DPixelLandmarks
-): [number, Vec8] {
+) {
 
     // From the paper: 
     //     At each frame, we compute the absolute difference be-
@@ -39,10 +39,10 @@ export function computeSkeletonDissimilarityQijiaMethod(
     // Compare 8 Vectors
     const vectorDissimilarityScores = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
         const [srcLandmark, destLandmark] = vecLandmarkIds
-        const [refX, refY] = GetNormalizedVector(refLandmarks, srcLandmark, destLandmark)
-        const [usrX, usrY] = GetNormalizedVector(userLandmarks, srcLandmark, destLandmark)
+        const [refX, refY] = GetNormalized2DVector(refLandmarks, srcLandmark, destLandmark)
+        const [usrX, usrY] = GetNormalized2DVector(userLandmarks, srcLandmark, destLandmark)
         const [dx, dy] = [refX - usrX, refY - usrY]
-        return getMagnitude([dx, dy]) || 0;
+        return getMagnitude2DVec([dx, dy]) || 0;
     });
 
 
@@ -63,10 +63,13 @@ export function computeSkeletonDissimilarityQijiaMethod(
         return lerp(s, SRC_DISSIMILARITY_BEST, SRC_DISSIMILARITY_WORST, QIJIA_SKELETON_SIMILARITY_MAX_SCORE, TARGET_WORST)
     }
 
-    const overallOutputScore = scaleScore(rawOverallDisimilarityScore)
-    const vectorOutputScores = vectorDissimilarityScores.map(scaleScore) as Vec8;
+    const overallScore = scaleScore(rawOverallDisimilarityScore)
+    const vectorByVectorScore = vectorDissimilarityScores.map(scaleScore) as Vec8;
 
-    return [overallOutputScore, vectorOutputScores];
+    return {
+        overallScore,
+        vectorByVectorScore
+    };
 }
  
 // Constants for reliable 2D angle determination (in pixels)
@@ -99,15 +102,15 @@ export function computeSkeleton2DDissimilarityJulienMethod(
     // Another idea: Mediapipe includes an approximate z-value for each landmark. We can use this
     //               to simply compute angle changes in 3D space. This is a simpler approach, but
     //               should work so long as mediapipe's z-values are accurate enough.
-    const vectorScoreInfos = QijiaMethodComparisonVectors.map((vecLandmarkIds, i) => {
+    const vectorScoreInfos = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
         const [srcLandmark, destLandmark] = vecLandmarkIds
-        const [refX, refY] = GetVector(refLandmarks, srcLandmark, destLandmark)
-        const [usrX, usrY] = GetVector(userLandmarks, srcLandmark, destLandmark)
+        const [refX, refY] = Get2DVector(refLandmarks, srcLandmark, destLandmark)
+        const [usrX, usrY] = Get2DVector(userLandmarks, srcLandmark, destLandmark)
 
         const scaleRef = GetScaleIndicator(refLandmarks)
         const scaleUsr = GetScaleIndicator(userLandmarks)
 
-        const [magnitudeRef, magnitudeUsr] = [getMagnitude([refX, refY]), getMagnitude([usrX, usrY])]
+        const [magnitudeRef, magnitudeUsr] = [getMagnitude2DVec([refX, refY]), getMagnitude2DVec([usrX, usrY])]
         const adjustedMagnitudeUsr = magnitudeUsr * scaleRef / scaleUsr
         const magnitudePercentileDifferential = Math.abs(magnitudeRef - adjustedMagnitudeUsr) / Math.max(magnitudeRef, adjustedMagnitudeUsr)
 
@@ -149,7 +152,41 @@ export function computeSkeleton2DDissimilarityJulienMethod(
 
     return {
         // Score is scaled between 0 and 1 - 0 is the best and 1 is the worst.
-        score: getArrayMean(vectorScoreInfos.map((s) => s.score)),
-        infoByVetor: vectorScoreInfos
+        overallScore: getArrayMean(vectorScoreInfos.map((s) => s.score)),
+        vectorByVectorScores: vectorScoreInfos
     };
+}
+
+/**
+ * Calculate the similarity of two 3D poses, based on inner angle between preset pairs of  
+ * body comparison vectors (as opposed to Qijia's method, which directly compares the orientation of 
+ * vectors to the camera reference frame).
+ * @param refLandmarks 3D pose of the expert
+ * @param userLandmarks 3D pose of the user
+ * @returns An object containing the overall similarity score, and an array of the similarity scores for each vector
+ */
+export function computeSkeleton3DVectorAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame) {
+
+    const results = Object.fromEntries(
+        Object.entries(BodyInnerAnglesComparisons).map(([key, comparison]) => {
+            const userInnerAngle = getInnerAngleFromFrame(userLandmarks, comparison.vec1, comparison.vec2);
+            const refInnerAngle = getInnerAngleFromFrame(refLandmarks, comparison.vec1, comparison.vec2);
+            const angleDiff = Math.abs(userInnerAngle - refInnerAngle);
+            const scaledAngleDiff = angleDiff / comparison.rangeOfMotion;
+            return [key, { 
+                user: userInnerAngle, 
+                ref: refInnerAngle, 
+                diff: angleDiff,
+                diffDegrees: angleDiff * 180 / Math.PI,
+                score: (1 - scaledAngleDiff)
+            }];
+        })
+    );
+
+    const meanScore = getArrayMean(Object.values(results).map((r) => r.score));
+
+    return {
+        overallScore: meanScore,
+        individualScores: results,
+    }
 }
