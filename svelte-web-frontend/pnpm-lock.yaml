@@ -27,8 +27,8 @@ devDependencies:
     specifier: ^0.0.0
     version: 0.0.0
   '@types/papaparse':
-    specifier: ^5.3.8
-    version: 5.3.8
+    specifier: ^5.3.9
+    version: 5.3.9
   '@types/uuid':
     specifier: ^9.0.4
     version: 9.0.4
@@ -566,8 +566,8 @@ packages:
     resolution: {integrity: sha512-dP7f3LdZIysZnmvP3ANJYTSwg+wLLl8p7RqniVlV7j+oXSXAbt9h0WIBFmJy5inWZoX9wZN6eXx+YXd9Rh3RBA==}
     dev: true
 
-  /@types/papaparse@5.3.8:
-    resolution: {integrity: sha512-ArKIEOOWULbhi53wkAiRy1ze4wvrTfhpAj7Yfzva+EkmX2sV8PpFB+xqzJfzXNzK4me95FJH9QZt5NXFVGzOoQ==}
+  /@types/papaparse@5.3.9:
+    resolution: {integrity: sha512-sZcrKD63qA4/6GyBcVvX6AIp0AkpfyYk00CUQHMBvb4+OVXTZWyXUvidUZaai1wyKUVyJoxO7mgREam/pMRrDw==}
     dependencies:
       '@types/node': 20.5.7
     dev: true
