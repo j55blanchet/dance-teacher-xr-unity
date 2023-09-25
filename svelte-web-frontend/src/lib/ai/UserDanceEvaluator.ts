@@ -2,7 +2,7 @@ import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
 import { BodyInnerAnglesComparisons, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean } from './EvaluationCommonUtils';
 import type { SummaryMetric, TimeSeriesMetric } from "./evaluationmetrics/MotionMetric";
-import { computeSkeleton2DDissimilarityJulienMethod, computeSkeleton3DVectorAngleSimilarity, computeSkeletonDissimilarityQijiaMethod } from "./evaluationmetrics/skeleton-similarity";
+import { computeSkeleton2DDissimilarityJulienMethod, computeSkeleton3DVectorAngleSimilarity } from "./evaluationmetrics/skeleton-similarity";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
 
 // Type definition for the result of evaluating a user's performance.
@@ -18,31 +18,32 @@ export class UserDanceEvaluatorV1 {
     constructor(
         private reference2DData: PoseReferenceData<Pose2DPixelLandmarks>, 
         private reference3DData: PoseReferenceData<Pose3DLandmarkFrame>,
-        private liveMetrics: TimeSeriesMetric<unknown, unknown>[],
-        private summaryMetrics: SummaryMetric<unknown>[]
+        private liveMetrics: TimeSeriesMetric<unknown, unknown>[] = [],
+        private summaryMetrics: SummaryMetric<unknown>[] = []
     ) {};
 
     /**
      * Evaluates a single frame of a user's dance performance.
      * @param trialId Identifier of the current attempt, used to separate recordings into tracks
-     * @param frameTime Frame time in seconds
+     * @param videoTimeSecs Timestamp of the video, in seconds
+     * @param actualTimeMs Actual time this pose was captured, in milliseconds
      * @param userPose2D User's pose at the given frame time
      */
-    evaluateFrame(trialId: string, frameTime: number, userPose2D: Pose2DPixelLandmarks, userPose3D: Pose3DLandmarkFrame) {
+    evaluateFrame(trialId: string, videoTimeSecs: number, actualTimeMs: number, userPose2D: Pose2DPixelLandmarks, userPose3D: Pose3DLandmarkFrame) {
 
-        const referencePose2D = this.reference2DData.getReferencePoseAtTime(frameTime);
-        const referencePose3D = this.reference3DData.getReferencePoseAtTime(frameTime);
+        const referencePose2D = this.reference2DData.getReferencePoseAtTime(videoTimeSecs);
+        const referencePose3D = this.reference3DData.getReferencePoseAtTime(videoTimeSecs);
         if (!referencePose2D || !referencePose3D) {
             return null;
         }
 
-        const { 
-            overallScore: qijiaOverallScore,
-            vectorByVectorScore: qijiaByVectorScores
-         } = computeSkeletonDissimilarityQijiaMethod(
-            referencePose2D, 
-            userPose2D
-        )
+        // const { 
+        //     overallScore: qijiaOverallScore,
+        //     vectorByVectorScore: qijiaByVectorScores
+        //  } = computeSkeletonDissimilarityQijiaMethod(
+        //     referencePose2D, 
+        //     userPose2D
+        // )
 
         const {
             overallScore: julienOverallScore,
@@ -58,8 +59,8 @@ export class UserDanceEvaluatorV1 {
         } = computeSkeleton3DVectorAngleSimilarity(referencePose3D, userPose3D)
 
         const evaluationResult = { 
-            qijiaOverallScore,
-            qijiaByVectorScores,
+            // qijiaOverallScore,
+            // qijiaByVectorScores,
             julienOverallScore,
             julienByVectorScores,
             angleSimilarity3DOverallScore,
@@ -68,7 +69,8 @@ export class UserDanceEvaluatorV1 {
 
         this.recorder.recordEvaluationFrame(
             trialId,
-            frameTime,
+            videoTimeSecs,
+            actualTimeMs,
             userPose2D,
             userPose3D,
             evaluationResult
@@ -106,9 +108,9 @@ export class UserDanceEvaluatorV1 {
         });
         const angleSimilarityByVectorScores = new Map(angleSimilarityVectorScoreKeyValues)
         
-        const frameCount = track.frameTimes.length
-        const realtimeDurationSecs = (track.recordTimesMs[frameCount - 1] - track.recordTimesMs[0]) / 1000
-        const danceTimeDurationSecs = track.frameTimes[frameCount - 1] - track.frameTimes[0]
+        const frameCount = track.videoFrameTimesInSecs.length
+        const realtimeDurationSecs = (track.actualTimesInMs[frameCount - 1] - track.actualTimesInMs[0]) / 1000
+        const danceTimeDurationSecs = track.videoFrameTimesInSecs[frameCount - 1] - track.videoFrameTimesInSecs[0]
         const danceTimeFps = frameCount / danceTimeDurationSecs
         const realTimeFps = frameCount / realtimeDurationSecs
 
@@ -118,8 +120,8 @@ export class UserDanceEvaluatorV1 {
             realtimeDurationSecs,
             danceTimeFps,
             realTimeFps,
-            qijiaOverallScore,
-            qijiaByVectorScores,
+            // qijiaOverallScore,
+            // qijiaByVectorScores,
             julienOverallScore,
             julienByVectorScores,
             angleSimilarityOverallScore,

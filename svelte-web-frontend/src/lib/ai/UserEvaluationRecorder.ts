@@ -32,16 +32,16 @@ function camelCaseToCAPITALIZED_SNAKE_CASE(camelCaseString: string): string {
 // Type definition for a performance evaluation track.
 export class PerformanceEvaluationTrack<EvaluationType extends object> {
     public creationDate: Date;
-    public frameTimes: number[];
-    public recordTimesMs: number[];
+    public videoFrameTimesInSecs: number[];
+    public actualTimesInMs: number[];
     public user2dPoses: Pose2DPixelLandmarks[];
     public user3dPoses: Pose3DLandmarkFrame[];
     public evaluation: ArrayVersions<EvaluationType>;
 
-    constructor(public id: string, frameTime: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
+    constructor(public id: string, videoTimeInSecs: number, actualTimeInMs: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
         this.creationDate = new Date();
-        this.frameTimes = [frameTime];
-        this.recordTimesMs = [new Date().getTime()];
+        this.videoFrameTimesInSecs = [videoTimeInSecs];
+        this.actualTimesInMs = [actualTimeInMs];
         this.user2dPoses = [user2dPose];
         this.user3dPoses = [user3dPose];
 
@@ -53,16 +53,16 @@ export class PerformanceEvaluationTrack<EvaluationType extends object> {
         }, {} as ArrayVersions<EvaluationType>)
     }
 
-    recordEvaluationFrame(frameTime: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
+    recordEvaluationFrame(videoTimeSecs: number, actualTimeMs: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
         const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
 
-        const lastFrameTime = this.frameTimes.slice(-1)[0] ?? -Infinity
-        if (frameTime < lastFrameTime) {
+        const lastFrameTime = this.videoFrameTimesInSecs.slice(-1)[0] ?? -Infinity
+        if (videoTimeSecs < lastFrameTime) {
             throw new Error("Frame time must be increasing")
         }
 
-        this.frameTimes.push(frameTime)
-        this.recordTimesMs.push(new Date().getTime());
+        this.videoFrameTimesInSecs.push(videoTimeSecs)
+        this.actualTimesInMs.push(actualTimeMs);
         this.user2dPoses.push(user2dPose)
         this.user3dPoses.push(user3dPose)
 
@@ -73,8 +73,10 @@ export class PerformanceEvaluationTrack<EvaluationType extends object> {
 
     getUserPose2DCsv(): string {
         
-        const pose2dHeaderCols = ['frameTime', 
-            ... PoseLandmarkKeys.flatMap((key, i) => {
+        const pose2dHeaderCols = [
+            'frameTime', 
+            ... 
+            PoseLandmarkKeys.flatMap((key) => {
                 const landmarkName = camelCaseToCAPITALIZED_SNAKE_CASE(key)
                 return [
                     `${landmarkName}_x`,
@@ -89,7 +91,7 @@ export class PerformanceEvaluationTrack<EvaluationType extends object> {
             ...this.user2dPoses.map(
                 (pose, frame_i) => 
                 [   
-                    this.frameTimes[frame_i],
+                    this.videoFrameTimesInSecs[frame_i],
                     ...pose.flatMap((lm) => [
                         [lm.x], [lm.y], [lm.dist_from_camera]
                     ])
@@ -99,8 +101,10 @@ export class PerformanceEvaluationTrack<EvaluationType extends object> {
     }
 
     getUserPose3DCsv(): string {
-        const pose3dHeaderCols = ['frameTime', 
-            ... PoseLandmarkKeys.flatMap((key) => {
+        const pose3dHeaderCols = [
+            'frameTime', 
+            ... 
+            PoseLandmarkKeys.flatMap((key) => {
                 const landmarkName = camelCaseToCAPITALIZED_SNAKE_CASE(key)
                 return [
                     `${landmarkName}_x`,
@@ -115,7 +119,7 @@ export class PerformanceEvaluationTrack<EvaluationType extends object> {
             ...this.user3dPoses.map(
                 (pose, frame_i) => 
                 [   
-                    this.frameTimes[frame_i],
+                    this.videoFrameTimesInSecs[frame_i],
                     ...pose.flatMap((lm) => [
                         [lm.x], [lm.y], [lm.z]
                     ])
@@ -141,13 +145,12 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
      * @param user2dPose - User's pose at the given frame time
      * @param evaluationResult - Result of the evaluation for this frame
      */
-    recordEvaluationFrame(id: string, frameTime: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
-        let track = this.tracks.get(id);
+    recordEvaluationFrame(id: string, videoTimeSecs: number, actualTimeMs: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {        let track = this.tracks.get(id);
         if (!track) {
-            track = new PerformanceEvaluationTrack(id, frameTime, user2dPose, user3dPose, evaluationResult);
+            track = new PerformanceEvaluationTrack(id, videoTimeSecs, actualTimeMs, user2dPose, user3dPose, evaluationResult);
             this.tracks.set(id, track);
         }
-        track.recordEvaluationFrame(frameTime, user2dPose, user3dPose, evaluationResult);
+        track.recordEvaluationFrame(videoTimeSecs, actualTimeMs, user2dPose, user3dPose, evaluationResult);
     }
 
     /**
@@ -168,7 +171,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
             throw new Error(`Track with ID ${id} does not exist.`);
         }
 
-        const frameCount = track.frameTimes.length;
+        const frameCount = track.videoFrameTimesInSecs.length;
         const userPosesTrack = track.user2dPoses;
 
         // Calculate frame times for the specified frame offsets relative to the current frame time.
@@ -177,10 +180,10 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
         // Find the closest frame time in the track for each target frame time.
         const closestFrameIndices = targetFrameTimes.map(targetTime => {
             let closestIndex = 0;
-            let closestDiff = Math.abs(targetTime - track.frameTimes[0]);
+            let closestDiff = Math.abs(targetTime - track.videoFrameTimesInSecs[0]);
 
             for (let i = 1; i < frameCount; i++) {
-                const diff = Math.abs(targetTime - track.frameTimes[i]);
+                const diff = Math.abs(targetTime - track.videoFrameTimesInSecs[i]);
                 if (diff < closestDiff) {
                     closestIndex = i;
                     closestDiff = diff;

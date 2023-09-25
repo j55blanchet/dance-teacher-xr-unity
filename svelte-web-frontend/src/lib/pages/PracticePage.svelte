@@ -104,8 +104,12 @@ function unPauseVideo() {
 }
 
 async function getFeedback(performanceSummary: evalAI.PerformanceSummary | null, recordedTrack:  PerformanceEvaluationTrack<evalAI.EvaluationV1Result> | null) {
+
     const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
     const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
+
+    performanceSummary
+
     webcamRecorder?.stop();
     let videoURL: undefined | string = undefined;
     if (webcamRecordedObjectURL) {
@@ -275,7 +279,11 @@ export async function reset() {
     startCountdown();
 }
 
-let poseEstimationCorrespondances: Map<number, number> = new Map();
+
+let poseEstimationCorrespondances: Map<number, {
+    videoTimeSecs: number;
+    actualTimeInMs: number;
+}> = new Map();
 let lastPoseEstimationVideoTime: number = -1;
 let lastPoseEstimationSentTimestamp: Date = new Date();
 const maximumPoseEstimationFrequencyHz = 10;
@@ -286,11 +294,26 @@ function poseEstimationFrameSent(e: any) {
     // with the current video timestamp, so that we can later
     // compare the user's pose with the dance pose at that time.
     // console.log("poseEstimationFrameSent", e.detail.frameId, videoCurrentTime);
-    poseEstimationCorrespondances.set(e.detail.frameId, videoCurrentTime);
+    poseEstimationCorrespondances.set(e.detail.frameId, {
+        videoTimeSecs: videoCurrentTime,
+        actualTimeInMs: Date.now(),
+    });
     lastPoseEstimationVideoTime = videoCurrentTime;
 }
 
+/**
+ * An override function used by the virtual mirror element to determine
+ * whether or not to send the next frame to pose estimation. When pose estimation
+ * is enabled (`poseEstimationEnabled`), VirtualMirror will call this function
+ * just before sending the next frame to pose estimation. If this function returns
+ * false, the frame will not be sent. This is useful for limiting the frequency
+ * of pose estimation to save resources during situations when high pose estimation
+ * frequency is unnecessary (such as during the countdown when the video is paused).
+ */
 function shouldSendNextPoseEstimationFrame() {
+
+    // When the video is paused (such as during countdown), limit the fps 
+    // of pose estimation to avoid wasting resources.
     if (
         lastPoseEstimationVideoTime === videoCurrentTime && 
         lastPoseEstimationSentTimestamp.getTime() > Date.now() - minimumPoseEsstimationIntervalMs
@@ -317,7 +340,11 @@ function poseEstimationFrameReceived(e: any) {
         console.log(`No matching correspondance for ${frameId}`, e, "current correspondances: ", poseEstimationCorrespondances)
         return;
     };
-    const videoTimestamp = poseEstimationCorrespondances.get(frameId)!;
+    const {
+        videoTimeSecs,
+        actualTimeInMs
+    } = poseEstimationCorrespondances.get(frameId)!;
+
     poseEstimationCorrespondances.delete(frameId);
 
     const srcWidth = e?.detail?.srcWidth;
@@ -337,7 +364,7 @@ function poseEstimationFrameReceived(e: any) {
     }
     if (!evaluation2DPose) { return; }
     try {
-        lastEvaluationResult = evaluator?.evaluateFrame(trialId, videoTimestamp, evaluation2DPose, evaluation3DPose) ?? null;
+        lastEvaluationResult = evaluator?.evaluateFrame(trialId, videoTimeSecs, actualTimeInMs, evaluation2DPose, evaluation3DPose) ?? null;
     }
     catch (e) {
         lastEvaluationResult = null;
