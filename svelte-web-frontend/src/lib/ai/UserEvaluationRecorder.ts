@@ -1,19 +1,31 @@
 import { PoseLandmarkKeys, type Pose2DPixelLandmarks, type Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 import Papa from "papaparse";
 
-// Used to represent evaluation data.
+/**
+ * For some object T, this type retains the same keys
+ * but replaces each value with an array containing the same type. 
+ */
 type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
 }
 
+/**
+ * Turn a camelCased string into CAPITALIZED_SNAKE_CASE. This will insert an underscore
+ * before each capital letter in the inptu string, then turn every letter to uppercase.
+ * @param camelCaseString Input camelCase string
+ * @returns CAPITALIZED_SNAKE_CASE version of the string
+ */
 function camelCaseToCAPITALIZED_SNAKE_CASE(camelCaseString: string): string {
-    return camelCaseString
+    return camelCaseString 
         // Add an underscore before all capital letters 
         // (other than one occuring as the first character)
+        // note: this only works with ASCII capital letter. Capital 
+        //       letters with accents or in other scripts won't work.
         .replace(
-            /(?<!^)[A-Z]/g, 
+            /(?<!^)[A-Z]/g,
             (letter) => `_${letter.toUpperCase()}`
         )
+        // Then, turn all remaining letters to uppercase.
         .toUpperCase()
 }
 

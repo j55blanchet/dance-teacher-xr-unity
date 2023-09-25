@@ -1,7 +1,8 @@
 import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
 import { BodyInnerAnglesComparisons, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean } from './EvaluationCommonUtils';
-import { computeSkeleton2DDissimilarityJulienMethod, computeSkeleton3DVectorAngleSimilarity, computeSkeletonDissimilarityQijiaMethod } from "./skeleton-similarity";
+import type { SummaryMetric, TimeSeriesMetric } from "./evaluationmetrics/MotionMetric";
+import { computeSkeleton2DDissimilarityJulienMethod, computeSkeleton3DVectorAngleSimilarity, computeSkeletonDissimilarityQijiaMethod } from "./evaluationmetrics/skeleton-similarity";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
 
 // Type definition for the result of evaluating a user's performance.
@@ -16,7 +17,9 @@ export class UserDanceEvaluatorV1 {
 
     constructor(
         private reference2DData: PoseReferenceData<Pose2DPixelLandmarks>, 
-        private reference3DData: PoseReferenceData<Pose3DLandmarkFrame>
+        private reference3DData: PoseReferenceData<Pose3DLandmarkFrame>,
+        private liveMetrics: TimeSeriesMetric<unknown, unknown>[],
+        private summaryMetrics: SummaryMetric<unknown>[]
     ) {};
 
     /**
@@ -79,18 +82,6 @@ export class UserDanceEvaluatorV1 {
         if (!track) {
             return null;
         }
-
-        const vectorScoreKeyValues = QijiaMethodComparisonVectors.map((vec, i) => {
-            const key = QijiaMethodComparisionVectorNames[i];
-            const vecScores = track.evaluation.qijiaByVectorScores.map((scores) => scores[i]);
-            const meanScore = getArrayMean(vecScores);
-            return [key, meanScore] as [string, number];
-        });
-
-        // const evaluationKeys = Object.keys(track.evaluation) as Array<keyof EvaluationV1>
-        
-        const qijiaOverallScore = getArrayMean(track.evaluation.qijiaOverallScore);
-        const qijiaByVectorScores = new Map(vectorScoreKeyValues)
         
         // evaluationKeys.reduce((summary, key) => {
         //     const sumOfMetric = track.evaluation[key].reduce((runningTotal, frameValue) => runningTotal + frameValue, 0)

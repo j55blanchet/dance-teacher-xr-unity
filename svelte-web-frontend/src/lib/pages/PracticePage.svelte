@@ -22,7 +22,7 @@ import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-ut
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
-import { QIJIA_SKELETON_SIMILARITY_MAX_SCORE } from '$lib/ai/skeleton-similarity';
+import { QIJIA_SKELETON_SIMILARITY_MAX_SCORE } from '$lib/ai/evaluationmetrics/skeleton-similarity';
 import type { PerformanceEvaluationTrack } from '$lib/ai/UserEvaluationRecorder';
 
 export let mirrorForEvaluation: boolean = true;

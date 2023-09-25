@@ -1,0 +1,106 @@
+import { lerp } from "$lib/utils/math";
+import type { Pose3DLandmarkFrame, Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
+import { GetNormalized2DVector, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean, getMagnitude2DVec } from "../EvaluationCommonUtils";
+import type { TimeSeriesMetric } from "./MotionMetric";
+import type { Vec8 } from "./skeleton-similarity";
+
+
+export const QIJIA_SKELETON_SIMILARITY_MAX_SCORE = 5.0;
+
+/**
+ * Compute the similarity of two poses based on a 2D projection, looking at a set of 8 upper body
+ * comparison vectors, as described by our JLS paper. The similarity is computed by normalizing each
+ * of these comparison vectors and computing the distance between the corresponding normalized vectors,
+ * (a value between good=0 and bad=2), remaiing to 0=bad, 5=good, then taking the average across the 
+ * comparison vectors.
+ * @param refLandmarks Reference landmarks (expert)
+ * @param userLandmarks Evaluation landmarks (learner)
+ * @returns Tuple of scores between 0 and 5, where 0 is the worst and 5 is the best. First is a scalar with the overall score, next is array of the scores of the 8 comparison vectors.
+ */
+export function computeSkeletonDissimilarityQijiaMethod(
+    refLandmarks: Pose2DPixelLandmarks, 
+    userLandmarks: Pose2DPixelLandmarks
+) {
+
+    // From the paper: 
+    //     At each frame, we compute the absolute difference be-
+    // tween the corresponding unit vectors of the learner and the
+    // expert, and then sum them up as the per-frame dancing error.
+    // The overall dancing error is calculated as the average of all
+    // frames of the dance. Finally, we scale the score into the range
+    // of [0, 5], where 0 denotes the poorest performance and 5 rep-
+    // resents the best performance. This normalized score serves
+    // as the final performance rating.
+    let rawOverallDisimilarityScore = 0
+
+    // Compare 8 Vectors
+    const vectorDissimilarityScores = QijiaMethodComparisonVectors.map((vecLandmarkIds) => {
+        const [srcLandmark, destLandmark] = vecLandmarkIds
+        const [refX, refY] = GetNormalized2DVector(refLandmarks, srcLandmark, destLandmark)
+        const [usrX, usrY] = GetNormalized2DVector(userLandmarks, srcLandmark, destLandmark)
+        const [dx, dy] = [refX - usrX, refY - usrY]
+        return getMagnitude2DVec([dx, dy]) || 0;
+    });
+
+
+    rawOverallDisimilarityScore = getArrayMean(vectorDissimilarityScores);
+
+    // According to Qijia, we used an upper bound of 2.0 for the dissimimlarity score (which would indicate all vectors
+    // of the user faced the exact opposite directions of the expert), and the lower bound was zero (which would indicate
+    // a perfect match with the expert)
+    // If a user's dissimilarity score was closer to 0, they did well, and if it was closer
+    // to 2.0, they did poorly. (These specific numbers are not mentioned in the paper). 
+    const SRC_DISSIMILARITY_WORST = 2.0
+    const SRC_DISSIMILARITY_BEST = 0.0
+    
+    // We want to scale the score to a [0...5] range
+    const TARGET_WORST = 0.0
+
+    function scaleScore(s: number) {
+        return lerp(s, SRC_DISSIMILARITY_BEST, SRC_DISSIMILARITY_WORST, QIJIA_SKELETON_SIMILARITY_MAX_SCORE, TARGET_WORST)
+    }
+
+    const overallScore = scaleScore(rawOverallDisimilarityScore)
+    const vectorByVectorScore = vectorDissimilarityScores.map(scaleScore) as Vec8;
+
+    return {
+        overallScore,
+        vectorByVectorScore
+    };
+}
+
+type QijiaMetricSingleFrameOutput = {
+    overallScore: number;
+    vectorByVectorScore: Vec8;
+}
+type QijiaMetricSummaryOutput = {
+    overallScore: number;
+    vectorByVectorScore: Map<string, number>;
+}
+export class Qijia2DSkeletonSimilarityMetric implements TimeSeriesMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
+
+    computeMetric(frameTimes: number[], metricHistory: number[], ref3DFrames: Pose3DLandmarkFrame[], ref2DFrames: Pose2DPixelLandmarks[], user3DFrames: Pose3DLandmarkFrame[], user2DFrames: Pose2DPixelLandmarks[]): QijiaMetricSingleFrameOutput {
+        return computeSkeletonDissimilarityQijiaMethod(
+            ref2DFrames[ref2DFrames.length - 1],
+            user2DFrames[user2DFrames.length - 1]
+        )
+    }
+
+    summarizeMetric(frameTimes: number[], metricHistory: QijiaMetricSingleFrameOutput[]): QijiaMetricSummaryOutput {
+        const qijiaOverallScore = getArrayMean(metricHistory.map(m => m.overallScore));
+        const arrayOfVecScores = metricHistory.map(m => m.vectorByVectorScore);
+
+        const vectorScoreKeyValues = QijiaMethodComparisonVectors.map((_vec, i) => {
+            const key = QijiaMethodComparisionVectorNames[i];
+            const thisVecScores = arrayOfVecScores.map(vecbyVecScores => vecbyVecScores[i]);
+            const meanScore = getArrayMean(thisVecScores);
+            return [key, meanScore] as [string, number];
+        });
+        const qijiaByVectorScores = new Map(vectorScoreKeyValues)
+
+        return {
+            overallScore: qijiaOverallScore,
+            vectorByVectorScore: qijiaByVectorScores,
+        }
+    }
+}
