@@ -74,18 +74,18 @@ type QijiaMetricSingleFrameOutput = {
     vectorByVectorScore: Vec8;
 }
 type QijiaMetricSummaryOutput = {
+    minPossibleScore: number;
+    maxPossibleScore: number;
     overallScore: number;
     vectorByVectorScore: Map<string, number>;
 }
 export class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
-
-    name = "Qijia2DSkeletonSimilarityMetric";
     
-    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number[], user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
+    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
         return computeSkeletonDissimilarityQijiaMethod(ref2dPose, user2dPose)
     }
 
-    summarizeMetric(_frameTimes: number[], metricHistory: QijiaMetricSingleFrameOutput[]): QijiaMetricSummaryOutput {
+    summarizeMetric(_history: TrackHistory, metricHistory: QijiaMetricSingleFrameOutput[]): QijiaMetricSummaryOutput {
         const qijiaOverallScore = getArrayMean(metricHistory.map(m => m.overallScore));
         const arrayOfVecScores = metricHistory.map(m => m.vectorByVectorScore);
 
@@ -100,6 +100,8 @@ export class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<Qij
         return {
             overallScore: qijiaOverallScore,
             vectorByVectorScore: qijiaByVectorScores,
+            minPossibleScore: 0,
+            maxPossibleScore: QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
         }
     }
 }

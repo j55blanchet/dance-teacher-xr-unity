@@ -6,7 +6,8 @@ const DEFAULT_SETTINGS = Object.freeze({
    debugPauseDurationSecs : 1.0,
    evaluation_GoodBadTrialThreshold : 4.0,
    feedback_YellowThreshold : 3.0,
-   feedback_GreenThreshold : 4.2
+   feedback_GreenThreshold : 4.2,
+   useAIFeedback : true,
 })
 
 export const pauseDurationMin = 0.1;
@@ -34,6 +35,7 @@ export const debugPauseDurationSecs = createNumberSettingsStore("debugPauseDurat
 export const evaluation_GoodBadTrialThreshold = createNumberSettingsStore("evaluation_GoodBadTrialThreshold", DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
 export const feedback_YellowThreshold = createNumberSettingsStore("feedback_YellowThreshold", DEFAULT_SETTINGS.feedback_YellowThreshold);
 export const feedback_GreenThreshold = createNumberSettingsStore("feedback_GreenThreshold", DEFAULT_SETTINGS.feedback_GreenThreshold);
+export const useAIFeedback = createBoolSettingsStore("useAIFeedback", DEFAULT_SETTINGS.useAIFeedback);
 
 // Reset all variables to their default values
 export function resetSettingsToDefault() {
@@ -43,4 +45,5 @@ export function resetSettingsToDefault() {
     evaluation_GoodBadTrialThreshold.set(DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
     feedback_YellowThreshold.set(DEFAULT_SETTINGS.feedback_YellowThreshold);
     feedback_GreenThreshold.set(DEFAULT_SETTINGS.feedback_GreenThreshold);
+    useAIFeedback.set(DEFAULT_SETTINGS.useAIFeedback);
 }

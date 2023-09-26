@@ -10,7 +10,8 @@ import {
     pauseDurationMin,
     pauseDurationMax,
     stepMin,
-    stepMax
+    stepMax,
+    useAIFeedback,
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -57,6 +58,10 @@ const qijiaScoreMax = 5;
     <div>
         <label for="feedback_GreenThreshold">Green Threshold</label>
         <input type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+    </div>
+    <div>
+        <label for="useAIFeedback">Use AI Feedback</label>
+        <input type="checkbox" name="useAIFeedback" bind:checked={$useAIFeedback}>
     </div>
     <div>
         <button on:click={resetSettingsToDefault}>Reset Settings</button>

@@ -24,15 +24,13 @@ export type TrackHistory = {
  * @type FrameResultType 
  * @type SummaryType 
  */
-export interface LiveEvaluationMetric<FrameResultType,SummaryType>{
-
-    name: Readonly<string>;
+export interface LiveEvaluationMetric<FrameResultType, SummaryType>{
 
     computeMetric(
         history: TrackHistory,
         metricHistory: number[],
         videoFrameTimeInSecs: number,
-        actualTimesInMs: number[],
+        actualTimesInMs: number,
         user2dPose: Pose2DPixelLandmarks,
         user3dPose: Pose3DLandmarkFrame,
         ref2dPose: Pose2DPixelLandmarks,
@@ -40,7 +38,7 @@ export interface LiveEvaluationMetric<FrameResultType,SummaryType>{
     ): FrameResultType;
 
     summarizeMetric(
-        frameTimes: number[],
+        history: TrackHistory,
         metricHistory: FrameResultType[]
     ): SummaryType;
 }

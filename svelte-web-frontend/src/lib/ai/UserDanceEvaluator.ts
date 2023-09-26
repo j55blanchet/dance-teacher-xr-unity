@@ -7,7 +7,7 @@ import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
  * Evaluates a user's dance performance against a reference dance.
  */
 export class UserDanceEvaluator<
-    T extends readonly LiveEvaluationMetric<unknown, unknown>[],
+    T extends Record<string, LiveEvaluationMetric<unknown, unknown>>,
 > {
     public recorder = new 
         UserEvaluationRecorder<
@@ -43,9 +43,9 @@ export class UserDanceEvaluator<
 
         
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
-        const metricResults = liveMetricKeys.map((liveMetricKey) => {
+        const metricResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
             const metric = this.liveMetrics[liveMetricKey];
-            return (metric as any).computeMetric(
+            return [liveMetricKey, (metric).computeMetric(
                 {
                     videoFrameTimesInSecs: track.videoFrameTimesInSecs,
                     actualTimesInMs: track.actualTimesInMs,
@@ -54,15 +54,15 @@ export class UserDanceEvaluator<
                     user3DFrameHistory: track.user3dPoses,
                     user2DFrameHistory: track.user2dPoses,
                 },
-                track.timeSeriesResults?.[liveMetricKey] ?? [],
-                track.videoFrameTimesInSecs,
+                (track.timeSeriesResults?.[liveMetricKey] ?? []) as any,
+                videoTimeSecs,
                 actualTimeMs,
                 userPose2D,
                 userPose3D,
                 referencePose2D,
                 referencePose3D,
-            )
-        }) as {[K in keyof T]: ReturnType<T[K]["computeMetric"]>};
+            )]
+        })) as {[K in keyof T]: ReturnType<T[K]["computeMetric"]>};
 
         // const { 
         //     overallScore: qijiaOverallScore,
@@ -113,48 +113,42 @@ export class UserDanceEvaluator<
         if (!track) {
             return null;
         }
-        
-        // evaluationKeys.reduce((summary, key) => {
-        //     const sumOfMetric = track.evaluation[key].reduce((runningTotal, frameValue) => runningTotal + frameValue, 0)
-        //     summary[key] = sumOfMetric / track.evaluation[key].length
-        //     return summary
-        // }, {} as Record<string, number>)
 
-        // const julienOverallScore = getArrayMean(track.evaluation.julienOverallScore);
-        // const julienVectorScoreKeyValues = QijiaMethodComparisonVectors.map((vec, i) => {
-        //     const key = QijiaMethodComparisionVectorNames[i];
-        //     const vecScores = track.evaluation.julienByVectorScores.map((scores) => scores[i].score);
-        //     const meanScore = getArrayMean(vecScores);
-        //     return [key, meanScore] as [string, number];
-        // });
-        // const julienByVectorScores = new Map(julienVectorScoreKeyValues)
-
-        // const angleSimilarityOverallScore = getArrayMean(track.evaluation.angleSimilarity3DOverallScore);
-        // const angleSimilarityVectorScoreKeyValues = Object.keys(BodyInnerAnglesComparisons).map((key) => {
-        //     const vecScores = track.evaluation.angleSimilarity3DByVectorScores.map((scores) => scores[key].score);
-        //     const meanScore = getArrayMean(vecScores);
-        //     return [key, meanScore] as [string, number];
-        // });
-        // const angleSimilarityByVectorScores = new Map(angleSimilarityVectorScoreKeyValues)
-        
-        // const frameCount = track.videoFrameTimesInSecs.length
-        // const realtimeDurationSecs = (track.actualTimesInMs[frameCount - 1] - track.actualTimesInMs[0]) / 1000
-        // const danceTimeDurationSecs = track.videoFrameTimesInSecs[frameCount - 1] - track.videoFrameTimesInSecs[0]
-        // const danceTimeFps = frameCount / danceTimeDurationSecs
-        // const realTimeFps = frameCount / realtimeDurationSecs
+        const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
+        const metricSummaryResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
+            const metric = this.liveMetrics[liveMetricKey];
+            return [liveMetricKey, (metric).summarizeMetric(
+                {
+                    videoFrameTimesInSecs: track.videoFrameTimesInSecs,
+                    actualTimesInMs: track.actualTimesInMs,
+                    ref3DFrameHistory: track.ref3dPoses,
+                    ref2DFrameHistory: track.ref2dPoses,
+                    user3DFrameHistory: track.user3dPoses,
+                    user2DFrameHistory: track.user2dPoses,
+                },
+                (track.timeSeriesResults?.[liveMetricKey] ?? []) as any,
+            )]
+        })) as {[K in keyof T]: ReturnType<T[K]["summarizeMetric"]>};
+                
+        const frameCount = track.videoFrameTimesInSecs.length
+        const realtimeDurationSecs = (track.actualTimesInMs[frameCount - 1] - track.actualTimesInMs[0]) / 1000
+        const danceTimeDurationSecs = track.videoFrameTimesInSecs[frameCount - 1] - track.videoFrameTimesInSecs[0]
+        const danceTimeFps = frameCount / danceTimeDurationSecs
+        const realTimeFps = frameCount / realtimeDurationSecs
 
         return {
-            // frameCount,
-            // danceTimeDurationSecs,
-            // realtimeDurationSecs,
-            // danceTimeFps,
-            // realTimeFps,
+            frameCount,
+            danceTimeDurationSecs,
+            realtimeDurationSecs,
+            danceTimeFps,
+            realTimeFps,
             // qijiaOverallScore,
             // qijiaByVectorScores,
             // julienOverallScore,
             // julienByVectorScores,
             // angleSimilarityOverallScore,
             // angleSimilarityByVectorScores,
+            ...metricSummaryResults,
         }
     }
 }

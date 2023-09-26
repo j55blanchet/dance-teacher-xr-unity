@@ -7,9 +7,9 @@ import type { PerformanceEvaluationTrack } from "./UserEvaluationRecorder";
 import { Qijia2DSkeletonSimilarityMetric } from "./evaluationmetrics/Qijia2DSkeletonSimilarityMetric";
 
 
-const frontendLiveMetrics = [
-    new Qijia2DSkeletonSimilarityMetric(),
-] as const;
+const frontendLiveMetrics = {
+    qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
+};
 
 export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics>;
 export type FrontendPerformanceSummary = ReturnType<FrontendDanceEvaluator["getPerformanceSummary"]>;

@@ -5,7 +5,7 @@ export const initialState = "waitWebcam";
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { pauseInPracticePage, debugPauseDurationSecs, debugMode } from '$lib/model/settings';
+import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
 import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation } from "$lib/data/dances-store";
@@ -102,10 +102,10 @@ function unPauseVideo() {
 
 async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
 
-    // const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
-    // const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
-
-    // performanceSummary
+    
+    const qijiaOverallScore = performanceSummary?.qijia2DSkeletonSimilarity.overallScore ?? 0;
+    const qijiaByVectorScores = performanceSummary?.qijia2DSkeletonSimilarity.vectorByVectorScore ?? new Map<string, number>();
+    const qijiaBestPossibleScore = performanceSummary?.qijia2DSkeletonSimilarity.maxPossibleScore ?? 0;
 
     webcamRecorder?.stop();
     let videoURL: undefined | string = undefined;
@@ -113,16 +113,21 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         videoURL = await webcamRecordedObjectURL;
     }
 
-    let feedback: TerminalFeedback
-    // try {
-    //     feedback = await generateFeedbackWithClaudeLLM(
-    //     qijiaOverallScore,
-    //     QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
-    //     )
-    // } catch(e) {
-    //     console.warn("Error generating feedback", e);
-        feedback = generateFeedbackRuleBased(2.5, new Map<string, number>());
-    // }
+    let feedback: TerminalFeedback | undefined = undefined;
+    if ($useAIFeedback) {
+        try {
+            feedback = await generateFeedbackWithClaudeLLM(
+            qijiaOverallScore,
+            qijiaBestPossibleScore,
+            )
+        } catch(e) {
+            console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
+        }
+    }
+
+    if (!feedback) {
+        feedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+    }
     
     feedback.debug = {
         performanceSummary: performanceSummary ?? undefined,
