@@ -4,11 +4,13 @@ import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 import { UserDanceEvaluator } from "./UserDanceEvaluator";
 import type { PerformanceEvaluationTrack } from "./UserEvaluationRecorder";
+import { Julien2DSkeletonSimilarityMetric } from "./evaluationmetrics/Julien2DSkeletonSimilarityMetric";
 import { Qijia2DSkeletonSimilarityMetric } from "./evaluationmetrics/Qijia2DSkeletonSimilarityMetric";
 
 
 const frontendLiveMetrics = {
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
+    julien2DSkeletonSimilarity: new Julien2DSkeletonSimilarityMetric(),
 };
 
 export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics>;
