@@ -59,8 +59,9 @@ export function generateFeedbackRuleBased(
 
         // Call out the worst body part
         const bodyPartToCallOut = ComparisonVectorToTerminalFeedbackBodyPartMap.get(worstComparisonVectorIndex);
-        if (!bodyPartToCallOut) { throw new Error("Unexpected vector index: " + worstComparisonVectorIndex); }
-        incorrectBodyPartsToHighlight = [bodyPartToCallOut];
+        if (bodyPartToCallOut) {
+            incorrectBodyPartsToHighlight = [bodyPartToCallOut];
+        }
     }
 
     return {

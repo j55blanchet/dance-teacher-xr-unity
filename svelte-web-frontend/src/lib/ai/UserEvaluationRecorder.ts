@@ -3,7 +3,7 @@ import Papa from "papaparse";
 
 /**
  * For some object T, this type retains the same keys
- * but replaces each value with an array containing the same type. 
+ * but replaces each value with an array containing the same type.
  */
 type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
@@ -30,31 +30,30 @@ function camelCaseToCAPITALIZED_SNAKE_CASE(camelCaseString: string): string {
 }
 
 // Type definition for a performance evaluation track.
-export class PerformanceEvaluationTrack<EvaluationType extends object> {
+export class PerformanceEvaluationTrack<T extends object> {
     public creationDate: Date;
-    public videoFrameTimesInSecs: number[];
-    public actualTimesInMs: number[];
-    public user2dPoses: Pose2DPixelLandmarks[];
-    public user3dPoses: Pose3DLandmarkFrame[];
-    public evaluation: ArrayVersions<EvaluationType>;
+    public videoFrameTimesInSecs: number[] = [];
+    public actualTimesInMs: number[] = [];
+    public user2dPoses: Pose2DPixelLandmarks[] = [];
+    public user3dPoses: Pose3DLandmarkFrame[] = [];
+    public ref2dPoses: Pose2DPixelLandmarks[] = [];
+    public ref3dPoses: Pose3DLandmarkFrame[] = [];
+    public timeSeriesResults: ArrayVersions<T> | undefined;
 
-    constructor(public id: string, videoTimeInSecs: number, actualTimeInMs: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
+    constructor(public id: string) {
         this.creationDate = new Date();
-        this.videoFrameTimesInSecs = [videoTimeInSecs];
-        this.actualTimesInMs = [actualTimeInMs];
-        this.user2dPoses = [user2dPose];
-        this.user3dPoses = [user3dPose];
-
-        const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
-        
-        this.evaluation = evaluationkeys.reduce((acc, key) => {
-            acc[key] = [evaluationResult[key]]
-            return acc
-        }, {} as ArrayVersions<EvaluationType>)
     }
 
-    recordEvaluationFrame(videoTimeSecs: number, actualTimeMs: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {
-        const evaluationkeys = Object.keys(evaluationResult) as Array<keyof EvaluationType>
+    recordEvaluationFrame(
+        videoTimeSecs: number, 
+        actualTimeMs: number, 
+        user2dPose: Pose2DPixelLandmarks, 
+        user3dPose: Pose3DLandmarkFrame, 
+        ref2dPose: Pose2DPixelLandmarks,
+        ref3dPose: Pose3DLandmarkFrame,
+        timeSeriesEvaluationMetrics: T) {
+
+        const evaluationKeys = Object.keys(timeSeriesEvaluationMetrics) as Array<keyof T>;
 
         const lastFrameTime = this.videoFrameTimesInSecs.slice(-1)[0] ?? -Infinity
         if (videoTimeSecs < lastFrameTime) {
@@ -65,9 +64,18 @@ export class PerformanceEvaluationTrack<EvaluationType extends object> {
         this.actualTimesInMs.push(actualTimeMs);
         this.user2dPoses.push(user2dPose)
         this.user3dPoses.push(user3dPose)
+        this.ref2dPoses.push(ref2dPose)
+        this.ref3dPoses.push(ref3dPose)
+        
+        if (!this.timeSeriesResults) {
+            this.timeSeriesResults = {} as ArrayVersions<T>
+            for(const key of evaluationKeys) {
+                this.timeSeriesResults[key] = []
+            }
+        }
 
-        for(const key of evaluationkeys) {
-            this.evaluation[key].push(evaluationResult[key])
+        for(const key of evaluationKeys) {
+            this.timeSeriesResults[key].push(timeSeriesEvaluationMetrics[key])
         }
     }
 
@@ -138,6 +146,14 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
 
     public tracks: Map<string, PerformanceEvaluationTrack<EvaluationType>> = new Map();
 
+    startNewTrack(id: string) {
+        if (this.tracks.has(id)) {
+            throw new Error(`Track with ID ${id} already exists.`)
+        }
+
+        this.tracks.set(id, new PerformanceEvaluationTrack(id))
+    }
+
     /**
      * Records a frame of user performance evaluation.
      * @param id - Identifier of the current attempt, used to separate recordings into tracks
@@ -145,12 +161,29 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
      * @param user2dPose - User's pose at the given frame time
      * @param evaluationResult - Result of the evaluation for this frame
      */
-    recordEvaluationFrame(id: string, videoTimeSecs: number, actualTimeMs: number, user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, evaluationResult: EvaluationType) {        let track = this.tracks.get(id);
+    recordEvaluationFrame(id: string, 
+        videoTimeSecs: number, 
+        actualTimeMs: number, 
+        user2dPose: Pose2DPixelLandmarks, 
+        user3dPose: Pose3DLandmarkFrame, 
+        ref3dPose: Pose3DLandmarkFrame,
+        ref2dPose: Pose2DPixelLandmarks,
+        evaluationResult: EvaluationType
+    ) {        
+        const track = this.tracks.get(id);
         if (!track) {
-            track = new PerformanceEvaluationTrack(id, videoTimeSecs, actualTimeMs, user2dPose, user3dPose, evaluationResult);
-            this.tracks.set(id, track);
+            throw new Error(`Track with ID ${id} does not exist.`)
         }
-        track.recordEvaluationFrame(videoTimeSecs, actualTimeMs, user2dPose, user3dPose, evaluationResult);
+
+        track.recordEvaluationFrame(
+            videoTimeSecs, 
+            actualTimeMs, 
+            user2dPose, 
+            user3dPose, 
+            ref2dPose,
+            ref3dPose,
+            evaluationResult
+        );
     }
 
     /**

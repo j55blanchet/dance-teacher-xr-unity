@@ -9,21 +9,18 @@ import { pauseInPracticePage, debugPauseDurationSecs, debugMode } from '$lib/mod
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
 import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation } from "$lib/data/dances-store";
-import * as evalAI from '$lib/ai/UserDanceEvaluator';
 import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai/feedback';
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
-
 import { onMount, createEventDispatcher } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
-import { QIJIA_SKELETON_SIMILARITY_MAX_SCORE } from '$lib/ai/evaluationmetrics/skeleton-similarity';
-import type { PerformanceEvaluationTrack } from '$lib/ai/UserEvaluationRecorder';
+import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
 
 export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
@@ -65,10 +62,10 @@ let poseEstimationReady: Promise<void> | null = null;
 let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
 let referneceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
-let lastEvaluationResult: evalAI.EvaluationV1Result | null = null;
-let evaluator: evalAI.UserDanceEvaluatorV1 | null = null;
+let lastEvaluationResult: FrontendLiveEvaluationResult | null = null;
+let evaluator: FrontendDanceEvaluator | null = null;
 let trialId = generateUUIDv4();
-let performanceSummary: ReturnType<evalAI.UserDanceEvaluatorV1["getPerformanceSummary"]> | null = null;
+let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
 
 let countdown = -1;
@@ -103,12 +100,12 @@ function unPauseVideo() {
     state = "playing";
 }
 
-async function getFeedback(performanceSummary: evalAI.PerformanceSummary | null, recordedTrack:  PerformanceEvaluationTrack<evalAI.EvaluationV1Result> | null) {
+async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
 
-    const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
-    const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
+    // const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
+    // const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
 
-    performanceSummary
+    // performanceSummary
 
     webcamRecorder?.stop();
     let videoURL: undefined | string = undefined;
@@ -117,15 +114,15 @@ async function getFeedback(performanceSummary: evalAI.PerformanceSummary | null,
     }
 
     let feedback: TerminalFeedback
-    try {
-        feedback = await generateFeedbackWithClaudeLLM(
-        qijiaOverallScore,
-        QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
-        )
-    } catch(e) {
-        console.warn("Error generating feedback", e);
-        feedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
-    }
+    // try {
+    //     feedback = await generateFeedbackWithClaudeLLM(
+    //     qijiaOverallScore,
+    //     QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
+    //     )
+    // } catch(e) {
+    //     console.warn("Error generating feedback", e);
+        feedback = generateFeedbackRuleBased(2.5, new Map<string, number>());
+    // }
     
     feedback.debug = {
         performanceSummary: performanceSummary ?? undefined,
@@ -269,12 +266,11 @@ export async function reset() {
 
     state = "waitStart";
 
-    evaluator = new evalAI.UserDanceEvaluatorV1(
+    evaluator = getFrontendDanceEvaluator(
         ref2dPoses,
         ref3dPoses
     );
-    // console.log("DancePoseInformation", referenceDancePoses);
-    await poseEstimationReady;
+    // console.lUserDanceEvaluator await poseEstimationReady;
 
     startCountdown();
 }

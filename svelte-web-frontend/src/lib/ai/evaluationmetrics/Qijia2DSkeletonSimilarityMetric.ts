@@ -1,7 +1,7 @@
 import { lerp } from "$lib/utils/math";
 import type { Pose3DLandmarkFrame, Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import { GetNormalized2DVector, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean, getMagnitude2DVec } from "../EvaluationCommonUtils";
-import type { TimeSeriesMetric } from "./MotionMetric";
+import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 import type { Vec8 } from "./skeleton-similarity";
 
 
@@ -17,7 +17,7 @@ export const QIJIA_SKELETON_SIMILARITY_MAX_SCORE = 5.0;
  * @param userLandmarks Evaluation landmarks (learner)
  * @returns Tuple of scores between 0 and 5, where 0 is the worst and 5 is the best. First is a scalar with the overall score, next is array of the scores of the 8 comparison vectors.
  */
-export function computeSkeletonDissimilarityQijiaMethod(
+function computeSkeletonDissimilarityQijiaMethod(
     refLandmarks: Pose2DPixelLandmarks, 
     userLandmarks: Pose2DPixelLandmarks
 ) {
@@ -77,16 +77,15 @@ type QijiaMetricSummaryOutput = {
     overallScore: number;
     vectorByVectorScore: Map<string, number>;
 }
-export class Qijia2DSkeletonSimilarityMetric implements TimeSeriesMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
+export class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
 
-    computeMetric(frameTimes: number[], metricHistory: number[], ref3DFrames: Pose3DLandmarkFrame[], ref2DFrames: Pose2DPixelLandmarks[], user3DFrames: Pose3DLandmarkFrame[], user2DFrames: Pose2DPixelLandmarks[]): QijiaMetricSingleFrameOutput {
-        return computeSkeletonDissimilarityQijiaMethod(
-            ref2DFrames[ref2DFrames.length - 1],
-            user2DFrames[user2DFrames.length - 1]
-        )
+    name = "Qijia2DSkeletonSimilarityMetric";
+    
+    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number[], user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
+        return computeSkeletonDissimilarityQijiaMethod(ref2dPose, user2dPose)
     }
 
-    summarizeMetric(frameTimes: number[], metricHistory: QijiaMetricSingleFrameOutput[]): QijiaMetricSummaryOutput {
+    summarizeMetric(_frameTimes: number[], metricHistory: QijiaMetricSingleFrameOutput[]): QijiaMetricSummaryOutput {
         const qijiaOverallScore = getArrayMean(metricHistory.map(m => m.overallScore));
         const arrayOfVecScores = metricHistory.map(m => m.vectorByVectorScore);
 

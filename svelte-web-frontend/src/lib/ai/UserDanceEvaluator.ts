@@ -1,25 +1,23 @@
 import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
-import { BodyInnerAnglesComparisons, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean } from './EvaluationCommonUtils';
-import type { SummaryMetric, TimeSeriesMetric } from "./evaluationmetrics/MotionMetric";
-import { computeSkeleton2DDissimilarityJulienMethod, computeSkeleton3DVectorAngleSimilarity } from "./evaluationmetrics/skeleton-similarity";
+import type { LiveEvaluationMetric } from "./evaluationmetrics/MotionMetric";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
 
-// Type definition for the result of evaluating a user's performance.
-export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["evaluateFrame"]>>;
-export type PerformanceSummary = NonNullable<ReturnType<UserDanceEvaluatorV1["getPerformanceSummary"]>>;
 /**
  * Evaluates a user's dance performance against a reference dance.
  */
-export class UserDanceEvaluatorV1 {
-
-    public recorder = new UserEvaluationRecorder<EvaluationV1Result>();
+export class UserDanceEvaluator<
+    T extends readonly LiveEvaluationMetric<unknown, unknown>[],
+> {
+    public recorder = new 
+        UserEvaluationRecorder<
+            {[K in keyof T]: ReturnType<T[K]["computeMetric"]>}
+        >();
 
     constructor(
         private reference2DData: PoseReferenceData<Pose2DPixelLandmarks>, 
         private reference3DData: PoseReferenceData<Pose3DLandmarkFrame>,
-        private liveMetrics: TimeSeriesMetric<unknown, unknown>[] = [],
-        private summaryMetrics: SummaryMetric<unknown>[] = []
+        private liveMetrics: T,
     ) {};
 
     /**
@@ -36,6 +34,35 @@ export class UserDanceEvaluatorV1 {
         if (!referencePose2D || !referencePose3D) {
             return null;
         }
+        
+        if (!this.recorder.tracks.has(trialId)) {
+            this.recorder.startNewTrack(trialId);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const track = this.recorder.tracks.get(trialId)!
+
+        
+        const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
+        const metricResults = liveMetricKeys.map((liveMetricKey) => {
+            const metric = this.liveMetrics[liveMetricKey];
+            return (metric as any).computeMetric(
+                {
+                    videoFrameTimesInSecs: track.videoFrameTimesInSecs,
+                    actualTimesInMs: track.actualTimesInMs,
+                    ref3DFrameHistory: track.ref3dPoses,
+                    ref2DFrameHistory: track.ref2dPoses,
+                    user3DFrameHistory: track.user3dPoses,
+                    user2DFrameHistory: track.user2dPoses,
+                },
+                track.timeSeriesResults?.[liveMetricKey] ?? [],
+                track.videoFrameTimesInSecs,
+                actualTimeMs,
+                userPose2D,
+                userPose3D,
+                referencePose2D,
+                referencePose3D,
+            )
+        }) as {[K in keyof T]: ReturnType<T[K]["computeMetric"]>};
 
         // const { 
         //     overallScore: qijiaOverallScore,
@@ -45,27 +72,27 @@ export class UserDanceEvaluatorV1 {
         //     userPose2D
         // )
 
-        const {
-            overallScore: julienOverallScore,
-            vectorByVectorScores: julienByVectorScores,
-        } = computeSkeleton2DDissimilarityJulienMethod(
-            referencePose2D,
-            userPose2D
-        )
+        // const {
+        //     overallScore: julienOverallScore,
+        //     vectorByVectorScores: julienByVectorScores,
+        // } = computeSkeleton2DDissimilarityJulienMethod(
+        //     referencePose2D,
+        //     userPose2D
+        // )
 
-        const { 
-            overallScore: angleSimilarity3DOverallScore,
-            individualScores: angleSimilarity3DByVectorScores,
-        } = computeSkeleton3DVectorAngleSimilarity(referencePose3D, userPose3D)
+        // const { 
+        //     overallScore: angleSimilarity3DOverallScore,
+        //     individualScores: angleSimilarity3DByVectorScores,
+        // } = computeSkeleton3DVectorAngleSimilarity(referencePose3D, userPose3D)
 
-        const evaluationResult = { 
-            // qijiaOverallScore,
-            // qijiaByVectorScores,
-            julienOverallScore,
-            julienByVectorScores,
-            angleSimilarity3DOverallScore,
-            angleSimilarity3DByVectorScores,
-         }
+        // const evaluationResult = { 
+        //     // qijiaOverallScore,
+        //     // qijiaByVectorScores,
+        //     julienOverallScore,
+        //     julienByVectorScores,
+        //     angleSimilarity3DOverallScore,
+        //     angleSimilarity3DByVectorScores,
+        //  }
 
         this.recorder.recordEvaluationFrame(
             trialId,
@@ -73,9 +100,11 @@ export class UserDanceEvaluatorV1 {
             actualTimeMs,
             userPose2D,
             userPose3D,
-            evaluationResult
+            referencePose3D,
+            referencePose2D,
+            metricResults,
         )
-        return evaluationResult;
+        return metricResults;
     }
 
     getPerformanceSummary(id: string) {
@@ -91,41 +120,41 @@ export class UserDanceEvaluatorV1 {
         //     return summary
         // }, {} as Record<string, number>)
 
-        const julienOverallScore = getArrayMean(track.evaluation.julienOverallScore);
-        const julienVectorScoreKeyValues = QijiaMethodComparisonVectors.map((vec, i) => {
-            const key = QijiaMethodComparisionVectorNames[i];
-            const vecScores = track.evaluation.julienByVectorScores.map((scores) => scores[i].score);
-            const meanScore = getArrayMean(vecScores);
-            return [key, meanScore] as [string, number];
-        });
-        const julienByVectorScores = new Map(julienVectorScoreKeyValues)
+        // const julienOverallScore = getArrayMean(track.evaluation.julienOverallScore);
+        // const julienVectorScoreKeyValues = QijiaMethodComparisonVectors.map((vec, i) => {
+        //     const key = QijiaMethodComparisionVectorNames[i];
+        //     const vecScores = track.evaluation.julienByVectorScores.map((scores) => scores[i].score);
+        //     const meanScore = getArrayMean(vecScores);
+        //     return [key, meanScore] as [string, number];
+        // });
+        // const julienByVectorScores = new Map(julienVectorScoreKeyValues)
 
-        const angleSimilarityOverallScore = getArrayMean(track.evaluation.angleSimilarity3DOverallScore);
-        const angleSimilarityVectorScoreKeyValues = Object.keys(BodyInnerAnglesComparisons).map((key) => {
-            const vecScores = track.evaluation.angleSimilarity3DByVectorScores.map((scores) => scores[key].score);
-            const meanScore = getArrayMean(vecScores);
-            return [key, meanScore] as [string, number];
-        });
-        const angleSimilarityByVectorScores = new Map(angleSimilarityVectorScoreKeyValues)
+        // const angleSimilarityOverallScore = getArrayMean(track.evaluation.angleSimilarity3DOverallScore);
+        // const angleSimilarityVectorScoreKeyValues = Object.keys(BodyInnerAnglesComparisons).map((key) => {
+        //     const vecScores = track.evaluation.angleSimilarity3DByVectorScores.map((scores) => scores[key].score);
+        //     const meanScore = getArrayMean(vecScores);
+        //     return [key, meanScore] as [string, number];
+        // });
+        // const angleSimilarityByVectorScores = new Map(angleSimilarityVectorScoreKeyValues)
         
-        const frameCount = track.videoFrameTimesInSecs.length
-        const realtimeDurationSecs = (track.actualTimesInMs[frameCount - 1] - track.actualTimesInMs[0]) / 1000
-        const danceTimeDurationSecs = track.videoFrameTimesInSecs[frameCount - 1] - track.videoFrameTimesInSecs[0]
-        const danceTimeFps = frameCount / danceTimeDurationSecs
-        const realTimeFps = frameCount / realtimeDurationSecs
+        // const frameCount = track.videoFrameTimesInSecs.length
+        // const realtimeDurationSecs = (track.actualTimesInMs[frameCount - 1] - track.actualTimesInMs[0]) / 1000
+        // const danceTimeDurationSecs = track.videoFrameTimesInSecs[frameCount - 1] - track.videoFrameTimesInSecs[0]
+        // const danceTimeFps = frameCount / danceTimeDurationSecs
+        // const realTimeFps = frameCount / realtimeDurationSecs
 
         return {
-            frameCount,
-            danceTimeDurationSecs,
-            realtimeDurationSecs,
-            danceTimeFps,
-            realTimeFps,
+            // frameCount,
+            // danceTimeDurationSecs,
+            // realtimeDurationSecs,
+            // danceTimeFps,
+            // realTimeFps,
             // qijiaOverallScore,
             // qijiaByVectorScores,
-            julienOverallScore,
-            julienByVectorScores,
-            angleSimilarityOverallScore,
-            angleSimilarityByVectorScores,
+            // julienOverallScore,
+            // julienByVectorScores,
+            // angleSimilarityOverallScore,
+            // angleSimilarityByVectorScores,
         }
     }
 }

@@ -10,24 +10,37 @@ export interface SummaryMetric<T> {
     ): T;
 }
 
+export type TrackHistory = {
+    videoFrameTimesInSecs: number[],
+    actualTimesInMs: number[],
+    ref3DFrameHistory: Pose3DLandmarkFrame[],
+    ref2DFrameHistory: Pose2DPixelLandmarks[],
+    user3DFrameHistory: Pose3DLandmarkFrame[],
+    user2DFrameHistory: Pose2DPixelLandmarks[],
+}
+
 /**
  * Represents a metric that is calculated as a time series 
- * @type TimeSeriesType 
+ * @type FrameResultType 
  * @type SummaryType 
  */
-export interface TimeSeriesMetric<TimeSeriesType,SummaryType>{
+export interface LiveEvaluationMetric<FrameResultType,SummaryType>{
+
+    name: Readonly<string>;
 
     computeMetric(
-        frameTimes: number[],
+        history: TrackHistory,
         metricHistory: number[],
-        ref3DFrames: Pose3DLandmarkFrame[],
-        ref2DFrames: Pose2DPixelLandmarks[],
-        user3DFrames: Pose3DLandmarkFrame[],
-        user2DFrames: Pose2DPixelLandmarks[],
-    ): TimeSeriesType;
+        videoFrameTimeInSecs: number,
+        actualTimesInMs: number[],
+        user2dPose: Pose2DPixelLandmarks,
+        user3dPose: Pose3DLandmarkFrame,
+        ref2dPose: Pose2DPixelLandmarks,
+        ref3dPose: Pose3DLandmarkFrame,
+    ): FrameResultType;
 
     summarizeMetric(
         frameTimes: number[],
-        metricHistory: TimeSeriesType[]
+        metricHistory: FrameResultType[]
     ): SummaryType;
 }

@@ -1,5 +1,5 @@
-import type { EvaluationV1Result, PerformanceSummary } from "$lib/ai/UserDanceEvaluator";
-import type { PerformanceEvaluationTrack } from "$lib/ai/UserEvaluationRecorder";
+
+import type { FrontendEvaluationTrack } from "$lib/ai/FrontendDanceEvaluator";
 import type { ValueOf } from "$lib/data/dances-store";
 
 export const TerminalFeedbackBodyParts = {
@@ -25,8 +25,8 @@ export type TerminalFeedback = {
     incorrectBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     correctBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     debug?: {
-        performanceSummary?: PerformanceSummary;
-        recordedTrack?: PerformanceEvaluationTrack<EvaluationV1Result>;
+        performanceSummary?: object;
+        recordedTrack?: FrontendEvaluationTrack;
         recordedVideoUrl?: string;
     }
 };
