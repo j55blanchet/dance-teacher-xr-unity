@@ -3,7 +3,7 @@ import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/med
 import { BodyInnerAnglesComparisons, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean } from './EvaluationCommonUtils';
 import { computeSkeleton2DDissimilarityJulienMethod, computeSkeleton3DVectorAngleSimilarity, computeSkeletonDissimilarityQijiaMethod } from "./skeleton-similarity";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
-import { calculateSDJerks, removeDuplicateFrameTimes } from "./compute-motion-descriptors";
+import { calculateMotionDescriptorsScore, removeDuplicateFrameTimes } from "./compute-motion-descriptors";
 
 // Type definition for the result of evaluating a user's performance.
 export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["evaluateFrame"]>>;
@@ -107,7 +107,7 @@ export class UserDanceEvaluatorV1 {
         });
 
         const { adjUserPoses, uniqueFrameTimes } = removeDuplicateFrameTimes(track.userPoses, track.frameTimes);
-        const sdJerks = calculateSDJerks(adjUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
+        const [sdJerks, sdAccs, sdVels] = calculateMotionDescriptorsScore(adjUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
 
 
         const julienByVectorScores = new Map(julienVectorScoreKeyValues)
@@ -138,7 +138,9 @@ export class UserDanceEvaluatorV1 {
             julienByVectorScores,
             angleSimilarityOverallScore,
             angleSimilarityByVectorScores,
-            sdJerks
+            sdJerks,
+            sdAccs,
+            sdVels
         }
     }
 }
