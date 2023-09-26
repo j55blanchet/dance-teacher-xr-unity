@@ -6,11 +6,13 @@ import { UserDanceEvaluator } from "./UserDanceEvaluator";
 import type { PerformanceEvaluationTrack } from "./UserEvaluationRecorder";
 import { Julien2DSkeletonSimilarityMetric } from "./evaluationmetrics/Julien2DSkeletonSimilarityMetric";
 import { Qijia2DSkeletonSimilarityMetric } from "./evaluationmetrics/Qijia2DSkeletonSimilarityMetric";
+import { Skeleton3dVectorAngleSimilarityMetric } from "./evaluationmetrics/Skeleton3dVectorAngleSimilarityMetric";
 
 
 const frontendLiveMetrics = {
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
     julien2DSkeletonSimilarity: new Julien2DSkeletonSimilarityMetric(),
+    skeleton3DAngleSimilarity: new Skeleton3dVectorAngleSimilarityMetric(),
 };
 
 export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics>;

@@ -2,10 +2,14 @@ import { lerp } from "$lib/utils/math";
 import type { Pose3DLandmarkFrame, Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import { GetNormalized2DVector, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean, getMagnitude2DVec } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
-import type { Vec8 } from "./skeleton-similarity";
-
 
 export const QIJIA_SKELETON_SIMILARITY_MAX_SCORE = 5.0;
+
+/**
+ * Type definition for an array of 8 numbers.
+ * Represents the scores for 8 upper body comparison vectors.
+ */
+type Vec8 = [number, number, number, number, number, number, number, number]
 
 /**
  * Compute the similarity of two poses based on a 2D projection, looking at a set of 8 upper body

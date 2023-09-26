@@ -2,7 +2,6 @@ import { lerp } from "$lib/utils/math";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 import { QijiaMethodComparisonVectors, Get2DVector, GetScaleIndicator, getMagnitude2DVec, getInnerAngle, getArrayMean, QijiaMethodComparisionVectorNames } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
-import type { Vec8 } from "./skeleton-similarity";
 
 // Constants for reliable 2D angle determination (in pixels)
 const MinVectorMagnitudeForReliableAngleDetermination = 50;
@@ -99,7 +98,7 @@ type JulienMetricSummaryOutput = {
 }
 export class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput> {
     
-    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
+    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): JulienMetricSingleFrameOutput {
         return computeSkeleton2DDissimilarityJulienMethod(ref2dPose, user2dPose)
     }
 
