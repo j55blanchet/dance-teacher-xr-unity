@@ -4,9 +4,9 @@ import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 import { UserDanceEvaluator } from "./UserDanceEvaluator";
 import type { PerformanceEvaluationTrack } from "./UserEvaluationRecorder";
-import { Julien2DSkeletonSimilarityMetric } from "./evaluationmetrics/Julien2DSkeletonSimilarityMetric";
-import { Qijia2DSkeletonSimilarityMetric } from "./evaluationmetrics/Qijia2DSkeletonSimilarityMetric";
-import { Skeleton3dVectorAngleSimilarityMetric } from "./evaluationmetrics/Skeleton3dVectorAngleSimilarityMetric";
+import { Julien2DSkeletonSimilarityMetric } from "./motionmetrics/Julien2DSkeletonSimilarityMetric";
+import { Qijia2DSkeletonSimilarityMetric } from "./motionmetrics/Qijia2DSkeletonSimilarityMetric";
+import { Skeleton3dVectorAngleSimilarityMetric } from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
 
 
 const frontendLiveMetrics = {

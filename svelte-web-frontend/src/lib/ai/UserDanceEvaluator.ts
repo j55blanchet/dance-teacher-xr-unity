@@ -1,6 +1,6 @@
 import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
-import type { LiveEvaluationMetric } from "./evaluationmetrics/MotionMetric";
+import type { LiveEvaluationMetric } from "./motionmetrics/MotionMetric";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
 
 /**
