@@ -122,4 +122,11 @@ export class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<Ju
             maxPossibleScore: 1.0,
         }
     }
+
+    formatSummary(summary: JulienMetricSummaryOutput): Record<string, string | number> {
+        return {
+            "overall": summary.overallScore,
+            ...Object.fromEntries(summary.vectorByVectorScore.entries())
+        }
+    }
 }

@@ -1,5 +1,4 @@
-import { PoseLandmarkKeys, type Pose2DPixelLandmarks, type Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
-import Papa from "papaparse";
+import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 
 /**
  * For some object T, this type retains the same keys
@@ -7,26 +6,6 @@ import Papa from "papaparse";
  */
 type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
-}
-
-/**
- * Turn a camelCased string into CAPITALIZED_SNAKE_CASE. This will insert an underscore
- * before each capital letter in the inptu string, then turn every letter to uppercase.
- * @param camelCaseString Input camelCase string
- * @returns CAPITALIZED_SNAKE_CASE version of the string
- */
-function camelCaseToCAPITALIZED_SNAKE_CASE(camelCaseString: string): string {
-    return camelCaseString 
-        // Add an underscore before all capital letters 
-        // (other than one occuring as the first character)
-        // note: this only works with ASCII capital letter. Capital 
-        //       letters with accents or in other scripts won't work.
-        .replace(
-            /(?<!^)[A-Z]/g,
-            (letter) => `_${letter.toUpperCase()}`
-        )
-        // Then, turn all remaining letters to uppercase.
-        .toUpperCase()
 }
 
 // Type definition for a performance evaluation track.
@@ -40,7 +19,7 @@ export class PerformanceEvaluationTrack<T extends object> {
     public ref3dPoses: Pose3DLandmarkFrame[] = [];
     public timeSeriesResults: ArrayVersions<T> | undefined;
 
-    constructor(public id: string) {
+    constructor(public id: string, public danceRelativeStem: string, public segmentDescription: string) {
         this.creationDate = new Date();
     }
 
@@ -82,6 +61,8 @@ export class PerformanceEvaluationTrack<T extends object> {
     asDictWithoutTimeSeriesResults(): Record<string, unknown> {
         return {
             id: this.id,
+            danceRelativeStem: this.danceRelativeStem,
+            segmentDescription: this.segmentDescription,
             creationDate: this.creationDate,
             videoFrameTimesInSecs: this.videoFrameTimesInSecs,
             actualTimesInMs: this.actualTimesInMs,
@@ -102,12 +83,13 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
 
     public tracks: Map<string, PerformanceEvaluationTrack<EvaluationType>> = new Map();
 
-    startNewTrack(id: string) {
+    startNewTrack(id: string, danceRelativeStem: string, segmentDescription: string) {
         if (this.tracks.has(id)) {
             throw new Error(`Track with ID ${id} already exists.`)
         }
 
-        this.tracks.set(id, new PerformanceEvaluationTrack(id))
+        const newTrack = new PerformanceEvaluationTrack<EvaluationType>(id, danceRelativeStem, segmentDescription);
+        this.tracks.set(id, newTrack);
     }
 
     /**

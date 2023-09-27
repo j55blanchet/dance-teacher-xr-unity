@@ -41,4 +41,8 @@ export interface LiveEvaluationMetric<FrameResultType, SummaryType>{
         history: TrackHistory,
         metricHistory: FrameResultType[]
     ): SummaryType;
+
+    formatSummary(
+        summary: SummaryType
+    ): Record<string, number | string>;
 }

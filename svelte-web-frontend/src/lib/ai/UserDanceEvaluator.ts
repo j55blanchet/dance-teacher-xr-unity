@@ -23,11 +23,20 @@ export class UserDanceEvaluator<
     /**
      * Evaluates a single frame of a user's dance performance.
      * @param trialId Identifier of the current attempt, used to separate recordings into tracks
+     * @param danceRelativeStem Identifier of the dance which is being evaluated
      * @param videoTimeSecs Timestamp of the video, in seconds
      * @param actualTimeMs Actual time this pose was captured, in milliseconds
      * @param userPose2D User's pose at the given frame time
      */
-    evaluateFrame(trialId: string, videoTimeSecs: number, actualTimeMs: number, userPose2D: Pose2DPixelLandmarks, userPose3D: Pose3DLandmarkFrame) {
+    evaluateFrame(
+        trialId: string, 
+        danceRelativeStem: string, 
+        segmentDescription: string, 
+        videoTimeSecs: number, 
+        actualTimeMs: number, 
+        userPose2D: Pose2DPixelLandmarks, 
+        userPose3D: Pose3DLandmarkFrame,
+        disableRecording = false) {
 
         const referencePose2D = this.reference2DData.getReferencePoseAtTime(videoTimeSecs);
         const referencePose3D = this.reference3DData.getReferencePoseAtTime(videoTimeSecs);
@@ -35,11 +44,11 @@ export class UserDanceEvaluator<
             return null;
         }
         
-        if (!this.recorder.tracks.has(trialId)) {
-            this.recorder.startNewTrack(trialId);
+        if (!disableRecording && !this.recorder.tracks.has(trialId)) {
+            this.recorder.startNewTrack(trialId, danceRelativeStem, segmentDescription);
         }
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const track = this.recorder.tracks.get(trialId)!
+        const track = this.recorder.tracks.get(trialId)
 
         
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
@@ -47,14 +56,14 @@ export class UserDanceEvaluator<
             const metric = this.liveMetrics[liveMetricKey];
             return [liveMetricKey, (metric).computeMetric(
                 {
-                    videoFrameTimesInSecs: track.videoFrameTimesInSecs,
-                    actualTimesInMs: track.actualTimesInMs,
-                    ref3DFrameHistory: track.ref3dPoses,
-                    ref2DFrameHistory: track.ref2dPoses,
-                    user3DFrameHistory: track.user3dPoses,
-                    user2DFrameHistory: track.user2dPoses,
+                    videoFrameTimesInSecs: track?.videoFrameTimesInSecs ?? [],
+                    actualTimesInMs: track?.actualTimesInMs ?? [],
+                    ref3DFrameHistory: track?.ref3dPoses ?? [],
+                    ref2DFrameHistory: track?.ref2dPoses ?? [],
+                    user3DFrameHistory: track?.user3dPoses ?? [],
+                    user2DFrameHistory: track?.user2dPoses ?? [],
                 },
-                (track.timeSeriesResults?.[liveMetricKey] ?? []) as any,
+                (track?.timeSeriesResults?.[liveMetricKey] ?? []) as any,
                 videoTimeSecs,
                 actualTimeMs,
                 userPose2D,
@@ -94,16 +103,18 @@ export class UserDanceEvaluator<
         //     angleSimilarity3DByVectorScores,
         //  }
 
-        this.recorder.recordEvaluationFrame(
-            trialId,
-            videoTimeSecs,
-            actualTimeMs,
-            userPose2D,
-            userPose3D,
-            referencePose3D,
-            referencePose2D,
-            metricResults,
-        )
+        if (!disableRecording) {
+            this.recorder.recordEvaluationFrame(
+                trialId,
+                videoTimeSecs,
+                actualTimeMs,
+                userPose2D,
+                userPose3D,
+                referencePose3D,
+                referencePose2D,
+                metricResults,
+            )
+        }
         return metricResults;
     }
 

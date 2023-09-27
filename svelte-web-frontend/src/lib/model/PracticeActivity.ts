@@ -3,4 +3,5 @@ export default interface PracticeActivity {
     endTime: number;
     activityTypes: Array<'watch' | 'mark' | 'drill' | 'fullout'>;
     playbackSpeed: number;
+    segmentDescription: string;
 };

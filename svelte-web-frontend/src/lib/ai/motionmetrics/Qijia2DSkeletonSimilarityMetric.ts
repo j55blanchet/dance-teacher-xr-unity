@@ -108,4 +108,11 @@ export class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<Qij
             maxPossibleScore: QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
         }
     }
+
+    formatSummary(summary: QijiaMetricSummaryOutput): Record<string, string | number> {
+        return {
+            "overall": summary.overallScore,
+            ...Object.fromEntries(summary.vectorByVectorScore.entries())
+        }
+    }
 }

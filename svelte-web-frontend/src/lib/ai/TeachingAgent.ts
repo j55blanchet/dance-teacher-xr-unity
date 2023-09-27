@@ -14,6 +14,7 @@ export function GeneratePracticeActivity(
     // userDancePerformanceLog: UserDancePerformanceLog
 ): PracticeActivity {
     return {
+        segmentDescription: danceTreeNode.id,
         startTime: danceTreeNode.start_time,
         endTime: danceTreeNode.end_time,
         activityTypes: ['drill'], // 'watch', 'mark', 'drill', 'fullout']

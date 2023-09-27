@@ -64,7 +64,7 @@ let referneceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
 let lastEvaluationResult: FrontendLiveEvaluationResult | null = null;
 let evaluator: FrontendDanceEvaluator | null = null;
-let trialId = generateUUIDv4();
+let trialId = null as string | null;
 let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
 
@@ -145,11 +145,15 @@ $: {
         isVideoPausedBinding = true;
 
         if (currentPlaybackEndtime === practiceActivity?.endTime) {
-            const recordedTrack = evaluator?.recorder.tracks.get(trialId);
-            performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
             terminalFeedback = null;
+            performanceSummary = null;
+            let recordedTrack = null as null | FrontendEvaluationTrack;
+            if (trialId) {
+                recordedTrack = evaluator?.recorder.tracks.get(trialId) ?? null;
+                performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
+            }
             state = "feedback";
-            getFeedback(performanceSummary, recordedTrack ?? null)
+            getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
                     terminalFeedback = feedback;
                 });
@@ -214,6 +218,7 @@ async function startCountdown() {
     playClickSound();
     await waitSecs(beatDuration);
 
+    trialId = generateUUIDv4();
     state = "playing"
     countdown = -1;
 
@@ -250,6 +255,7 @@ export async function reset() {
     if (unpauseVideoTimeout !== null) {
         clearTimeout(unpauseVideoTimeout);
     }
+    trialId = null;
     currentActivityStepIndex = 0;
     state = "waitWebcam";
     lastEvaluationResult = null;
@@ -327,10 +333,6 @@ function shouldSendNextPoseEstimationFrame() {
 function poseEstimationFrameReceived(e: any) {
     // console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
 
-    if (state !== 'playing' && state !== 'paused') {
-        return;
-    }
-
     if (!referenceDancePoses2D) {
         console.log("No dance pose information", e);
         return;
@@ -365,7 +367,16 @@ function poseEstimationFrameReceived(e: any) {
     }
     if (!evaluation2DPose) { return; }
     try {
-        lastEvaluationResult = evaluator?.evaluateFrame(trialId, videoTimeSecs, actualTimeInMs, evaluation2DPose, evaluation3DPose) ?? null;
+        lastEvaluationResult = evaluator?.evaluateFrame(
+            trialId ?? 'null', 
+            dance.clipRelativeStem,
+            practiceActivity?.segmentDescription ?? 'undefined',
+            videoTimeSecs,
+            actualTimeInMs,
+            evaluation2DPose,
+            evaluation3DPose,
+            state !== 'playing',
+        ) ?? null;
     }
     catch (e) {
         lastEvaluationResult = null;

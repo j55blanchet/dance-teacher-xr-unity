@@ -69,4 +69,11 @@ export class Skeleton3dVectorAngleSimilarityMetric implements LiveEvaluationMetr
             maxPossibleScore: 1.0,
         }
     }
+
+    formatSummary(summary: Angle3DMetricSummaryOutput): Record<string, string | number> {
+        return {
+            "overall": summary.overallScore,
+            ...Object.fromEntries(summary.individualScores.entries())
+        }
+    }
 }

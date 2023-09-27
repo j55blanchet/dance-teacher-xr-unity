@@ -1,10 +1,17 @@
 import type { LiveEvaluationMetric } from '../MotionMetric';
-
-import type testtrack1 from './test1.group0.laxed-siren-beat.track.json';
-import type testtrack2 from './test2.group0.laxed-siren-beat.track.json';
-import type testtrack3 from './test3.group0.laxed-siren-beat.track.json';
+import fs from 'fs';
+import path from 'path';
+import testtrack1 from './badperf_alignedwithcamera.other_laxed_siren_beat.track.json'
+import testtrack2 from './goodperf_alignedwithcamera.other_laxed_siren_beat.track.json';
+import testtrack3 from './goodperf_skewedtocamera.other_laxed_siren_beat.track.json';
+import Papa from 'papaparse';
 
 export type TestTrack = typeof testtrack1 & typeof testtrack2 & typeof testtrack3;
+
+export const allTestTracks: TestTrack[] = [testtrack1, testtrack2, testtrack3];
+
+export const allTestTrackNames = allTestTracks.map((track) => track.id);
+
 
 export function runMetricOnTestTrack<T extends LiveEvaluationMetric<any, any>>(metric: T, track: TestTrack) {
     
@@ -55,4 +62,48 @@ export function runMetricOnTestTrack<T extends LiveEvaluationMetric<any, any>>(m
         metricHistory, 
         summary
     };
+}
+
+function ensureDirectoryExistence(dirPath: string) {
+    if (fs.existsSync(dirPath)) {
+      return true;
+    }
+    fs.mkdirSync(dirPath);
+    return false;
+  }
+
+export function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any>>(
+    metric: T,
+    tracks: TestTrack[],
+) {
+    
+    const trackIds = tracks.map((track) => track.id);
+    const trackDances = tracks.map((track) => track.danceRelativeStem);
+    const trackSegments = tracks.map((track) => track.segmentDescription);
+    const trackDescriptions = tracks.map((track) => track.trackDescription);
+    const summaries = tracks.map((track) => runMetricOnTestTrack(metric, track).summary);
+    const formattedSummaries = summaries.map((summary) => metric.formatSummary(summary));
+    const rows = formattedSummaries.map((summary, i) => ({
+        ...summary,
+        dance: trackDances[i],
+        trackId: trackIds[i],
+        segment: trackSegments[i],
+        description: trackDescriptions[i],
+    }));
+
+    const columns = [
+        'trackId',
+        'dance',
+        'segment',
+        'description',
+        ...Object.keys(rows[0]).filter((key) => key !== 'dance' && key !== 'track'),
+    ];
+
+    const csv = Papa.unparse({
+        fields: columns,
+        data: rows,
+    });
+    
+    ensureDirectoryExistence('./testResults');
+    fs.writeFileSync(`./testResults/${metric.constructor.name}.csv`, csv);
 }

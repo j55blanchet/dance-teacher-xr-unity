@@ -67,35 +67,45 @@ function promptDownload(objUrl: string, filename: string) {
 
 function exportRecordings() {
 
-    const filename = prompt('Please enter a filename');
-    if (!filename?.length){
+    const track = feedback?.debug?.recordedTrack;
+    if (!track) {
+        console.error("No track to export");
         return;
     }
-    const track = feedback?.debug?.recordedTrack;
-    if (track) {
-        const trackDictionary = track.asDictWithoutTimeSeriesResults()
-        const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
-        const blob = new Blob([trackJson], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        promptDownload(url, `${filename}.track.json`)
 
-        // // Create pose2d csv file with track
-        // let blob2d = new Blob([track.getUserPose2DCsv()], {type: "text/csv"});
-        // let url2d = URL.createObjectURL(blob2d);
-        // promptDownload(url2d, `${filename}-pose2d.csv`)
-        // URL.revokeObjectURL(url2d);
-
-        // // Create pose3d csv file with track
-        // let blob3d = new Blob([track.getUserPose3DCsv()], {type: "text/csv"});
-        // let url3d = URL.createObjectURL(blob3d);
-        // promptDownload(url3d, `${filename}-pose3d.csv`)
-        // URL.revokeObjectURL(url3d);
+    const trackDescription = prompt('Please describe this track');
+    if (!trackDescription?.length){
+        return;
     }
+
+    const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+    let trackDictionary = track.asDictWithoutTimeSeriesResults()
+    trackDictionary = {
+        ...trackDictionary,
+        trackDescription,
+    }
+    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
+    const blob = new Blob([trackJson], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    promptDownload(url, `${filenameRoot}.track.json`)
+
+    // // Create pose2d csv file with track
+    // let blob2d = new Blob([track.getUserPose2DCsv()], {type: "text/csv"});
+    // let url2d = URL.createObjectURL(blob2d);
+    // promptDownload(url2d, `${filename}-pose2d.csv`)
+    // URL.revokeObjectURL(url2d);
+
+    // // Create pose3d csv file with track
+    // let blob3d = new Blob([track.getUserPose3DCsv()], {type: "text/csv"});
+    // let url3d = URL.createObjectURL(blob3d);
+    // promptDownload(url3d, `${filename}-pose3d.csv`)
+    // URL.revokeObjectURL(url3d);
+    
 
     
     const webcamRecording = feedback?.debug?.recordedVideoUrl;
     if (webcamRecording) {
-        promptDownload(webcamRecording, `${filename}.userrecording.webm`)
+        promptDownload(webcamRecording, `${filenameRoot}.userrecording.webm`)
     }
 }
 
