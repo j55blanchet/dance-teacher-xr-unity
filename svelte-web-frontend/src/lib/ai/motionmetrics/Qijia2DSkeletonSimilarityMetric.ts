@@ -77,15 +77,17 @@ type QijiaMetricSingleFrameOutput = {
     overallScore: number;
     vectorByVectorScore: Vec8;
 }
+
 type QijiaMetricSummaryOutput = {
     minPossibleScore: number;
     maxPossibleScore: number;
     overallScore: number;
     vectorByVectorScore: Map<string, number>;
 }
+
 export class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
-    
-    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
+
+    computeMetric(_history: TrackHistory, _metricHistory: QijiaMetricSingleFrameOutput[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
         return computeSkeletonDissimilarityQijiaMethod(ref2dPose, user2dPose)
     }
 

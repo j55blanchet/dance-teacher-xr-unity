@@ -28,7 +28,7 @@ export interface LiveEvaluationMetric<FrameResultType, SummaryType>{
 
     computeMetric(
         history: TrackHistory,
-        metricHistory: number[],
+        metricHistory: FrameResultType[],
         videoFrameTimeInSecs: number,
         actualTimesInMs: number,
         user2dPose: Pose2DPixelLandmarks,
