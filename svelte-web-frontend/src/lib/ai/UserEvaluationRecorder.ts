@@ -79,61 +79,17 @@ export class PerformanceEvaluationTrack<T extends object> {
         }
     }
 
-    getUserPose2DCsv(): string {
-        
-        const pose2dHeaderCols = [
-            'frameTime', 
-            ... 
-            PoseLandmarkKeys.flatMap((key) => {
-                const landmarkName = camelCaseToCAPITALIZED_SNAKE_CASE(key)
-                return [
-                    `${landmarkName}_x`,
-                    `${landmarkName}_y`,
-                    `${landmarkName}_dist_from_camera`,
-                ]
-            })
-        ]
-        
-        return Papa.unparse([
-            pose2dHeaderCols, 
-            ...this.user2dPoses.map(
-                (pose, frame_i) => 
-                [   
-                    this.videoFrameTimesInSecs[frame_i],
-                    ...pose.flatMap((lm) => [
-                        [lm.x], [lm.y], [lm.dist_from_camera]
-                    ])
-                ]
-            )
-        ])
-    }
-
-    getUserPose3DCsv(): string {
-        const pose3dHeaderCols = [
-            'frameTime', 
-            ... 
-            PoseLandmarkKeys.flatMap((key) => {
-                const landmarkName = camelCaseToCAPITALIZED_SNAKE_CASE(key)
-                return [
-                    `${landmarkName}_x`,
-                    `${landmarkName}_y`,
-                    `${landmarkName}_z`,
-                ]
-            })
-        ]
-        
-        return Papa.unparse([
-            pose3dHeaderCols, 
-            ...this.user3dPoses.map(
-                (pose, frame_i) => 
-                [   
-                    this.videoFrameTimesInSecs[frame_i],
-                    ...pose.flatMap((lm) => [
-                        [lm.x], [lm.y], [lm.z]
-                    ])
-                ]
-            )
-        ])
+    asDictWithoutTimeSeriesResults(): Record<string, unknown> {
+        return {
+            id: this.id,
+            creationDate: this.creationDate,
+            videoFrameTimesInSecs: this.videoFrameTimesInSecs,
+            actualTimesInMs: this.actualTimesInMs,
+            user2dPoses: this.user2dPoses,
+            user3dPoses: this.user3dPoses,
+            ref2dPoses: this.ref2dPoses,
+            ref3dPoses: this.ref3dPoses,
+        }
     }
 }
 
