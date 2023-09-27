@@ -1,15 +1,5 @@
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 
-export interface SummaryMetric<T> {
-    computeSummaryMetric(
-        frameTimes: number[],
-        ref3DFrames: Pose3DLandmarkFrame[],
-        ref2DFrames: Pose2DPixelLandmarks[],
-        user3DFrames: Pose3DLandmarkFrame[],
-        user2DFrames: Pose2DPixelLandmarks[],
-    ): T;
-}
-
 export type TrackHistory = {
     videoFrameTimesInSecs: number[],
     actualTimesInMs: number[],
@@ -40,6 +30,17 @@ export interface LiveEvaluationMetric<FrameResultType, SummaryType>{
     summarizeMetric(
         history: TrackHistory,
         metricHistory: FrameResultType[]
+    ): SummaryType;
+
+    formatSummary(
+        summary: SummaryType
+    ): Record<string, number | string>;
+}
+
+
+export interface SummaryMetric<SummaryType> {
+    computeSummaryMetric(
+        history: TrackHistory,
     ): SummaryType;
 
     formatSummary(

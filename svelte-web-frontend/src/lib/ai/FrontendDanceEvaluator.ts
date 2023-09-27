@@ -7,7 +7,7 @@ import type { PerformanceEvaluationTrack } from "./UserEvaluationRecorder";
 import { Julien2DSkeletonSimilarityMetric } from "./motionmetrics/Julien2DSkeletonSimilarityMetric";
 import { Qijia2DSkeletonSimilarityMetric } from "./motionmetrics/Qijia2DSkeletonSimilarityMetric";
 import { Skeleton3dVectorAngleSimilarityMetric } from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
-
+import { BasicInfoSummaryMetric } from "./motionmetrics/BasicInfoSummaryMetric";
 
 const frontendLiveMetrics = {
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
@@ -15,7 +15,11 @@ const frontendLiveMetrics = {
     skeleton3DAngleSimilarity: new Skeleton3dVectorAngleSimilarityMetric(),
 };
 
-export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics>;
+const frontendSummaryMetrics = {
+    basicInfo: new BasicInfoSummaryMetric(),
+};
+
+export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics, typeof frontendSummaryMetrics>;
 export type FrontendPerformanceSummary = ReturnType<FrontendDanceEvaluator["getPerformanceSummary"]>;
 export type FrontendLiveEvaluationResult = ReturnType<FrontendDanceEvaluator["evaluateFrame"]>;
 export type FrontendEvaluationTrack = PerformanceEvaluationTrack<NonNullable<FrontendLiveEvaluationResult>>;
@@ -29,5 +33,6 @@ export function getFrontendDanceEvaluator(
         ref2dPoses,
         ref3dPoses,
         frontendLiveMetrics,
+        frontendSummaryMetrics,
     );
 }

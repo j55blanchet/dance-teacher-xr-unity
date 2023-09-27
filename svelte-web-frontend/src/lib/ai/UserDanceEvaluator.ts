@@ -1,6 +1,6 @@
 import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
-import type { LiveEvaluationMetric } from "./motionmetrics/MotionMetric";
+import type { LiveEvaluationMetric, SummaryMetric } from "./motionmetrics/MotionMetric";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
 
 /**
@@ -8,6 +8,7 @@ import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
  */
 export class UserDanceEvaluator<
     T extends Record<string, LiveEvaluationMetric<unknown, unknown>>,
+    U extends Record<string, SummaryMetric<unknown>>,
 > {
     public recorder = new 
         UserEvaluationRecorder<
@@ -18,6 +19,7 @@ export class UserDanceEvaluator<
         private reference2DData: PoseReferenceData<Pose2DPixelLandmarks>, 
         private reference3DData: PoseReferenceData<Pose3DLandmarkFrame>,
         private liveMetrics: T,
+        private summaryMetrics: U,
     ) {};
 
     /**
@@ -126,40 +128,35 @@ export class UserDanceEvaluator<
         }
 
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
-        const metricSummaryResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
+
+        const trackHistory = {
+            videoFrameTimesInSecs: track.videoFrameTimesInSecs,
+            actualTimesInMs: track.actualTimesInMs,
+            ref3DFrameHistory: track.ref3dPoses,
+            ref2DFrameHistory: track.ref2dPoses,
+            user3DFrameHistory: track.user3dPoses,
+            user2DFrameHistory: track.user2dPoses,
+        };
+
+        const liveMetricSummaryResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
             const metric = this.liveMetrics[liveMetricKey];
             return [liveMetricKey, (metric).summarizeMetric(
-                {
-                    videoFrameTimesInSecs: track.videoFrameTimesInSecs,
-                    actualTimesInMs: track.actualTimesInMs,
-                    ref3DFrameHistory: track.ref3dPoses,
-                    ref2DFrameHistory: track.ref2dPoses,
-                    user3DFrameHistory: track.user3dPoses,
-                    user2DFrameHistory: track.user2dPoses,
-                },
+                trackHistory,
                 (track.timeSeriesResults?.[liveMetricKey] ?? []) as any,
             )]
         })) as {[K in keyof T]: ReturnType<T[K]["summarizeMetric"]>};
                 
-        const frameCount = track.videoFrameTimesInSecs.length
-        const realtimeDurationSecs = (track.actualTimesInMs[frameCount - 1] - track.actualTimesInMs[0]) / 1000
-        const danceTimeDurationSecs = track.videoFrameTimesInSecs[frameCount - 1] - track.videoFrameTimesInSecs[0]
-        const danceTimeFps = frameCount / danceTimeDurationSecs
-        const realTimeFps = frameCount / realtimeDurationSecs
+        const summaryMetricKeys = Object.keys(this.summaryMetrics) as (keyof U)[];
+        const summaryMetricResults = Object.fromEntries(summaryMetricKeys.map((summaryMetricKey) => {
+            const metric = this.summaryMetrics[summaryMetricKey];
+            return [summaryMetricKey, (metric).computeSummaryMetric(
+                trackHistory,
+            )]
+        })) as {[K in keyof U]: ReturnType<U[K]["computeSummaryMetric"]>};
 
         return {
-            frameCount,
-            danceTimeDurationSecs,
-            realtimeDurationSecs,
-            danceTimeFps,
-            realTimeFps,
-            // qijiaOverallScore,
-            // qijiaByVectorScores,
-            // julienOverallScore,
-            // julienByVectorScores,
-            // angleSimilarityOverallScore,
-            // angleSimilarityByVectorScores,
-            ...metricSummaryResults,
+            ...liveMetricSummaryResults,
+            ...summaryMetricResults
         }
     }
 }
