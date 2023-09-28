@@ -25,11 +25,15 @@ def run_dancetree_pipeline(
 ):
     complexities_temp_dir = temp_dir / 'complexities'
     audio_results_temp_dir = temp_dir / 'audio_analysis'
-    audio_analysis_tree_dir = get_audio_result_subdirectory(audio_results_temp_dir, 'video', 'dancetrees')
+    audio_analysis_tree_dir = get_audio_result_subdirectory(
+        results_dir=audio_results_temp_dir, 
+        result_type='dancetrees', 
+        input_type='video'
+    )
     trees_with_complexity_dir = temp_dir / 'trees_with_complexity'
 
     audio_cache_dir =  bundle_media_export_path / 'audio' if include_audio_in_bundle \
-                        else audio_results_temp_dir / 'audio'
+                        else audio_results_temp_dir / 'audiocache'
     
     thumbnails_outdir = bundle_media_export_path / 'thumbnails' if include_thumbnail_in_bundle \
                         else None
@@ -85,7 +89,7 @@ def run_dancetree_pipeline(
     perform_audio_analysis(
         videosrcdir=video_srcdir,
         audiosrcdir=None,
-        destdir=audio_results_temp_dir,
+        audio_analysis_destdir=audio_results_temp_dir,
         audiocachedir=audio_cache_dir if audio_cache_dir else temp_dir / 'audio_cache',
         analysis_summary_out=audio_results_temp_dir / 'audio_analysis_summary.csv',
         include_mem_usage=False,
