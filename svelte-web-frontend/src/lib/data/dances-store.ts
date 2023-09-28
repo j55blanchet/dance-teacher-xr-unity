@@ -78,6 +78,13 @@ export function getAllLeafNodes(node: DanceTreeNode): DanceTreeNode[] {
     ];   
 }
 
+export function getAllNodes(node: DanceTreeNode): DanceTreeNode[] {
+    return [
+        node,
+        ...node.children.flatMap((child) => getAllNodes(child as unknown as DanceTreeNode))
+    ];   
+}
+
 export function getDanceVideoSrc(dance: Dance): string {
     return `/bundle/source_videos/${dance.clipPath}`;
 }

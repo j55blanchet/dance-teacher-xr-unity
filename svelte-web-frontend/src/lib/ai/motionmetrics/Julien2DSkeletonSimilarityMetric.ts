@@ -114,12 +114,17 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
 
     summarizeMetric(_history: Readonly<TrackHistory>, metricHistory: Readonly<JulienMetricSingleFrameOutput[]>): JulienMetricSummaryOutput {
         
-        const overallScore = getArrayMean(metricHistory.map(m => m.overallScore));
+        const overallScore = getArrayMean(metricHistory
+            .map(m => m.overallScore)
+            .filter((n) => !isNaN(n))
+        );
         const arrayOfVecScores = metricHistory.map(m => m.vectorByVectorScores);
 
         const vectorScoreKeyValues = QijiaMethodComparisonVectors.map((_vec, i) => {
             const key = QijiaMethodComparisionVectorNames[i];
-            const thisVecScores = arrayOfVecScores.map(vecbyVecScores => vecbyVecScores[i].score);
+            const thisVecScores = arrayOfVecScores
+                .map(vecbyVecScores => vecbyVecScores[i].score)
+                .filter((n) => !isNaN(n));
             const meanScore = getArrayMean(thisVecScores);
             return [key, meanScore] as [string, number];
         });

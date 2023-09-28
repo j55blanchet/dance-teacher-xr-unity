@@ -6,10 +6,11 @@ export async function POST(event: RequestEvent) {
 
     const data = await event.request.json();
 
-    const performanceScore = data.performanceScore;
-    const performanceMaxScore = data.performanceMaxScore;
-
-    if (!performanceScore || !performanceMaxScore) {
+    const danceStructureDistillation = data.danceStructureDistillation;
+    const currentSectionName = data.currentSectionName;
+    const performanceDistillation = data.performanceDistillation;
+    
+    if (!danceStructureDistillation || !currentSectionName || !performanceDistillation) {
         return json({
             error: "Missing required parameters " + JSON.stringify(data)
         },  {
@@ -18,8 +19,9 @@ export async function POST(event: RequestEvent) {
     }
 
     const feedbackData = await getLLMFeedback(
-        performanceScore,
-        performanceMaxScore
+        danceStructureDistillation,
+        currentSectionName,
+        performanceDistillation,
     );
 
     return json(feedbackData);

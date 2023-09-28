@@ -53,10 +53,14 @@ export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvalua
 
     summarizeMetric(_history: TrackHistory, metricHistory: Angle3DMetricSingleFrameOutput[]): Angle3DMetricSummaryOutput {
         
-        const overallScore = getArrayMean(metricHistory.map(m => m.overallScore));
+        const overallScore = getArrayMean(
+            metricHistory.map(m => m.overallScore)
+                            .filter((n) => !isNaN(n))
+        );
         
         const angleSimilarityVectorScoreKeyValues = Object.keys(BodyInnerAnglesComparisons).map((key) => {
-            const vecScores = metricHistory.map((scores) => scores.individualScores[key].score);
+            const vecScores = metricHistory.map((scores) => scores.individualScores[key].score)
+                                                      .filter((n) => !isNaN(n));
             const meanScore = getArrayMean(vecScores);
             return [key, meanScore] as [string, number];
         });
