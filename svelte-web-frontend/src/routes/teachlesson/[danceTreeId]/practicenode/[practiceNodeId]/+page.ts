@@ -2,11 +2,17 @@ import { error } from '@sveltejs/kit';
 
 import { getDanceAndDanceTreeFromDanceTreeId, findDanceTreeNode } from '$lib/data/dances-store.js';
 
-import type { PageLoad } from './$types';
-
-
 /** @type {import('./$types').PageLoad} */
-export function load({ params })  {
+export function load({ url, params })  {
+
+    const playbackSpeedSearchParam = url.searchParams.get('playbackSpeed');
+    let playbackSpeed = 0.5; // default to 0.5x playback speed
+    if (playbackSpeedSearchParam) {
+        const parsedPlaybackSpeed = parseFloat(playbackSpeedSearchParam);
+        if (!isNaN(playbackSpeed)) {
+            playbackSpeed = parsedPlaybackSpeed
+        }
+    }
 
     const danceTreeId: string = params.danceTreeId;
     const [dance, danceTree] = getDanceAndDanceTreeFromDanceTreeId(danceTreeId);
@@ -24,6 +30,7 @@ export function load({ params })  {
         dance: dance,
         danceTree: danceTree,
         danceTreeNode: danceTreeNode,
+        playbackSpeed: playbackSpeed,
     }
 }
 

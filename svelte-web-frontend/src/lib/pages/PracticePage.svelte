@@ -5,10 +5,11 @@ export const initialState = "waitWebcam";
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
+import { getAllLeafNodes } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
-import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation } from "$lib/data/dances-store";
+import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation, type DanceTreeNode } from "$lib/data/dances-store";
 import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai/feedback';
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
@@ -41,6 +42,15 @@ let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
 $: {
     if (practiceActivity) {
         currentActivityType = practiceActivity.activityTypes[currentActivityStepIndex];
+    }
+}
+
+let containingDanceTreeLeafNodes = [] as DanceTreeNode[];
+$: {
+    if (practiceActivity?.danceTreeNode) {
+        containingDanceTreeLeafNodes = getAllLeafNodes(practiceActivity.danceTreeNode).filter((node) => node.id !== practiceActivity?.danceTreeNode?.id);
+    } else {
+        containingDanceTreeLeafNodes = [];
     }
 }
 
@@ -102,10 +112,9 @@ function unPauseVideo() {
 
 async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
 
-    
-    const qijiaOverallScore = performanceSummary?.qijia2DSkeletonSimilarity.overallScore ?? 0;
-    const qijiaByVectorScores = performanceSummary?.qijia2DSkeletonSimilarity.vectorByVectorScore ?? new Map<string, number>();
-    const qijiaBestPossibleScore = performanceSummary?.qijia2DSkeletonSimilarity.maxPossibleScore ?? 0;
+    const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
+    const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? new Map<string, number>();
+    const qijiaBestPossibleScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.maxPossibleScore ?? 0;
 
     webcamRecorder?.stop();
     let videoURL: undefined | string = undefined;
@@ -148,9 +157,16 @@ $: {
             terminalFeedback = null;
             performanceSummary = null;
             let recordedTrack = null as null | FrontendEvaluationTrack;
+            
+            let subsequences = Object.fromEntries(
+                containingDanceTreeLeafNodes.map((node) => 
+                    [node.id, { startTime: node.start_time, endTime: node.end_time }]
+                )
+            );
+
             if (trialId) {
                 recordedTrack = evaluator?.recorder.tracks.get(trialId) ?? null;
-                performanceSummary = evaluator?.generatePerformanceSummary(trialId) ?? null;
+                performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
             }
             state = "feedback";
             getFeedback(performanceSummary, recordedTrack)
@@ -183,7 +199,6 @@ function playClickSound() {
     clickAudioElement.currentTime = 0;
     clickAudioElement.play();
 }
-
 
 async function startCountdown() {
     if (countdownActive) return;

@@ -68,6 +68,16 @@ export function findDanceTreeNode(danceTree: DanceTree, nodeId: string): DanceTr
     return FindDanceTreeNodeRecursive(danceTree.root, nodeId);
 }
 
+export function getAllLeafNodes(node: DanceTreeNode): DanceTreeNode[] {
+    if (node.children.length === 0) {
+        return [node];
+    }
+
+    return [
+        ...node.children.flatMap((child) => getAllLeafNodes(child as unknown as DanceTreeNode))
+    ];   
+}
+
 export function getDanceVideoSrc(dance: Dance): string {
     return `/bundle/source_videos/${dance.clipPath}`;
 }

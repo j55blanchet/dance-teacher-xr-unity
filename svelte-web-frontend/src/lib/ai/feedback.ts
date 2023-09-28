@@ -32,6 +32,7 @@ export function generateFeedbackRuleBased(
     let incorrectBodyPartsToHighlight: TerminalFeedbackBodyPart[] | undefined;
     let correctBodyPartsToHighlight: TerminalFeedbackBodyPart[] | undefined;
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [worstComparisonVectorIndex, worstVectorScore] = [... qijiaByVectorScores.keys()].map((vectorName) => {
         const vectorIndex = QijiaMethodComparisionVectorNamesToIndexMap.get(vectorName);
         if (vectorIndex === undefined) { throw new Error("Unexpected vector name: " + vectorName); }

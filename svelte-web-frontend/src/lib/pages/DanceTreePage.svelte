@@ -117,7 +117,7 @@ async function practiceClicked() {
         <span class="practiceLink">{currentPlayingNode.id}</span>
         <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
             {#if $navigating}
-                Navigating <div class="spinner"></div>
+                Navigating <span class="spinner"></span>
             {:else}
                 Practice
             {/if}
