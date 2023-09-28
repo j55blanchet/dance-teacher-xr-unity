@@ -1,11 +1,12 @@
 <script context="module" lang="ts">
 export type PracticePageState = "waitWebcam" | "waitStart" | "countdown" | "playing" | "paused" | "feedback";
-export const initialState = "waitWebcam";
+export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
+import { evaluation_summarizeSubsections } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { getAllLeafNodes } from '$lib/data/dances-store';
+import { getAllLeafNodes, getAllNodesInSubtree } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
@@ -33,7 +34,7 @@ const dispatch = createEventDispatcher();
 
 let fitVideoToFlexbox = true;
 
-let state: PracticePageState = initialState;
+let state: PracticePageState = INITIAL_STATE;
 $: console.log("PracticePage state", state);
 $: dispatch('stateChanged', state); 
 
@@ -47,16 +48,20 @@ $: {
 
 let containingDanceTreeLeafNodes = [] as DanceTreeNode[];
 $: {
-    if (practiceActivity?.danceTreeNode) {
+    if (practiceActivity?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
         containingDanceTreeLeafNodes = getAllLeafNodes(practiceActivity.danceTreeNode).filter((node) => node.id !== practiceActivity?.danceTreeNode?.id);
-    } else {
+    } else if (practiceActivity?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
+        containingDanceTreeLeafNodes = getAllNodesInSubtree(practiceActivity.danceTreeNode).filter((node) => node.id !== practiceActivity?.danceTreeNode?.id);
+    }else {
         containingDanceTreeLeafNodes = [];
     }
 }
 
 let beatDuration = 1;
 $: {
-    beatDuration = dance?.bpm ? 60 / dance.bpm : 1;
+    const danceBpm = dance?.bpm ?? 60;
+    const danceSecsPerBeat = 60 / danceBpm;
+    beatDuration = danceSecsPerBeat / videoPlaybackSpeed;
 }
 
 let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
@@ -185,9 +190,9 @@ $: {
     }
 }
 
-async function waitSecs(secs: number | undefined) {
+async function waitSecs(secs: number) {
     return new Promise((resolve) => {
-        setTimeout(resolve, (secs ?? 1) * 1000);
+        setTimeout(resolve, secs * 1000);
     })
 }
 

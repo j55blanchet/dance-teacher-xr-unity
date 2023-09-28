@@ -63,7 +63,7 @@ function distillDanceSubTree(danceNode: DanceTreeNode, depth = 0) {
     const indentation = "  ".repeat(depth);
     let description = `${indentation}${nodeNoun} "${danceNode.id}" is ${nodeDuration.toFixed(2)}s long, has a complexity of ${danceNode.complexity.toFixed(2)}, and has ${danceNode.children.length} subsections\n`;
     danceNode.children.forEach((child) => {
-        description += distillDanceSubTree(child, depth + 1);
+        description += distillDanceSubTree(child as DanceTreeNode, depth + 1);
     });
     return description;
 }

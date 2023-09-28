@@ -68,6 +68,13 @@ export function findDanceTreeNode(danceTree: DanceTree, nodeId: string): DanceTr
     return FindDanceTreeNodeRecursive(danceTree.root, nodeId);
 }
 
+export function getAllNodesInSubtree(node: DanceTreeNode): DanceTreeNode[] {
+    return [
+        node,
+        ...node.children.flatMap((child) => getAllNodesInSubtree(child as unknown as DanceTreeNode))
+    ];   
+}
+
 export function getAllLeafNodes(node: DanceTreeNode): DanceTreeNode[] {
     if (node.children.length === 0) {
         return [node];
