@@ -51,7 +51,7 @@ def get_audio_analysis_filepath(
 def perform_audio_analysis(
         videosrcdir: t.Optional[Path],
         audiosrcdir: t.Optional[Path],
-        destdir: Path,
+        audio_analysis_destdir: Path,
         audiocachedir: Path,
         analysis_summary_out: Path,
         include_mem_usage: bool = False,
@@ -117,7 +117,7 @@ def perform_audio_analysis(
 
         # Save the analysis information (with same relative path as input file)
         analysis_destdir = get_audio_result_subdirectory(
-            results_dir=destdir, 
+            results_dir=audio_analysis_destdir, 
             input_type=input_type, 
             result_type='analysis'
         )
@@ -128,7 +128,7 @@ def perform_audio_analysis(
         analysis_result = None
         should_reanalyze_audio = True
         if skip_existing and analysis_output_filepath.exists():
-            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {analysis_output_filepath.relative_to(destdir)}")
+            print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Exists: {analysis_output_filepath.relative_to(audio_analysis_destdir)}")
             # Try-catch is necessary because sometimes we update the format of the AudioAnalysisResult,
             # and the json files can be out of date, causing the AudioAnalysisResult.from_dict() to fail.
             # In this case, we'll reanalyze the audio.
@@ -137,7 +137,7 @@ def perform_audio_analysis(
                 analysis_result = AudioAnalysisResult.from_dict(json.loads(preexisting_analysis_filetext))
                 should_reanalyze_audio = False
             except Exception as e:
-                print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Error loading: {analysis_output_filepath.relative_to(destdir)}: {e}. ")
+                print_with_time(f"    {i+1}/{len(all_input_filepaths)} [{input_type} src] Error loading: {analysis_output_filepath.relative_to(audio_analysis_destdir)}: {e}. ")
                 
         if should_reanalyze_audio:
             is_reanalyzing = analysis_output_filepath.exists()
@@ -150,7 +150,7 @@ def perform_audio_analysis(
             
         # Plot cross similarity matrix (if it doesn't already exist)
         similarity_dir = get_audio_result_subdirectory(
-            results_dir=destdir, 
+            results_dir=audio_analysis_destdir, 
             input_type=input_type, 
             result_type='segmentsimilarity'
         )
@@ -164,7 +164,7 @@ def perform_audio_analysis(
 
         # Create / save dance tree files
         dance_tree_dir = get_audio_result_subdirectory(
-            results_dir=destdir, 
+            results_dir=audio_analysis_destdir, 
             input_type=input_type, 
             result_type='dancetrees'
         )

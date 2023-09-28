@@ -17,7 +17,7 @@ if __name__ == '__main__':
     perform_audio_analysis(
         videosrcdir=args.videosrcdir,
         audiosrcdir=args.audiosrcdir,
-        destdir=args.destdir,
+        audio_analysis_destdir=args.destdir,
         audiocachedir=args.audiocachedir,
         analysis_summary_out=args.analysis_summary_out,
         include_mem_usage=args.include_mem_usage,

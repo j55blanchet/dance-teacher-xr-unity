@@ -17,6 +17,16 @@ $: node_title = node.id.split("-").findLast(() => true);
 let showProgress = false;
 $: showProgress = showProgressNodes.includes(node);
 
+let nodeTitleString = "";
+$: {
+    if (!$debugMode) nodeTitleString = "";
+    else {
+        const duration = node.end_time - node.start_time;
+        const complexityPerSecond = node.complexity / (node.end_time - node.start_time);
+        const nodeComplexityString = `${complexityPerSecond.toFixed(2)}/s ${node.complexity.toFixed(2)} total`
+        nodeTitleString = `${node.id}\nComplexity: ${nodeComplexityString}\nDuration: ${duration.toFixed(2)}s`;
+    } 
+}
 const dispatch = createEventDispatcher();
 
 function barClicked () {
@@ -33,6 +43,7 @@ function barClicked () {
        on:click={barClicked}
        role="menuitem"
        tabindex="0"
+       title={nodeTitleString}
     >   
         {#if showProgress}<span class="progress outlined" style="width:{progressPercent*100}%">
             <!-- {currentTime.toFixed(1)} -->
@@ -45,11 +56,6 @@ function barClicked () {
                     </span>
                 {/if}
             {/each}
-        {/if}
-        {#if $debugMode}
-        <span class="complexity">
-            {(node.complexity / (node.end_time - node.start_time)).toFixed(2)}/s ({node.complexity.toFixed(2)} total)
-        </span>
         {/if}
     </a>
     {#if node.children.length > 0}
