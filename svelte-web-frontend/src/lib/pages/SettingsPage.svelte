@@ -12,6 +12,8 @@ import {
     stepMin,
     stepMax,
     useAIFeedback,
+    evaluation_summarizeSubsections,
+    evaluation_summarizeSubsectionsOptions
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -35,33 +37,50 @@ const qijiaScoreMax = 5;
 </script>
 
 <section class="settingsPage">
-    <div>
-        <label for="debugMode">Debug Mode</label>
-        <input type="checkbox" name="debugMode" bind:checked={$debugMode}>
+    <div class="group">
+        <h3>General Settings</h3>
+        <div>
+            <label for="debugMode">Debug Mode</label>
+            <input type="checkbox" name="debugMode" bind:checked={$debugMode}>
+        </div>
+        <div>
+            <label for="pauseInPracticePage">Pause in Practice Page</label>
+            <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>
+        </div>
+        <div>
+            <label for="debugPauseDuration">Debug Pause Duration</label>
+            <input type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
+        </div>
     </div>
-    <div>
-        <label for="pauseInPracticePage">Pause in Practice Page</label>
-        <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>
+    <div class="group">
+        <h3>Live Feedback</h3>
+        <div>
+            <label for="evaluation_GoodBadTrialThreshold">Good/Bad Trial Threshold</label>
+            <input type="number" name="evaluation_GoodBadTrialThreshold" bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+        </div>
+        <div>
+            <label for="feedback_YellowThreshold">Yellow Threshold</label>
+            <input type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+        </div>
+        <div>
+            <label for="feedback_GreenThreshold">Green Threshold</label>
+            <input type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+        </div>
     </div>
-    <div>
-        <label for="debugPauseDuration">Debug Pause Duration</label>
-        <input type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
-    </div>
-    <div>
-        <label for="evaluation_GoodBadTrialThreshold">Good/Bad Trial Threshold</label>
-        <input type="number" name="evaluation_GoodBadTrialThreshold" bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-    </div>
-    <div>
-        <label for="feedback_YellowThreshold">Yellow Threshold</label>
-        <input type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-    </div>
-    <div>
-        <label for="feedback_GreenThreshold">Green Threshold</label>
-        <input type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-    </div>
-    <div>
-        <label for="useAIFeedback">Use AI Feedback</label>
-        <input type="checkbox" name="useAIFeedback" bind:checked={$useAIFeedback}>
+    <div class="group">
+        <h3>Summary Feedback</h3>
+        <div>
+            <label for="useAIFeedback">Use AI Feedback</label>
+            <input type="checkbox" name="useAIFeedback" bind:checked={$useAIFeedback}>
+        </div>
+        <div>
+            <label for="evaluation_summarizeSubsections">Evaluate Subsections</label>
+            <select name="evaluation_summarizeSubsections" bind:value={$evaluation_summarizeSubsections}>
+                {#each Object.entries(evaluation_summarizeSubsectionsOptions) as [optionValue, optionTitle]}
+                    <option value={optionValue}>{optionTitle}</option>
+                {/each}
+            </select>
+        </div>
     </div>
     <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
@@ -81,5 +100,22 @@ const qijiaScoreMax = 5;
     padding: 1rem;
     box-sizing: border-box;
     gap: 0.5rem;
+}
+div.group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    gap: 0.5rem;
+    width: 100%;
+    // border: 1px solid lightgray;
+    padding: 1rem;
+    box-sizing: border-box;
+
+    & h3 {
+        font-size: 1em;
+        margin: 0;
+        border-bottom: 1px solid lightgray;
+    }
 }
 </style>

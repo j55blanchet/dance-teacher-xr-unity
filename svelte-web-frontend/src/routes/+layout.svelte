@@ -5,6 +5,7 @@
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
 	import SettingsPage from '$lib/pages/SettingsPage.svelte';
+	import CloseButton from '$lib/elements/CloseButton.svelte';
 
 	let settingsDialog: HTMLDialogElement;
 
@@ -30,13 +31,7 @@
 	</div>
 
 	<dialog class="settingsDialog" bind:this={settingsDialog}>
-		<button class="button close x" aria-label="close" on:click={toggleSettings}>
-			<svg
-			xmlns="http://www.w3.org/2000/svg"
-			viewBox="0 0 1 1">
-			<path d="M0,0 L1,1 M1,0 L0,1" />
-			</svg>
-		</button>
+		<CloseButton on:click={toggleSettings} />
 		<div class="settingsContainer outlined">
 			<SettingsPage />
 		</div>
@@ -87,35 +82,5 @@
 	.settingsContainer {
 		background: white;
 		margin-top: 0.5rem;
-	}
-
-	.close {
-		margin-left: auto;
-		/* margin-right: auto; */
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		/* border-color: white; */
-		/* color: white;
-		background: rgba(0, 0, 0, 0.5);
-		box-shadow: none;
-		outline: 4px solid white; */
-	}
-
-	.close.x {
-		/* width: 2rem; */
-		/* height: 2rem; */
-		
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.close.x svg {
-		width: 1rem;
-		height: 1rem;
-		stroke-width: 0.15px;
-		stroke: var(--color-text);
-		stroke-linecap: round;
 	}
 </style>

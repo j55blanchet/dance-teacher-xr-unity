@@ -11,6 +11,8 @@ import { createEventDispatcher, onMount } from 'svelte';
 import { debugMode } from '$lib/model/settings';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { goto } from '$app/navigation';
+import CloseButton from './CloseButton.svelte';
+import Dialog from './Dialog.svelte';
 
 const dispatch = createEventDispatcher();
 
@@ -57,6 +59,17 @@ $: {
         buttons = [repeatButton, continueButton, ...navigationButtons];
     }
 }
+
+let showingPerformanceSummary = false;
+let performanceSummaryDialog: HTMLDialogElement | undefined;
+$: {
+    if (showingPerformanceSummary) {
+        performanceSummaryDialog?.showModal();
+    } else {
+        performanceSummaryDialog?.close();
+    }
+}
+let showingLLMReflection = false;
 
 let skeletonHighlights: BodyPartHighlight[] = [];
 
@@ -134,33 +147,44 @@ function exportRecordings() {
         />
     </div>
     {/if}
-    {#if $debugMode && feedback?.debug?.performanceSummary}
-    <div class="debug">
-        <h3>Performance Summary</h3>
-        <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
-    </div>
-    {/if}
-    {#if $debugMode && feedback?.debug?.llmReflection}
-    <div class="debug">
-        <h3>LLM Reflection</h3>
-        <p>{feedback.debug.llmReflection}</p>
-    </div>
-    {/if}
+    <div class="buttons">
     {#each buttons as button, i}
         <button class="button outlined thick" 
             class:primary={i===0} 
             class:secondary={i>0}
-            on:click={button.action}>
+            on:click={button.action}
+            title={ $debugMode ? button.debug : ''}
+            >
             {button.title}
-            {#if $debugMode && button.debug}
-                <div class="debug">{button.debug}</div>
-            {/if}
         </button>
     {/each}
-    {#if $debugMode && feedback?.debug?.recordedTrack}
-    <button class="button" on:click={exportRecordings}>
-        Export Recorded Track
-    </button>
+    </div>
+    {#if $debugMode}
+        <div class="debug buttons">
+            {#if feedback?.debug?.performanceSummary}
+            <button class="button" on:click={() => showingPerformanceSummary = true }>
+                View Performance Summary
+            </button>
+            <Dialog open={showingPerformanceSummary}
+              on:dialog-closed={() => showingPerformanceSummary = false}>
+                <span slot="title">Performance Summary</span>
+                <pre class="dialogcontent microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+            </Dialog>
+            {/if}
+            {#if feedback?.debug?.llmReflection}
+            <button class="button" on:click={() => showingLLMReflection = true }>View LLM Reflection</button>
+            <Dialog open={showingLLMReflection}
+                on:dialog-closed={() => showingLLMReflection = false}>
+                <span slot="title">LLM Reflection</span>
+                <p>{feedback.debug.llmReflection}</p>
+            </Dialog>
+            {/if}
+            {#if feedback?.debug?.recordedTrack}
+            <button class="button" on:click={exportRecordings}>
+                Export Recorded Track
+            </button>
+            {/if}
+        </div>
     {/if}
 </div>
 
@@ -212,26 +236,45 @@ pre {
 
 .debug {
     font-size: 0.5em;
-    overflow-y: scroll;
-    border: 1px solid lightgray;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-
-    & h3 {
-        margin: 0;
-    }
-
-    & p {
-        margin-top: 0.25rem;
-    }
 }
 
 button.primary {
     font-weight: 800;
     background: white;
+    border-color: var(--color-theme-1);
+    color: var(--color-theme-1); 
 }
 button.secondary {
     margin-top: 0.25rem;
     font-size: 0.8em;
+}
+
+dialog {
+    max-height: calc(100vh - 2rem);
+    box-sizing: border-box;
+    font-size: 1rem;
+    overflow-y: hidden;
+}
+
+dialog .close {
+    display: inline-block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+dialog > .dialogcontent {
+    max-height: 80vh;
+    overflow-y: scroll;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 1rem;
 }
 </style>
