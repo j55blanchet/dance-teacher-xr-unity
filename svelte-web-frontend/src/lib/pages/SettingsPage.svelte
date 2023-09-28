@@ -64,7 +64,7 @@ const qijiaScoreMax = 5;
         <input type="checkbox" name="useAIFeedback" bind:checked={$useAIFeedback}>
     </div>
     <div>
-        <button on:click={resetSettingsToDefault}>Reset Settings</button>
+        <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
 </section>
 

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
@@ -6,9 +6,16 @@
 	import './styles.scss';
 	import SettingsPage from '$lib/pages/SettingsPage.svelte';
 
+	let settingsDialog: HTMLDialogElement;
+
 	let showingSettings = false;
 	function toggleSettings() {
 		showingSettings = !showingSettings;
+		if (showingSettings) {
+			settingsDialog.showModal();
+		} else {
+			settingsDialog.close();
+		}
 	}
 </script>
 
@@ -22,8 +29,17 @@
 		<slot name="debug" />
 	</div>
 
-	<dialog class="settingsDialog" open={showingSettings}>
-		<SettingsPage />
+	<dialog class="settingsDialog" bind:this={settingsDialog}>
+		<button class="button close x" aria-label="close" on:click={toggleSettings}>
+			<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 1 1">
+			<path d="M0,0 L1,1 M1,0 L0,1" />
+			</svg>
+		</button>
+		<div class="settingsContainer outlined">
+			<SettingsPage />
+		</div>
 	</dialog>
 </div>
 
@@ -50,10 +66,56 @@
 
 	.settingsDialog {
 		position: absolute;
-		top: calc(var(--navbar_height) + 1rem);
-		left: 1rem;
-		right: 1rem;
+		/* top: calc(var(--navbar_height) + 1rem); */
+		/* left: 1rem; */
+		/* right: 1rem; */
 		--content_height: auto;
+		margin-top: 0;
+		margin-right: 0;
+		max-width: calc(100vw - 2rem);
+		padding: 0.5em;
+		background: none;
+		border: none;
 		/* background: rgba(0, 0, 0, 0.5); */
+	}
+
+	.settingsDialog::backdrop {
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(3px);
+	}
+
+	.settingsContainer {
+		background: white;
+		margin-top: 0.5rem;
+	}
+
+	.close {
+		margin-left: auto;
+		/* margin-right: auto; */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		/* border-color: white; */
+		/* color: white;
+		background: rgba(0, 0, 0, 0.5);
+		box-shadow: none;
+		outline: 4px solid white; */
+	}
+
+	.close.x {
+		/* width: 2rem; */
+		/* height: 2rem; */
+		
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.close.x svg {
+		width: 1rem;
+		height: 1rem;
+		stroke-width: 0.15px;
+		stroke: var(--color-text);
+		stroke-linecap: round;
 	}
 </style>

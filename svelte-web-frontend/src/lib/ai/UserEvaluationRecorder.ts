@@ -9,18 +9,21 @@ type ArrayVersions<T> = {
 }
 
 // Type definition for a performance evaluation track.
-export class PerformanceEvaluationTrack<T extends object> {
-    public creationDate: Date;
-    public videoFrameTimesInSecs: number[] = [];
-    public actualTimesInMs: number[] = [];
-    public user2dPoses: Pose2DPixelLandmarks[] = [];
-    public user3dPoses: Pose3DLandmarkFrame[] = [];
-    public ref2dPoses: Pose2DPixelLandmarks[] = [];
-    public ref3dPoses: Pose3DLandmarkFrame[] = [];
-    public timeSeriesResults: ArrayVersions<T> | undefined;
-
-    constructor(public id: string, public danceRelativeStem: string, public segmentDescription: string) {
-        this.creationDate = new Date();
+export class PerformanceEvaluationTrack<T extends Record<string, unknown>> {
+    
+    constructor(
+        public id: string, 
+        public danceRelativeStem: string, 
+        public segmentDescription: string,
+        public creationDate = new Date(),
+        public videoFrameTimesInSecs: number[] = [],
+        public actualTimesInMs: number[] = [],
+        public user2dPoses: Pose2DPixelLandmarks[] = [],
+        public user3dPoses: Pose3DLandmarkFrame[] = [],
+        public ref2dPoses: Pose2DPixelLandmarks[] = [],
+        public ref3dPoses: Pose3DLandmarkFrame[] = [],
+        public timeSeriesResults: ArrayVersions<T> | undefined = undefined,
+    ) {  
     }
 
     recordEvaluationFrame(
@@ -72,23 +75,62 @@ export class PerformanceEvaluationTrack<T extends object> {
             ref3dPoses: this.ref3dPoses,
         }
     }
+
+    getSubTrack(videoStartTime: number, videoEndTime: number): PerformanceEvaluationTrack<T> | null {
+        const frameStart = this.videoFrameTimesInSecs.findIndex(frameTime => frameTime >= videoStartTime)
+        
+        let frameEnd = this.videoFrameTimesInSecs.findIndex(frameTime => frameTime >= videoEndTime)
+        if (frameEnd === -1) {
+            frameEnd = this.videoFrameTimesInSecs.length;
+        }
+
+        if (frameStart === -1 || frameEnd === -1) {
+            return null
+        }
+        if (frameEnd <= frameStart) {
+            return null
+        }
+
+        let timeSeriesResults = undefined as typeof this.timeSeriesResults;
+        
+        if (this.timeSeriesResults) {
+            timeSeriesResults = Object.entries(this.timeSeriesResults).reduce((acc, [key, value]) => {
+                (acc as any)[key] = value.slice(frameStart, frameEnd)
+                return acc
+            }, {} as ArrayVersions<T>)
+        }
+
+        return new PerformanceEvaluationTrack(
+            this.id,
+            this.danceRelativeStem,
+            this.segmentDescription,
+            this.creationDate,
+            this.videoFrameTimesInSecs.slice(frameStart, frameEnd),
+            this.actualTimesInMs.slice(frameStart, frameEnd),
+            this.user2dPoses.slice(frameStart, frameEnd),
+            this.user3dPoses.slice(frameStart, frameEnd),
+            this.ref2dPoses.slice(frameStart, frameEnd),
+            this.ref3dPoses.slice(frameStart, frameEnd),
+            timeSeriesResults,
+        )
+    }
 }
 
 /**
  * Class for recording user performance evaluations.
- * @template EvaluationType - The type of evaluation data to be recorded.
+ * @template LiveMetricResultsType - The type of evaluation data to be recorded.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> {
+export class UserEvaluationRecorder<LiveMetricResultsType extends Record<string, any>> {
 
-    public tracks: Map<string, PerformanceEvaluationTrack<EvaluationType>> = new Map();
+    public tracks: Map<string, PerformanceEvaluationTrack<LiveMetricResultsType>> = new Map();
 
     startNewTrack(id: string, danceRelativeStem: string, segmentDescription: string) {
         if (this.tracks.has(id)) {
             throw new Error(`Track with ID ${id} already exists.`)
         }
 
-        const newTrack = new PerformanceEvaluationTrack<EvaluationType>(id, danceRelativeStem, segmentDescription);
+        const newTrack = new PerformanceEvaluationTrack<LiveMetricResultsType>(id, danceRelativeStem, segmentDescription);
         this.tracks.set(id, newTrack);
     }
 
@@ -106,7 +148,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
         user3dPose: Pose3DLandmarkFrame, 
         ref3dPose: Pose3DLandmarkFrame,
         ref2dPose: Pose2DPixelLandmarks,
-        evaluationResult: EvaluationType
+        timeSeriesMetrics: LiveMetricResultsType
     ) {        
         const track = this.tracks.get(id);
         if (!track) {
@@ -120,7 +162,7 @@ export class UserEvaluationRecorder<EvaluationType extends Record<string, any>> 
             user3dPose, 
             ref2dPose,
             ref3dPose,
-            evaluationResult
+            timeSeriesMetrics
         );
     }
 }

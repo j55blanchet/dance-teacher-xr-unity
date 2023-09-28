@@ -11,11 +11,13 @@ export let data;
 const dance: Dance = data.dance;
 const danceTree: DanceTree = data.danceTree;
 const node: DanceTreeNode = data.danceTreeNode;
+const playbackSpeed: number = data.playbackSpeed;
 
 const practiceActivity = GeneratePracticeActivity (
     dance,
     danceTree,
     node,
+    playbackSpeed,
     // {} //  UserDancePerformanceLog
 )
 

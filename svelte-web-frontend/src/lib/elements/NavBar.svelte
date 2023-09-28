@@ -52,7 +52,6 @@ export let settingsActive: boolean;
          on:click={() => dispatch('settingsButtonClicked')}>
         <svg 
             xmlns="http://www.w3.org/2000/svg"
-            fill="#000000"  
 	        viewBox="0 0 45.973 45.973">
             <path d="M43.454,18.443h-2.437c-0.453-1.766-1.16-3.42-2.082-4.933l1.752-1.756c0.473-0.473,0.733-1.104,0.733-1.774
                 c0-0.669-0.262-1.301-0.733-1.773l-2.92-2.917c-0.947-0.948-2.602-0.947-3.545-0.001l-1.826,1.815
@@ -99,10 +98,6 @@ nav h1 {
     font-size: 2rem;
 }
 
-.back {
-    background: var(--color-bg-2);
-}
-
 button.settings {
     display: flex;
     align-items: center;
@@ -116,10 +111,8 @@ button.settings {
 }
 
 button.settings.active {
-    background-color: black;
     & svg {
         transform: rotate(45deg);
-        fill: white;
         animation: gearjiggle ease-out 0.5s infinite alternate;
     }
 }
@@ -128,5 +121,6 @@ button svg {
     width: 1em;
     height: 1em;
     transition: transform 0.2s ease-in-out, fill 0.2s ease-in-out;
+    fill: var(--color-text)
 }
 </style>

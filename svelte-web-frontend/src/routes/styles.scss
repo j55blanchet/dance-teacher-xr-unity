@@ -131,12 +131,18 @@ button:focus:not(:focus-visible) {
 	display: inline-block;
 	text-decoration: none;
 	border-width: 2px;
+	background-color: rgb(239, 239, 239);
 	cursor: pointer;
 	// transition: color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
+
+a.button {
+	text-decoration: none;
+}
+
 .button:hover {
 	// display: inline-block;
-	background-color: rgba(0, 0, 0, 0.03);
+	background-color: rgba(247, 247, 247);
 	color: var(--color-theme-2);
 	box-shadow: 0 0 2px #000;
 }
@@ -179,6 +185,9 @@ button:focus:not(:focus-visible) {
 .ta-center {
 	text-align: center;
 }
+.ta-right {
+	text-align: right;
+}
 .margin-auto {
 	margin: auto;
 }
@@ -192,6 +201,13 @@ button:focus:not(:focus-visible) {
 	animation: spin 2s linear infinite;
 	// margin: 0 auto;
 }
+.span.spinner {
+	display: inline-block;
+}
+div.spinner {
+	display: block;
+	margin: 0 auto;
+}
 
 .spinner.large {
 	border: 16px solid #f3f3f3; /* Light grey */
@@ -202,9 +218,9 @@ button:focus:not(:focus-visible) {
 
 @keyframes spin {
 	0% { transform: rotate(0deg); border-radius: 50%;}
-	25% { border-radius: 50%; border-top: 16px solid var(--color-text);}
-	40% { border-radius: 25%;}
-	60% { border-radius: 25%;}
+	25% { border-radius: 50%;}
+	40% { border-radius: 40%;}
+	60% { border-radius: 40%;}
 	75% { border-radius: 50%;}
 	100% { transform: rotate(360deg); border-radius: 50%;}
 }

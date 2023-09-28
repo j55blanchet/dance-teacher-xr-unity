@@ -105,13 +105,32 @@ export default class UserDanceEvaluator<
      * @returns Performance summary for the given track, accululated from the live metrics and
      * summary metrics provided to the constructor.
      */
-    generatePerformanceSummary(id: string) {
+    generatePerformanceSummary<T extends Record<string, { startTime: number, endTime: number}>>(
+        id: string, 
+        subsections: T,
+    ) {
 
         const track = this.recorder.tracks.get(id)
         if (!track) {
             return null;
         }
+        const perfTrackWholePerformance = this.generateMetricSummariesForTrack(track);
 
+        return {
+            wholePerformance: perfTrackWholePerformance,
+            subsections: Object.fromEntries(Object.entries(subsections).map(([subsectionName, {startTime, endTime}]) => {
+                const subsectionTrack = track.getSubTrack(startTime, endTime)
+                if (!subsectionTrack) {
+                    return [subsectionName, null];
+                }
+                return [subsectionName, this.generateMetricSummariesForTrack(subsectionTrack)];
+            })) as {[K in keyof T]: ReturnType<typeof this.generateMetricSummariesForTrack>},
+        }
+    }
+
+    private generateMetricSummariesForTrack(
+        track: NonNullable<ReturnType<typeof this.recorder.tracks["get"]>>,
+    ) {
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
 
         const trackHistory = {
