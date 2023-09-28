@@ -20,7 +20,7 @@ const frontendSummaryMetrics = {
 };
 
 export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics, typeof frontendSummaryMetrics>;
-export type FrontendPerformanceSummary = ReturnType<FrontendDanceEvaluator["generatePerformanceSummary"]>;
+export type FrontendPerformanceSummary = NonNullable<ReturnType<FrontendDanceEvaluator["generatePerformanceSummary"]>>;
 export type FrontendLiveEvaluationResult = ReturnType<FrontendDanceEvaluator["evaluateFrame"]>;
 export type FrontendEvaluationTrack = PerformanceEvaluationTrack<NonNullable<FrontendLiveEvaluationResult>>;
 

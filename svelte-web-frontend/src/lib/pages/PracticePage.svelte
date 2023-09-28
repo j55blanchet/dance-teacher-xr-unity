@@ -126,8 +126,9 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     if ($useAIFeedback) {
         try {
             feedback = await generateFeedbackWithClaudeLLM(
-            qijiaOverallScore,
-            qijiaBestPossibleScore,
+                practiceActivity?.danceTree,
+                practiceActivity?.danceTreeNode?.id ?? 'undefined',
+                performanceSummary ?? undefined,
             )
         } catch(e) {
             console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
@@ -139,6 +140,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     }
     
     feedback.debug = {
+        ...feedback.debug,
         performanceSummary: performanceSummary ?? undefined,
         recordedTrack: recordedTrack ?? undefined,
         recordedVideoUrl: videoURL,

@@ -2,9 +2,12 @@
  * @file Takes raw evaluation data and creates feedback for the user's consumption
  */
 
+import { getAllNodes, type DanceTree, makeDanceTreeSlug } from "$lib/data/dances-store";
 import { TerminalFeedbackBodyParts, type TerminalFeedbackAction, type TerminalFeedbackBodyPart, type TerminalFeedback } from "$lib/model/TerminalFeedback";
 import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 import { ComparisonVectorToTerminalFeedbackBodyPartMap, QijiaMethodComparisionVectorNamesToIndexMap } from "./EvaluationCommonUtils";
+import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
+import { distillDanceTreeStructureToTextualRepresentation, distillFrontendPerformanceSummaryToTextualRepresentation } from "./textual-distillation";
 import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./precomputed-feedback-msgs";
 
 // Variable to store the value of the evaluation threshold, initialized to 1.0
@@ -67,7 +70,7 @@ export function generateFeedbackRuleBased(
 
     return {
         headline: headline,
-        subHeadline: subHeadline,
+        paragraphs: [subHeadline],
         score: {
             achieved: qijiaOverallScore,
             maximumPossible: 5.0,
@@ -85,9 +88,15 @@ export function generateFeedbackRuleBased(
  * @returns Terminal feedback information that can be displayed to the user
  */
 export async function generateFeedbackWithClaudeLLM(
-    performanceScore: number,
-    performanceMaxScore: number,
+    danceTree: DanceTree | undefined,
+    currentSectionName: string,
+    performance: FrontendPerformanceSummary | undefined,
 ): Promise<TerminalFeedback> {
+
+    const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree) : "missing";
+    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance): "missing";
+
+    console.log('Requesting feedback from Claude LLM', currentSectionName, danceStructureDistillation, performanceDistillation);
 
     // Call into our API route to get the feedback message. The paramaters here
     // must match with the corresponding API route is expecting.
@@ -95,21 +104,39 @@ export async function generateFeedbackWithClaudeLLM(
         'headers': { 'Content-Type': 'application/json' },
         'method': 'POST',
         'body': JSON.stringify({ 
-            'performanceScore': performanceScore,
-            'performanceMaxScore': performanceMaxScore,
+            currentSectionName,
+            danceStructureDistillation,
+            performanceDistillation
         }),
     }).then((res) => res.json());
 
+
     const feedbackMessage = claudeApiData['feedbackMessage'];
-    const shouldTryAgain = claudeApiData['tryAgain'];
+    const coachingReflection = claudeApiData['coachingReflection'];
+    const claudeSuggestedNextSection = claudeApiData['nextSection'];
+    const coachingMessage = claudeApiData['coachingMessage'];
+    const feedbackTitle = claudeApiData['feedbackTitle'];
+
+    let suggestedSection = currentSectionName;
+    let suggestedURL = undefined;
+    if (danceTree) {
+        const allNodes = getAllNodes(danceTree?.root);
+        const allNodeIds = allNodes.map((node) => node.id);
+        if (allNodeIds.includes(claudeSuggestedNextSection)) {
+            suggestedSection = claudeSuggestedNextSection;
+            const danceTreeSlug = makeDanceTreeSlug(danceTree);
+            suggestedURL = `/teachlesson/${danceTreeSlug}/practicenode/${suggestedSection}`;
+        }
+    }
 
     return {
-        headline: "AI Coach Feedback",
-        subHeadline: feedbackMessage,
-        score: {
-            achieved: performanceScore,
-            maximumPossible: performanceMaxScore,
-        },
-        suggestedAction: shouldTryAgain ? "repeat" : "next", 
+        headline: feedbackTitle,
+        paragraphs: [feedbackMessage, coachingMessage],
+        // note the double equals here, we want to compare the string values
+        suggestedAction: suggestedSection == currentSectionName ? "repeat" : "navigate", 
+        navigateOptions: suggestedURL ? [{ label: `Try section ${suggestedSection}`, url: suggestedURL }] : undefined,
+        debug: {
+            llmReflection: coachingReflection,
+        }
     }
 }

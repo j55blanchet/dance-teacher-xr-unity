@@ -13,11 +13,13 @@ export const TerminalFeedbackBodyParts = {
 export type TerminalFeedbackBodyPart = keyof typeof TerminalFeedbackBodyParts;
 export type TerminalFeedbackBodyPartIndex = ValueOf<typeof TerminalFeedbackBodyParts>;
 
-export type TerminalFeedbackAction = 'repeat' | 'next';
+export type TerminalFeedbackAction = 'repeat' | 'next' | 'navigate';
 export type TerminalFeedback = {
     headline: string;
-    subHeadline: string; 
+    paragraphs: string[]; 
     suggestedAction: TerminalFeedbackAction;
+    navigateOptions?: { label: string, url: string}[];
+    
     score?: {
         achieved: number;
         maximumPossible: number;
@@ -28,5 +30,6 @@ export type TerminalFeedback = {
         performanceSummary?: object;
         recordedTrack?: FrontendEvaluationTrack;
         recordedVideoUrl?: string;
+        llmReflection?: string;
     }
 };

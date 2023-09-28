@@ -10,6 +10,7 @@ import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
 import { createEventDispatcher, onMount } from 'svelte';
 import { debugMode } from '$lib/model/settings';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
+import { goto } from '$app/navigation';
 
 const dispatch = createEventDispatcher();
 
@@ -20,23 +21,40 @@ $: {
     suggestingRepeat = feedback?.suggestedAction === "repeat";
 }
 
-let primaryButtonTitle = "";
-$: primaryButtonTitle = suggestingRepeat ? "Do Again 🔁" : "Continue ➡️";
-let secondaryButtonTitle = "";
-$: secondaryButtonTitle = suggestingRepeat ? "Continue ➡️" : "Do Again 🔁";
-
-function primaryButtonClicked() {
-    if(suggestingRepeat) {
-        dispatch("repeat-clicked");
-    } else {
-        dispatch("continue-clicked");
-    }
+type ButtonData = {
+    title: string,
+    action: () => Promise<void>,
+    debug?: string;
 }
-function secondaryButtonClicked() {
-    if(suggestingRepeat) {
-        dispatch("continue-clicked");
+
+const repeatButton: ButtonData = {
+    title: "Do Again 🔁",
+    action: async () => { dispatch("repeat-clicked"); },
+}
+const continueButton: ButtonData = {
+    title: "Continue ➡️",
+    action: async () => { dispatch("continue-clicked"); },
+}
+
+let buttons = [] as ButtonData[];
+$: {
+    const navigationButtons = (feedback?.navigateOptions ?? [])
+        .map((option, i) => {
+            return {
+                title: `${option.label}`,
+                action: async () => {
+                    await goto(option.url)
+                },
+                debug: option.url
+            } as ButtonData
+        })
+
+    if (feedback?.suggestedAction === 'navigate') {
+        buttons = [navigationButtons[0], repeatButton, continueButton, ...navigationButtons.slice(1)];
+    } else if (feedback?.suggestedAction === 'next') {
+        buttons = [continueButton, repeatButton, ...navigationButtons];
     } else {
-        dispatch("repeat-clicked");
+        buttons = [repeatButton, continueButton, ...navigationButtons];
     }
 }
 
@@ -89,20 +107,6 @@ function exportRecordings() {
     const url = URL.createObjectURL(blob);
     promptDownload(url, `${filenameRoot}.track.json`)
 
-    // // Create pose2d csv file with track
-    // let blob2d = new Blob([track.getUserPose2DCsv()], {type: "text/csv"});
-    // let url2d = URL.createObjectURL(blob2d);
-    // promptDownload(url2d, `${filename}-pose2d.csv`)
-    // URL.revokeObjectURL(url2d);
-
-    // // Create pose3d csv file with track
-    // let blob3d = new Blob([track.getUserPose3DCsv()], {type: "text/csv"});
-    // let url3d = URL.createObjectURL(blob3d);
-    // promptDownload(url3d, `${filename}-pose3d.csv`)
-    // URL.revokeObjectURL(url3d);
-    
-
-    
     const webcamRecording = feedback?.debug?.recordedVideoUrl;
     if (webcamRecording) {
         promptDownload(webcamRecording, `${filenameRoot}.userrecording.webm`)
@@ -112,8 +116,10 @@ function exportRecordings() {
 </script>
 
 <div class="feedbackForm">
-    <h2>{feedback?.headline ?? 'Thinking...'}</h2>
-    <p class="sub-headline">{feedback?.subHeadline ?? ''}</p>
+    <h2>{feedback?.headline ?? 'Thinking...'}{#if !feedback}<span class="spinner"></span>{/if}</h2>
+    {#each feedback?.paragraphs ?? [] as paragraph}
+        <p>{paragraph}</p>
+    {/each}
     
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
@@ -129,10 +135,28 @@ function exportRecordings() {
     </div>
     {/if}
     {#if $debugMode && feedback?.debug?.performanceSummary}
-    <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+    <div class="debug">
+        <h3>Performance Summary</h3>
+        <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+    </div>
     {/if}
-    <button class="button outlined thick primary" on:click={primaryButtonClicked}>{primaryButtonTitle}</button>
-    <button class="button outlined thin secondary" on:click={secondaryButtonClicked}>{secondaryButtonTitle}</button>
+    {#if $debugMode && feedback?.debug?.llmReflection}
+    <div class="debug">
+        <h3>LLM Reflection</h3>
+        <p>{feedback.debug.llmReflection}</p>
+    </div>
+    {/if}
+    {#each buttons as button, i}
+        <button class="button outlined thick" 
+            class:primary={i===0} 
+            class:secondary={i>0}
+            on:click={button.action}>
+            {button.title}
+            {#if $debugMode && button.debug}
+                <div class="debug">{button.debug}</div>
+            {/if}
+        </button>
+    {/each}
     {#if $debugMode && feedback?.debug?.recordedTrack}
     <button class="button" on:click={exportRecordings}>
         Export Recorded Track
@@ -154,6 +178,10 @@ function exportRecordings() {
     gap: 0.25rem;
     overflow: hidden;
     font-size: 1.5rem;
+
+    & p,h2 {
+        max-width: 70ch;
+    }
 }
 .skeleton {
     // min-height: 0;
@@ -179,7 +207,23 @@ p {
 }
 
 pre {
-    font-size: 0.75rem;
+    font-size: 0.7em;
+}
+
+.debug {
+    font-size: 0.5em;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+
+    & h3 {
+        margin: 0;
+    }
+
+    & p {
+        margin-top: 0.25rem;
+    }
 }
 
 button.primary {
