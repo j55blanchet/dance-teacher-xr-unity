@@ -15,8 +15,8 @@ const TargetVectorMagnitudeForReliableAngleDetermination = 100;
  * @returns Object containing the dissimilarity score and information by vector
  */
 function computeSkeleton2DDissimilarityJulienMethod(
-    refLandmarks: Pose2DPixelLandmarks,
-    userLandmarks: Pose2DPixelLandmarks
+    refLandmarks: Readonly<Pose2DPixelLandmarks>,
+    userLandmarks: Readonly<Pose2DPixelLandmarks>
 ) {
 
     // Idea: 2D vector comparison should look at both angle and magnitude, since angle
@@ -96,13 +96,23 @@ type JulienMetricSummaryOutput = {
     overallScore: number;
     vectorByVectorScore: Map<string, number>;
 }
+
+/**
+ * Metric that computes the similarity between two poses using the Julien method.
+ * This method calculates the dissimilarity based on angle and magnitude of comparison vectors, and 
+ * weighs which one to used based on whether the 2D vector is sufficiently long to be reliably
+ * compared by angle.
+ * @param refLandmarks - Reference landmarks (expert)
+ * @param userLandmarks - User landmarks (learner)
+ * @returns Object containing the dissimilarity score and information by vector
+ */
 export class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput> {
     
-    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): JulienMetricSingleFrameOutput {
+    computeMetric(_history: Readonly<TrackHistory>, _metricHistory: Readonly<JulienMetricSingleFrameOutput[]>, _videoFrameTimeInSecs: Readonly<number>, _actualTimesInMs: number, user2dPose: Readonly<Pose2DPixelLandmarks>, _user3dPose: Readonly<Pose3DLandmarkFrame>, ref2dPose: Readonly<Pose2DPixelLandmarks>, _ref3dPose: Readonly<Pose3DLandmarkFrame>): JulienMetricSingleFrameOutput {
         return computeSkeleton2DDissimilarityJulienMethod(ref2dPose, user2dPose)
     }
 
-    summarizeMetric(_history: TrackHistory, metricHistory: JulienMetricSingleFrameOutput[]): JulienMetricSummaryOutput {
+    summarizeMetric(_history: Readonly<TrackHistory>, metricHistory: Readonly<JulienMetricSingleFrameOutput[]>): JulienMetricSummaryOutput {
         
         const overallScore = getArrayMean(metricHistory.map(m => m.overallScore));
         const arrayOfVecScores = metricHistory.map(m => m.vectorByVectorScores);
@@ -123,7 +133,7 @@ export class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<Ju
         }
     }
 
-    formatSummary(summary: JulienMetricSummaryOutput): Record<string, string | number> {
+    formatSummary(summary: Readonly<JulienMetricSummaryOutput>): Record<string, string | number> {
         return {
             "overall": summary.overallScore,
             ...Object.fromEntries(summary.vectorByVectorScore.entries())

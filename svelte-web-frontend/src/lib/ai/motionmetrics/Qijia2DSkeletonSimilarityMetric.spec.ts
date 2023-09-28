@@ -1,15 +1,21 @@
 import { describe, it } from 'vitest';
-import { runMetricOnTestTrack, publishMetricOutputForTracks, allTestTracks } from './testdata/metricTestingUtils';
+import { runLiveEvaluationMetricOnTestTrack, publishLiveMetricOutputForTracks, loadTestTrack, generateAllTestTracks } from './testdata/metricTestingUtils';
 import { Qijia2DSkeletonSimilarityMetric } from './Qijia2DSkeletonSimilarityMetric';
 
-import testtrack1 from './testdata/goodperf_alignedwithcamera.other_laxed_siren_beat.track.json';
+// Note: we import the json file with ?url appended to the end in order to prevent degraded
+//       tooling performance. If we import the json file directly, the tooling will try to
+//       parse the json file as a module, which is very slow. By appending ?url, we cause the 
+//       tooling to instead import the url of the json file, eliminating the need for it to parse 
+//       that file during development. 
+import goodperf_alignedwithcamera_url from './testdata/goodperf_alignedwithcamera.other_laxed_siren_beat.track.json?url';
 
 describe('Qijia2DSkeletonSimilarityMetric', () => {
 
     it('should produce expected scores for test track 1', ({ expect }) => {
-        const { summary } = runMetricOnTestTrack(
+        const track = loadTestTrack(goodperf_alignedwithcamera_url);
+        const { summary } = runLiveEvaluationMetricOnTestTrack(
             new Qijia2DSkeletonSimilarityMetric(),
-            testtrack1
+            track,
         );
         
         expect(summary?.overallScore).toMatchInlineSnapshot(4.356392371095064);
@@ -29,9 +35,9 @@ describe('Qijia2DSkeletonSimilarityMetric', () => {
     it('publishing metric outputs should not throw', ({ expect }) => {
         expect(() => {
 
-            publishMetricOutputForTracks(
+            publishLiveMetricOutputForTracks(
                 new Qijia2DSkeletonSimilarityMetric(),
-                allTestTracks,
+                generateAllTestTracks(),
             )
 
         }).not.toThrow();

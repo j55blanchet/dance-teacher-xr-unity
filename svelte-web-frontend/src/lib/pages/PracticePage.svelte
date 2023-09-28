@@ -150,7 +150,7 @@ $: {
             let recordedTrack = null as null | FrontendEvaluationTrack;
             if (trialId) {
                 recordedTrack = evaluator?.recorder.tracks.get(trialId) ?? null;
-                performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
+                performanceSummary = evaluator?.generatePerformanceSummary(trialId) ?? null;
             }
             state = "feedback";
             getFeedback(performanceSummary, recordedTrack)

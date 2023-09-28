@@ -4,7 +4,11 @@ import type { LiveEvaluationMetric, SummaryMetric } from "./motionmetrics/Motion
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
 
 /**
- * Evaluates a user's dance performance against a reference dance.
+ * Evaluates a user's dance performance against a reference dance. This class is responsible for
+ * computing the metrics for each frame, and for computing the summary metrics for the entire dance.
+ * The metrics are provided by the caller, and can be any metric that implements the 
+ * LiveEvaluationMetric or SummaryMetric interfaces. As such, this class is generic over the types 
+ * of the live and summary metrics.
  */
 export class UserDanceEvaluator<
     T extends Record<string, LiveEvaluationMetric<unknown, unknown>>,
@@ -29,6 +33,8 @@ export class UserDanceEvaluator<
      * @param videoTimeSecs Timestamp of the video, in seconds
      * @param actualTimeMs Actual time this pose was captured, in milliseconds
      * @param userPose2D User's pose at the given frame time
+     * @param userPose3D User's pose at the given frame time
+     * @param disableRecording If true, the evaluation will not be recorded in the evaluation history
      */
     evaluateFrame(
         trialId: string, 
@@ -56,6 +62,7 @@ export class UserDanceEvaluator<
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
         const metricResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
             const metric = this.liveMetrics[liveMetricKey];
+
             return [liveMetricKey, (metric).computeMetric(
                 {
                     videoFrameTimesInSecs: track?.videoFrameTimesInSecs ?? [],
@@ -75,36 +82,6 @@ export class UserDanceEvaluator<
             )]
         })) as {[K in keyof T]: ReturnType<T[K]["computeMetric"]>};
 
-        // const { 
-        //     overallScore: qijiaOverallScore,
-        //     vectorByVectorScore: qijiaByVectorScores
-        //  } = computeSkeletonDissimilarityQijiaMethod(
-        //     referencePose2D, 
-        //     userPose2D
-        // )
-
-        // const {
-        //     overallScore: julienOverallScore,
-        //     vectorByVectorScores: julienByVectorScores,
-        // } = computeSkeleton2DDissimilarityJulienMethod(
-        //     referencePose2D,
-        //     userPose2D
-        // )
-
-        // const { 
-        //     overallScore: angleSimilarity3DOverallScore,
-        //     individualScores: angleSimilarity3DByVectorScores,
-        // } = computeSkeleton3DVectorAngleSimilarity(referencePose3D, userPose3D)
-
-        // const evaluationResult = { 
-        //     // qijiaOverallScore,
-        //     // qijiaByVectorScores,
-        //     julienOverallScore,
-        //     julienByVectorScores,
-        //     angleSimilarity3DOverallScore,
-        //     angleSimilarity3DByVectorScores,
-        //  }
-
         if (!disableRecording) {
             this.recorder.recordEvaluationFrame(
                 trialId,
@@ -120,7 +97,14 @@ export class UserDanceEvaluator<
         return metricResults;
     }
 
-    getPerformanceSummary(id: string) {
+    /**
+     * Generates a summary of the performance for a given track. This summary is computed from the
+     * live metrics and summary metrics provided to the constructor.
+     * @param id Id of the track to get the performance summary for
+     * @returns Performance summary for the given track, accululated from the live metrics and
+     * summary metrics provided to the constructor.
+     */
+    generatePerformanceSummary(id: string) {
 
         const track = this.recorder.tracks.get(id)
         if (!track) {
@@ -149,10 +133,10 @@ export class UserDanceEvaluator<
         const summaryMetricKeys = Object.keys(this.summaryMetrics) as (keyof U)[];
         const summaryMetricResults = Object.fromEntries(summaryMetricKeys.map((summaryMetricKey) => {
             const metric = this.summaryMetrics[summaryMetricKey];
-            return [summaryMetricKey, (metric).computeSummaryMetric(
+            return [summaryMetricKey, (metric).summarizeMetric(
                 trackHistory,
             )]
-        })) as {[K in keyof U]: ReturnType<U[K]["computeSummaryMetric"]>};
+        })) as {[K in keyof U]: ReturnType<U[K]["summarizeMetric"]>};
 
         return {
             ...liveMetricSummaryResults,

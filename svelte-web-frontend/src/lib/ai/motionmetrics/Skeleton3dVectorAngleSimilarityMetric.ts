@@ -47,7 +47,7 @@ type Angle3DMetricSummaryOutput = {
 
 export class Skeleton3dVectorAngleSimilarityMetric implements LiveEvaluationMetric<Angle3DMetricSingleFrameOutput, Angle3DMetricSummaryOutput> {
     
-    computeMetric(_history: TrackHistory, _metricHistory: number[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, _user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, _ref2dPose: Pose2DPixelLandmarks, ref3dPose: Pose3DLandmarkFrame): Angle3DMetricSingleFrameOutput {
+    computeMetric(_history: TrackHistory, _metricHistory: Angle3DMetricSingleFrameOutput[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, _user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, _ref2dPose: Pose2DPixelLandmarks, ref3dPose: Pose3DLandmarkFrame): Angle3DMetricSingleFrameOutput {
         return computeSkeleton3DVectorAngleSimilarity(ref3dPose, user3dPose)
     }
 

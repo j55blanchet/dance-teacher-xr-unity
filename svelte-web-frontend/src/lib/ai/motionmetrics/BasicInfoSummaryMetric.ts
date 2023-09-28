@@ -2,7 +2,7 @@ import type { SummaryMetric, TrackHistory } from "./MotionMetric";
 
 
 type BasicInfoSummaryOutput = {
-    poseFrames: number;
+    poseFrameCount: number;
     realTimeDurationSecs: number;
     realTimeFps: number;
     videoTimeDurationSecs: number;
@@ -10,8 +10,9 @@ type BasicInfoSummaryOutput = {
 }
 export class BasicInfoSummaryMetric implements SummaryMetric<BasicInfoSummaryOutput> {
 
-    computeSummaryMetric(history: TrackHistory): BasicInfoSummaryOutput {
+    summarizeMetric(history: TrackHistory): BasicInfoSummaryOutput {
 
+        const poseFrameCount = history.videoFrameTimesInSecs.length;
         const realtimeStartMs = history.actualTimesInMs[0] ?? 0;
         const realtimeEndMs = history.actualTimesInMs[history.actualTimesInMs.length - 1] ?? 0;
         const realTimeDurationSecs = (realtimeEndMs - realtimeStartMs) / 1000;
@@ -20,11 +21,11 @@ export class BasicInfoSummaryMetric implements SummaryMetric<BasicInfoSummaryOut
         const videoTimeDurationSecs = danceEndSecs - danceStartSecs;
 
         return {
-            poseFrames: history.videoFrameTimesInSecs.length,
+            poseFrameCount,
             realTimeDurationSecs,
-            realTimeFps: history.videoFrameTimesInSecs.length / realTimeDurationSecs,
+            realTimeFps: poseFrameCount / realTimeDurationSecs,
             videoTimeDurationSecs,
-            videoTimeFps: history.videoFrameTimesInSecs.length / videoTimeDurationSecs,
+            videoTimeFps: poseFrameCount / videoTimeDurationSecs,
         }
     }
     
