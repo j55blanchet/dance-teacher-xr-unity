@@ -231,6 +231,59 @@ export function getArrayMean(v: Array<number>) {
   }
 
 /**
+ * Calculate the Mean Absolute Error (MAE) between two matrices.
+ *
+ * @param {number[][]} v1 - The first matrix.
+ * @param {number[][]} v2 - The second matrix.
+ * @returns {number} The MAE between the two matrices.
+ */
+export function getMatricesMAE(v1: number[][], v2: number[][]): number {
+    if (v1.length !== v2.length || v1[0].length !== v2[0].length) {
+        throw new Error("Matrices must have the same dimension.");
+    }
+
+    const m = v1.length;
+    const n = v1[0].length;
+    let mae = 0;
+
+    for (let i = 0; i < m; i++) {
+        for (let j = 0; j < n; j++) {
+            mae += Math.abs(v1[i][j] - v2[i][j]); 
+        }
+    }
+
+    return mae / n;
+}
+
+/**
+ * Calculate the Root Mean Square Error (RMSE) between two matrices.
+ *
+ * @param {number[][]} v1 - The first matrix.
+ * @param {number[][]} v2 - The second matrix.
+ * @returns {number} The RMSE between the two matrices.
+ */
+export function getMatricesRMSE(v1: number[][], v2: number[][]): number {
+    if (v1.length !== v2.length || v1[0].length !== v2[0].length) {
+        throw new Error("Matrices must have the same dimension.");
+    }
+
+    const m = v1.length;
+    const n = v1[0].length;
+    let squaredDiffSum = 0;
+
+    for (let i = 0; i < m; i++) {
+        for (let j = 0; j < n; j++) {
+            const diff = v1[i][j] - v2[i][j];
+            squaredDiffSum += diff * diff;
+        }
+    }
+
+    return Math.sqrt(squaredDiffSum / n);
+}
+  
+  
+
+/**
  * Calculate a 2D vector between two pose landmarks.
  * @param pixelLandmarks - 2D pixel coordinates of pose landmarks
  * @param srcLandmark - Index of the source landmark

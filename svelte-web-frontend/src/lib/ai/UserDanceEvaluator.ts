@@ -107,7 +107,7 @@ export class UserDanceEvaluatorV1 {
         });
 
         const { adjUserPoses, uniqueFrameTimes } = removeDuplicateFrameTimes(track.userPoses, track.frameTimes);
-        const [sdJerks, sdAccs, sdVels] = calculateMotionDescriptorsScore(adjUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
+        const [jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME] = calculateMotionDescriptorsScore(adjUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
 
 
         const julienByVectorScores = new Map(julienVectorScoreKeyValues)
@@ -138,9 +138,7 @@ export class UserDanceEvaluatorV1 {
             julienByVectorScores,
             angleSimilarityOverallScore,
             angleSimilarityByVectorScores,
-            sdJerks,
-            sdAccs,
-            sdVels
+            jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME
         }
     }
 }
