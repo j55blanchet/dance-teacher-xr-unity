@@ -36,7 +36,7 @@ export let settingsActive: boolean;
 <nav class:collapsed={$navbarProps.collapsed}>
     <!-- Container for left-aligned content -->
     {#if $navbarProps.back}
-        <a class="button back" href={$navbarProps.back.url}>&lt; {$navbarProps.back.title}</a>
+        <a class="button back" href={$navbarProps.back.url}>&lt;&nbsp;{$navbarProps.back.title}</a>
     {:else}
         <div></div>
     {/if}
@@ -95,7 +95,13 @@ nav.collapsed {
 nav h1 {
     margin: 0;
     padding: 0;
-    font-size: 2rem;
+    font-size: 1.5rem;
+}
+
+@media (max-width: 600px) {
+    nav h1 {
+        font-size: 1rem;
+    }
 }
 
 button.settings {

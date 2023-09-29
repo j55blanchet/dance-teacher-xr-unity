@@ -9,6 +9,8 @@ import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
+	import { debugMode } from '$lib/model/settings';
+	import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 
 
 export let dance: Dance;
@@ -98,7 +100,7 @@ async function practiceClicked() {
 	<meta name="description" content="App for learning the dance: {dance.title}" />
 </svelte:head>
 
-<section>
+<section class:nodeSelected={currentPlayingNode ?? false }>
     <div class="visual-tree">
         <div>
             <DanceTreeVisual 
@@ -112,28 +114,27 @@ async function practiceClicked() {
         </div>
     </div>
     
+    
     <div class="ta-center">
         {#if currentPlayingNode}
-        <span class="practiceLink">{currentPlayingNode.id}</span>
-        <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
-            {#if $navigating}
-                Navigating <span class="spinner"></span>
-            {:else}
-                Practice
+            {#if $debugMode}
+            <span>{currentPlayingNode.id}</span>
             {/if}
-        </SketchButton>
+            <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
+                {#if $navigating}
+                    Navigating<ProgressEllipses />
+                {:else}
+                    Practice
+                {/if}
+            </SketchButton>
+        {:else}
+            <span>Select a node to practice</span>
         {/if}
     </div>
     
+    
     <div class="preview">
-        <div class="controls">
-            <div class="control">
-                <label for="playbackSpeed">Playback Speed</label>
-                <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.5" max="2" step="0.1" />
-                {videoPlaybackSpeed.toFixed(1)}x
-            </div>
-        </div>
-        
+       
         <VideoWithSkeleton bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
             bind:duration={videoDuration}
@@ -143,7 +144,14 @@ async function practiceClicked() {
             >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-    
+        {#if $debugMode}
+        <div class="controls">
+            <div class="control">
+                <span><label for="playbackSpeed">Playback Speed</label>:&nbsp;{videoPlaybackSpeed.toFixed(1)}x</span>
+                <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.5" max="2" step="0.1" />
+            </div>
+        </div>
+        {/if}
     </div>
 </section>
 
@@ -157,6 +165,7 @@ section {
     display: grid;
     overflow: hidden;
     grid-template-rows: auto auto minmax(0, 1fr); 
+    gap: 1rem;
 }
 
 .preview {
@@ -171,19 +180,20 @@ section {
 .visual-tree {
     max-width: 100vw;
     margin: 1rem;
+    margin-bottom: 0;
 }
 .visual-tree div {
     display: flex;
     overflow-x: auto;
 }
 
-div:has(.practiceLink) {
-    margin-bottom: 1rem;
-}
+// div:has(.practiceLink) {
+    // margin-bottom: 1rem;
+// }
 
 .control {
     display: flex;
-    flex-direction: row; 
+    flex-direction: column; 
     align-items: center;
     justify-content: center;
 }
