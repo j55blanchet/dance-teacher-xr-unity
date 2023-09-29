@@ -38,6 +38,11 @@ dialog {
     overflow-y: hidden;
 }
 
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.2);
+	backdrop-filter: blur(5px);
+}
+
 .topBar {
     display: flex;
     flex-direction: row;

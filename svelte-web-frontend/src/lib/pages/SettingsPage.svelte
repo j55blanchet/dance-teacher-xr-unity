@@ -49,22 +49,18 @@ const qijiaScoreMax = 5;
         </div>
         <div>
             <label for="debugPauseDuration">Debug Pause Duration</label>
-            <input type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
+            <input class="outlined thin" type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
         </div>
     </div>
     <div class="group">
         <h3>Live Feedback</h3>
         <div>
-            <label for="evaluation_GoodBadTrialThreshold">Good/Bad Trial Threshold</label>
-            <input type="number" name="evaluation_GoodBadTrialThreshold" bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-        </div>
-        <div>
             <label for="feedback_YellowThreshold">Yellow Threshold</label>
-            <input type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+            <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
         </div>
         <div>
             <label for="feedback_GreenThreshold">Green Threshold</label>
-            <input type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+            <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
         </div>
     </div>
     <div class="group">
@@ -74,8 +70,12 @@ const qijiaScoreMax = 5;
             <input type="checkbox" name="useAIFeedback" bind:checked={$useAIFeedback}>
         </div>
         <div>
+            <label for="evaluation_GoodBadTrialThreshold">Good/Bad Trial Threshold</label>
+            <input class="outlined thin" type="number" name="evaluation_GoodBadTrialThreshold" disabled={$useAIFeedback} bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+        </div>
+        <div>
             <label for="evaluation_summarizeSubsections">Evaluate Subsections</label>
-            <select name="evaluation_summarizeSubsections" bind:value={$evaluation_summarizeSubsections}>
+            <select class="outlined thin" name="evaluation_summarizeSubsections" bind:value={$evaluation_summarizeSubsections}>
                 {#each Object.entries(evaluation_summarizeSubsectionsOptions) as [optionValue, optionTitle]}
                     <option value={optionValue}>{optionTitle}</option>
                 {/each}
@@ -118,4 +118,10 @@ div.group {
         border-bottom: 1px solid lightgray;
     }
 }
+
+input[type=number] {
+    width: 4em;
+    font-size: 1em;
+}
+
 </style>

@@ -75,8 +75,8 @@
 	}
 
 	.settingsDialog::backdrop {
-		background: rgba(0, 0, 0, 0.5);
-		backdrop-filter: blur(3px);
+		background: rgba(0, 0, 0, 0.2);
+		backdrop-filter: blur(5px);
 	}
 
 	.settingsContainer {

@@ -23,6 +23,7 @@ import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
 import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
+import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 
 export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
@@ -494,7 +495,7 @@ onMount(() => {
         {#if state === "waitStart"}  
         <div class="loading outlined thick">
             <!-- <div class="spinner large"></div> -->
-            <div class="label">Loading...</div>
+            <div class="label">Loading<ProgressEllipses /></div>
         </div>
         {/if}
     </div>
