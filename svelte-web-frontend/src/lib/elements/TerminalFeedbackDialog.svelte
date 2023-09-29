@@ -262,24 +262,6 @@ button.secondary {
     font-size: 0.8em;
 }
 
-dialog {
-    max-height: calc(100vh - 2rem);
-    box-sizing: border-box;
-    font-size: 1rem;
-    overflow-y: hidden;
-}
-
-dialog .close {
-    display: inline-block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-dialog > .dialogcontent {
-    max-height: 80vh;
-    overflow-y: scroll;
-}
-
 .buttons {
     display: flex;
     flex-direction: row;
