@@ -13,7 +13,10 @@ import {
     stepMax,
     useAIFeedback,
     evaluation_summarizeSubsections,
-    evaluation_summarizeSubsectionsOptions
+    evaluation_summarizeSubsectionsOptions,
+
+	useTextToSpeech
+
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -68,6 +71,10 @@ const qijiaScoreMax = 5;
         <div>
             <label for="useAIFeedback">Use AI Feedback</label>
             <input type="checkbox" name="useAIFeedback" bind:checked={$useAIFeedback}>
+        </div>
+        <div>
+            <label for="useTextToSpeech">Use Text to Speech</label>
+            <input type="checkbox" name="useTextToSpeech" bind:checked={$useTextToSpeech}>
         </div>
         <div>
             <label for="evaluation_GoodBadTrialThreshold">Good/Bad Trial Threshold</label>

@@ -7,7 +7,8 @@ const DEFAULT_SETTINGS = {
    evaluation_GoodBadTrialThreshold : 4.0,
    feedback_YellowThreshold : 3.0,
    feedback_GreenThreshold : 4.2,
-   useAIFeedback : true,
+   useAIFeedback: true,
+   useTextToSpeech: true,
    evaluation_summarizeSubsections: 'allnodes' as const,
 }
 
@@ -47,6 +48,7 @@ export const evaluation_GoodBadTrialThreshold = createNumberSettingsStore("evalu
 export const feedback_YellowThreshold = createNumberSettingsStore("feedback_YellowThreshold", DEFAULT_SETTINGS.feedback_YellowThreshold);
 export const feedback_GreenThreshold = createNumberSettingsStore("feedback_GreenThreshold", DEFAULT_SETTINGS.feedback_GreenThreshold);
 export const useAIFeedback = createBoolSettingsStore("useAIFeedback", DEFAULT_SETTINGS.useAIFeedback);
+export const useTextToSpeech = createBoolSettingsStore("useTextToSpeech", DEFAULT_SETTINGS.useTextToSpeech);
 
 export const evaluation_summarizeSubsectionsOptions = {
     // storedValue: displayName
@@ -68,5 +70,6 @@ export function resetSettingsToDefault() {
     feedback_YellowThreshold.set(DEFAULT_SETTINGS.feedback_YellowThreshold);
     feedback_GreenThreshold.set(DEFAULT_SETTINGS.feedback_GreenThreshold);
     useAIFeedback.set(DEFAULT_SETTINGS.useAIFeedback);
+    useTextToSpeech.set(DEFAULT_SETTINGS.useTextToSpeech);
     evaluation_summarizeSubsections.set(DEFAULT_SETTINGS.evaluation_summarizeSubsections)
 }
