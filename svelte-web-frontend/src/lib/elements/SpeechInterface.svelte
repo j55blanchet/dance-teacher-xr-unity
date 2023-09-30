@@ -125,7 +125,6 @@ const speakWithSpeechSynthesis =
                     reject(event.error);
                 };
                 utterance.onboundary = (event) => {
-                    console.log("boundary", event);
                     alreadySpokenText = textToSpeak.slice(0, event.charIndex);
                     const remainingText = textToSpeak.slice(event.charIndex);
                     const [nextWord, nextWhitespace] = getNextWordWithEndIndex(remainingText);
