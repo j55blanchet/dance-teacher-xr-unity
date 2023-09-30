@@ -13,7 +13,8 @@ import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { goto } from '$app/navigation';
 import CloseButton from './CloseButton.svelte';
 import Dialog from './Dialog.svelte';
-	import ProgressEllipses from './ProgressEllipses.svelte';
+import ProgressEllipses from './ProgressEllipses.svelte';
+import SpeechInterface from './SpeechInterface.svelte';
 
 const dispatch = createEventDispatcher();
 
@@ -131,9 +132,15 @@ function exportRecordings() {
 
 <div class="feedbackForm">
     <h2>{#if !feedback}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
-    {#each feedback?.paragraphs ?? [] as paragraph}
+    
+    {#if feedback?.paragraphs}
+    <div class="paragraphs">
+        <SpeechInterface textToSpeak={feedback.paragraphs.join("\n")}/>
+    </div>
+    {/if}
+    <!-- {#each feedback?.paragraphs ?? [] as paragraph}
         <p>{paragraph}</p>
-    {/each}
+    {/each} -->
     
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
@@ -204,7 +211,7 @@ function exportRecordings() {
     overflow: scroll;
     font-size: 1.5rem;
 
-    & p,h2 {
+    & p,h2,.paragraphs {
         max-width: 70ch;
     }
 }
@@ -234,6 +241,7 @@ function exportRecordings() {
 h2, p {
     margin : 0;
 }
+
 h2 {
     margin-top: 1rem;
     font-weight: 600;
