@@ -3,6 +3,7 @@ import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/med
 import { BodyInnerAnglesComparisons, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean } from './EvaluationCommonUtils';
 import { computeSkeleton2DDissimilarityJulienMethod, computeSkeleton3DVectorAngleSimilarity, computeSkeletonDissimilarityQijiaMethod } from "./skeleton-similarity";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
+import { calculateMotionDescriptorsScore, removeDuplicateFrameTimes } from "./compute-motion-descriptors";
 
 // Type definition for the result of evaluating a user's performance.
 export type EvaluationV1Result = NonNullable<ReturnType<UserDanceEvaluatorV1["evaluateFrame"]>>;
@@ -104,6 +105,11 @@ export class UserDanceEvaluatorV1 {
             const meanScore = getArrayMean(vecScores);
             return [key, meanScore] as [string, number];
         });
+
+        const { matchingUserPoses, uniqueFrameTimes } = removeDuplicateFrameTimes(track.userPoses, track.frameTimes);
+        const [jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME] = calculateMotionDescriptorsScore(matchingUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
+
+
         const julienByVectorScores = new Map(julienVectorScoreKeyValues)
 
         const angleSimilarityOverallScore = getArrayMean(track.evaluation.angleSimilarity3DOverallScore);
@@ -132,6 +138,8 @@ export class UserDanceEvaluatorV1 {
             julienByVectorScores,
             angleSimilarityOverallScore,
             angleSimilarityByVectorScores,
+            jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME
         }
     }
 }
+

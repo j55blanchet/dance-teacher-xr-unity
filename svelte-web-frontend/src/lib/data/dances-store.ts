@@ -129,7 +129,25 @@ export class PoseReferenceData<T extends Pose2DPixelLandmarks | Pose3DLandmarkFr
         // const frameIndex = this.frameIndices[searchIndex];
         const pose = this.poses[searchIndex];
 
-        return pose;
+        return pose ?? null;
+    }
+
+/**
+ * Retrieves 2D landmarks of a pose at specified timestamps.
+ * @param {number[]} frameTimes - An array of timestamps indicating the moments when pose landmarks are needed.
+ * @returns {Pose2DPixelLandmarks[]} - An array of 2D pixel landmarks corresponding to the specified timestamps.
+ */
+    get2DLandmarks(frameTimes: number[]): T[] {
+        const poses: T[] = [];
+
+        for (const timestamp of frameTimes) {
+            const pose = this.getReferencePoseAtTime(timestamp);
+            if (pose !== null) {
+                poses.push(pose);
+            }
+        }
+
+        return poses;
     }
 }
 
