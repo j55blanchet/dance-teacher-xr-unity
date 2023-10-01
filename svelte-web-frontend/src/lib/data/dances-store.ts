@@ -132,13 +132,13 @@ export class PoseReferenceData<T extends Pose2DPixelLandmarks | Pose3DLandmarkFr
         return pose ?? null;
     }
 
-    /**
-     * Get the reference pose information for an array of dance timestamps.
-     * @param frameTimes Array of dance timestamps for which to get the pose information
-     * @returns Array of pose information for the frames at the given timestamps, or an empty array if no pose information is available for any frame
-     */
-    get2DLandmarks(frameTimes: number[]): Pose2DPixelLandmarks[] {
-        const poses: Pose2DPixelLandmarks[] = [];
+/**
+ * Retrieves 2D landmarks of a pose at specified timestamps.
+ * @param {number[]} frameTimes - An array of timestamps indicating the moments when pose landmarks are needed.
+ * @returns {Pose2DPixelLandmarks[]} - An array of 2D pixel landmarks corresponding to the specified timestamps.
+ */
+    get2DLandmarks(frameTimes: number[]): T[] {
+        const poses: T[] = [];
 
         for (const timestamp of frameTimes) {
             const pose = this.getReferencePoseAtTime(timestamp);

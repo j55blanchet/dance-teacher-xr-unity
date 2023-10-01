@@ -106,8 +106,8 @@ export class UserDanceEvaluatorV1 {
             return [key, meanScore] as [string, number];
         });
 
-        const { adjUserPoses, uniqueFrameTimes } = removeDuplicateFrameTimes(track.userPoses, track.frameTimes);
-        const [jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME] = calculateMotionDescriptorsScore(adjUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
+        const { matchingUserPoses, uniqueFrameTimes } = removeDuplicateFrameTimes(track.userPoses, track.frameTimes);
+        const [jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME] = calculateMotionDescriptorsScore(matchingUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
 
 
         const julienByVectorScores = new Map(julienVectorScoreKeyValues)
