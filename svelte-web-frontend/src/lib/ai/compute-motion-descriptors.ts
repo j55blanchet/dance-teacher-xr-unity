@@ -5,11 +5,11 @@ import { GetScaleIndicator, Get2DVector, QijiaMethodComparisonVectors, getMatric
  * Removes duplicate frame times from an array of user poses and corresponding frame times.
  * @param {Pose2DPixelLandmarks[]} userPoses - Array of user poses.
  * @param {number[]} frameTimes - Array of frame times corresponding to the poses.
- * @returns {{ adjUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] }} An object containing adjusted user poses and unique frame times.
+ * @returns {{ matchingUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] }} An object containing adjusted user poses and unique frame times.
  */
-export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], frameTimes: number[]): { adjUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] } {
+export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], frameTimes: number[]): { matchingUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] } {
     const uniqueFrameTimes = [];
-    const adjUserPoses = [];
+    const matchingUserPoses = [];
 
     for (let i = 0; i < frameTimes.length; i++) {
         const currentTime = frameTimes[i];
@@ -17,45 +17,59 @@ export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], fra
         // Check if the current frame time is not the same as the previous one
         if (i === 0 || currentTime !== frameTimes[i - 1]) {
             uniqueFrameTimes.push(currentTime);
-            adjUserPoses.push(userPoses[i]);
+            matchingUserPoses.push(userPoses[i]);
         }
     }
 
-    return { adjUserPoses, uniqueFrameTimes };
+    return { matchingUserPoses, uniqueFrameTimes };
 }
 
 
 /**
- * Calculates the standard deviation of the differences between adjusted user jerks and reference jerks.
+ * Calculates the MAE and RMSE for velocity, acceleration, and jerk between matchingUserPoses and referencePoses.
  *
- * @param {Pose2DPixelLandmarks[]} adjUserPoses - Array of adjusted user poses.
+ * @param {Pose2DPixelLandmarks[]} matchingUserPoses - Array of adjusted user poses.
  * @param {Pose2DPixelLandmarks[]} referencePoses - Array of reference poses.
  * @param {number[]} uniqueFrameTimes - Array of unique frame times corresponding to the poses.
  * @returns {[number, number, number, number, number, number]} MSE and RMSE between user and reference motion descriptors.
- *
+ * Both MAE and RMSE measure the how different the user's poses are from the refence poses.
+ * Mean Absolute Error (MAE):
+ *  Intuitive Interpretation: MAE is straightforward to understand. It measures the average absolute difference between the values in two arrays.
+ *  Robustness to Outliers: MAE is less sensitive to extreme outliers compared to RMSE because it doesn't square the differences.
+ *  Easy to Compute: It involves simple arithmetic operations and doesn't require complex calculations.
+ * Root Mean Square Error (RMSE):
+ *  Sensitivity to Large Errors: RMSE gives higher weight to larger errors due to squaring the differences. This makes it more suitable when large errors need to be penalized more.
+ *  Differentiability: RMSE is differentiable at all points, which can be important for optimization problems.
+ * approximate range:
+ *  jerksMAE Range: Approximately 170,000 to 240,000
+ *  jerksRSME Range: Approximately 14,000 to 75,000
+ * accsMAE Range: Approximately 2,500 to 5,600
+ *  accsRSME Range: Approximately 500 to 1,600
+ *  velsMAE Range: Approximately 95 to 180
+ *  velsRSME Range: Approximately 18 to 40
  * @throws {Error} Throws an error if there is invalid input data, mismatched array lengths, or bad unique frametimes.
  */
 export function calculateMotionDescriptorsScore(
-  adjUserPoses: Pose2DPixelLandmarks[],
+  matchingUserPoses: Pose2DPixelLandmarks[],
   referencePoses: Pose2DPixelLandmarks[],
   uniqueFrameTimes: number[]
 ): [number, number, number, number, number, number] {
-  if (!adjUserPoses || adjUserPoses.length === 0 || !referencePoses || referencePoses.length === 0) {
-      throw new Error("Invalid input data. Both adjUserPoses and referencePoses must be non-empty arrays.");
+  if (!matchingUserPoses || matchingUserPoses.length === 0 || !referencePoses || referencePoses.length === 0) {
+      throw new Error("Invalid input data. Both matchingUserPoses and referencePoses must be non-empty arrays.");
   }
 
-  if (adjUserPoses.length !== referencePoses.length) {
-      throw new Error("Mismatched array lengths between adjUserPoses and referencePoses.");
+  if (matchingUserPoses.length !== referencePoses.length) {
+      throw new Error("Mismatched array lengths between matchingUserPoses and referencePoses.");
   }
 
-  const usrScale = GetScaleIndicator(adjUserPoses[0]);
+  const usrScale = GetScaleIndicator(matchingUserPoses[0]);
   const refScale = GetScaleIndicator(referencePoses[0]);
 
   if (!uniqueFrameTimes || uniqueFrameTimes.length === 0) {
       throw new Error("Bad uniqueFrameTimes");
   }
 
-  const userVels = calculateVels(adjUserPoses, uniqueFrameTimes, usrScale);
+  const userVels = calculateVels(matchingUserPoses, uniqueFrameTimes, usrScale);
   const referenceVels = calculateVels(referencePoses, uniqueFrameTimes, refScale);
   const userAccs = calculateDerivative(userVels, uniqueFrameTimes);
   const referenceAccs = calculateDerivative(referenceVels, uniqueFrameTimes);
