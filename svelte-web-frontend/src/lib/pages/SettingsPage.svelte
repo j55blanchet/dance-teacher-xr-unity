@@ -15,7 +15,10 @@ import {
     evaluation_summarizeSubsections,
     evaluation_summarizeSubsectionsOptions,
 
-	useTextToSpeech
+	useTextToSpeech,
+
+	practiceFallbackPlaybackSpeed
+
 
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
@@ -56,7 +59,11 @@ const qijiaScoreMax = 5;
         </div>
     </div>
     <div class="group">
-        <h3>Live Feedback</h3>
+        <h3>Practice Page</h3>
+        <div>
+            <label for="practiceFallbackPlaybackSpeed">Practice Page Default Speed</label>
+            <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
+        </div>
         <div>
             <label for="feedback_YellowThreshold">Yellow Threshold</label>
             <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>

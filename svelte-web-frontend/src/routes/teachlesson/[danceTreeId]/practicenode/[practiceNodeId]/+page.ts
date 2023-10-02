@@ -3,13 +3,14 @@ import { error } from '@sveltejs/kit';
 import { getDanceAndDanceTreeFromDanceTreeId, findDanceTreeNode } from '$lib/data/dances-store.js';
 
 /** @type {import('./$types').PageLoad} */
-export function load({ url, params })  {
+export async function load({ url, params })  {
 
     const playbackSpeedSearchParam = url.searchParams.get('playbackSpeed');
-    let playbackSpeed = 0.5; // default to 0.5x playback speed
+
+    let playbackSpeed = 'default' as 'default' | number;
     if (playbackSpeedSearchParam) {
         const parsedPlaybackSpeed = parseFloat(playbackSpeedSearchParam);
-        if (!isNaN(playbackSpeed)) {
+        if (!isNaN(parsedPlaybackSpeed)) {
             playbackSpeed = parsedPlaybackSpeed
         }
     }

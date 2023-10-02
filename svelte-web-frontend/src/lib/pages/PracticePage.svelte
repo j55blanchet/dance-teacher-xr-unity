@@ -4,7 +4,7 @@ export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
-import { evaluation_summarizeSubsections } from '$lib/model/settings';
+import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { getAllLeafNodes, getAllNodesInSubtree } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
@@ -104,8 +104,13 @@ $: {
 $: {
     poseEstimationEnabled = pageActive && (countdownActive || !isVideoPausedBinding || state==="paused") && currentActivityType === 'drill';
 }
-$: {
-    videoPlaybackSpeed = practiceActivity?.playbackSpeed ?? 1.0;
+$: { 
+    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
+    if (practiceActivity?.playbackSpeed !== 'default' && 
+        practiceActivity?.playbackSpeed !== undefined &&
+        !isNaN(practiceActivity.playbackSpeed)) {
+        videoPlaybackSpeed = practiceActivity.playbackSpeed;
+    }
 }
 
 let unpauseVideoTimeout: number | null  = null;

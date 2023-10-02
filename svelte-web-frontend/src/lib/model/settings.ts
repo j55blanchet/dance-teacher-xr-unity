@@ -3,6 +3,7 @@ import { writable } from 'svelte/store';
 const DEFAULT_SETTINGS = {
    debugMode: false,
    pauseInPracticePage : false,
+   practiceFallbackPlaybackSpeed: 0.5,
    debugPauseDurationSecs : 1.0,
    evaluation_GoodBadTrialThreshold : 4.0,
    feedback_YellowThreshold : 3.0,
@@ -10,6 +11,7 @@ const DEFAULT_SETTINGS = {
    useAIFeedback: true,
    useTextToSpeech: true,
    evaluation_summarizeSubsections: 'allnodes' as const,
+   
 }
 
 export const pauseDurationMin = 0.1;
@@ -44,12 +46,12 @@ function createOptionsSettingsStore<T extends Record<string, string>>(key: strin
 export const debugMode = createBoolSettingsStore("debugMode", DEFAULT_SETTINGS.debugMode);
 export const pauseInPracticePage = createBoolSettingsStore("pauseInPracticePage", DEFAULT_SETTINGS.pauseInPracticePage);
 export const debugPauseDurationSecs = createNumberSettingsStore("debugPauseDurationSecs", DEFAULT_SETTINGS.debugPauseDurationSecs);
+export const practiceFallbackPlaybackSpeed = createNumberSettingsStore("practiceFallbackPlaybackSpeed", DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
 export const evaluation_GoodBadTrialThreshold = createNumberSettingsStore("evaluation_GoodBadTrialThreshold", DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
 export const feedback_YellowThreshold = createNumberSettingsStore("feedback_YellowThreshold", DEFAULT_SETTINGS.feedback_YellowThreshold);
 export const feedback_GreenThreshold = createNumberSettingsStore("feedback_GreenThreshold", DEFAULT_SETTINGS.feedback_GreenThreshold);
 export const useAIFeedback = createBoolSettingsStore("useAIFeedback", DEFAULT_SETTINGS.useAIFeedback);
 export const useTextToSpeech = createBoolSettingsStore("useTextToSpeech", DEFAULT_SETTINGS.useTextToSpeech);
-
 export const evaluation_summarizeSubsectionsOptions = {
     // storedValue: displayName
     'disable': "Don't evaluate subsections",
@@ -66,6 +68,7 @@ export function resetSettingsToDefault() {
     debugMode.set(DEFAULT_SETTINGS.debugMode);
     pauseInPracticePage.set(DEFAULT_SETTINGS.pauseInPracticePage);
     debugPauseDurationSecs.set(DEFAULT_SETTINGS.debugPauseDurationSecs);
+    practiceFallbackPlaybackSpeed.set(DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
     evaluation_GoodBadTrialThreshold.set(DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
     feedback_YellowThreshold.set(DEFAULT_SETTINGS.feedback_YellowThreshold);
     feedback_GreenThreshold.set(DEFAULT_SETTINGS.feedback_GreenThreshold);

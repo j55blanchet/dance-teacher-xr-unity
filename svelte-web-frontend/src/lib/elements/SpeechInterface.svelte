@@ -41,13 +41,15 @@ function getPauseAfterWord(word: string) {
     const endsWithNewline = word.endsWith("\n");
     word = word.trim();
 
+    const speedModifier = 1.5;
     const wordLength = word.length;
     const pauseAfterWord = lerp(wordLength / 10 , 0, 1, 0.07, 0.3, true);
     if (endsWithNewline) return pauseAfterWord + 0.5;
     if (word.endsWith(".")) return pauseAfterWord + 0.35;
     if (word.endsWith("!")) return pauseAfterWord + 0.35;
+    if (word == "-") return 0.4;
     if (word.endsWith(',')) return pauseAfterWord + 0.25;
-    return pauseAfterWord;
+    return pauseAfterWord / speedModifier;
 }
 
 function getNextWordWithEndIndex(text: string) {
@@ -86,6 +88,8 @@ async function displayTextWithoutSpeechSynthesis(text: string) {
         await wait(getPauseAfterWord(outputtedWord));
         await tick();
     }
+    alreadySpokenText += currentlySpeakingText;
+    currentlySpeakingText = "";
     dispatch("speech-ended");
 };
 

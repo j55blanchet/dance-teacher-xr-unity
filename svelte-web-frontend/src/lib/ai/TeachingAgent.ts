@@ -10,7 +10,7 @@ export function GeneratePracticeActivity(
     dance: Dance,
     danceTree: DanceTree,
     danceTreeNode: DanceTreeNode,
-    playbackSpeed: number,
+    playbackSpeed: number | 'default',
     // userDancePerformanceLog: UserDancePerformanceLog
 ): PracticeActivity {
     return {
