@@ -174,7 +174,6 @@ describe('calculateKinematicErrorDescriptors', () => {
             refScale,
         );
 
-        console.log(result)
         expect(result).not.toBeNull();
         expect(result.accsMAE).toBeCloseTo(0);
         expect(result.accsRSME).toBeCloseTo(0);
@@ -227,7 +226,6 @@ describe('calculateKinematicErrorDescriptors', () => {
             refScale,
         );
 
-        console.log(result)
         expect(result).not.toBeNull();
         expect(result.velsMAE).toBeCloseTo(0.15868, 4);
         expect(result.velsRSME).toBeCloseTo(0.18953, 4);
