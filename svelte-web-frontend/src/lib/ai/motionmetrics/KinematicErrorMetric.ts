@@ -5,12 +5,12 @@ import type { SummaryMetric, TrackHistory } from "./MotionMetric";
 import { calculateKinematicErrorDescriptors } from "./compute-kinematic-motion-descriptors.ts";
 
 type KinematicErrorMetricOutput = {
-    jerksMAE: number; 
-    jerksRSME: number; 
-    accsMAE: number; 
-    accsRSME: number; 
-    velsMAE: number; 
-    velsRSME: number;
+    jerksMAE: number | null; 
+    jerksRSME: number | null; 
+    accsMAE: number | null; 
+    accsRSME: number | null; 
+    velsMAE: number | null; 
+    velsRSME: number | null;
 };
 
 export default class KinematicErrorMetric implements SummaryMetric<KinematicErrorMetricOutput> {
@@ -23,7 +23,7 @@ export default class KinematicErrorMetric implements SummaryMetric<KinematicErro
         )
     }
 
-    formatSummary(summary: Readonly<KinematicErrorMetricOutput>): Record<string, string | number> {
+    formatSummary(summary: Readonly<KinematicErrorMetricOutput>): Record<string, string | number | null> {
         return summary; // no formatting needed, already in a row-compatible format
     }
 }

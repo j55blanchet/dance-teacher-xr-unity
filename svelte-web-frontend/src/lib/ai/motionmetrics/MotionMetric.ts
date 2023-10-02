@@ -19,7 +19,7 @@ export interface BaseMetric<SummaryType> {
      */
     formatSummary(
         summary: Readonly<SummaryType>
-    ): Record<string, number | string>;
+    ): Record<string, number | string | null>;
 }
 
 /**

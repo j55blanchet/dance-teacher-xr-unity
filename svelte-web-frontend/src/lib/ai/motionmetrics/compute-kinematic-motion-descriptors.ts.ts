@@ -1,5 +1,36 @@
-import type { Pose2DPixelLandmarks } from  "$lib/webcam/mediapipe-utils";
-import { GetScaleIndicator, Get2DVector, QijiaMethodComparisonVectors, getMatricesMAE, getMatricesRMSE, getMagnitude2DVec } from "../EvaluationCommonUtils";
+import type { Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
+import { GetScaleIndicator, getMatricesMAE, getMatricesRMSE, getMagnitude2DVec } from "../EvaluationCommonUtils";
+
+
+export type Vec2<T> = [T, T];
+// type Vec3<T> = [T, T, T];
+export type Vec8<T> = [T, T, T, T, T, T, T, T];
+
+function makeUndefinedVec8Frame2D() {
+    return makeUndefined2DMatrix(8, 2) as Vec8<Vec2<undefined>>;
+}
+function makeUndefinedArray(length: number): undefined[] {
+    return new Array(length).fill(undefined);
+}
+function makeUndefinedMatrix(dims: number[]): any {
+
+    if (dims.length === 1) {
+        return makeUndefinedArray(dims[0])
+    }
+
+    const matrix = [];
+    for (let i = 0; i < dims[0]; i++) {
+        matrix.push(makeUndefinedMatrix(dims.slice(1)));
+    }
+    return matrix;
+}
+function makeUndefined2DMatrix(m: number, n: number) {
+    return makeUndefinedMatrix([m, n]) as undefined[][]
+}
+
+function replaceNaNsWithUndefined(num: number) {
+    return isNaN(num) ? undefined : num;
+}
 
 /**
  * Removes duplicate frame times from an array of user poses and corresponding frame times.
@@ -29,7 +60,7 @@ export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], fra
  *
  * @param {Pose2DPixelLandmarks[]} matchingUserPoses - Array of adjusted user poses.
  * @param {Pose2DPixelLandmarks[]} referencePoses - Array of reference poses.
- * @param {number[]} uniqueFrameTimes - Array of unique frame times corresponding to the poses.
+ * @param {number[]} frameTimes - Array of unique frame times corresponding to the poses.
  * @returns {[number, number, number, number, number, number]} MSE and RMSE between user and reference motion descriptors.
  * Both MAE and RMSE measure the how different the user's poses are from the refence poses.
  * Mean Absolute Error (MAE):
@@ -49,54 +80,54 @@ export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], fra
  * @throws {Error} Throws an error if there is invalid input data, mismatched array lengths, or bad unique frametimes.
  */
 export function calculateKinematicErrorDescriptors(
-  matchingUserPoses: Pose2DPixelLandmarks[],
-  referencePoses: Pose2DPixelLandmarks[],
-  uniqueFrameTimes: number[]
+    matchingUserPoses: Pose2DPixelLandmarks[],
+    referencePoses: Pose2DPixelLandmarks[],
+    frameTimes: number[],
+    usrScale?: number,
+    refScale?: number
 ) {
-  if (!matchingUserPoses || matchingUserPoses.length === 0 || !referencePoses || referencePoses.length === 0) {
-      throw new Error("Invalid input data. Both matchingUserPoses and referencePoses must be non-empty arrays.");
-  }
+    if (!matchingUserPoses || !referencePoses || !frameTimes) {
+        throw new Error("Invalid input data. Either matchingUserPoses or referencePoses is null.");
+    }
 
-  if (matchingUserPoses.length !== referencePoses.length) {
-      throw new Error("Mismatched array lengths between matchingUserPoses and referencePoses.");
-  }
+    if (matchingUserPoses.length !== referencePoses.length || matchingUserPoses.length !== frameTimes.length) {
+        throw new Error("Mismatched array lengths between matchingUserPoses and referencePoses.");
+    }
 
-  const usrScale = GetScaleIndicator(matchingUserPoses[0]);
-  const refScale = GetScaleIndicator(referencePoses[0]);
+    const frameCount = matchingUserPoses.length;
 
-  if (!uniqueFrameTimes || uniqueFrameTimes.length === 0) {
-      throw new Error("Bad uniqueFrameTimes");
-  }
+    usrScale ??= frameCount > 0 ? GetScaleIndicator(matchingUserPoses[0]) : 1;
+    refScale ??= frameCount > 0 ? GetScaleIndicator(referencePoses[0]) : 1;
 
-  const userVels = calculateVels(matchingUserPoses, uniqueFrameTimes, usrScale);
-  const referenceVels = calculateVels(referencePoses, uniqueFrameTimes, refScale);
-  const userAccs = calculateDerivative(userVels, uniqueFrameTimes);
-  const referenceAccs = calculateDerivative(referenceVels, uniqueFrameTimes);
-  const userJerks = calculateDerivative(userAccs, uniqueFrameTimes);
-  const referenceJerks = calculateDerivative(referenceAccs, uniqueFrameTimes);
+    const userVels = calculateVels(matchingUserPoses, frameTimes, usrScale);
+    const referenceVels = calculateVels(referencePoses, frameTimes, refScale);
+    const userAccs = calculateDerivative(userVels, frameTimes);
+    const referenceAccs = calculateDerivative(referenceVels, frameTimes);
+    const userJerks = calculateDerivative(userAccs, frameTimes);
+    const referenceJerks = calculateDerivative(referenceAccs, frameTimes);
 
-  const usrScalarVels = calculateMetricsMag(userVels);
-  const refScalarVels = calculateMetricsMag(referenceVels);
-  const usrScalarAccs = calculateMetricsMag(userAccs);
-  const refScalarAccs = calculateMetricsMag(referenceAccs);
-  const usrScalarJerks = calculateMetricsMag(userJerks);
-  const refScalarJerks = calculateMetricsMag(referenceJerks);
+    const usrScalarVels = calculateMetricsMag(userVels);
+    const refScalarVels = calculateMetricsMag(referenceVels);
+    const usrScalarAccs = calculateMetricsMag(userAccs);
+    const refScalarAccs = calculateMetricsMag(referenceAccs);
+    const usrScalarJerks = calculateMetricsMag(userJerks);
+    const refScalarJerks = calculateMetricsMag(referenceJerks);
 
-  const jerksMAE = getMatricesMAE(usrScalarJerks, refScalarJerks);
-  const jerksRSME = getMatricesRMSE(usrScalarJerks, refScalarJerks);
-  const accsMAE = getMatricesMAE(usrScalarAccs, refScalarAccs);
-  const accsRSME = getMatricesRMSE(usrScalarAccs, refScalarAccs);
-  const velsMAE = getMatricesMAE(usrScalarVels, refScalarVels);
-  const velsRSME = getMatricesRMSE(usrScalarVels, refScalarVels);
+    const velsMAE = getMatricesMAE(usrScalarVels, refScalarVels) ?? null;
+    const velsRSME = getMatricesRMSE(usrScalarVels, refScalarVels) ?? null;
+    const accsMAE = getMatricesMAE(usrScalarAccs, refScalarAccs) ?? null;
+    const accsRSME = getMatricesRMSE(usrScalarAccs, refScalarAccs) ?? null;
+    const jerksMAE = getMatricesMAE(usrScalarJerks, refScalarJerks) ?? null;
+    const jerksRSME = getMatricesRMSE(usrScalarJerks, refScalarJerks) ?? null;
 
-  return {
-    jerksMAE, 
-    jerksRSME, 
-    accsMAE, 
-    accsRSME, 
-    velsMAE, 
-    velsRSME
-  };
+    return {
+        velsMAE,
+        velsRSME,
+        accsMAE,
+        accsRSME,
+        jerksMAE,
+        jerksRSME,
+    };
 }
 
 /**
@@ -109,100 +140,136 @@ export function calculateKinematicErrorDescriptors(
  *
  * @throws {Error} Throws an error if there are insufficient frames for calculating the first derivative.
  */
-function calculateVels(
-  poses: Pose2DPixelLandmarks[],
-  frameTimes: number[],
-  scale: number
-  ): number[][][] {
-  const numFrames = poses.length;
+export function calculateVels(
+    poses: Pose2DPixelLandmarks[],
+    frameTimes: number[],
+    scale: number,
+): Vec2<number | undefined>[][] {
 
-  if (numFrames < 2) {
-    throw new Error("Insufficient frames for calculating first derivative.");
-  }
+    const numFrames = poses.length;
 
-  const velocities: number[][][] = [];
+    if (poses.length !== frameTimes.length) {
+        throw new Error("Mismatched array lengths (poses and frameTimes).");
+    }
 
-  for (let i = 1; i < numFrames; i++) {
-    const dt = frameTimes[i] - frameTimes[i - 1];
+    const velocities = [] as Vec2<number | undefined>[][];
+    if (poses.length === 0) return velocities;
 
-    const velocitesByVector = QijiaMethodComparisonVectors.map(
-      (vecLandmarkIds) => {
-        const [srcLandmark, destLandmark] = vecLandmarkIds;
-        const [refX_i, refY_i] = Get2DVector(poses[i], srcLandmark, destLandmark);
-        const [refX_ip, refY_ip] = Get2DVector(poses[i - 1], srcLandmark, destLandmark);
+    const landmarkCount = poses[0].length;
 
-        const dx = (refX_i - refX_ip) / (dt * scale);
-        const dy = (refY_i - refY_ip) / (dt * scale);
+    for (let i = 0; i < numFrames; i++) {
+        const dt = frameTimes[i] - frameTimes[i - 1];
 
-        return [dx, dy];
-      }
-    );
+        // > For the first frame, the velocity is undefined, as there is no previous frame to compare to.
+        // > If there are repeat framesTimes, the velocity is undefined, as we unable to calculate it
+        // > if the scale is zero, the velocity is undefined, as we would be dividing by zero 
+        if (i === 0 || dt === 0 || scale === 0) {
+            velocities.push(makeUndefined2DMatrix(landmarkCount, 2) as Vec2<undefined>[]);
+            continue;
+        }
 
-    velocities.push(velocitesByVector);
-  }
+        const prevPoseFrame: Pose2DPixelLandmarks | undefined = poses[i - 1];
+        const poseFrame: Pose2DPixelLandmarks = poses[i];
 
-  return velocities;
+        if (poseFrame.length !== landmarkCount) {
+            throw new Error("Mismatched array lengths (landmarkCount).");
+        }
+
+        const velocitesByVector = poseFrame.map(
+            (curLandmark, index) => {
+                const pLandmark = prevPoseFrame[index];
+
+                const dx = (curLandmark.x - pLandmark?.x) / (dt * scale);
+                const dy = (curLandmark.y - pLandmark?.y) / (dt * scale);
+
+                return [replaceNaNsWithUndefined(dx), replaceNaNsWithUndefined(dy)] as Vec2<number>;
+            }
+        ) as Vec2<number | undefined>[];
+
+        velocities.push(velocitesByVector);
+    }
+
+    return velocities;
 }
 
 /**
  * Computes the first derivative of a 3D array.
  *
- * @param {number[][][]} original - The original array.
- * @param {number[]} frameTimes - Array of frame times corresponding to the original data.
- * @returns {number[][][]} Array representing the first derivative of the original data.
+ * @param original - The original array.
+ * @param frameTimes - Array of frame times corresponding to the original data.
+ * @returns Array representing the first derivative of the original data.
  *
  * @throws {Error} Throws an error if there are insufficient frames for calculating the first derivative.
  */
-function calculateDerivative(
-  original: number[][][],
-  frameTimes: number[]
-): number[][][] {
-  const numFrames = original.length;
+export function calculateDerivative(
+    original: Vec2<number | undefined>[][],
+    frameTimes: number[]
+): Vec2<number | undefined>[][] {
+    const numFrames = original.length;
 
-  if (numFrames < 2) {
-    throw new Error("Insufficient frames for calculating derivative.");
-  }
+    if (original.length !== frameTimes.length) {
+        throw new Error("Mismatched array lengths (original and frameTimes).");
+    }
 
-  const derivatives: number[][][] = [];
+    if (original.length === 0) return [];
 
-  for (let i = 1; i < numFrames; i++) {
-    const dt = frameTimes[i] - frameTimes[i - 1];
+    const numVectors = original[0].length;
+    const derivatives: Array<Array<Vec2<number | undefined>>> = [];
 
-    const deriv = original[i].map((values, vec) => {
-      const [x, y] = values;
-      const [prevX, prevY] = original[i - 1][vec];
+    for (let i = 0; i < numFrames; i++) {
+        const dt = frameTimes[i] - frameTimes[i - 1];
+        if (original[i].length !== numVectors) {
+            throw new Error("Mismatched array lengths.");
+        }
 
-      const dx = (x - prevX) / dt;
-      const dy = (y - prevY) / dt;
+        if (i === 0 || dt === 0) {
+            const frameDeriv = makeUndefined2DMatrix(numVectors, 2) as Vec2<undefined>[];
+            derivatives.push(frameDeriv);
+            continue;
+        }
 
-      return [dx, dy];
-    });
+        const deriv = original[i].map((values, vec) => {
+            const [x, y] = values;
+            const [prevX, prevY] = original[i - 1][vec];
 
-    derivatives.push(deriv);
-  }
+            const dx = (x as number - (prevX as number)) / dt;
+            const dy = (y as number - (prevY as number)) / dt;
 
-  return derivatives;
+            return [replaceNaNsWithUndefined(dx), replaceNaNsWithUndefined(dy)] as Vec2<number | undefined>;
+        }) as Vec8<Vec2<number | undefined>>;
+
+        derivatives.push(deriv);
+    }
+
+    return derivatives;
 }
 
 /**
  * Calculate the magnitudes of 2D vectors in a 3D array of velocities.
  *
- * @param {number[][][]} vectorMetrics - The 3D array of vector metrics.
- * @returns {number[][]} A 2D array of magnitudes for each 2D vector.
+ * @param vectorMetrics - The 3D array of vector metrics.
+ * @returns A 2D array of magnitudes for each 2D vector.
  */
- function calculateMetricsMag(vectorMetrics: number[][][]): number[][] {
-  const scalarMetrics: number[][] = [];
+function calculateMetricsMag(vectorMetrics: Array<Array<Vec2<number | undefined>>>): Array<Array<number | undefined>> {
+    const scalarMetrics: Array<Array<number | undefined>> = [];
 
-  for (let time = 0; time < vectorMetrics.length; time++) {
-    const frameVels: number[] = [];
+    for (let time = 0; time < vectorMetrics.length; time++) {
+        const frameVels: Array<number | undefined> = [];
 
-    for (let vec = 0; vec < vectorMetrics[time].length; vec++) {
-      const velMag = getMagnitude2DVec([vectorMetrics[time][vec][0], vectorMetrics[time][vec][1]]);
-      frameVels.push(velMag);
+        for (let vec = 0; vec < vectorMetrics[time].length; vec++) {
+            const x = vectorMetrics[time][vec][0];
+            const y = vectorMetrics[time][vec][1];
+            if (x === undefined || y === undefined) {
+                frameVels.push(undefined);
+                continue;
+            }
+
+            const velMag = getMagnitude2DVec([x, y]);
+            frameVels.push(velMag);
+        }
+
+        scalarMetrics.push(frameVels);
     }
 
-    scalarMetrics.push(frameVels);
-  }
-
-  return scalarMetrics;
+    return scalarMetrics;
 }
