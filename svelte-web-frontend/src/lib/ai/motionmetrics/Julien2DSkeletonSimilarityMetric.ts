@@ -106,7 +106,7 @@ type JulienMetricSummaryOutput = {
  * @param userLandmarks - User landmarks (learner)
  * @returns Object containing the dissimilarity score and information by vector
  */
-export class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput> {
+export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput> {
     
     computeMetric(_history: Readonly<TrackHistory>, _metricHistory: Readonly<JulienMetricSingleFrameOutput[]>, _videoFrameTimeInSecs: Readonly<number>, _actualTimesInMs: number, user2dPose: Readonly<Pose2DPixelLandmarks>, _user3dPose: Readonly<Pose3DLandmarkFrame>, ref2dPose: Readonly<Pose2DPixelLandmarks>, _ref3dPose: Readonly<Pose3DLandmarkFrame>): JulienMetricSingleFrameOutput {
         return computeSkeleton2DDissimilarityJulienMethod(ref2dPose, user2dPose)

@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest';
 import { runLiveEvaluationMetricOnTestTrack, publishLiveMetricOutputForTracks, loadTestTrack, generateAllTestTracks } from './testdata/metricTestingUtils';
-import { Qijia2DSkeletonSimilarityMetric } from './Qijia2DSkeletonSimilarityMetric';
+import Qijia2DSkeletonSimilarityMetric from './Qijia2DSkeletonSimilarityMetric';
 
 // Note: we import the json file with ?url appended to the end in order to prevent degraded
 //       tooling performance. If we import the json file directly, the tooling will try to

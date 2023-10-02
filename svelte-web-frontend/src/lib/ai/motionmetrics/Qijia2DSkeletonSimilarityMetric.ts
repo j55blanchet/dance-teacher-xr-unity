@@ -89,7 +89,7 @@ type QijiaMetricSummaryOutput = {
  * A metric that calculates the similarity between two poses using the Qijia method.
  * @see computeSkeletonDissimilarityQijiaMethod
  */
-export class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
+export default class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
 
     computeMetric(_history: TrackHistory, _metricHistory: QijiaMetricSingleFrameOutput[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
         return computeSkeletonDissimilarityQijiaMethod(ref2dPose, user2dPose)

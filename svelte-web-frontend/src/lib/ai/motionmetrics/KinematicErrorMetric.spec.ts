@@ -1,6 +1,7 @@
+
 import { describe, it } from 'vitest';
-import { publishSummaryMetricOutputForTracks, loadTestTrack, generateAllTestTracks, runSummaryMetricOnTestTrack } from './testdata/metricTestingUtils';
-import BasicInfoSummaryMetric from './BasicInfoSummaryMetric';
+import { runSummaryMetricOnTestTrack, publishSummaryMetricOutputForTracks, loadTestTrack, generateAllTestTracks } from './testdata/metricTestingUtils';
+import KinematicErrorMetric from "./KinematicErrorMetric";
 
 // Note: we import the json file with ?url appended to the end in order to prevent degraded
 //       tooling performance. If we import the json file directly, the tooling will try to
@@ -9,27 +10,28 @@ import BasicInfoSummaryMetric from './BasicInfoSummaryMetric';
 //       that file during development. 
 import goodperf_alignedwithcamera_url from './testdata/goodperf_alignedwithcamera.other_laxed_siren_beat.track.json?url';
 
-describe('BasicInfoSummaryMetric', () => {
+describe('KinematicErrorMetric', () => {
 
     it('should produce expected scores for test track 1', ({ expect }) => {
         const track = loadTestTrack(goodperf_alignedwithcamera_url);
         const { summary } = runSummaryMetricOnTestTrack(
-            new BasicInfoSummaryMetric(),
+            new KinematicErrorMetric(),
             track,
         );
         
-        expect(summary.poseFrameCount).toMatchInlineSnapshot('387');
-        expect(summary.realTimeDurationSecs).toMatchInlineSnapshot('30.134');
-        expect(summary.realTimeFps).toMatchInlineSnapshot('12.842636224862282');
-        expect(summary.videoTimeDurationSecs).toMatchInlineSnapshot('14.97');
-        expect(summary.videoTimeFps).toMatchInlineSnapshot('25.851703406813627');
+        expect(summary?.accsMAE).toMatchInlineSnapshot();
+        expect(summary?.accsRSME).toMatchInlineSnapshot();
+        expect(summary?.jerksMAE).toMatchInlineSnapshot();
+        expect(summary?.jerksRSME).toMatchInlineSnapshot();
+        expect(summary?.velsMAE).toMatchInlineSnapshot();
+        expect(summary?.velsRSME).toMatchInlineSnapshot();
     });
 
     it('publishing metric outputs should not throw', ({ expect }) => {
         expect(() => {
 
             publishSummaryMetricOutputForTracks(
-                new BasicInfoSummaryMetric(),
+                new KinematicErrorMetric(),
                 generateAllTestTracks(),
             )
 

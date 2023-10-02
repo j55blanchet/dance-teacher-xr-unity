@@ -10,7 +10,7 @@ import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
  * LiveEvaluationMetric or SummaryMetric interfaces. As such, this class is generic over the types 
  * of the live and summary metrics.
  */
-export class UserDanceEvaluator<
+export default class UserDanceEvaluator<
     T extends Record<string, LiveEvaluationMetric<unknown, unknown>>,
     U extends Record<string, SummaryMetric<unknown>>,
 > {
@@ -144,3 +144,4 @@ export class UserDanceEvaluator<
         }
     }
 }
+

@@ -8,7 +8,7 @@ type BasicInfoSummaryOutput = {
     videoTimeDurationSecs: number;
     videoTimeFps: number;
 }
-export class BasicInfoSummaryMetric implements SummaryMetric<BasicInfoSummaryOutput> {
+export default class BasicInfoSummaryMetric implements SummaryMetric<BasicInfoSummaryOutput> {
 
     summarizeMetric(history: TrackHistory): BasicInfoSummaryOutput {
 

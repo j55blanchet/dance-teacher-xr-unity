@@ -2,25 +2,27 @@
 
 import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
-import { UserDanceEvaluator } from "./UserDanceEvaluator";
+import UserDanceEvaluator from "./UserDanceEvaluator";
 import type { PerformanceEvaluationTrack } from "./UserEvaluationRecorder";
-import { Julien2DSkeletonSimilarityMetric } from "./motionmetrics/Julien2DSkeletonSimilarityMetric";
-import { Qijia2DSkeletonSimilarityMetric } from "./motionmetrics/Qijia2DSkeletonSimilarityMetric";
-import { Skeleton3dVectorAngleSimilarityMetric } from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
-import { BasicInfoSummaryMetric } from "./motionmetrics/BasicInfoSummaryMetric";
+// import Julien2DSkeletonSimilarityMetric from "./motionmetrics/Julien2DSkeletonSimilarityMetric";
+import Qijia2DSkeletonSimilarityMetric from "./motionmetrics/Qijia2DSkeletonSimilarityMetric";
+import Skeleton3dVectorAngleSimilarityMetric from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
+import BasicInfoSummaryMetric from "./motionmetrics/BasicInfoSummaryMetric";
+import KinematicErrorMetric from "./motionmetrics/KinematicErrorMetric";
 
 const frontendLiveMetrics = {
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
-    julien2DSkeletonSimilarity: new Julien2DSkeletonSimilarityMetric(),
+    // julien2DSkeletonSimilarity: new Julien2DSkeletonSimilarityMetric(),
     skeleton3DAngleSimilarity: new Skeleton3dVectorAngleSimilarityMetric(),
 };
 
 const frontendSummaryMetrics = {
     basicInfo: new BasicInfoSummaryMetric(),
+    kinematicError: new KinematicErrorMetric(),
 };
 
 export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics, typeof frontendSummaryMetrics>;
-export type FrontendPerformanceSummary = ReturnType<FrontendDanceEvaluator["getPerformanceSummary"]>;
+export type FrontendPerformanceSummary = ReturnType<FrontendDanceEvaluator["generatePerformanceSummary"]>;
 export type FrontendLiveEvaluationResult = ReturnType<FrontendDanceEvaluator["evaluateFrame"]>;
 export type FrontendEvaluationTrack = PerformanceEvaluationTrack<NonNullable<FrontendLiveEvaluationResult>>;
 
