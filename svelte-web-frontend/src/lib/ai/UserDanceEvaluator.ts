@@ -2,7 +2,6 @@ import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
 import type { LiveEvaluationMetric, SummaryMetric } from "./motionmetrics/MotionMetric";
 import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
-import { calculateMotionDescriptorsScore, removeDuplicateFrameTimes } from "./compute-motion-descriptors";
 
 /**
  * Evaluates a user's dance performance against a reference dance. This class is responsible for

@@ -1,13 +1,14 @@
 <script lang="ts">
-import { debugMode } from './model/settings';
+import { debugMode } from '$lib/model/settings';
 import { createEventDispatcher } from 'svelte';
-import type { DanceTreeNode } from '$lib/data/dances-store';
+import { findDanceTreeNode, type DanceTreeNode, findDanceTreeSubNode } from '$lib/data/dances-store';
 
 export let enableClick: boolean = false;
 export let currentTime: number = 0;
 export let node: DanceTreeNode;
+export let playingFocusMode: 'hide-others' | 'hide-non-descendant' | 'show-all' = 'show-all';
 
-export let showProgressNodes: Array<DanceTreeNode> = [];
+export let showProgressNode: DanceTreeNode | undefined;
 export let beatTimes: Array<number> = [];
 
 let progressPercent = 0;
@@ -15,7 +16,52 @@ $: progressPercent = (currentTime - node.start_time) / (node.end_time - node.sta
 $: node_title = node.id.split("-").findLast(() => true);
 
 let showProgress = false;
-$: showProgress = showProgressNodes.includes(node);
+$: showProgress = (showProgressNode != undefined) && node === showProgressNode;
+
+function shouldHideBar(a_node: DanceTreeNode, progressNode: DanceTreeNode | undefined, focusMode: typeof playingFocusMode) {
+    if (focusMode === 'hide-others') {
+        return progressNode !== undefined
+            && a_node !== progressNode;
+    } else if (focusMode === 'hide-non-descendant') {
+        return progressNode !== undefined
+            && a_node.id !== (progressNode.id) 
+            && !findDanceTreeSubNode(progressNode, a_node.id);
+    } else {
+        return false;
+    }
+}
+
+function shouldHideAllChildrenNodes(parentNode: DanceTreeNode, progressNode: DanceTreeNode | undefined, focusMode: typeof playingFocusMode) {
+    const isFocusNode = progressNode !== undefined && parentNode.id === progressNode.id;
+    const hasFocusNodeInSubtree = progressNode && findDanceTreeSubNode(parentNode, progressNode.id);
+    const isAChildOfFocusNode = progressNode && findDanceTreeSubNode(progressNode, parentNode.id);
+    if (focusMode === 'hide-others') {
+        // Can hide all of this node's children if the progress node is not a descendant of this node.
+        return progressNode !== undefined && (isFocusNode || !hasFocusNodeInSubtree);
+    } else if (focusMode === 'hide-non-descendant') {
+        return progressNode !== undefined && 
+            !isFocusNode && 
+            !hasFocusNodeInSubtree &&                                   
+            !isAChildOfFocusNode;
+    }
+
+    return false;
+}
+
+let isBarHidden = false;
+$: {
+    isBarHidden = shouldHideBar(node, showProgressNode, playingFocusMode);
+}
+let areAllChildrenHidden = false;
+$: {
+    areAllChildrenHidden = shouldHideAllChildrenNodes(node, showProgressNode, playingFocusMode);
+}
+let isNodeHidden = false;
+$: {
+    isNodeHidden = isBarHidden && areAllChildrenHidden;
+}
+
+
 
 let nodeTitleString = "";
 $: {
@@ -24,6 +70,7 @@ $: {
         const duration = node.end_time - node.start_time;
         const complexityPerSecond = node.complexity / (node.end_time - node.start_time);
         const nodeComplexityString = `${complexityPerSecond.toFixed(2)}/s ${node.complexity.toFixed(2)} total`
+        
         nodeTitleString = `${node.id}\nComplexity: ${nodeComplexityString}\nDuration: ${duration.toFixed(2)}s`;
     } 
 }
@@ -36,8 +83,12 @@ function barClicked () {
 }
 </script>
 
-<div class="node" style="--node-duration:{node.end_time - node.start_time}">
+<div class="node" 
+    style="--node-duration:{node.end_time - node.start_time}"
+    class:hidden={isNodeHidden}>
+
     <a class="bar outlined" 
+       class:hidden={isBarHidden}
        class:button={enableClick} 
        class:active={showProgress}
        on:click={barClicked}
@@ -59,14 +110,15 @@ function barClicked () {
         {/if}
     </a>
     {#if node.children.length > 0}
-        <div class="children">
+        <div class="children" class:hidden={areAllChildrenHidden}>
         {#each node.children as child}
             <svelte:self 
                 node={child} 
                 {enableClick} 
                 {currentTime}
-                {showProgressNodes}
+                showProgressNode={showProgressNode}
                 {beatTimes}
+                {playingFocusMode}
                 on:nodeClicked 
                 />
         {/each}
@@ -75,11 +127,18 @@ function barClicked () {
 </div>
 
 <style lang="scss">
+
+.node {
+    --hide-transition-duration: 1.5s;
+}
+    
     .bar {
+        box-sizing: border-box;
         position: relative;
         // min-width: 100%;
         text-align: center;
         height: 1em;
+        transition: height var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
         overflow: hidden;
@@ -89,6 +148,12 @@ function barClicked () {
         // border-width: 0.12em;
         box-shadow: 0 0 1px black;
         border: 0 solid transparent;
+    }
+    .bar.hidden {
+        box-shadow: 0;
+        // border: 0;
+        height: 0;
+        opacity: 0.2;
     }
 
     .bar .progress {
@@ -117,6 +182,10 @@ function barClicked () {
         width: 100%;
         justify-content: space-between;
         gap: 0.5em;
+        transition: gap var(--hide-transition-duration) ease-in-out;
+    }
+    .children.hidden {
+        gap: 0;
     }
 
     .node {
@@ -126,9 +195,12 @@ function barClicked () {
         gap: 0.25em;
         flex-basis: 0;
         flex-grow: var(--node-duration);
-        // width: 100%;
-        // margin: 1em;
-        // border: 1px solid black;
-        // border-radius: 1em;
+        transition: flex-grow var(--hide-transition-duration) ease-in-out;
+    }
+
+    .node.hidden {
+        flex-basis: 0;
+        flex-grow: 0;
+
     }
 </style>

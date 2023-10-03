@@ -24,9 +24,12 @@ import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackScreen.svelte';
 import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
+import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 
 export let mirrorForEvaluation: boolean = true;
+
 export let dance: Dance;
+
 export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
@@ -38,6 +41,8 @@ let fitVideoToFlexbox = true;
 let state: PracticePageState = INITIAL_STATE;
 $: console.log("PracticePage state", state);
 $: dispatch('stateChanged', state); 
+let isPlayingOrCountdown = INITIAL_STATE === "playing" || INITIAL_STATE === "countdown";
+$: isPlayingOrCountdown = state === "playing" || state === "countdown";
 
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
@@ -442,19 +447,25 @@ onMount(() => {
 
 </script>
 
-<section class="practicePage">
+<section class="practicePage" 
+    class:hasDanceTree={practiceActivity?.danceTree}
+    class:hasFeedback={state === "feedback"}
+    >
+    {#if practiceActivity?.danceTree}
+    <div class="treevis">
+        <DanceTreeVisual 
+            node={practiceActivity.danceTree.root }
+            showProgressNode={practiceActivity.danceTreeNode} 
+            currentTime={videoCurrentTime}
+            playingFocusMode={isPlayingOrCountdown ? 
+                'hide-non-descendant': 
+                'show-all'
+            }/>
+    </div>
+    {/if}
+
     {#if state !== "feedback"}
-    <div>
-        <!-- <video 
-               bind:currentTime={videoCurrentTime}
-               bind:playbackRate={videoPlaybackSpeed}
-               bind:paused={isVideoPaused}
-               bind:duration={videoDuration}
-               class="shrinkingVideo"
-               class:flipped={flipVideo}
-               >
-            <source src={danceSrc} type="video/mp4" />
-        </video> -->
+    <div class="demovid">
         <VideoWithSkeleton
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
@@ -477,7 +488,7 @@ onMount(() => {
     </div>
     {/if}
     {#if state === "feedback"}
-    <div>
+    <div class="feedback">
         <TerminalFeedbackDialog 
             feedback={terminalFeedback}
             on:repeat-clicked={reset}
@@ -487,7 +498,10 @@ onMount(() => {
         <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
     </div>
     {/if}
-    <div style:display={state === "feedback" ? 'none' : 'flex'}>
+    <div 
+        class="mirror"
+        style:display={state === "feedback" ? 'none' : 'flex'}
+        >
         <VirtualMirror
             bind:this={virtualMirrorElement}
             {poseEstimationEnabled}
@@ -504,14 +518,38 @@ onMount(() => {
         </div>
         {/if}
     </div>
-
 </section>
 
 <style lang="scss">
 
+div.demovid { grid-area: demovid; }
+div.mirror {  grid-area: mirror;  }
+div.treevis { grid-area: treevis; }
+div.feedback { grid-area: feedback; }
+
 section {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template: "demovid mirror" 1fr / 1fr 1fr;
+
+    &.hasDanceTree {
+        grid-template-areas:
+            "treevis treevis"
+            "demovid  mirror";
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 1fr 1fr;
+        // grid-template:
+        //     "treevis treevis" auto
+        //     "demovid mirror" 1fr / 1fr 1fr;
+    }
+    &.hasFeedback {
+        grid-template: "feedback feedback" 1fr / 1fr 1fr;
+    }
+    &.hasDanceTree.hasFeedback {
+        grid-template:
+            "treevis treevis" auto
+            "feedback feedback" 1fr / 1fr 1fr;
+    }
+    
     align-items: center;
     justify-content: stretch;
     
@@ -521,6 +559,7 @@ section {
     gap: 1rem;
 
     & > div {
+        place-self: center;
         position: relative;
         flex-grow: 1;
         flex-shrink: 1;

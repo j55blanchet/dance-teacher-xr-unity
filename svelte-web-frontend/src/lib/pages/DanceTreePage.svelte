@@ -5,7 +5,7 @@ import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 import SketchButton from '$lib/elements/SketchButton.svelte';
 import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode } from '$lib/data/dances-store';
-import DanceTreeVisual from '$lib/DanceTreeVisual.svelte';
+import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
@@ -43,11 +43,7 @@ $: navbarProps.set({
         title: 'Home',
     },
 });
-$: {
-    showProgressNodes = currentPlayingNode !== null ? 
-        [currentPlayingNode]:
-        [];
-}
+
 $: if (videoCurrentTime > stopTime) {
     videoPaused = true;
 }
@@ -107,7 +103,7 @@ async function practiceClicked() {
                 on:nodeClicked={onNodeClicked} 
                 enableClick 
                 node={danceTree.root}
-                showProgressNodes={showProgressNodes}
+                showProgressNode={currentPlayingNode ?? undefined}
                 currentTime={videoCurrentTime}
                 beatTimes={danceBeatTimes}
             /> 

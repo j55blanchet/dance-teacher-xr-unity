@@ -48,12 +48,14 @@ export function getDanceAndDanceTreeFromDanceTreeId(slug: string): [Dance | null
     
 }
 
-function FindDanceTreeNodeRecursive(node: DanceTreeNode, nodeId: string): DanceTreeNode | null {
+export function findDanceTreeSubNode(node: DanceTreeNode, subNodeId: string | undefined): DanceTreeNode | null {
+    if (!subNodeId) return null;
+    
     for (const child of node.children) {
-        if (child.id === nodeId) {
+        if (child.id === subNodeId) {
             return child as unknown as DanceTreeNode;
         }
-        const foundNode = FindDanceTreeNodeRecursive(child as unknown as DanceTreeNode, nodeId);
+        const foundNode = findDanceTreeSubNode(child as unknown as DanceTreeNode, subNodeId);
         if (foundNode) {
             return foundNode;
         }
@@ -65,7 +67,7 @@ export function findDanceTreeNode(danceTree: DanceTree, nodeId: string): DanceTr
     if (danceTree.root.id === nodeId) {
         return danceTree.root;
     }
-    return FindDanceTreeNodeRecursive(danceTree.root, nodeId);
+    return findDanceTreeSubNode(danceTree.root, nodeId);
 }
 
 export function getAllNodesInSubtree(node: DanceTreeNode): DanceTreeNode[] {
