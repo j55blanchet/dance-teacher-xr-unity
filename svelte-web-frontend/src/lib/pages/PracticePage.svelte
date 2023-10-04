@@ -1,31 +1,35 @@
 <script context="module" lang="ts">
 export type PracticePageState = "waitWebcam" | "waitStart" | "countdown" | "playing" | "paused" | "feedback";
-export const initialState = "waitWebcam";
+export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
+import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { pauseInPracticePage, debugPauseDurationSecs } from '$lib/model/settings';
+import { getAllLeafNodes, getAllNodesInSubtree } from '$lib/data/dances-store';
+import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
-import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation } from "$lib/data/dances-store";
-import * as evalAI from '$lib/ai/UserDanceEvaluator';
+import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation, type DanceTreeNode } from "$lib/data/dances-store";
 import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai/feedback';
 import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
-
 import { onMount, createEventDispatcher } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
-import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackDialog.svelte';
-import { QIJIA_SKELETON_SIMILARITY_MAX_SCORE } from '$lib/ai/skeleton-similarity';
+import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackScreen.svelte';
+import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
+import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
+import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 
 export let mirrorForEvaluation: boolean = true;
+
 export let dance: Dance;
+
 export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
@@ -34,9 +38,11 @@ const dispatch = createEventDispatcher();
 
 let fitVideoToFlexbox = true;
 
-let state: PracticePageState = initialState;
+let state: PracticePageState = INITIAL_STATE;
 $: console.log("PracticePage state", state);
 $: dispatch('stateChanged', state); 
+let isPlayingOrCountdown = INITIAL_STATE === "playing" || INITIAL_STATE === "countdown";
+$: isPlayingOrCountdown = state === "playing" || state === "countdown";
 
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
@@ -46,9 +52,22 @@ $: {
     }
 }
 
+let containingDanceTreeLeafNodes = [] as DanceTreeNode[];
+$: {
+    if (practiceActivity?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
+        containingDanceTreeLeafNodes = getAllLeafNodes(practiceActivity.danceTreeNode).filter((node) => node.id !== practiceActivity?.danceTreeNode?.id);
+    } else if (practiceActivity?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
+        containingDanceTreeLeafNodes = getAllNodesInSubtree(practiceActivity.danceTreeNode).filter((node) => node.id !== practiceActivity?.danceTreeNode?.id);
+    }else {
+        containingDanceTreeLeafNodes = [];
+    }
+}
+
 let beatDuration = 1;
 $: {
-    beatDuration = dance?.bpm ? 60 / dance.bpm : 1;
+    const danceBpm = dance?.bpm ?? 60;
+    const danceSecsPerBeat = 60 / danceBpm;
+    beatDuration = danceSecsPerBeat / videoPlaybackSpeed;
 }
 
 let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
@@ -64,10 +83,10 @@ let poseEstimationReady: Promise<void> | null = null;
 let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
 let referneceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
-let lastEvaluationResult: evalAI.EvaluationV1Result | null = null;
-let evaluator: evalAI.UserDanceEvaluatorV1 | null = null;
-let trialId = generateUUIDv4();
-let performanceSummary: ReturnType<evalAI.UserDanceEvaluatorV1["getPerformanceSummary"]> | null = null;
+let lastEvaluationResult: FrontendLiveEvaluationResult | null = null;
+let evaluator: FrontendDanceEvaluator | null = null;
+let trialId = null as string | null;
+let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
 
 let countdown = -1;
@@ -76,6 +95,13 @@ let countdownActive = false;
 const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
 let currentPlaybackEndtime = practiceActivity?.endTime ?? 0;
 
+let webcamRecorder: MediaRecorder | null = null;
+let webcamRecordedChunks: Blob[] = [];
+
+let resolveWebcamRecordedObjectUrl: ((url: string) => void) | null = null;  
+let rejectWebcamRecordedObjectUrl: ((reason?: any) => void) | null = null;
+let webcamRecordedObjectURL: Promise<string> | null = null;
+
 $: {
     danceSrc = getDanceVideoSrc(dance);
 }
@@ -83,8 +109,13 @@ $: {
 $: {
     poseEstimationEnabled = pageActive && (countdownActive || !isVideoPausedBinding || state==="paused") && currentActivityType === 'drill';
 }
-$: {
-    videoPlaybackSpeed = practiceActivity?.playbackSpeed ?? 1.0;
+$: { 
+    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
+    if (practiceActivity?.playbackSpeed !== 'default' && 
+        practiceActivity?.playbackSpeed !== undefined &&
+        !isNaN(practiceActivity.playbackSpeed)) {
+        videoPlaybackSpeed = practiceActivity.playbackSpeed;
+    }
 }
 
 let unpauseVideoTimeout: number | null  = null;
@@ -95,6 +126,45 @@ function unPauseVideo() {
     state = "playing";
 }
 
+async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
+
+    const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
+    const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? new Map<string, number>();
+    const qijiaBestPossibleScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.maxPossibleScore ?? 0;
+
+    webcamRecorder?.stop();
+    let videoURL: undefined | string = undefined;
+    if (webcamRecordedObjectURL) {
+        videoURL = await webcamRecordedObjectURL;
+    }
+
+    let feedback: TerminalFeedback | undefined = undefined;
+    if ($useAIFeedback) {
+        try {
+            feedback = await generateFeedbackWithClaudeLLM(
+                practiceActivity?.danceTree,
+                practiceActivity?.danceTreeNode?.id ?? 'undefined',
+                performanceSummary ?? undefined,
+            )
+        } catch(e) {
+            console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
+        }
+    }
+
+    if (!feedback) {
+        feedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+    }
+    
+    feedback.debug = {
+        ...feedback.debug,
+        performanceSummary: performanceSummary ?? undefined,
+        recordedTrack: recordedTrack ?? undefined,
+        recordedVideoUrl: videoURL,
+    }
+
+    return feedback;
+}
+
 // Auto-pause the video when the practice activity is over
 $: {
     if ((practiceActivity?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
@@ -102,24 +172,25 @@ $: {
         isVideoPausedBinding = true;
 
         if (currentPlaybackEndtime === practiceActivity?.endTime) {
-            performanceSummary = evaluator?.getPerformanceSummary(trialId) ?? null;
             terminalFeedback = null;
+            performanceSummary = null;
+            let recordedTrack = null as null | FrontendEvaluationTrack;
+            
+            let subsequences = Object.fromEntries(
+                containingDanceTreeLeafNodes.map((node) => 
+                    [node.id, { startTime: node.start_time, endTime: node.end_time }]
+                )
+            );
+
+            if (trialId) {
+                recordedTrack = evaluator?.recorder.tracks.get(trialId) ?? null;
+                performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+            }
             state = "feedback";
-
-            const qijiaOverallScore = performanceSummary?.qijiaOverallScore ?? 0;
-            const qijiaByVectorScores = performanceSummary?.qijiaByVectorScores ?? new Map<string, number>();
-
-            generateFeedbackWithClaudeLLM(
-                qijiaOverallScore,
-                QIJIA_SKELETON_SIMILARITY_MAX_SCORE,
-            ).then((feedback) => {
-                terminalFeedback = feedback;
-                terminalFeedback.debugJson = performanceSummary ?? undefined;
-            }).catch((e) => {
-                console.warn("Error generating feedback", e);
-                terminalFeedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
-                terminalFeedback.debugJson = performanceSummary ?? undefined;
-            });
+            getFeedback(performanceSummary, recordedTrack)
+                .then(feedback => {
+                    terminalFeedback = feedback;
+                });
         }
         else {
             state = "paused"
@@ -130,9 +201,9 @@ $: {
     }
 }
 
-async function waitSecs(secs: number | undefined) {
+async function waitSecs(secs: number) {
     return new Promise((resolve) => {
-        setTimeout(resolve, (secs ?? 1) * 1000);
+        setTimeout(resolve, secs * 1000);
     })
 }
 
@@ -146,7 +217,6 @@ function playClickSound() {
     clickAudioElement.currentTime = 0;
     clickAudioElement.play();
 }
-
 
 async function startCountdown() {
     if (countdownActive) return;
@@ -181,8 +251,34 @@ async function startCountdown() {
     playClickSound();
     await waitSecs(beatDuration);
 
+    trialId = generateUUIDv4();
     state = "playing"
     countdown = -1;
+
+    resolveWebcamRecordedObjectUrl = null;
+    rejectWebcamRecordedObjectUrl = null;
+    webcamRecordedObjectURL = null;
+    webcamRecorder?.stop();
+    webcamRecorder = null;
+    webcamRecordedChunks = [];
+
+    if ($debugMode) {
+        webcamRecordedObjectURL = new Promise((resolve, reject) => {
+            resolveWebcamRecordedObjectUrl = resolve;
+            rejectWebcamRecordedObjectUrl = reject;
+        });
+        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: 'video/webm' });
+        webcamRecordedChunks = [];
+        webcamRecorder.addEventListener('dataavailable', (e) => {
+            webcamRecordedChunks.push(e.data);
+        });
+        webcamRecorder.addEventListener('stop', () => {
+            let recordedVideoURL = URL.createObjectURL(new Blob(webcamRecordedChunks));
+            resolveWebcamRecordedObjectUrl?.(recordedVideoURL);
+        });
+        webcamRecorder.start();
+    }
+
     isVideoPausedBinding = false;
     countdownActive = false;
 }
@@ -192,6 +288,7 @@ export async function reset() {
     if (unpauseVideoTimeout !== null) {
         clearTimeout(unpauseVideoTimeout);
     }
+    trialId = null;
     currentActivityStepIndex = 0;
     state = "waitWebcam";
     lastEvaluationResult = null;
@@ -213,17 +310,20 @@ export async function reset() {
 
     state = "waitStart";
 
-    evaluator = new evalAI.UserDanceEvaluatorV1(
+    evaluator = getFrontendDanceEvaluator(
         ref2dPoses,
         ref3dPoses
     );
-    // console.log("DancePoseInformation", referenceDancePoses);
-    await poseEstimationReady;
+    // console.lUserDanceEvaluator await poseEstimationReady;
 
     startCountdown();
 }
 
-let poseEstimationCorrespondances: Map<number, number> = new Map();
+
+let poseEstimationCorrespondances: Map<number, {
+    videoTimeSecs: number;
+    actualTimeInMs: number;
+}> = new Map();
 let lastPoseEstimationVideoTime: number = -1;
 let lastPoseEstimationSentTimestamp: Date = new Date();
 const maximumPoseEstimationFrequencyHz = 10;
@@ -234,11 +334,26 @@ function poseEstimationFrameSent(e: any) {
     // with the current video timestamp, so that we can later
     // compare the user's pose with the dance pose at that time.
     // console.log("poseEstimationFrameSent", e.detail.frameId, videoCurrentTime);
-    poseEstimationCorrespondances.set(e.detail.frameId, videoCurrentTime);
+    poseEstimationCorrespondances.set(e.detail.frameId, {
+        videoTimeSecs: videoCurrentTime,
+        actualTimeInMs: Date.now(),
+    });
     lastPoseEstimationVideoTime = videoCurrentTime;
 }
 
+/**
+ * An override function used by the virtual mirror element to determine
+ * whether or not to send the next frame to pose estimation. When pose estimation
+ * is enabled (`poseEstimationEnabled`), VirtualMirror will call this function
+ * just before sending the next frame to pose estimation. If this function returns
+ * false, the frame will not be sent. This is useful for limiting the frequency
+ * of pose estimation to save resources during situations when high pose estimation
+ * frequency is unnecessary (such as during the countdown when the video is paused).
+ */
 function shouldSendNextPoseEstimationFrame() {
+
+    // When the video is paused (such as during countdown), limit the fps 
+    // of pose estimation to avoid wasting resources.
     if (
         lastPoseEstimationVideoTime === videoCurrentTime && 
         lastPoseEstimationSentTimestamp.getTime() > Date.now() - minimumPoseEsstimationIntervalMs
@@ -251,10 +366,6 @@ function shouldSendNextPoseEstimationFrame() {
 function poseEstimationFrameReceived(e: any) {
     // console.log("poseEstimationFrameReceived", e.detail.frameId, e.detail.result);
 
-    if (state !== 'playing' && state !== 'paused') {
-        return;
-    }
-
     if (!referenceDancePoses2D) {
         console.log("No dance pose information", e);
         return;
@@ -265,7 +376,11 @@ function poseEstimationFrameReceived(e: any) {
         console.log(`No matching correspondance for ${frameId}`, e, "current correspondances: ", poseEstimationCorrespondances)
         return;
     };
-    const videoTimestamp = poseEstimationCorrespondances.get(frameId)!;
+    const {
+        videoTimeSecs,
+        actualTimeInMs
+    } = poseEstimationCorrespondances.get(frameId)!;
+
     poseEstimationCorrespondances.delete(frameId);
 
     const srcWidth = e?.detail?.srcWidth;
@@ -285,7 +400,16 @@ function poseEstimationFrameReceived(e: any) {
     }
     if (!evaluation2DPose) { return; }
     try {
-        lastEvaluationResult = evaluator?.evaluateFrame(trialId, videoTimestamp, evaluation2DPose, evaluation3DPose) ?? null;
+        lastEvaluationResult = evaluator?.evaluateFrame(
+            trialId ?? 'null', 
+            dance.clipRelativeStem,
+            practiceActivity?.segmentDescription ?? 'undefined',
+            videoTimeSecs,
+            actualTimeInMs,
+            evaluation2DPose,
+            evaluation3DPose,
+            state !== 'playing',
+        ) ?? null;
     }
     catch (e) {
         lastEvaluationResult = null;
@@ -314,24 +438,34 @@ onMount(() => {
         if (toggleSkeletonInvervel) {
             clearInterval(toggleSkeletonInvervel);
         }
+        if (webcamRecorder) {
+            webcamRecorder.stop();
+            webcamRecorder = null;
+        }
     }
 })
 
 </script>
 
-<section class="practicePage">
-    <div>
-        <!-- <video 
-               bind:currentTime={videoCurrentTime}
-               bind:playbackRate={videoPlaybackSpeed}
-               bind:paused={isVideoPaused}
-               bind:duration={videoDuration}
-               class="shrinkingVideo"
-               class:flipped={flipVideo}
-               >
-            <source src={danceSrc} type="video/mp4" />
-        </video> -->
+<section class="practicePage" 
+    class:hasDanceTree={practiceActivity?.danceTree}
+    class:hasFeedback={state === "feedback"}
+    >
+    {#if practiceActivity?.danceTree}
+    <div class="treevis">
+        <DanceTreeVisual 
+            node={practiceActivity.danceTree.root }
+            showProgressNode={practiceActivity.danceTreeNode} 
+            currentTime={videoCurrentTime}
+            playingFocusMode={isPlayingOrCountdown ? 
+                'hide-non-descendant': 
+                'show-all'
+            }/>
+    </div>
+    {/if}
 
+    {#if state !== "feedback"}
+    <div class="demovid">
         <VideoWithSkeleton
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
@@ -344,7 +478,6 @@ onMount(() => {
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-
         {#if countdown >= 0}
             <div class="countdown">
                 <span class="count">
@@ -353,8 +486,9 @@ onMount(() => {
             </div>
         {/if}
     </div>
+    {/if}
     {#if state === "feedback"}
-    <div>
+    <div class="feedback">
         <TerminalFeedbackDialog 
             feedback={terminalFeedback}
             on:repeat-clicked={reset}
@@ -364,7 +498,10 @@ onMount(() => {
         <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
     </div>
     {/if}
-    <div style:display={state === "feedback" ? 'none' : 'flex'}>
+    <div 
+        class="mirror"
+        style:display={state === "feedback" ? 'none' : 'flex'}
+        >
         <VirtualMirror
             bind:this={virtualMirrorElement}
             {poseEstimationEnabled}
@@ -377,18 +514,42 @@ onMount(() => {
         {#if state === "waitStart"}  
         <div class="loading outlined thick">
             <!-- <div class="spinner large"></div> -->
-            <div class="label">Loading...</div>
+            <div class="label">Loading<ProgressEllipses /></div>
         </div>
         {/if}
     </div>
-
 </section>
 
 <style lang="scss">
 
+div.demovid { grid-area: demovid; }
+div.mirror {  grid-area: mirror;  }
+div.treevis { grid-area: treevis; }
+div.feedback { grid-area: feedback; }
+
 section {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template: "demovid mirror" 1fr / 1fr 1fr;
+
+    &.hasDanceTree {
+        grid-template-areas:
+            "treevis treevis"
+            "demovid  mirror";
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 1fr 1fr;
+        // grid-template:
+        //     "treevis treevis" auto
+        //     "demovid mirror" 1fr / 1fr 1fr;
+    }
+    &.hasFeedback {
+        grid-template: "feedback feedback" 1fr / 1fr 1fr;
+    }
+    &.hasDanceTree.hasFeedback {
+        grid-template:
+            "treevis treevis" auto
+            "feedback feedback" 1fr / 1fr 1fr;
+    }
+    
     align-items: center;
     justify-content: stretch;
     
@@ -398,6 +559,7 @@ section {
     gap: 1rem;
 
     & > div {
+        place-self: center;
         position: relative;
         flex-grow: 1;
         flex-shrink: 1;

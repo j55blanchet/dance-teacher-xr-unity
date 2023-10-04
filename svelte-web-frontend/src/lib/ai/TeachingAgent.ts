@@ -6,17 +6,21 @@ import type PracticeActivity from '$lib/model/PracticeActivity';
 //     // similarityByNode: Map<DanceTreeNode["id"], number>;
 // }
 
-
 export function GeneratePracticeActivity(
     dance: Dance,
     danceTree: DanceTree,
     danceTreeNode: DanceTreeNode,
+    playbackSpeed: number | 'default',
     // userDancePerformanceLog: UserDancePerformanceLog
 ): PracticeActivity {
     return {
+        segmentDescription: danceTreeNode.id,
         startTime: danceTreeNode.start_time,
         endTime: danceTreeNode.end_time,
         activityTypes: ['drill'], // 'watch', 'mark', 'drill', 'fullout']
-        playbackSpeed: 0.50,
+        playbackSpeed,
+        dance,
+        danceTree,
+        danceTreeNode,
     }
 }

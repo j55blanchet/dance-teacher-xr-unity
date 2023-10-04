@@ -48,12 +48,14 @@ export function getDanceAndDanceTreeFromDanceTreeId(slug: string): [Dance | null
     
 }
 
-function FindDanceTreeNodeRecursive(node: DanceTreeNode, nodeId: string): DanceTreeNode | null {
+export function findDanceTreeSubNode(node: DanceTreeNode, subNodeId: string | undefined): DanceTreeNode | null {
+    if (!subNodeId) return null;
+    
     for (const child of node.children) {
-        if (child.id === nodeId) {
+        if (child.id === subNodeId) {
             return child as unknown as DanceTreeNode;
         }
-        const foundNode = FindDanceTreeNodeRecursive(child as unknown as DanceTreeNode, nodeId);
+        const foundNode = findDanceTreeSubNode(child as unknown as DanceTreeNode, subNodeId);
         if (foundNode) {
             return foundNode;
         }
@@ -65,7 +67,31 @@ export function findDanceTreeNode(danceTree: DanceTree, nodeId: string): DanceTr
     if (danceTree.root.id === nodeId) {
         return danceTree.root;
     }
-    return FindDanceTreeNodeRecursive(danceTree.root, nodeId);
+    return findDanceTreeSubNode(danceTree.root, nodeId);
+}
+
+export function getAllNodesInSubtree(node: DanceTreeNode): DanceTreeNode[] {
+    return [
+        node,
+        ...node.children.flatMap((child) => getAllNodesInSubtree(child as unknown as DanceTreeNode))
+    ];   
+}
+
+export function getAllLeafNodes(node: DanceTreeNode): DanceTreeNode[] {
+    if (node.children.length === 0) {
+        return [node];
+    }
+
+    return [
+        ...node.children.flatMap((child) => getAllLeafNodes(child as unknown as DanceTreeNode))
+    ];   
+}
+
+export function getAllNodes(node: DanceTreeNode): DanceTreeNode[] {
+    return [
+        node,
+        ...node.children.flatMap((child) => getAllNodes(child as unknown as DanceTreeNode))
+    ];   
 }
 
 export function getDanceVideoSrc(dance: Dance): string {

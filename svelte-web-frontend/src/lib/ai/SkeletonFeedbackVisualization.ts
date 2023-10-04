@@ -1,9 +1,9 @@
 import { DrawingUtils, type NormalizedLandmark, type LandmarkData } from "@mediapipe/tasks-vision";
-import type { EvaluationV1Result } from "./UserDanceEvaluator";
 import { SwapLeftRightLandmarks } from "$lib/webcam/mediapipe-utils";
 
 import {feedback_YellowThreshold, feedback_GreenThreshold} from '$lib/model/settings';
 import { QijiaMethodComparisonVectors } from "./EvaluationCommonUtils";
+import type { FrontendLiveEvaluationResult } from "./FrontendDanceEvaluator";
 
 const QijiaMethodVectorConnections = QijiaMethodComparisonVectors.map(([lm1, lm2]) => {
     return {
@@ -32,8 +32,9 @@ feedback_YellowThreshold.subscribe((val) => {
     yellowThreshold = val;
 });
 
-function getVectorColor(lmData: LandmarkData, evaluationResult: EvaluationV1Result | null) {
-    const score = evaluationResult?.qijiaByVectorScores[lmData.index ?? -1];
+function getVectorColor(lmData: LandmarkData, evaluationResult: FrontendLiveEvaluationResult | null) {
+    
+    const score = evaluationResult?.qijia2DSkeletonSimilarity?.vectorByVectorScore?.[lmData.index ?? -1];
     if (score === undefined) return 'white';
     
     if (score >= greenThreshold) return 'green';
@@ -44,7 +45,7 @@ function getVectorColor(lmData: LandmarkData, evaluationResult: EvaluationV1Resu
 export function DrawColorCodedSkeleton(
     ctx: CanvasRenderingContext2D, 
     pose: null | NormalizedLandmark[], 
-    evaluationResult: EvaluationV1Result | null,
+    evaluationResult: FrontendLiveEvaluationResult | null,
     flipLeftRight = false) 
 {
     if (!pose) return;

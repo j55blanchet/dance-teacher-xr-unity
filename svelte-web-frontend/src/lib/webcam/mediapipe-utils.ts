@@ -96,7 +96,7 @@ export type AnyLandmark = NormalizedLandmark | PixelLandmark | Landmark3D;
 /**
  * Represents a 2d landmark, converted to pixel coordinates. 
  */
-type PixelLandmark = {
+export type PixelLandmark = {
     x: number;
     y: number;
     dist_from_camera: number;
