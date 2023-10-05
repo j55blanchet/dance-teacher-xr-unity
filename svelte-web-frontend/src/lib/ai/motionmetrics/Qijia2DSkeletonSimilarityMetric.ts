@@ -1,6 +1,6 @@
 import { lerp } from "$lib/utils/math";
 import type { Pose3DLandmarkFrame, Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-import { GetNormalized2DVector, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, getArrayMean, getMagnitude2DVec } from "../EvaluationCommonUtils";
+import { GetNormalized2DVector, QijiaMethodComparisionVectorNames, QijiaMethodComparisonVectors, GetArithmeticMean, getMagnitude2DVec } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 
 export const QIJIA_SKELETON_SIMILARITY_MAX_SCORE = 5.0;
@@ -47,7 +47,7 @@ function computeSkeletonDissimilarityQijiaMethod(
     });
 
 
-    rawOverallDisimilarityScore = getArrayMean(vectorDissimilarityScores);
+    rawOverallDisimilarityScore = GetArithmeticMean(vectorDissimilarityScores);
 
     // According to Qijia, we used an upper bound of 2.0 for the dissimimlarity score (which would indicate all vectors
     // of the user faced the exact opposite directions of the expert), and the lower bound was zero (which would indicate
@@ -96,13 +96,13 @@ export default class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMe
     }
 
     summarizeMetric(_history: TrackHistory, metricHistory: QijiaMetricSingleFrameOutput[]): QijiaMetricSummaryOutput {
-        const qijiaOverallScore = getArrayMean(metricHistory.map(m => m.overallScore));
+        const qijiaOverallScore = GetArithmeticMean(metricHistory.map(m => m.overallScore));
         const arrayOfVecScores = metricHistory.map(m => m.vectorByVectorScore);
 
         const vectorScoreKeyValues = QijiaMethodComparisonVectors.map((_vec, i) => {
             const key = QijiaMethodComparisionVectorNames[i];
             const thisVecScores = arrayOfVecScores.map(vecbyVecScores => vecbyVecScores[i]);
-            const meanScore = getArrayMean(thisVecScores);
+            const meanScore = GetArithmeticMean(thisVecScores);
             return [key, meanScore] as [string, number];
         });
         const qijiaByVectorScores = new Map(vectorScoreKeyValues)

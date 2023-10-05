@@ -1,5 +1,5 @@
 import type { Pose3DLandmarkFrame, Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-import { BodyInnerAnglesComparisons, getInnerAngleFromFrame, getArrayMean } from "../EvaluationCommonUtils";
+import { BodyInnerAnglesComparisons, getInnerAngleFromFrame, GetHarmonicMean } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 
 /**
@@ -28,7 +28,7 @@ function computeSkeleton3DVectorAngleSimilarity(refLandmarks: Pose3DLandmarkFram
         })
     );
 
-    const meanScore = getArrayMean(Object.values(results).map((r) => r.score));
+    const meanScore = GetHarmonicMean(Object.values(results).map((r) => r.score));
 
     return {
         overallScore: meanScore,
@@ -53,7 +53,7 @@ export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvalua
 
     summarizeMetric(_history: TrackHistory, metricHistory: Angle3DMetricSingleFrameOutput[]): Angle3DMetricSummaryOutput {
         
-        const overallScore = getArrayMean(
+        const overallScore = GetHarmonicMean(
             metricHistory.map(m => m.overallScore)
                             .filter((n) => !isNaN(n))
         );
@@ -61,7 +61,7 @@ export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvalua
         const angleSimilarityVectorScoreKeyValues = Object.keys(BodyInnerAnglesComparisons).map((key) => {
             const vecScores = metricHistory.map((scores) => scores.individualScores[key].score)
                                                       .filter((n) => !isNaN(n));
-            const meanScore = getArrayMean(vecScores);
+            const meanScore = GetHarmonicMean(vecScores);
             return [key, meanScore] as [string, number];
         });
         const angleSimilarityIndividualScores = new Map(angleSimilarityVectorScoreKeyValues)

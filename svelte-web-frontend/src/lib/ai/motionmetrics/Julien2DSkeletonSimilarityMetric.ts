@@ -1,6 +1,6 @@
 import { lerp } from "$lib/utils/math";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
-import { QijiaMethodComparisonVectors, Get2DVector, GetScaleIndicator, getMagnitude2DVec, getInnerAngle, getArrayMean, QijiaMethodComparisionVectorNames } from "../EvaluationCommonUtils";
+import { QijiaMethodComparisonVectors, Get2DVector, GetScaleIndicator, getMagnitude2DVec, getInnerAngle, GetArithmeticMean, QijiaMethodComparisionVectorNames } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 
 // Constants for reliable 2D angle determination (in pixels)
@@ -83,7 +83,7 @@ function computeSkeleton2DDissimilarityJulienMethod(
 
     return {
         // Score is scaled between 0 and 1 - 0 is the best and 1 is the worst.
-        overallScore: getArrayMean(vectorScoreInfos.map((s) => s.score)),
+        overallScore: GetArithmeticMean(vectorScoreInfos.map((s) => s.score)),
         vectorByVectorScores: vectorScoreInfos
     };
 }
@@ -114,7 +114,7 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
 
     summarizeMetric(_history: Readonly<TrackHistory>, metricHistory: Readonly<JulienMetricSingleFrameOutput[]>): JulienMetricSummaryOutput {
         
-        const overallScore = getArrayMean(metricHistory
+        const overallScore = GetArithmeticMean(metricHistory
             .map(m => m.overallScore)
             .filter((n) => !isNaN(n))
         );
@@ -125,7 +125,7 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
             const thisVecScores = arrayOfVecScores
                 .map(vecbyVecScores => vecbyVecScores[i].score)
                 .filter((n) => !isNaN(n));
-            const meanScore = getArrayMean(thisVecScores);
+            const meanScore = GetArithmeticMean(thisVecScores);
             return [key, meanScore] as [string, number];
         });
         const byVectorScores = new Map(vectorScoreKeyValues)

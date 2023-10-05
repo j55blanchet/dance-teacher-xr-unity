@@ -137,7 +137,7 @@ export function runSummaryMetricOnTestTrack<T extends SummaryMetric<any>>(metric
  * @param dirPath Directory path to ensure exists
  * @returns True if the directory already existed, false if it was created
  */
-function ensureDirectoryExistence(dirPath: string) {
+export function ensureDirectoryExistence(dirPath: string) {
     if (fs.existsSync(dirPath)) {
         return true;
     }
@@ -160,7 +160,7 @@ function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any> |
     const trackDances = [] as string[];
     const trackSegments = [] as string[];
     const trackDescriptions = [] as string[];
-    const formattedSummaries = [] as Record<string, string | number>[];
+    const formattedSummaries = [] as Record<string, string | number | null>[];
 
     for(const track of tracks) {
         trackIds.push(track.id);
@@ -186,7 +186,7 @@ function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any> |
         'dance',
         'segment',
         'description',
-        ...Object.keys(rows[0]).filter((key) => key !== 'dance' && key !== 'track'),
+        ...Object.keys(rows[0]).filter((key) => key !== 'dance' && key !== 'trackId'),
     ];
 
     const csv = Papa.unparse({
@@ -194,7 +194,7 @@ function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any> |
         data: rows,
     });
     
-    ensureDirectoryExistence('./testResults');
+    ensureDirectoryExistence('./testResults/metricOutput/');
     fs.writeFileSync(`./testResults/${metric.constructor.name}.csv`, csv);
 }
 
