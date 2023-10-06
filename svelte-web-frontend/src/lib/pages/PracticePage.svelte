@@ -99,7 +99,6 @@ $: {
     const suggestedNodeIds = terminalFeedback?.navigateOptions?.map(opt => opt.nodeId).filter(x => x);
     if (suggestedNodeIds) {
         const defaultHighlight: NodeHighlight = {
-            showLabel: true,
         };
         nodeHighlights = Object.fromEntries(
             suggestedNodeIds.map(nodeId => [nodeId, defaultHighlight])
