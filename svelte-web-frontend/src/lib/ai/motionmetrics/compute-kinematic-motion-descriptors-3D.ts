@@ -1,14 +1,10 @@
-import type { Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-import { GetScaleIndicator, getMatricesMAE, getMatricesRMSE, getMagnitude2DVec } from "../EvaluationCommonUtils";
+import type { Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
+import { Get3DScaleIndicator, getMatricesMAE, getMatricesRMSE, getMagnitude3DVec } from "../EvaluationCommonUtils";
 
 
-export type Vec2<T> = [T, T];
-// type Vec3<T> = [T, T, T];
+export type Vec3<T> = [T, T, T];
 export type Vec8<T> = [T, T, T, T, T, T, T, T];
 
-function makeUndefinedVec8Frame2D() {
-    return makeUndefined2DMatrix(8, 2) as Vec8<Vec2<undefined>>;
-}
 function makeUndefinedArray(length: number): undefined[] {
     return new Array(length).fill(undefined);
 }
@@ -33,33 +29,10 @@ function replaceNaNsWithUndefined(num: number) {
 }
 
 /**
- * Removes duplicate frame times from an array of user poses and corresponding frame times.
- * @param {Pose2DPixelLandmarks[]} userPoses - Array of user poses.
- * @param {number[]} frameTimes - Array of frame times corresponding to the poses.
- * @returns {{ matchingUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] }} An object containing adjusted user poses and unique frame times.
- */
-export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], frameTimes: number[]): { matchingUserPoses: Pose2DPixelLandmarks[], uniqueFrameTimes: number[] } {
-    const uniqueFrameTimes = [];
-    const matchingUserPoses = [];
-
-    for (let i = 0; i < frameTimes.length; i++) {
-        const currentTime = frameTimes[i];
-
-        // Check if the current frame time is not the same as the previous one
-        if (i === 0 || currentTime !== frameTimes[i - 1]) {
-            uniqueFrameTimes.push(currentTime);
-            matchingUserPoses.push(userPoses[i]);
-        }
-    }
-
-    return { matchingUserPoses, uniqueFrameTimes };
-}
-
-/**
  * Calculates the MAE and RMSE for velocity, acceleration, and jerk between matchingUserPoses and referencePoses.
  *
- * @param {Pose2DPixelLandmarks[]} matchingUserPoses - Array of adjusted user poses.
- * @param {Pose2DPixelLandmarks[]} referencePoses - Array of reference poses.
+ * @param {Pose3DLandmarkFrame[]} matchingUserPoses - Array of adjusted user poses.
+ * @param {Pose3DLandmarkFrame[]} referencePoses - Array of reference poses.
  * @param {number[]} frameTimes - Array of unique frame times corresponding to the poses.
  * @returns {[number, number, number, number, number, number]} MSE and RMSE between user and reference motion descriptors.
  * Both MAE and RMSE measure the how different the user's poses are from the refence poses.
@@ -80,8 +53,8 @@ export function removeDuplicateFrameTimes(userPoses: Pose2DPixelLandmarks[], fra
  * @throws {Error} Throws an error if there is invalid input data, mismatched array lengths, or bad unique frametimes.
  */
 export function calculateKinematicErrorDescriptors(
-    matchingUserPoses: Pose2DPixelLandmarks[],
-    referencePoses: Pose2DPixelLandmarks[],
+    matchingUserPoses: Pose3DLandmarkFrame[],
+    referencePoses: Pose3DLandmarkFrame[],
     frameTimes: number[],
     usrScale?: number,
     refScale?: number
@@ -96,8 +69,8 @@ export function calculateKinematicErrorDescriptors(
 
     const frameCount = matchingUserPoses.length;
 
-    usrScale ??= frameCount > 0 ? GetScaleIndicator(matchingUserPoses[0]) : 1;
-    refScale ??= frameCount > 0 ? GetScaleIndicator(referencePoses[0]) : 1;
+    usrScale ??= frameCount > 0 ? Get3DScaleIndicator(matchingUserPoses[0]) : 1;
+    refScale ??= frameCount > 0 ? Get3DScaleIndicator(referencePoses[0]) : 1;
 
     const userVels = calculateVels(matchingUserPoses, frameTimes, usrScale);
     const referenceVels = calculateVels(referencePoses, frameTimes, refScale);
@@ -130,10 +103,11 @@ export function calculateKinematicErrorDescriptors(
     };
 }
 
+
 /**
  * Calculates the velocity (first derivative) of the poses at every frame.
  *
- * @param {Pose2DPixelLandmarks[]} poses - Array of poses at different frames (either user or reference poses).
+ * @param {Pose3DLandmarkFrame[]} poses - Array of poses at different frames (either user or reference poses).
  * @param {number[]} frameTimes - Array of frame times corresponding to the poses.
  * @param {number} scale - Scaling factor for velocity calculation.
  * @returns {number[][][]} Array of velocities (first derivatives) of poses.
@@ -141,10 +115,10 @@ export function calculateKinematicErrorDescriptors(
  * @throws {Error} Throws an error if there are insufficient frames for calculating the first derivative.
  */
 export function calculateVels(
-    poses: Pose2DPixelLandmarks[],
+    poses: Pose3DLandmarkFrame[],
     frameTimes: number[],
-    scale: number,
-): Vec2<number | undefined>[][] {
+    scale: number
+): Vec3<number | undefined>[][] {
 
     const numFrames = poses.length;
 
@@ -152,7 +126,7 @@ export function calculateVels(
         throw new Error("Mismatched array lengths (poses and frameTimes).");
     }
 
-    const velocities = [] as Vec2<number | undefined>[][];
+    const velocities = [] as Vec3<number | undefined>[][];
     if (poses.length === 0) return velocities;
 
     const landmarkCount = poses[0].length;
@@ -164,12 +138,12 @@ export function calculateVels(
         // > If there are repeat framesTimes, the velocity is undefined, as we unable to calculate it
         // > if the scale is zero, the velocity is undefined, as we would be dividing by zero 
         if (i === 0 || dt === 0 || scale === 0) {
-            velocities.push(makeUndefined2DMatrix(landmarkCount, 2) as Vec2<undefined>[]);
+            velocities.push(makeUndefined2DMatrix(landmarkCount, 3) as Vec3<undefined>[]);
             continue;
         }
 
-        const prevPoseFrame: Pose2DPixelLandmarks | undefined = poses[i - 1];
-        const poseFrame: Pose2DPixelLandmarks = poses[i];
+        const prevPoseFrame: Pose3DLandmarkFrame | undefined = poses[i - 1];
+        const poseFrame: Pose3DLandmarkFrame = poses[i];
 
         if (poseFrame.length !== landmarkCount) {
             throw new Error("Mismatched array lengths (landmarkCount).");
@@ -181,16 +155,18 @@ export function calculateVels(
 
                 const dx = (curLandmark.x - pLandmark?.x) / (dt * scale);
                 const dy = (curLandmark.y - pLandmark?.y) / (dt * scale);
+                const dz  = (curLandmark.z - pLandmark?.z) / (dt * scale);
 
-                return [replaceNaNsWithUndefined(dx), replaceNaNsWithUndefined(dy)] as Vec2<number>;
+                return [replaceNaNsWithUndefined(dx), replaceNaNsWithUndefined(dy), replaceNaNsWithUndefined(dz)] as Vec3<number>;
             }
-        ) as Vec2<number | undefined>[];
+        ) as Vec3<number | undefined>[];
 
         velocities.push(velocitesByVector);
     }
 
     return velocities;
 }
+
 
 /**
  * Computes the first derivative of a 3D array.
@@ -202,9 +178,9 @@ export function calculateVels(
  * @throws {Error} Throws an error if there are insufficient frames for calculating the first derivative.
  */
 export function calculateDerivative(
-    original: Vec2<number | undefined>[][],
+    original: Vec3<number | undefined>[][],
     frameTimes: number[]
-): Vec2<number | undefined>[][] {
+): Vec3<number | undefined>[][] {
     const numFrames = original.length;
 
     if (original.length !== frameTimes.length) {
@@ -214,7 +190,7 @@ export function calculateDerivative(
     if (original.length === 0) return [];
 
     const numVectors = original[0].length;
-    const derivatives: Array<Array<Vec2<number | undefined>>> = [];
+    const derivatives: Array<Array<Vec3<number | undefined>>> = [];
 
     for (let i = 0; i < numFrames; i++) {
         const dt = frameTimes[i] - frameTimes[i - 1];
@@ -223,20 +199,21 @@ export function calculateDerivative(
         }
 
         if (i === 0 || dt === 0) {
-            const frameDeriv = makeUndefined2DMatrix(numVectors, 2) as Vec2<undefined>[];
+            const frameDeriv = makeUndefined2DMatrix(numVectors, 3) as Vec3<undefined>[];
             derivatives.push(frameDeriv);
             continue;
         }
 
         const deriv = original[i].map((values, vec) => {
-            const [x, y] = values;
-            const [prevX, prevY] = original[i - 1][vec];
+            const [x, y, z] = values;
+            const [prevX, prevY, prevZ] = original[i - 1][vec];
 
             const dx = (x as number - (prevX as number)) / dt;
             const dy = (y as number - (prevY as number)) / dt;
+            const dz = (z as number - (prevZ as number)) / dt;
 
-            return [replaceNaNsWithUndefined(dx), replaceNaNsWithUndefined(dy)] as Vec2<number | undefined>;
-        }) as Vec8<Vec2<number | undefined>>;
+            return [replaceNaNsWithUndefined(dx), replaceNaNsWithUndefined(dy), replaceNaNsWithUndefined(dz)] as Vec3<number | undefined>;
+        }) as Vec8<Vec3<number | undefined>>;
 
         derivatives.push(deriv);
     }
@@ -245,26 +222,27 @@ export function calculateDerivative(
 }
 
 /**
- * Calculate the magnitudes of 2D vectors in a 3D array of velocities.
+ * Calculates the magnitudes of 3D vectors in a 3D array of vector metrics.
+ * It computes the magnitude for each 3D vector (x, y, z) and stores the results in a 2D array.
+ * If any component (x, y, or z) of a vector is undefined, the corresponding magnitude is also undefined.
  *
- * @param vectorMetrics - The 3D array of vector metrics.
- * @returns A 2D array of magnitudes for each 2D vector.
+ * @param {Array<Array<Vec3<number | undefined>>>} vectorMetrics - A 3D array of vector metrics.
+ * @returns {Array<Array<number | undefined>>} A 2D array of magnitudes for each 3D vector.
  */
-function calculateMetricsMag(vectorMetrics: Array<Array<Vec2<number | undefined>>>): Array<Array<number | undefined>> {
+function calculateMetricsMag(vectorMetrics: Array<Array<Vec3<number | undefined>>>): Array<Array<number | undefined>> {
     const scalarMetrics: Array<Array<number | undefined>> = [];
 
     for (let time = 0; time < vectorMetrics.length; time++) {
         const frameVels: Array<number | undefined> = [];
 
         for (let vec = 0; vec < vectorMetrics[time].length; vec++) {
-            const x = vectorMetrics[time][vec][0];
-            const y = vectorMetrics[time][vec][1];
-            if (x === undefined || y === undefined) {
+            const [x, y, z] = vectorMetrics[time][vec];
+            if (x === undefined || y === undefined || z === undefined) {
                 frameVels.push(undefined);
                 continue;
             }
 
-            const velMag = getMagnitude2DVec([x, y]);
+            const velMag = getMagnitude3DVec([x, y, z]);
             frameVels.push(velMag);
         }
 
