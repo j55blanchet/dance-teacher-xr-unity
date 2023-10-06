@@ -10,10 +10,10 @@ import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
  */
 export function distillFrontendPerformanceSummaryToTextualRepresentation(summary: FrontendPerformanceSummary): string {
 
-    const { wholePerformance, subsections } = summary;
+    const { wholePerformance, subsections, segmentDescription } = summary;
 
     const perfPercentage = (wholePerformance.skeleton3DAngleSimilarity.overallScore * 100).toFixed(0);
-    let distillation = `Overall, the user had a ${perfPercentage}% match with the reference dance.`;
+    let distillation = `The user just performed "${segmentDescription}". Overall, the user had a ${perfPercentage}% match with the reference dance.`;
 
     const [worstJointName, worstJointScore] = [...wholePerformance.skeleton3DAngleSimilarity.individualScores.entries()].reduce((prev, curr) => {
         const pAngleScore = prev[1] as number

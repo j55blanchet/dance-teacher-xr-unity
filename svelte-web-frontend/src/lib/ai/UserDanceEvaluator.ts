@@ -1,7 +1,8 @@
 import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from  "$lib/webcam/mediapipe-utils";
 import type { LiveEvaluationMetric, SummaryMetric } from "./motionmetrics/MotionMetric";
-import { UserEvaluationRecorder } from "./UserEvaluationRecorder";
+import type { PerformanceHistoryStore } from "./performanceHistory";
+import { UserEvaluationTrackRecorder } from "./UserEvaluationTrackRecorder";
 
 /**
  * Evaluates a user's dance performance against a reference dance. This class is responsible for
@@ -14,8 +15,8 @@ export default class UserDanceEvaluator<
     T extends Record<string, LiveEvaluationMetric<unknown, unknown>>,
     U extends Record<string, SummaryMetric<unknown>>,
 > {
-    public recorder = new 
-        UserEvaluationRecorder<
+    public trackRecorder = new 
+        UserEvaluationTrackRecorder<
             {[K in keyof T]: ReturnType<T[K]["computeMetric"]>}
         >();
 
@@ -24,6 +25,7 @@ export default class UserDanceEvaluator<
         private reference3DData: PoseReferenceData<Pose3DLandmarkFrame>,
         private liveMetrics: T,
         private summaryMetrics: U,
+        private performanceHistoryStore?: PerformanceHistoryStore<T & U>,
     ) {};
 
     /**
@@ -52,11 +54,11 @@ export default class UserDanceEvaluator<
             return null;
         }
         
-        if (!disableRecording && !this.recorder.tracks.has(trialId)) {
-            this.recorder.startNewTrack(trialId, danceRelativeStem, segmentDescription);
+        if (!disableRecording && !this.trackRecorder.tracks.has(trialId)) {
+            this.trackRecorder.startNewTrack(trialId, danceRelativeStem, segmentDescription);
         }
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const track = this.recorder.tracks.get(trialId)
+        const track = this.trackRecorder.tracks.get(trialId)
 
         
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
@@ -83,7 +85,7 @@ export default class UserDanceEvaluator<
         })) as {[K in keyof T]: ReturnType<T[K]["computeMetric"]>};
 
         if (!disableRecording) {
-            this.recorder.recordEvaluationFrame(
+            this.trackRecorder.recordEvaluationFrame(
                 trialId,
                 videoTimeSecs,
                 actualTimeMs,
@@ -109,26 +111,32 @@ export default class UserDanceEvaluator<
         subsections: T,
     ) {
 
-        const track = this.recorder.tracks.get(id)
+        const track = this.trackRecorder.tracks.get(id)
         if (!track) {
             return null;
         }
-        const perfTrackWholePerformance = this.generateMetricSummariesForTrack(track);
+        const perfTrackWholePerformance = this.generateMetricSummariesForTrackSection(
+            track.segmentDescription,
+            track,
+            );
 
         return {
+            trackId: id,
+            segmentDescription: track.segmentDescription,
             wholePerformance: perfTrackWholePerformance,
             subsections: Object.fromEntries(Object.entries(subsections).map(([subsectionName, {startTime, endTime}]) => {
                 const subsectionTrack = track.getSubTrack(startTime, endTime)
                 if (!subsectionTrack) {
                     return [subsectionName, null];
                 }
-                return [subsectionName, this.generateMetricSummariesForTrack(subsectionTrack)];
-            })) as {[K in keyof T]: ReturnType<typeof this.generateMetricSummariesForTrack>},
+                return [subsectionName, this.generateMetricSummariesForTrackSection(subsectionName, subsectionTrack)];
+            })) as {[K in keyof T]: ReturnType<typeof this.generateMetricSummariesForTrackSection>},
         }
     }
 
-    private generateMetricSummariesForTrack(
-        track: NonNullable<ReturnType<typeof this.recorder.tracks["get"]>>,
+    private generateMetricSummariesForTrackSection(
+        sectionName: string,
+        track: NonNullable<ReturnType<typeof this.trackRecorder.tracks["get"]>>,
     ) {
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
 
@@ -143,18 +151,38 @@ export default class UserDanceEvaluator<
 
         const liveMetricSummaryResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
             const metric = this.liveMetrics[liveMetricKey];
-            return [liveMetricKey, (metric).summarizeMetric(
+            const metricSummary = (metric).summarizeMetric(
                 trackHistory,
                 (track.timeSeriesResults?.[liveMetricKey] ?? []) as any,
-            )]
+            )
+            if (this.performanceHistoryStore) {
+                const formattedSummary = metric.formatSummary(metricSummary as any);
+                this.performanceHistoryStore.recordPerformance(
+                    track.danceRelativeStem,
+                    sectionName,
+                    liveMetricKey,
+                    formattedSummary as any,
+                )
+            }
+            return [liveMetricKey, metricSummary]
         })) as {[K in keyof T]: ReturnType<T[K]["summarizeMetric"]>};
                 
         const summaryMetricKeys = Object.keys(this.summaryMetrics) as (keyof U)[];
         const summaryMetricResults = Object.fromEntries(summaryMetricKeys.map((summaryMetricKey) => {
             const metric = this.summaryMetrics[summaryMetricKey];
-            return [summaryMetricKey, (metric).summarizeMetric(
+            const metricSummary = (metric).summarizeMetric(
                 trackHistory,
-            )]
+            )
+            if (this.performanceHistoryStore) {
+                const formattedSummary = metric.formatSummary(metricSummary as any);
+                this.performanceHistoryStore.recordPerformance(
+                    track.danceRelativeStem,
+                    sectionName,
+                    summaryMetricKey,
+                    formattedSummary as any,
+                )
+            }
+            return [summaryMetricKey, metricSummary]
         })) as {[K in keyof U]: ReturnType<U[K]["summarizeMetric"]>};
 
         return {

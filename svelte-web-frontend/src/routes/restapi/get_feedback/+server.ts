@@ -11,8 +11,14 @@ export async function POST(event: RequestEvent) {
     const performanceDistillation = data.performanceDistillation;
     
     if (!danceStructureDistillation || !currentSectionName || !performanceDistillation) {
+        const missingParameters = [
+            danceStructureDistillation ? undefined : 'danceStructureDistillation', 
+            currentSectionName ? undefined : 'currentSectionName', 
+            performanceDistillation ? undefined : 'performanceDistillation'
+        ].filter((x) => x !== undefined);
+
         return json({
-            error: "Missing required parameters " + JSON.stringify(data)
+            error: "Missing required parameters: " + missingParameters.join(', ')
         },  {
             status: 400
         });

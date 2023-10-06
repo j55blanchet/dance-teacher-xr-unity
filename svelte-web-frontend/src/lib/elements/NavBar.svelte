@@ -111,22 +111,16 @@ button.settings {
     transition: background-color 0.5s ease-in-out;
 }
 
-@keyframes gearjiggle {
-  from {transform: rotate(45deg)}
-  to {transform: rotate(75deg)}
-}
-
 button.settings.active {
     & svg {
-        transform: rotate(45deg);
-        animation: gearjiggle ease-out 0.5s infinite alternate;
+        transform: rotate(180deg);
     }
 }
     
 button svg {
     width: 1em;
     height: 1em;
-    transition: transform 0.2s ease-in-out, fill 0.2s ease-in-out;
+    transition: transform 0.5s ease-in-out;
     fill: var(--color-text)
 }
 </style>

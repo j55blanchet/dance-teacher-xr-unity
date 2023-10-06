@@ -131,7 +131,7 @@ function exportRecordings() {
 </script>
 
 <div class="feedbackForm">
-    <h2>{#if !feedback}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
+    <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
     
     {#if feedback?.paragraphs}
     <div class="paragraphs">

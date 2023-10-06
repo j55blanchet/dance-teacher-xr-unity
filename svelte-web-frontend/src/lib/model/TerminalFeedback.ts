@@ -18,7 +18,7 @@ export type TerminalFeedback = {
     headline: string;
     paragraphs: string[]; 
     suggestedAction: TerminalFeedbackAction;
-    navigateOptions?: { label: string, url: string}[];
+    navigateOptions?: { label: string, url: string, nodeId?: string}[];
     
     score?: {
         achieved: number;

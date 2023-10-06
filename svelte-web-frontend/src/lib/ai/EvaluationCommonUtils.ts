@@ -396,8 +396,6 @@ export function getMatricesRMSE(v1: readonly (number | undefined)[][], v2: reado
         return undefined;
     }
 
-    console.log(errors)
-
     rmse /= denominator;
     rmse = Math.pow(rmse, 0.5);
 

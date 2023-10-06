@@ -3,25 +3,32 @@
 import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 import UserDanceEvaluator from "./UserDanceEvaluator";
-import type { PerformanceEvaluationTrack } from "./UserEvaluationRecorder";
+import type { PerformanceEvaluationTrack } from "./UserEvaluationTrackRecorder";
 // import Julien2DSkeletonSimilarityMetric from "./motionmetrics/Julien2DSkeletonSimilarityMetric";
 import Qijia2DSkeletonSimilarityMetric from "./motionmetrics/Qijia2DSkeletonSimilarityMetric";
 import Skeleton3dVectorAngleSimilarityMetric from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
 import BasicInfoSummaryMetric from "./motionmetrics/BasicInfoSummaryMetric";
 import KinematicErrorMetric from "./motionmetrics/KinematicErrorMetric";
 
-const frontendLiveMetrics = {
+import frontendPerformanceHistory from "./frontendPerformanceHistory";
+
+export const FrontendLiveMetrics = Object.freeze({
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
     // julien2DSkeletonSimilarity: new Julien2DSkeletonSimilarityMetric(),
     skeleton3DAngleSimilarity: new Skeleton3dVectorAngleSimilarityMetric(),
-};
+});
 
-const frontendSummaryMetrics = {
+export const FrontendSummaryMetrics = Object.freeze({
     basicInfo: new BasicInfoSummaryMetric(),
     kinematicError: new KinematicErrorMetric(),
-};
+});
 
-export type FrontendDanceEvaluator = UserDanceEvaluator<typeof frontendLiveMetrics, typeof frontendSummaryMetrics>;
+export const FrontendMetrics = Object.freeze({
+    ...FrontendLiveMetrics,
+    ...FrontendSummaryMetrics
+})
+
+export type FrontendDanceEvaluator = UserDanceEvaluator<typeof FrontendLiveMetrics, typeof FrontendSummaryMetrics>;
 export type FrontendPerformanceSummary = NonNullable<ReturnType<FrontendDanceEvaluator["generatePerformanceSummary"]>>;
 export type FrontendLiveEvaluationResult = ReturnType<FrontendDanceEvaluator["evaluateFrame"]>;
 export type FrontendEvaluationTrack = PerformanceEvaluationTrack<NonNullable<FrontendLiveEvaluationResult>>;
@@ -34,7 +41,8 @@ export function getFrontendDanceEvaluator(
     return new UserDanceEvaluator(
         ref2dPoses,
         ref3dPoses,
-        frontendLiveMetrics,
-        frontendSummaryMetrics,
+        FrontendLiveMetrics,
+        FrontendSummaryMetrics,
+        frontendPerformanceHistory,
     );
 }

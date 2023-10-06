@@ -74,10 +74,10 @@ export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvalua
         }
     }
 
-    formatSummary(summary: Angle3DMetricSummaryOutput): Record<string, string | number> {
+    formatSummary(summary: Angle3DMetricSummaryOutput) {
         return {
             "overall": summary.overallScore,
             ...Object.fromEntries(summary.individualScores.entries())
-        }
+        } as const;
     }
 }

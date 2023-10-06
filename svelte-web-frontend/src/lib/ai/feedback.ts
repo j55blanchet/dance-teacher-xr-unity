@@ -93,10 +93,15 @@ export async function generateFeedbackWithClaudeLLM(
     performance: FrontendPerformanceSummary | undefined,
 ): Promise<TerminalFeedback> {
 
-    const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree) : "missing";
-    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance): "missing";
+    const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree): undefined;
+    const danceStructureDistillationIsMissing = danceStructureDistillation === undefined;
+    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance) : undefined;
+    const performanceDistillationIsMissing = performanceDistillation === undefined;
 
-    console.log('Requesting feedback from Claude LLM', currentSectionName, danceStructureDistillation, performanceDistillation);
+    console.log('Requesting feedback from Claude LLM', 
+        `currentSectionName: ${currentSectionName}`,
+        `danceStructureDistillationIsMissing: ${danceStructureDistillationIsMissing}`,
+        `performanceDistillationIsMissing: ${performanceDistillationIsMissing}`);
 
     // Call into our API route to get the feedback message. The paramaters here
     // must match with the corresponding API route is expecting.
@@ -105,11 +110,10 @@ export async function generateFeedbackWithClaudeLLM(
         'method': 'POST',
         'body': JSON.stringify({ 
             currentSectionName,
-            danceStructureDistillation,
-            performanceDistillation
+            danceStructureDistillation, 
+            performanceDistillation,
         }),
-    }).then((res) => res.json());
-
+    }).then((res) => res.json())
 
     const feedbackMessage = claudeApiData['feedbackMessage'];
     const coachingReflection = claudeApiData['coachingReflection'];
@@ -134,7 +138,11 @@ export async function generateFeedbackWithClaudeLLM(
         paragraphs: [feedbackMessage, coachingMessage],
         // note the double equals here, we want to compare the string values
         suggestedAction: suggestedSection == currentSectionName ? "repeat" : "navigate", 
-        navigateOptions: suggestedURL ? [{ label: `Try section ${suggestedSection}`, url: suggestedURL }] : undefined,
+        navigateOptions: suggestedURL ? [{ 
+            label: `Try section ${suggestedSection}`, 
+            url: suggestedURL,
+            nodeId: suggestedSection,
+        }] : undefined,
         debug: {
             llmReflection: coachingReflection,
         }
