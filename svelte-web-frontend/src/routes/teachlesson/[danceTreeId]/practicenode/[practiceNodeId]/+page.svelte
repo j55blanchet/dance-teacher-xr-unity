@@ -13,7 +13,7 @@ const danceTree: DanceTree = data.danceTree;
 const node: DanceTreeNode = data.danceTreeNode;
 const playbackSpeed: number = data.playbackSpeed;
 
-const practiceActivity = GeneratePracticeActivity (
+let practiceActivity = GeneratePracticeActivity (
     dance,
     danceTree,
     node,
@@ -49,7 +49,7 @@ $: {
 <section>
     <PracticePage 
         {dance} 
-        {practiceActivity}
+        bind:practiceActivity={practiceActivity}
         pageActive={true}
         on:continue-clicked={() => goto(parentURL)}
         on:stateChanged={(e) => pageState = e.detail}

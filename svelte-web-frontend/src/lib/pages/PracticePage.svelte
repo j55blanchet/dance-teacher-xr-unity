@@ -6,7 +6,7 @@ export const INITIAL_STATE: PracticePageState = "waitWebcam";
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { getAllLeafNodes, getAllNodesInSubtree } from '$lib/data/dances-store';
+import { getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
@@ -16,7 +16,7 @@ import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
-import { onMount, createEventDispatcher } from "svelte";
+import { onMount, createEventDispatcher, tick } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
@@ -24,7 +24,9 @@ import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackScreen.svelte';
 import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
+import DanceTreeVisual, { type NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
+import { goto, invalidateAll } from '$app/navigation';
+	import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -41,8 +43,11 @@ let fitVideoToFlexbox = true;
 let state: PracticePageState = INITIAL_STATE;
 $: console.log("PracticePage state", state);
 $: dispatch('stateChanged', state); 
+
 let isPlayingOrCountdown = INITIAL_STATE === "playing" || INITIAL_STATE === "countdown";
 $: isPlayingOrCountdown = state === "playing" || state === "countdown";
+let isShowingFeedback = state === 'feedback';
+$: isShowingFeedback = state === 'feedback';
 
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
@@ -81,13 +86,43 @@ let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
 let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
-let referneceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
+let referenceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
 let lastEvaluationResult: FrontendLiveEvaluationResult | null = null;
 let evaluator: FrontendDanceEvaluator | null = null;
 let trialId = null as string | null;
+$: console.log('trialId changed, now is: ', trialId);
 let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
+let nodeHighlights = {} as Record<string, NodeHighlight>;
+$: {
+    const suggestedNodeIds = terminalFeedback?.navigateOptions?.map(opt => opt.nodeId).filter(x => x);
+    if (suggestedNodeIds) {
+        const defaultHighlight: NodeHighlight = {
+            showLabel: true,
+        };
+        nodeHighlights = Object.fromEntries(
+            suggestedNodeIds.map(nodeId => [nodeId, defaultHighlight])
+        );
+    } else {
+        nodeHighlights = {}
+    }
+}
+async function onNodeClicked(clickedNode: DanceTreeNode) {
+    if (isPlayingOrCountdown) return;
+
+    if (!practiceActivity?.dance || !practiceActivity.danceTree) return;
+    const dance = practiceActivity.dance;
+    const danceTree = practiceActivity.danceTree;
+    const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
+    const nodeSlug = clickedNode.id;
+    const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}`;
+    await goto(url);
+    
+    let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, 'default');
+    practiceActivity = newActivity;
+    await reset();
+}
 
 let countdown = -1;
 let countdownActive = false;
@@ -172,6 +207,7 @@ $: {
         isVideoPausedBinding = true;
 
         if (currentPlaybackEndtime === practiceActivity?.endTime) {
+            console.log('Paused video - reached end of practice activity');
             terminalFeedback = null;
             performanceSummary = null;
             let recordedTrack = null as null | FrontendEvaluationTrack;
@@ -183,9 +219,10 @@ $: {
             );
 
             if (trialId) {
-                recordedTrack = evaluator?.recorder.tracks.get(trialId) ?? null;
+                recordedTrack = evaluator?.trackRecorder.tracks.get(trialId) ?? null;
                 performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
             }
+            trialId = null;
             state = "feedback";
             getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
@@ -201,7 +238,7 @@ $: {
     }
 }
 
-async function waitSecs(secs: number) {
+async function waitSecs(secs: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, secs * 1000);
     })
@@ -223,16 +260,15 @@ async function startCountdown() {
 
     isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
-    trialId = generateUUIDv4();
-
+    await tick();
     if (poseEstimationEnabled) {
         console.log("Triggering pose estimation priming");
         await virtualMirrorElement.primePoseEstimation();
     }
+    await waitSecs(beatDuration);
 
     state = "countdown";
     countdownActive = true;
-
     await waitSecs(beatDuration);
 
     countdown = 5;
@@ -284,10 +320,19 @@ async function startCountdown() {
 }
 
 export async function reset() {
-    
+    console.log('Reseting practice page');
     if (unpauseVideoTimeout !== null) {
         clearTimeout(unpauseVideoTimeout);
     }
+    if (!practiceActivity) {
+        console.warn('Null practice activity during reset() call');
+    }
+
+    if(!virtualMirrorElement) {
+        await tick();
+    }
+
+    terminalFeedback = null;
     trialId = null;
     currentActivityStepIndex = 0;
     state = "waitWebcam";
@@ -297,22 +342,33 @@ export async function reset() {
     const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
     
+
+
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
-    const [ref2dPoses, ref3dPoses, ignore_value] = await Promise.all([
-        load2DPoseInformation(dance),
-        load3DPoseInformation(dance),
-        virtualMirrorElement.webcamStartedPromise,
-    ]);    
-
-    referenceDancePoses2D = ref2dPoses;
-    referneceDancePoses3D = ref3dPoses;
+    const promises = [] as Promise<any>[];
+    if (virtualMirrorElement) {
+        promises.push(virtualMirrorElement.webcamStartedPromise);
+    }
+    let ref2dPosesPromise: ReturnType<typeof load2DPoseInformation> | null = null;
+    let ref3dPosesPromise: ReturnType<typeof load3DPoseInformation> | null = null;
+    if (!referenceDancePoses2D) {
+        ref2dPosesPromise = load2DPoseInformation(dance);
+        promises.push(ref2dPosesPromise);
+    }  
+    if (!referenceDancePoses3D) {
+        ref3dPosesPromise = load3DPoseInformation(dance);
+        promises.push(ref3dPosesPromise);
+    }
+    if (ref2dPosesPromise) { referenceDancePoses2D = await ref2dPosesPromise; }
+    if (ref3dPosesPromise) { referenceDancePoses3D = await ref3dPosesPromise; }
+    await Promise.all(promises);
 
     state = "waitStart";
 
     evaluator = getFrontendDanceEvaluator(
-        ref2dPoses,
-        ref3dPoses
+        referenceDancePoses2D!,
+        referenceDancePoses3D!
     );
     // console.lUserDanceEvaluator await poseEstimationReady;
 
@@ -323,6 +379,7 @@ export async function reset() {
 let poseEstimationCorrespondances: Map<number, {
     videoTimeSecs: number;
     actualTimeInMs: number;
+    pageState: typeof state;
 }> = new Map();
 let lastPoseEstimationVideoTime: number = -1;
 let lastPoseEstimationSentTimestamp: Date = new Date();
@@ -337,6 +394,7 @@ function poseEstimationFrameSent(e: any) {
     poseEstimationCorrespondances.set(e.detail.frameId, {
         videoTimeSecs: videoCurrentTime,
         actualTimeInMs: Date.now(),
+        pageState: state,
     });
     lastPoseEstimationVideoTime = videoCurrentTime;
 }
@@ -378,7 +436,8 @@ function poseEstimationFrameReceived(e: any) {
     };
     const {
         videoTimeSecs,
-        actualTimeInMs
+        actualTimeInMs,
+        pageState
     } = poseEstimationCorrespondances.get(frameId)!;
 
     poseEstimationCorrespondances.delete(frameId);
@@ -408,7 +467,7 @@ function poseEstimationFrameReceived(e: any) {
             actualTimeInMs,
             evaluation2DPose,
             evaluation3DPose,
-            state !== 'playing',
+            pageState !== 'playing' && trialId !== null,
         ) ?? null;
     }
     catch (e) {
@@ -449,7 +508,7 @@ onMount(() => {
 
 <section class="practicePage" 
     class:hasDanceTree={practiceActivity?.danceTree}
-    class:hasFeedback={state === "feedback"}
+    class:hasFeedback={isShowingFeedback}
     >
     {#if practiceActivity?.danceTree}
     <div class="treevis">
@@ -457,15 +516,20 @@ onMount(() => {
             node={practiceActivity.danceTree.root }
             showProgressNode={practiceActivity.danceTreeNode} 
             currentTime={videoCurrentTime}
-            playingFocusMode={isPlayingOrCountdown ? 
-                'hide-non-descendant': 
-                'show-all'
+            danceTree={practiceActivity.danceTree}
+            nodeHighlights={nodeHighlights}
+            enableClick={isShowingFeedback}
+            enableColorCoding={isShowingFeedback}
+            on:nodeClicked={(e) => onNodeClicked(e.detail)}
+            playingFocusMode={isShowingFeedback ?  
+                'show-all':
+                'hide-others'
             }/>
     </div>
     {/if}
 
-    {#if state !== "feedback"}
-    <div class="demovid">
+    
+    <div class="demovid" style:display={state === "feedback" ? 'none' : 'flex'}>
         <VideoWithSkeleton
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
@@ -486,7 +550,6 @@ onMount(() => {
             </div>
         {/if}
     </div>
-    {/if}
     {#if state === "feedback"}
     <div class="feedback">
         <TerminalFeedbackDialog 

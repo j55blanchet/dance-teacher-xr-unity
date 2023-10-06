@@ -17,7 +17,7 @@ export let currentTime: number = 0;
 export let danceTree: DanceTree | undefined = undefined;
 export let node: DanceTreeNode;
 export let playingFocusMode: 'hide-others' | 'hide-non-descendant' | 'show-all' = 'show-all';
-
+export let enableColorCoding: boolean = false;
 
 export let nodeHighlights: Record<string, NodeHighlight> = {};
 let highlight: NodeHighlight | undefined = undefined;
@@ -77,6 +77,11 @@ function shouldHideBar(a_node: DanceTreeNode, progressNode: DanceTreeNode | unde
     }
 }
 
+function getHasNodeInSubtree(a_node: DanceTreeNode, progressNode: DanceTreeNode | undefined) {
+    return progressNode !== undefined
+        && findDanceTreeSubNode(a_node, progressNode.id) !== null;
+}
+
 function shouldHideAllChildrenNodes(parentNode: DanceTreeNode, progressNode: DanceTreeNode | undefined, focusMode: typeof playingFocusMode) {
     // const isFocusNode = progressNode !== undefined && parentNode.id === progressNode.id;
     // const hasFocusNodeInSubtree = progressNode && findDanceTreeSubNode(parentNode, progressNode.id);
@@ -106,6 +111,10 @@ let isNodeHidden = false;
 $: {
     isNodeHidden = isBarHidden && areAllChildrenHidden;
 }
+let hasNodeInSubtree = false;
+$: {
+    hasNodeInSubtree = getHasNodeInSubtree(node, showProgressNode);
+}
 
 let nodeTitleString = "";
 $: {
@@ -129,16 +138,18 @@ function barClicked () {
 
 <div class="node" 
     style="--node-duration:{node.end_time - node.start_time}"
-    class:hidden={isNodeHidden}>
+    class:hidden={isNodeHidden}
+    class:hasNodeInSubtree={hasNodeInSubtree}
+    class:hiddenBar={isBarHidden}>
 
     <a class="bar outlined" 
        class:hidden={isBarHidden}
        class:button={enableClick} 
        class:active={showProgress}
-       class:hasScore={$bestScore !== undefined}
-       class:hasGoodScore={$bestScore !== undefined && $bestScore.score > 0.9}
-       class:hasMediumScore={$bestScore !== undefined && $bestScore.score > 0.8 && $bestScore.score <= 0.9}
-       class:hasBadScore={$bestScore !== undefined && $bestScore.score <= 0.8}
+       class:hasScore={enableColorCoding && $bestScore !== undefined}
+       class:hasGoodScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > 0.9}
+       class:hasMediumScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > 0.8 && $bestScore.score <= 0.9}
+       class:hasBadScore={enableColorCoding && $bestScore !== undefined && $bestScore.score <= 0.8}
        class:highlighted={highlight !== undefined}
        on:click={barClicked}
        role="menuitem"
@@ -175,6 +186,7 @@ function barClicked () {
                 {playingFocusMode}
                 {danceTree}
                 {nodeHighlights}
+                {enableColorCoding}
                 on:nodeClicked 
                 />
         {/each}
@@ -295,9 +307,12 @@ function barClicked () {
         transition: flex-grow var(--hide-transition-duration) ease-in-out;
     }
 
-    .node.hidden {
-        flex-basis: 0;
-        flex-grow: 0;
+    .node.hiddenBar {
+        // flex-basis: 0;
+        flex-grow:  calc(var(--node-duration) / 2);
+    }
 
+    .node.hiddenBar.hasNodeInSubtree {
+        flex-grow: var(--node-duration);
     }
 </style>
