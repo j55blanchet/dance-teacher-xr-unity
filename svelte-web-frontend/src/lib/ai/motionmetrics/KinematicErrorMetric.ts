@@ -2,7 +2,7 @@
 // const [jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME] = calculateMotionDescriptorsScore(matchingUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
 
 import type { SummaryMetric, TrackHistory } from "./MotionMetric";
-import { calculateKinematicErrorDescriptors } from "./compute-kinematic-motion-descriptors.ts";
+import { calculateKinematicErrorDescriptors } from "./compute-kinematic-motion-descriptors";
 
 type KinematicErrorMetricOutput = {
     jerksMAE: number | null; 
