@@ -3,7 +3,8 @@ import {PoseLandmarkIds, type PoseLandmarkIndex, type Pose2DPixelLandmarks, Pose
 
 export type PoseVectorIdPair = [PoseLandmarkIndex, PoseLandmarkIndex]
 export type VectorAngleComparisonInfo = { vec1: PoseVectorIdPair, vec2: PoseVectorIdPair, rangeOfMotion: number};
-
+export type ReadonlyPoseVectorIdPair = Readonly<PoseVectorIdPair>;
+export type ReadonlyVectorAngleComparisonInfo = Readonly<{vec1: ReadonlyPoseVectorIdPair, vec2: ReadonlyPoseVectorIdPair, rangeOfMotion: number}>;
 
 /**
  * Calculate the norm of a vector.
@@ -145,7 +146,7 @@ export const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<TerminalFee
  * Different body joints may be capable of different ranges of motion, so the range of motion of 
  * joint is included in the comparison info, to allow for normalization of the angle values if needed.
  */
-export const BodyInnerAnglesComparisons: Readonly<Record<string, VectorAngleComparisonInfo>> = Object.freeze({
+export const BodyInnerAnglesComparisons = {
    'left-shoulder-pitch': {
         vec1: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftElbow], 
         vec2: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip],
@@ -189,7 +190,7 @@ export const BodyInnerAnglesComparisons: Readonly<Record<string, VectorAngleComp
         vec2: [PoseLandmarkIds.rightElbow, PoseLandmarkIds.rightWrist],
         rangeOfMotion: Math.PI
     },
-});
+} as const;
 
 /**
  * Calculate the inner angle between two 3D vectors, in radians. 

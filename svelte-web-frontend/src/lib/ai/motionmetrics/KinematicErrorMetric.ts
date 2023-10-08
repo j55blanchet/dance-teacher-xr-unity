@@ -13,7 +13,7 @@ type KinematicErrorMetricOutput = {
     velsRSME: number | null;
 };
 
-export default class KinematicErrorMetric implements SummaryMetric<KinematicErrorMetricOutput> {
+export default class KinematicErrorMetric implements SummaryMetric<KinematicErrorMetricOutput, KinematicErrorMetricOutput> {
 
     summarizeMetric(history: TrackHistory): KinematicErrorMetricOutput {
         return calculateKinematicErrorDescriptors(
@@ -23,7 +23,7 @@ export default class KinematicErrorMetric implements SummaryMetric<KinematicErro
         )
     }
 
-    formatSummary(summary: Readonly<KinematicErrorMetricOutput>): Record<string, string | number | null> {
+    formatSummary(summary: Readonly<KinematicErrorMetricOutput>) {
         return summary; // no formatting needed, already in a row-compatible format
     }
 }

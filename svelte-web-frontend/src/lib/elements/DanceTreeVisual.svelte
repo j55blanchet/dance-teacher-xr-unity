@@ -1,7 +1,8 @@
 <script lang="ts" context="module">
 export type NodeHighlight = {
     color?: string,
-    showLabel?: boolean
+    label?: string,
+    pulse?: boolean
 }
 </script>
 <script lang="ts">
@@ -151,6 +152,7 @@ function barClicked () {
        class:hasMediumScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > 0.8 && $bestScore.score <= 0.9}
        class:hasBadScore={enableColorCoding && $bestScore !== undefined && $bestScore.score <= 0.8}
        class:highlighted={highlight !== undefined}
+       class:highlighted-pulse={highlight?.pulse ?? false}
        on:click={barClicked}
        role="menuitem"
        tabindex="0"
@@ -170,8 +172,8 @@ function barClicked () {
             {/each}
         {/if}
         
-        {#if highlight?.showLabel}
-        <span class="label">{node.id}</span>
+        {#if highlight?.label !== undefined}
+        <span class="label">{highlight?.label}</span>
         {/if}
     </a>
     {#if node.children.length > 0}
@@ -219,16 +221,19 @@ function barClicked () {
         // border-color: var(--highlight-color);
         // border-width: calc(0.12em * var(--border-scale));
         height: 1.5em;
-        animation-name: highlightGlow;
+        box-shadow: 0 0 0.1em 0.1em var(--highlight-color), inset 0 0 0.075em 0.075em var(--highlight-color);
+    }
+    .bar.highlighted.highlighted-pulse {
+        animation-name: highlightPulse;
         animation-duration: 0.5s;
         animation-iteration-count: infinite;
         animation-direction: alternate;
     }
-    .bar .label {
-        // color: var(--highlight-color);
-    }
+    // .bar .label {
+    //     // color: var(--highlight-color);
+    // }
 
-    @keyframes highlightGlow {
+    @keyframes highlightPulse {
         from {
             box-shadow: 0 0 0.05em 0.05em var(--highlight-color), inset 0 0 0.05em 0.05em var(--highlight-color);
         }

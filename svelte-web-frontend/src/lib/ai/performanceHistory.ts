@@ -2,18 +2,22 @@ import type { BaseMetric } from "./motionmetrics/MotionMetric";
 
 import { writable, derived } from 'svelte/store';
 
-export type DanceSegmentPerformanceHistory<MetricTypes extends Record<string, BaseMetric<any>>> = {
+export type DanceSegmentPerformanceHistory<MetricTypes extends Record<string, BaseMetric<any, any>>> = {
     [K in keyof MetricTypes]?: Array<{
         date: Date,
         summary: Partial<ReturnType<MetricTypes[K]["formatSummary"]>>
     }>
 }
 
-export type DancePerformanceHistory<MetricTypes extends Record<string, BaseMetric<any>>> = {
+export type DancePerformanceHistory<MetricTypes extends Record<string, BaseMetric<any, any>>> = {
     [segmentId: string]: DanceSegmentPerformanceHistory<MetricTypes>
 }
 
-export function createPerformanceHistoryStore<MetricTypes extends Record<string, BaseMetric<any>>>() {
+export type CompletePerformanceHistory<MetricTypes extends Record<string, BaseMetric<any, any>>> = {
+    [danceRelativeStem: string]: DancePerformanceHistory<MetricTypes>
+}
+
+export function createPerformanceHistoryStore<MetricTypes extends Record<string, BaseMetric<any, any>>>() {
 	const { subscribe, update } = writable({} as Record<string, DancePerformanceHistory<MetricTypes>>);
 
 	return {
@@ -46,4 +50,4 @@ export function createPerformanceHistoryStore<MetricTypes extends Record<string,
 	};
 }
 
-export type PerformanceHistoryStore<MetricTypes extends Record<string, BaseMetric<any>>> = ReturnType<typeof createPerformanceHistoryStore<MetricTypes>>
+export type PerformanceHistoryStore<MetricTypes extends Record<string, BaseMetric<any, any>>> = ReturnType<typeof createPerformanceHistoryStore<MetricTypes>>

@@ -7,7 +7,7 @@ import { reset } from 'microlight';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
-import { createEventDispatcher, onMount } from 'svelte';
+import { createEventDispatcher, onMount, tick } from 'svelte';
 import { debugMode } from '$lib/model/settings';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { goto } from '$app/navigation';
@@ -41,37 +41,30 @@ const continueButton: ButtonData = {
 }
 
 let buttons = [] as ButtonData[];
-$: {
-    const navigationButtons = (feedback?.navigateOptions ?? [])
-        .map((option, i) => {
-            return {
-                title: `${option.label}`,
-                action: async () => {
-                    await goto(option.url)
-                },
-                debug: option.url
-            } as ButtonData
-        })
+// $: {
+//     const navigationButtons = (feedback?.navigateOptions ?? [])
+//         .map((option, i) => {
+//             return {
+//                 title: `${option.label}`,
+//                 action: async () => {
+//                     await goto(option.url)
+//                 },
+//                 debug: option.url
+//             } as ButtonData
+//         })
 
-    if (feedback?.suggestedAction === 'navigate') {
-        buttons = [navigationButtons[0], repeatButton, continueButton, ...navigationButtons.slice(1)];
-    } else if (feedback?.suggestedAction === 'next') {
-        buttons = [continueButton, repeatButton, ...navigationButtons];
-    } else {
-        buttons = [repeatButton, continueButton, ...navigationButtons];
-    }
-}
+//     if (feedback?.suggestedAction === 'navigate') {
+//         buttons = [navigationButtons[0], repeatButton, continueButton, ...navigationButtons.slice(1)];
+//     } else if (feedback?.suggestedAction === 'next') {
+//         buttons = [continueButton, repeatButton, ...navigationButtons];
+//     } else {
+//         buttons = [repeatButton, continueButton, ...navigationButtons];
+//     }
+// }
 
 let showingPerformanceSummary = false;
-let performanceSummaryDialog: HTMLDialogElement | undefined;
-$: {
-    if (showingPerformanceSummary) {
-        performanceSummaryDialog?.showModal();
-    } else {
-        performanceSummaryDialog?.close();
-    }
-}
-let showingLLMReflection = false;
+let showingLLMOutput = false;
+let showingTerminalFeedbackJson = false;
 
 let skeletonHighlights: BodyPartHighlight[] = [];
 
@@ -85,7 +78,14 @@ $: {
     skeletonHighlights = [...incorrectHighlights, ...correctHighlights];
 }
 
-$: $debugMode, feedback?.debug?.performanceSummary, reset('microlight'); // re-run microlight syntax highlighting
+const performSyntaxHighlighting = async () => {
+    await tick();
+    reset('microlight');
+};
+$: if ($debugMode || feedback?.debug) {
+    performSyntaxHighlighting();
+}
+
 
 onMount(() => {
     reset('microlight');
@@ -176,15 +176,30 @@ function exportRecordings() {
             <Dialog open={showingPerformanceSummary}
               on:dialog-closed={() => showingPerformanceSummary = false}>
                 <span slot="title">Performance Summary</span>
-                <pre class="dialogcontent microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+                <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
             {/if}
-            {#if feedback?.debug?.llmReflection}
-            <button class="button" on:click={() => showingLLMReflection = true }>View LLM Reflection</button>
-            <Dialog open={showingLLMReflection}
-                on:dialog-closed={() => showingLLMReflection = false}>
-                <span slot="title">LLM Reflection</span>
-                <p>{feedback.debug.llmReflection}</p>
+            {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
+            <button class="button" on:click={() => showingLLMOutput = true }>View LLM Output</button>
+            <Dialog open={showingLLMOutput}
+                on:dialog-closed={() => showingLLMOutput = false}>
+                <span slot="title">LLM Data</span>
+                {#if feedback?.debug?.llmInput}
+                    <h3>Input</h3>
+                    <pre class="microlight">{JSON.stringify(feedback?.debug?.llmInput, undefined, 2)}</pre>
+                {/if}
+                {#if feedback?.debug?.llmOutput}
+                    <h3>Output</h3>
+                    <pre class="microlight">{JSON.stringify(feedback?.debug?.llmOutput, undefined, 2)}</pre>
+                {/if}
+            </Dialog>
+            {/if}
+            {#if feedback}
+            <button class="button" on:click={() => showingTerminalFeedbackJson = true }>View Terminal Feedback</button>
+            <Dialog open={showingTerminalFeedbackJson}
+                on:dialog-closed={() => showingTerminalFeedbackJson = false}>
+                <span slot="title">TerminalFeedback JSON</span>
+                <pre style="microlight">{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
             {#if feedback?.debug?.recordedTrack}
@@ -257,6 +272,10 @@ pre {
 
 .debug {
     font-size: 0.5em;
+}
+
+pre {
+    white-space: pre-wrap;
 }
 
 button.primary {

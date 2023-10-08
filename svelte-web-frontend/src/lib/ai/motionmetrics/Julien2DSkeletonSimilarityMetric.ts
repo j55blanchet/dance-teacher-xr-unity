@@ -94,8 +94,10 @@ type JulienMetricSummaryOutput = {
     minPossibleScore: number;
     maxPossibleScore: number;
     overallScore: number;
-    vectorByVectorScore: Map<string, number>;
+    vectorByVectorScore: Record<string, number>;
 }
+
+type JulienMetricFormattedSummaryOutput = ReturnType<Julien2DSkeletonSimilarityMetric["formatSummary"]>;
 
 /**
  * Metric that computes the similarity between two poses using the Julien method.
@@ -106,7 +108,7 @@ type JulienMetricSummaryOutput = {
  * @param userLandmarks - User landmarks (learner)
  * @returns Object containing the dissimilarity score and information by vector
  */
-export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput> {
+export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput, JulienMetricFormattedSummaryOutput> {
     
     computeMetric(_history: Readonly<TrackHistory>, _metricHistory: Readonly<JulienMetricSingleFrameOutput[]>, _videoFrameTimeInSecs: Readonly<number>, _actualTimesInMs: number, user2dPose: Readonly<Pose2DPixelLandmarks>, _user3dPose: Readonly<Pose3DLandmarkFrame>, ref2dPose: Readonly<Pose2DPixelLandmarks>, _ref3dPose: Readonly<Pose3DLandmarkFrame>): JulienMetricSingleFrameOutput {
         return computeSkeleton2DDissimilarityJulienMethod(ref2dPose, user2dPose)
@@ -128,7 +130,7 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
             const meanScore = GetArithmeticMean(thisVecScores);
             return [key, meanScore] as [string, number];
         });
-        const byVectorScores = new Map(vectorScoreKeyValues)
+        const byVectorScores = Object.fromEntries(vectorScoreKeyValues) as Record<string, number>;
 
         return {
             overallScore: overallScore,
@@ -138,10 +140,10 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
         }
     }
 
-    formatSummary(summary: Readonly<JulienMetricSummaryOutput>): Record<string, string | number> {
+    formatSummary(summary: Readonly<JulienMetricSummaryOutput>) {
         return {
             "overall": summary.overallScore,
-            ...Object.fromEntries(summary.vectorByVectorScore.entries())
+            ...summary.vectorByVectorScore,
         }
     }
 }

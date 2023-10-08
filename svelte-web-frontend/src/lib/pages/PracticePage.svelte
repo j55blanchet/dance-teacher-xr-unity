@@ -26,7 +26,8 @@ import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPe
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 import DanceTreeVisual, { type NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
-	import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
+	import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -96,15 +97,37 @@ let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
 let nodeHighlights = {} as Record<string, NodeHighlight>;
 $: {
-    const suggestedNodeIds = terminalFeedback?.navigateOptions?.map(opt => opt.nodeId).filter(x => x);
-    if (suggestedNodeIds) {
-        const defaultHighlight: NodeHighlight = {
-        };
-        nodeHighlights = Object.fromEntries(
-            suggestedNodeIds.map(nodeId => [nodeId, defaultHighlight])
-        );
-    } else {
-        nodeHighlights = {}
+    const currentNodeId = practiceActivity?.danceTreeNode?.id;
+    const terminalFeedbackNavOptions = terminalFeedback?.navigateOptions ?? [];
+    const navOptionsSuggestingANode = terminalFeedbackNavOptions.filter(opt => opt.nodeId);
+   
+    const defaultHighlight: NodeHighlight = {
+        color: 'yellow',
+        pulse: true,
+    };
+    nodeHighlights = Object.fromEntries(
+        navOptionsSuggestingANode.map(navOpts => {
+            if (currentNodeId && navOpts.nodeId === currentNodeId) {
+                return [navOpts.nodeId, {
+                    ...defaultHighlight,
+                    label: navOpts.nodeId + ' 🔁'
+                }]
+            }
+            return [navOpts.nodeId, {
+                ...defaultHighlight,
+                label: navOpts.nodeId
+            }]
+        })
+    );
+
+    // If we've just performed an segment and aren't suggesting to repeat it,
+    // we will highlight the segment we just performed.
+    if (isShowingFeedback && currentNodeId && nodeHighlights[currentNodeId] === undefined) {
+        nodeHighlights[currentNodeId] = {
+            color: 'green',
+            pulse: false,
+            label: terminalFeedback?.suggestedAction === "repeat" ? "🔁" : "✔️"
+        }
     }
 }
 async function onNodeClicked(clickedNode: DanceTreeNode) {
@@ -163,7 +186,7 @@ function unPauseVideo() {
 async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
 
     const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
-    const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? new Map<string, number>();
+    const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
     const qijiaBestPossibleScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.maxPossibleScore ?? 0;
 
     webcamRecorder?.stop();
@@ -175,10 +198,13 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     let feedback: TerminalFeedback | undefined = undefined;
     if ($useAIFeedback) {
         try {
+            const perfHistory = $frontendPerformanceHistory;
+            const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory[practiceActivity.dance.clipRelativeStem] ?? null : null;
             feedback = await generateFeedbackWithClaudeLLM(
                 practiceActivity?.danceTree,
                 practiceActivity?.danceTreeNode?.id ?? 'undefined',
                 performanceSummary ?? undefined,
+                dancePerfHistory ?? undefined
             )
         } catch(e) {
             console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
@@ -513,7 +539,7 @@ onMount(() => {
     <div class="treevis">
         <DanceTreeVisual 
             node={practiceActivity.danceTree.root }
-            showProgressNode={practiceActivity.danceTreeNode} 
+            showProgressNode={isShowingFeedback ? undefined : practiceActivity.danceTreeNode} 
             currentTime={videoCurrentTime}
             danceTree={practiceActivity.danceTree}
             nodeHighlights={nodeHighlights}

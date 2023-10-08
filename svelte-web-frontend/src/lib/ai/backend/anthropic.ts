@@ -14,7 +14,7 @@ const anthropic = new Anthropic({
 
 const taskStatement = `
 ${Anthropic.HUMAN_PROMPT} You are an AI dance coach and you are giving feedback to a dancer, who is learning a dance choreography from a dance video. 
-They have performed a part of the dance routine, and the system has analyzed their performance and distilled it into a textual representation (surrounded by <performanceDistillation><performanceDistillation/> tags), along with other context (surrounded by <performanceDistillation><performanceDistillation/> tags) that you can use to provide coaching guidance.
+They have performed a part of the dance routine, and the system has analyzed their performance and distilled it into a textual representation (surrounded by <performanceDistillation><performanceDistillation/> tags), along with other context (surrounded by <performanceDistillation><performanceDistillation/> and <performanceHistoryDistillation></performanceHistoryDistillation> tags) that you can use to provide coaching guidance.
 
 Please generate the following pieces of feedback / guidance for the dancer:
 1. Reflections on the distillations that the system has provided for you. What obsevations do you have about the data? What do you think the data means? What do you think the data implies about the dancer's performance, and what aspects of the performance cannot be determined from the data provided? This is space for you to reflect on the data and provide your own insights. It should be 1-4 paragraphs long and surrounded by <coachingreflection></coachingreflection> tags. If clear insights are not coming to you, you can also use this space to ask questions about the data, or to describe what you would like to know more about. This will be logged by the system and used to improve the experience, but will not be shown to the user.
@@ -34,6 +34,7 @@ export async function getFeedback(
     danceStructureDistillation: string,
     currentSectionName: string,
     performanceDistillation: string,
+    performanceHistoryDistillation: string,
 
 ){
     
@@ -41,6 +42,7 @@ export async function getFeedback(
 <danceStructureDistillation>${danceStructureDistillation}</danceStructureDistillation>
 <currentSectionName>${currentSectionName}</currentSectionName>
 <performanceDistillation>${performanceDistillation}</performanceDistillation>
+<performanceHistoryDistillation>${performanceHistoryDistillation}</performanceHistoryDistillation>
 `
     
     const prompt = taskStatement + example + dynamicData + Anthropic.AI_PROMPT;

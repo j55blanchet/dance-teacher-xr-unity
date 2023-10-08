@@ -82,14 +82,16 @@ type QijiaMetricSummaryOutput = {
     minPossibleScore: number;
     maxPossibleScore: number;
     overallScore: number;
-    vectorByVectorScore: Map<string, number>;
+    vectorByVectorScore: Record<string, number>;
 }
+
+type QijiaMetricSummaryFormattedOutput = ReturnType<Qijia2DSkeletonSimilarityMetric["formatSummary"]>;
 
 /**
  * A metric that calculates the similarity between two poses using the Qijia method.
  * @see computeSkeletonDissimilarityQijiaMethod
  */
-export default class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput> {
+export default class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMetric<QijiaMetricSingleFrameOutput, QijiaMetricSummaryOutput, QijiaMetricSummaryFormattedOutput> {
 
     computeMetric(_history: TrackHistory, _metricHistory: QijiaMetricSingleFrameOutput[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, user2dPose: Pose2DPixelLandmarks, _user3dPose: Pose3DLandmarkFrame, ref2dPose: Pose2DPixelLandmarks, _ref3dPose: Pose3DLandmarkFrame): QijiaMetricSingleFrameOutput {
         return computeSkeletonDissimilarityQijiaMethod(ref2dPose, user2dPose)
@@ -105,7 +107,7 @@ export default class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMe
             const meanScore = GetArithmeticMean(thisVecScores);
             return [key, meanScore] as [string, number];
         });
-        const qijiaByVectorScores = new Map(vectorScoreKeyValues)
+        const qijiaByVectorScores = Object.fromEntries(vectorScoreKeyValues) 
 
         return {
             overallScore: qijiaOverallScore,
@@ -118,7 +120,7 @@ export default class Qijia2DSkeletonSimilarityMetric implements LiveEvaluationMe
     formatSummary(summary: QijiaMetricSummaryOutput): Record<string, string | number> {
         return {
             "overall": summary.overallScore,
-            ...Object.fromEntries(summary.vectorByVectorScore.entries())
+            ...summary.vectorByVectorScore
         }
     }
 }
