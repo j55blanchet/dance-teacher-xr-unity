@@ -60,11 +60,11 @@ export function calculateKinematicErrorDescriptors(
     refScale?: number
 ) {
     if (!matchingUserPoses || !referencePoses || !frameTimes) {
-        throw new Error("Invalid input data. Either matchingUserPoses or referencePoses is null.");
+        throw new Error("Invalid input data. Either matchingUserPoses, referencePoses, or frameTimes is null.");
     }
 
     if (matchingUserPoses.length !== referencePoses.length || matchingUserPoses.length !== frameTimes.length) {
-        throw new Error("Mismatched array lengths between matchingUserPoses and referencePoses.");
+        throw new Error("Mismatched array lengths between matchingUserPoses, referencePoses, and frameTimes.");
     }
 
     const frameCount = matchingUserPoses.length;
