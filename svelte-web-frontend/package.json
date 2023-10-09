@@ -39,7 +39,7 @@
 		"typescript": "^5.2.2",
 		"uuid": "^9.0.1",
 		"vite": "^4.4.11",
-		"vitest": "^0.34.5",
+		"vitest": "^0.34.6",
 		"wasm-feature-detect": "^1.5.1"
 	},
 	"type": "module"
