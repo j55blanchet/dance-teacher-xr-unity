@@ -208,7 +208,7 @@ function barClicked () {
         position: relative;
         // min-width: 100%;
         text-align: center;
-        height: 1em;
+        min-height: 1em;
         transition: height var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
@@ -221,12 +221,10 @@ function barClicked () {
     .bar.highlighted {
         // border-color: var(--highlight-color);
         // border-width: calc(0.12em * var(--border-scale));
-        height: 1.5em;
+        min-height: 1.5em;
         box-shadow: 0 0 0.1em 0.1em var(--highlight-color), inset 0 0 0.075em 0.075em var(--highlight-color);
     }
-    .bar.labeled, .bar.highlighted.labeled {
-        min-height: max-content;
-    }
+
     .bar.highlighted.highlighted-pulse {
         animation-name: highlightPulse;
         animation-duration: 0.5s;
@@ -267,7 +265,7 @@ function barClicked () {
     .bar.hidden {
         box-shadow: 0;
         // border: 0;
-        height: 0;
+        min-height: 0;
         opacity: 0.2;
     }
 
