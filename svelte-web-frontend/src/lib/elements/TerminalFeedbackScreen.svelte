@@ -3,6 +3,7 @@
 //
 // A component for offering feedback after a user has completed a
 // practice attempt of a dance. 
+import Icon, { Icons } from '$lib/elements/Icon.svelte';
 import { reset } from 'microlight';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
@@ -135,9 +136,13 @@ function exportRecordings() {
     
     {#if feedback?.paragraphs}
     <div class="paragraphs">
-        <SpeechInterface textToSpeak={feedback.paragraphs.join("\n")}/>
+        <SpeechInterface textToSpeak={feedback.paragraphs.map(x => x.trim()).join("\n\n")}/>
     </div>
     {/if}
+    <div class="info ta-center outlined thin dashed p-1">
+        <span class="icon"><Icon type={Icons.info} /></span>
+        <span class="message">Click any part of the dance above to practice that segment.</span>
+    </div>
     <!-- {#each feedback?.paragraphs ?? [] as paragraph}
         <p>{paragraph}</p>
     {/each} -->
@@ -155,6 +160,7 @@ function exportRecordings() {
         />
     </div>
     {/if}
+    {#if buttons.length > 0}
     <div class="buttons">
     {#each buttons as button, i}
         <button class="button outlined thick" 
@@ -167,6 +173,7 @@ function exportRecordings() {
         </button>
     {/each}
     </div>
+    {/if}
     {#if $debugMode}
         <div class="debug buttons">
             {#if feedback?.debug?.performanceSummary}
@@ -222,7 +229,7 @@ function exportRecordings() {
     max-width: 100%;
     flex-shrink: 1;
     flex-grow: 1;
-    gap: 0.25rem;
+    gap: 0.5rem;
     overflow: scroll;
     font-size: 1.5rem;
 
@@ -257,6 +264,24 @@ h2, p {
     margin : 0;
 }
 
+.info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 1rem;
+    padding: 1rem;
+    & .icon {
+        font-size: 1rem;
+    }
+
+    & .message {
+        color: var(--color-text);
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: auto;
+    }
+}
 h2 {
     margin-top: 1rem;
     font-weight: 600;
@@ -297,6 +322,6 @@ button.secondary {
     gap: 0.5rem;
     flex-wrap: wrap;
     width: 100%;
-    margin-top: 1rem;
+    // margin-top: 1rem;
 }
 </style>
