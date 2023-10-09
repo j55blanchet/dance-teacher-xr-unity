@@ -43,13 +43,13 @@ function replaceNaNsWithUndefined(num: number) {
  * Root Mean Square Error (RMSE):
  *  Sensitivity to Large Errors: RMSE gives higher weight to larger errors due to squaring the differences. This makes it more suitable when large errors need to be penalized more.
  *  Differentiability: RMSE is differentiable at all points, which can be important for optimization problems.
- * approximate range:
- *  jerksMAE Range: Approximately 170,000 to 240,000
- *  jerksRSME Range: Approximately 14,000 to 75,000
- * accsMAE Range: Approximately 2,500 to 5,600
- *  accsRSME Range: Approximately 500 to 1,600
- *  velsMAE Range: Approximately 95 to 180
- *  velsRSME Range: Approximately 18 to 40
+ * approximate range (to be updated):
+ * jerksMAE Range: Approximately 4,200 to 6,900
+ * jerksRSME Range: Approximately 7,600 to 23,300
+ * accsMAE Range: Approximately 34 to 176
+ * accsRSME Range: Approximately 63 to 797
+ * velsMAE Range: Approximately 2.6 to 9.0
+ * velsRSME Range: Approximately 4.5 to 57.1
  * @throws {Error} Throws an error if there is invalid input data, mismatched array lengths, or bad unique frametimes.
  */
 export function calculateKinematicErrorDescriptors(
