@@ -1,6 +1,6 @@
 import { lerp } from "$lib/utils/math";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
-import { QijiaMethodComparisonVectors, Get2DVector, GetScaleIndicator, getMagnitude2DVec, getInnerAngle, getArrayMean, QijiaMethodComparisionVectorNames } from "../EvaluationCommonUtils";
+import { QijiaMethodComparisonVectors, Get2DVector, Get2DScaleIndicator, getMagnitude2DVec, getInnerAngle, getArrayMean, QijiaMethodComparisionVectorNames } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 
 // Constants for reliable 2D angle determination (in pixels)
@@ -38,8 +38,8 @@ function computeSkeleton2DDissimilarityJulienMethod(
         const [refX, refY] = Get2DVector(refLandmarks, srcLandmark, destLandmark)
         const [usrX, usrY] = Get2DVector(userLandmarks, srcLandmark, destLandmark)
 
-        const scaleRef = GetScaleIndicator(refLandmarks)
-        const scaleUsr = GetScaleIndicator(userLandmarks)
+        const scaleRef = Get2DScaleIndicator(refLandmarks)
+        const scaleUsr = Get2DScaleIndicator(userLandmarks)
 
         const [magnitudeRef, magnitudeUsr] = [getMagnitude2DVec([refX, refY]), getMagnitude2DVec([usrX, usrY])]
         const adjustedMagnitudeUsr = magnitudeUsr * scaleRef / scaleUsr

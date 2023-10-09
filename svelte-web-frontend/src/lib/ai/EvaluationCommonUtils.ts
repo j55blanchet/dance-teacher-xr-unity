@@ -12,12 +12,26 @@ export type VectorAngleComparisonInfo = { vec1: PoseVectorIdPair, vec2: PoseVect
  * @param pixelLandmarks - 2D pixel coordinates of pose landmarks
  * @returns Scale indicator value
  */
-export function GetScaleIndicator(pixelLandmarks: Readonly<Pose2DPixelLandmarks>){
+export function Get2DScaleIndicator(pixelLandmarks: Readonly<Pose2DPixelLandmarks>){
 
     // Calculate torso heights and shoulder width
     const leftTorsoHeight = getMagnitude2DVec(Get2DVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip))
     const rightTorsoHeight = getMagnitude2DVec(Get2DVector(pixelLandmarks, PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightHip))
     const shoulderWidth = getMagnitude2DVec(Get2DVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder))
+    
+    // Combine the measurements to compute the scale indicator
+    return 0.25 * leftTorsoHeight + 
+           0.25 * rightTorsoHeight +
+           0.5 * shoulderWidth
+}
+
+
+export function Get3DScaleIndicator(pixelLandmarks: Readonly<Pose3DLandmarkFrame>){
+
+    // Calculate torso heights and shoulder width
+    const leftTorsoHeight = getMagnitude3DVec(Get3DVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip))
+    const rightTorsoHeight = getMagnitude3DVec(Get3DVector(pixelLandmarks, PoseLandmarkIds.rightShoulder, PoseLandmarkIds.rightHip))
+    const shoulderWidth = getMagnitude3DVec(Get3DVector(pixelLandmarks, PoseLandmarkIds.leftShoulder, PoseLandmarkIds.rightShoulder))
     
     // Combine the measurements to compute the scale indicator
     return 0.25 * leftTorsoHeight + 
@@ -164,6 +178,7 @@ export function getInnerAngleFromFrame(frame: Readonly<Pose3DLandmarkFrame>, src
 export function getMagnitude2DVec(v: Readonly<[number, number]>) {
     return Math.pow(Math.pow(v[0], 2) + Math.pow(v[1], 2), 0.5)
 }
+
 
 /**
  * Calculate the magnitude of a 3D vector.

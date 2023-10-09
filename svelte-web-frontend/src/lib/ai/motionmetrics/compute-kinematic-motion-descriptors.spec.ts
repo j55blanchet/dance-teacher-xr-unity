@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { calculateVels, calculateDerivative, type Vec2, calculateKinematicErrorDescriptors } from './compute-kinematic-motion-descriptors.ts';
+import { calculateVels, calculateDerivative, type Vec2, calculateKinematicErrorDescriptors } from './compute-kinematic-motion-descriptors';
 import { type Pose2DPixelLandmarks, PoseLandmarkKeys, type PixelLandmark } from '$lib/webcam/mediapipe-utils.js';
 
 
