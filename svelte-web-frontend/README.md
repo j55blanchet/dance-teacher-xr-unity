@@ -46,3 +46,19 @@ You can preview the production build with:
 ```bash
 npm run preview
 ```
+
+## Testing
+
+We use `vitest` for testing. This will be installed as a dev dependency as part of `pnpm install`.
+
+I recommend using Visual Studio Code as your editor, with the [vitest extension](https://marketplace.visualstudio.com/items?itemName=ZixuanChen.vitest-explorer) installed.
+
+* Then, you can use the testing tab in vscode to run tests, or hover over tests and click to run or debug an individual test.
+
+You can also run tests from the command line:
+
+* To run tests, you can simply do `pnpm run test`. This will put tests in watch mode, and will rerun whenever code changes.
+* You can also execute `pnpm run test --run` to run the tests only once (not in watch mode).
+* You can also execute `pnpm run test --coverage` to run the tests and generate a coverage report.
+
+Many motion metric tests include a test that runs the metric against multiple pre-recorded dance performance and outputs the formatted summaries of the results in the `testResults` directory. These CSV files are very useful for getting an overview of a given metric's output for many different performances. You can record a new performance by loading up the site, enabling debug mode, and practicing a segment. Then, click "Export Recorded Track", enter a description for the track, and the files will be saved.
