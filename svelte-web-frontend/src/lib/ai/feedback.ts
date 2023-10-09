@@ -93,14 +93,23 @@ export async function generateFeedbackWithClaudeLLM(
     currentSectionName: string,
     performance: FrontendPerformanceSummary | undefined,
     dancePerformanceHistory: FrontendDancePeformanceHistory | undefined,
+    mediumScoreThreshold: number,
+    goodScoreThreshold: number,
+    attemptHistory: { date: Date, score: number, segmentId: string }[],
 ): Promise<TerminalFeedback> {
 
     const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree): undefined;
     const danceStructureDistillationIsMissing = danceStructureDistillation === undefined;
-    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance) : undefined;
+    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance, mediumScoreThreshold, goodScoreThreshold) : undefined;
     const performanceDistillationIsMissing = performanceDistillation === undefined;
     const performanceHistoryDistillation = dancePerformanceHistory ? distillPerformanceHistoryToTextualRepresentation(dancePerformanceHistory) : undefined;
     const performanceHistoryDistillationIsMissing = performanceHistoryDistillation === undefined;
+
+    const attemptHistoryDistillation = "The last few attempts the user has tried have been: \n" +
+        attemptHistory.map((attempt) => {
+            const score = attempt.score.toFixed(2);
+            return `* ${attempt.date.toISOString()} ${attempt.segmentId}: ${score}`;
+        }).join('\n');
 
     console.log('Requesting feedback from Claude LLM', 
         `currentSectionName: ${currentSectionName}`,
@@ -115,7 +124,7 @@ export async function generateFeedbackWithClaudeLLM(
         currentSectionName,
         danceStructureDistillation, 
         performanceDistillation,
-        performanceHistoryDistillation,
+        performanceHistoryDistillation: `${performanceHistoryDistillation}\n${attemptHistoryDistillation}`,
     };
 
     const claudeApiData = await fetch('/restapi/get_feedback', {

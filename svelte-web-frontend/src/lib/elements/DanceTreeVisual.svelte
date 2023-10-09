@@ -6,7 +6,7 @@ export type NodeHighlight = {
 }
 </script>
 <script lang="ts">
-import { debugMode } from '$lib/model/settings';
+import { debugMode, summaryFeedback_skeleton3d_goodPerformanceThreshold, summaryFeedback_skeleton3d_mediumPerformanceThreshold } from '$lib/model/settings';
 import { createEventDispatcher } from 'svelte';
 import { findDanceTreeNode, type DanceTreeNode, findDanceTreeSubNode, type DanceTree } from '$lib/data/dances-store';
 
@@ -37,15 +37,14 @@ $: showProgress = (showProgressNode != undefined) && node === showProgressNode;
 let nodePerformanceHistory = frontendPerformanceHistory.getDanceSegmentPerformanceHistory(
     danceTree?.clip_relativepath ?? "",
     "skeleton3DAngleSimilarity",
-    node.id
+    node?.id
 )
-$: {
-    nodePerformanceHistory = frontendPerformanceHistory.getDanceSegmentPerformanceHistory(
-        danceTree?.clip_relativepath ?? "",
-        "skeleton3DAngleSimilarity",
-        node.id
-    )
-}
+$: nodePerformanceHistory = frontendPerformanceHistory.getDanceSegmentPerformanceHistory(
+    danceTree?.clip_relativepath ?? "",
+    "skeleton3DAngleSimilarity",
+    node?.id
+)
+
 const bestScore = derived(nodePerformanceHistory, ($nodePerformanceHistory) => {
     const bestFoundScore = $nodePerformanceHistory.reduce((best, current) => {
         const curScore = current.summary?.overall ?? -Infinity;
@@ -148,11 +147,12 @@ function barClicked () {
        class:button={enableClick} 
        class:active={showProgress}
        class:hasScore={enableColorCoding && $bestScore !== undefined}
-       class:hasGoodScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > 0.9}
-       class:hasMediumScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > 0.8 && $bestScore.score <= 0.9}
-       class:hasBadScore={enableColorCoding && $bestScore !== undefined && $bestScore.score <= 0.8}
+       class:hasGoodScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_goodPerformanceThreshold}
+       class:hasMediumScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_mediumPerformanceThreshold && $bestScore.score <= $summaryFeedback_skeleton3d_goodPerformanceThreshold}
+       class:hasBadScore={enableColorCoding && $bestScore !== undefined && $bestScore.score <= $summaryFeedback_skeleton3d_mediumPerformanceThreshold}
        class:highlighted={highlight !== undefined}
        class:highlighted-pulse={highlight?.pulse ?? false}
+       class:labeled={highlight?.label !== undefined}
        on:click={barClicked}
        role="menuitem"
        tabindex="0"
@@ -217,11 +217,15 @@ function barClicked () {
         align-items: center;
         justify-content: center;
     }
+
     .bar.highlighted {
         // border-color: var(--highlight-color);
         // border-width: calc(0.12em * var(--border-scale));
         height: 1.5em;
         box-shadow: 0 0 0.1em 0.1em var(--highlight-color), inset 0 0 0.075em 0.075em var(--highlight-color);
+    }
+    .bar.labeled, .bar.highlighted.labeled {
+        min-height: max-content;
     }
     .bar.highlighted.highlighted-pulse {
         animation-name: highlightPulse;

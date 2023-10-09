@@ -9,12 +9,13 @@ import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistor
  * @param summary Summary of the performance
  * @returns A condensed representation of the summary, highlighting only the most important things
  */
-export function distillFrontendPerformanceSummaryToTextualRepresentation(summary: FrontendPerformanceSummary): string {
+export function distillFrontendPerformanceSummaryToTextualRepresentation(summary: FrontendPerformanceSummary, mediumScoreThreshold: number, goodScoreThreshold: number): string {
 
     const { wholePerformance, subsections, segmentDescription } = summary;
 
-    const perfPercentage = (wholePerformance.skeleton3DAngleSimilarity.overallScore * 100).toFixed(0);
-    let distillation = `The user just performed "${segmentDescription}". Overall, the user had a ${perfPercentage}% match with the reference dance.`;
+    const perfPercentage = wholePerformance.skeleton3DAngleSimilarity.overallScore.toFixed(2);
+    let distillation = `The user just performed "${segmentDescription}". Overall, the user had a ${perfPercentage} match with the reference dance.`;
+    distillation += `A match of above ${mediumScoreThreshold.toFixed(2)} is considered a "fair" performance, and a match of above ${goodScoreThreshold.toFixed(2)} is considered a "good" performance.`
 
     const [worstJointName, worstJointScore] = Object.entries(wholePerformance.skeleton3DAngleSimilarity.individualScores).reduce((prev, curr) => {
         const pAngleScore = prev[1] as number
@@ -87,7 +88,7 @@ export function distillPerformanceHistoryToTextualRepresentation(dancePerformanc
                 score: x.summary.overall as number
             }));
         const meanScore = GetArithmeticMean(nonnullOverallScoreAttempts.map(x => x.score));
-        description += `Tne user has attempted segment "${segmentId}" ${attemptCount} times, achiving an average score of ${meanScore} on this segment\n`;
+        description += `Tne user has attempted segment "${segmentId}" ${attemptCount} times, achiving an average score of ${meanScore.toFixed(2)} on this segment\n`;
     }
     return description;
 }

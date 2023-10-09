@@ -17,9 +17,9 @@ import {
 
 	useTextToSpeech,
 
-	practiceFallbackPlaybackSpeed
-
-
+	practiceFallbackPlaybackSpeed,
+	summaryFeedback_skeleton3d_mediumPerformanceThreshold,
+    summaryFeedback_skeleton3d_goodPerformanceThreshold
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -65,11 +65,11 @@ const qijiaScoreMax = 5;
             <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
         </div>
         <div>
-            <label for="feedback_YellowThreshold">Yellow Threshold</label>
+            <label for="feedback_YellowThreshold">Live Feedback - Yellow Threshold</label>
             <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
         </div>
         <div>
-            <label for="feedback_GreenThreshold">Green Threshold</label>
+            <label for="feedback_GreenThreshold">Live Feedback - Green Threshold</label>
             <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
         </div>
     </div>
@@ -84,8 +84,16 @@ const qijiaScoreMax = 5;
             <input type="checkbox" name="useTextToSpeech" bind:checked={$useTextToSpeech}>
         </div>
         <div>
-            <label for="evaluation_GoodBadTrialThreshold">Good/Bad Trial Threshold</label>
+            <label for="evaluation_GoodBadTrialThreshold">(Rule Based Feedback)<br />Good/Bad Trial Threshold</label>
             <input class="outlined thin" type="number" name="evaluation_GoodBadTrialThreshold" disabled={$useAIFeedback} bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+        </div>
+        <div>
+            <label for="summaryFeedback_skeleton3d_mediumPerformanceThreshold">3D Angle - Yellow Threshold</label>
+            <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_mediumPerformanceThreshold} min={0} max={1} step={0.01}>
+        </div>
+        <div>
+            <label for="summaryFeedback_skeleton3d_goodPerformanceThreshold">3D Angle - Green Threshold</label>
+            <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_goodPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_goodPerformanceThreshold} min={0} max={1} step={0.01}>
         </div>
         <div>
             <label for="evaluation_summarizeSubsections">Evaluate Subsections</label>

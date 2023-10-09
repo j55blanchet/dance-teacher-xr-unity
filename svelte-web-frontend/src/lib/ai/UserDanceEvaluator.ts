@@ -12,8 +12,8 @@ import { UserEvaluationTrackRecorder } from "./UserEvaluationTrackRecorder";
  * of the live and summary metrics.
  */
 export default class UserDanceEvaluator<
-    T extends Record<string, LiveEvaluationMetric<unknown, unknown>>,
-    U extends Record<string, SummaryMetric<unknown>>,
+    T extends Record<string, LiveEvaluationMetric<any, any, any>>,
+    U extends Record<string, SummaryMetric<any, any>>,
 > {
     public trackRecorder = new 
         UserEvaluationTrackRecorder<
@@ -118,7 +118,8 @@ export default class UserDanceEvaluator<
         const perfTrackWholePerformance = this.generateMetricSummariesForTrackSection(
             track.segmentDescription,
             track,
-            );
+            false,
+        );
 
         return {
             trackId: id,
@@ -129,7 +130,7 @@ export default class UserDanceEvaluator<
                 if (!subsectionTrack) {
                     return [subsectionName, null];
                 }
-                return [subsectionName, this.generateMetricSummariesForTrackSection(subsectionName, subsectionTrack)];
+                return [subsectionName, this.generateMetricSummariesForTrackSection(subsectionName, subsectionTrack, true)];
             })) as {[K in keyof T]: ReturnType<typeof this.generateMetricSummariesForTrackSection>},
         }
     }
@@ -137,6 +138,7 @@ export default class UserDanceEvaluator<
     private generateMetricSummariesForTrackSection(
         sectionName: string,
         track: NonNullable<ReturnType<typeof this.trackRecorder.tracks["get"]>>,
+        partOfLargerPerformance: boolean,
     ) {
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
 
@@ -162,6 +164,7 @@ export default class UserDanceEvaluator<
                     sectionName,
                     liveMetricKey,
                     formattedSummary as any,
+                    partOfLargerPerformance,
                 )
             }
             return [liveMetricKey, metricSummary]
@@ -180,6 +183,7 @@ export default class UserDanceEvaluator<
                     sectionName,
                     summaryMetricKey,
                     formattedSummary as any,
+                    partOfLargerPerformance
                 )
             }
             return [summaryMetricKey, metricSummary]

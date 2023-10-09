@@ -4,7 +4,7 @@ export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
 import { v4 as generateUUIDv4 } from 'uuid';
-import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed } from '$lib/model/settings';
+import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
@@ -27,7 +27,7 @@ import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 import DanceTreeVisual, { type NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
-	import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
+import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -175,6 +175,20 @@ $: {
     }
 }
 
+let letNAttempts = frontendPerformanceHistory.lastNAttempts(
+    practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
+    'skeleton3DAngleSimilarity',
+    20,
+)
+
+$: {
+    letNAttempts = frontendPerformanceHistory.lastNAttempts(
+        practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
+        'skeleton3DAngleSimilarity',
+        20,
+    )
+}
+
 let unpauseVideoTimeout: number | null  = null;
 function unPauseVideo() {
     unpauseVideoTimeout = null;
@@ -195,16 +209,27 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         videoURL = await webcamRecordedObjectURL;
     }
 
+    const attemptHistory = $letNAttempts.map((a) => {
+        return {
+            score: a.summary?.overall ?? NaN, 
+            date: a.date,
+            segmentId: a.segmentId
+        }
+    });
+
     let feedback: TerminalFeedback | undefined = undefined;
     if ($useAIFeedback) {
         try {
             const perfHistory = $frontendPerformanceHistory;
-            const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory[practiceActivity.dance.clipRelativeStem] ?? null : null;
+            const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
             feedback = await generateFeedbackWithClaudeLLM(
                 practiceActivity?.danceTree,
                 practiceActivity?.danceTreeNode?.id ?? 'undefined',
                 performanceSummary ?? undefined,
-                dancePerfHistory ?? undefined
+                dancePerfHistory ?? undefined,
+                $summaryFeedback_skeleton3d_mediumPerformanceThreshold,
+                $summaryFeedback_skeleton3d_goodPerformanceThreshold,
+                attemptHistory,
             )
         } catch(e) {
             console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
