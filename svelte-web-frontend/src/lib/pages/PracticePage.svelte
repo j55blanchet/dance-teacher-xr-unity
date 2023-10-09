@@ -175,14 +175,14 @@ $: {
     }
 }
 
-let letNAttempts = frontendPerformanceHistory.lastNAttempts(
+let lastNAttempts = frontendPerformanceHistory.lastNAttempts(
     practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
     'skeleton3DAngleSimilarity',
     20,
 )
 
 $: {
-    letNAttempts = frontendPerformanceHistory.lastNAttempts(
+    lastNAttempts = frontendPerformanceHistory.lastNAttempts(
         practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
         'skeleton3DAngleSimilarity',
         20,
@@ -209,7 +209,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         videoURL = await webcamRecordedObjectURL;
     }
 
-    const attemptHistory = $letNAttempts.map((a) => {
+    const attemptHistory = $lastNAttempts.map((a) => {
         return {
             score: a.summary?.overall ?? NaN, 
             date: a.date,
