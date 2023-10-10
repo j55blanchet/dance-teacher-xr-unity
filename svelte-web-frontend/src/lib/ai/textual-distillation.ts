@@ -13,8 +13,8 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
 
     const { wholePerformance, subsections, segmentDescription } = summary;
 
-    const perfPercentage = wholePerformance.skeleton3DAngleSimilarity.overallScore.toFixed(2);
-    let distillation = `The user just performed "${segmentDescription}". Overall, the user had a ${perfPercentage} match with the reference dance.`;
+    const overallPerformance = wholePerformance.skeleton3DAngleSimilarity.overallScore?.toFixed(2);
+    let distillation = `The user just performed "${segmentDescription}". Overall, the user had a ${overallPerformance} match with the reference dance.`;
     distillation += `A match of above ${mediumScoreThreshold.toFixed(2)} is considered a "fair" performance, and a match of above ${goodScoreThreshold.toFixed(2)} is considered a "good" performance.`
 
     const [worstJointName, worstJointScore] = Object.entries(wholePerformance.skeleton3DAngleSimilarity.individualScores).reduce((prev, curr) => {
@@ -26,22 +26,19 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
         return prev;
     }, ["null", Infinity] as [string, number]);
 
-    const worstJointScorePercentage = (worstJointScore * 100).toFixed(0);
-    distillation += ` The worst joint overall was the ${worstJointName} joint, with an accuracy of ${worstJointScorePercentage}%.`;
+    distillation += ` The worst joint overall was the ${worstJointName} joint, with an accuracy of ${worstJointScore?.toFixed(2)}.`;
 
     const subsectionNames = Object.keys(subsections);
-    const subsectionOverallScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity.overallScore);
-    const subsectionWorstJointScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity.individualScores[worstJointName as keyof typeof BodyInnerAnglesComparisons ]);
+    const subsectionOverallScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity?.overallScore);
+    const subsectionWorstJointScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity?.individualScores?.[worstJointName as keyof typeof BodyInnerAnglesComparisons ]);
 
     if (subsectionNames.length > 1) {
         // Describe subsections if there were some.
         distillation += ` The user's performance was broken down into ${subsectionNames.length} subsections:\n`;
         const subsectionsAndScores = subsectionNames.map((subsectionName, subsectionIndex) => {
             const score = subsectionOverallScores[subsectionIndex];
-            const scorePercentage = (score * 100).toFixed(0);
-            const worstJointScore = subsectionWorstJointScores[subsectionIndex];
-            const worstJointScorePercentage = worstJointScore ? (worstJointScore * 100).toFixed(0) : "N/A";
-            return `* Section "${subsectionName}" : full-body: ${scorePercentage}%, ${worstJointName}: ${worstJointScorePercentage}%)`;
+            const worstJointScore = subsectionWorstJointScores?.[subsectionIndex];
+            return `* Section "${subsectionName}" : full-body: ${score?.toFixed(2)}, ${worstJointName}: ${worstJointScore?.toFixed(2)})`;
         });
         distillation += subsectionsAndScores.join("\n");
     }
