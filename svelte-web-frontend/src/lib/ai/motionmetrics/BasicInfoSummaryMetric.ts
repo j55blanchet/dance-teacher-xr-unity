@@ -8,7 +8,7 @@ type BasicInfoSummaryOutput = {
     videoTimeDurationSecs: number;
     videoTimeFps: number;
 }
-export default class BasicInfoSummaryMetric implements SummaryMetric<BasicInfoSummaryOutput> {
+export default class BasicInfoSummaryMetric implements SummaryMetric<BasicInfoSummaryOutput, BasicInfoSummaryOutput> {
 
     summarizeMetric(history: TrackHistory): BasicInfoSummaryOutput {
 
@@ -29,7 +29,7 @@ export default class BasicInfoSummaryMetric implements SummaryMetric<BasicInfoSu
         }
     }
     
-    formatSummary(summary: BasicInfoSummaryOutput): Record<string, string | number> {
+    formatSummary(summary: BasicInfoSummaryOutput) {
         return summary; // no formatting needed
     }
 

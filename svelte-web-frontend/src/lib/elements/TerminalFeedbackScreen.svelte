@@ -3,11 +3,12 @@
 //
 // A component for offering feedback after a user has completed a
 // practice attempt of a dance. 
+import Icon, { Icons } from '$lib/elements/Icon.svelte';
 import { reset } from 'microlight';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
-import { createEventDispatcher, onMount } from 'svelte';
+import { createEventDispatcher, onMount, tick } from 'svelte';
 import { debugMode } from '$lib/model/settings';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { goto } from '$app/navigation';
@@ -41,37 +42,30 @@ const continueButton: ButtonData = {
 }
 
 let buttons = [] as ButtonData[];
-$: {
-    const navigationButtons = (feedback?.navigateOptions ?? [])
-        .map((option, i) => {
-            return {
-                title: `${option.label}`,
-                action: async () => {
-                    await goto(option.url)
-                },
-                debug: option.url
-            } as ButtonData
-        })
+// $: {
+//     const navigationButtons = (feedback?.navigateOptions ?? [])
+//         .map((option, i) => {
+//             return {
+//                 title: `${option.label}`,
+//                 action: async () => {
+//                     await goto(option.url)
+//                 },
+//                 debug: option.url
+//             } as ButtonData
+//         })
 
-    if (feedback?.suggestedAction === 'navigate') {
-        buttons = [navigationButtons[0], repeatButton, continueButton, ...navigationButtons.slice(1)];
-    } else if (feedback?.suggestedAction === 'next') {
-        buttons = [continueButton, repeatButton, ...navigationButtons];
-    } else {
-        buttons = [repeatButton, continueButton, ...navigationButtons];
-    }
-}
+//     if (feedback?.suggestedAction === 'navigate') {
+//         buttons = [navigationButtons[0], repeatButton, continueButton, ...navigationButtons.slice(1)];
+//     } else if (feedback?.suggestedAction === 'next') {
+//         buttons = [continueButton, repeatButton, ...navigationButtons];
+//     } else {
+//         buttons = [repeatButton, continueButton, ...navigationButtons];
+//     }
+// }
 
 let showingPerformanceSummary = false;
-let performanceSummaryDialog: HTMLDialogElement | undefined;
-$: {
-    if (showingPerformanceSummary) {
-        performanceSummaryDialog?.showModal();
-    } else {
-        performanceSummaryDialog?.close();
-    }
-}
-let showingLLMReflection = false;
+let showingLLMOutput = false;
+let showingTerminalFeedbackJson = false;
 
 let skeletonHighlights: BodyPartHighlight[] = [];
 
@@ -85,7 +79,14 @@ $: {
     skeletonHighlights = [...incorrectHighlights, ...correctHighlights];
 }
 
-$: $debugMode, feedback?.debug?.performanceSummary, reset('microlight'); // re-run microlight syntax highlighting
+const performSyntaxHighlighting = async () => {
+    await tick();
+    reset('microlight');
+};
+$: if ($debugMode || feedback?.debug) {
+    performSyntaxHighlighting();
+}
+
 
 onMount(() => {
     reset('microlight');
@@ -131,13 +132,17 @@ function exportRecordings() {
 </script>
 
 <div class="feedbackForm">
-    <h2>{#if !feedback}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
+    <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
     
     {#if feedback?.paragraphs}
     <div class="paragraphs">
-        <SpeechInterface textToSpeak={feedback.paragraphs.join("\n")}/>
+        <SpeechInterface textToSpeak={feedback.paragraphs.map(x => x.trim()).join("\n\n")}/>
     </div>
     {/if}
+    <div class="info ta-center outlined thin dashed p-1">
+        <span class="icon"><Icon type={Icons.info} /></span>
+        <span class="message">Click any part of the dance above to practice that segment.</span>
+    </div>
     <!-- {#each feedback?.paragraphs ?? [] as paragraph}
         <p>{paragraph}</p>
     {/each} -->
@@ -155,6 +160,7 @@ function exportRecordings() {
         />
     </div>
     {/if}
+    {#if buttons.length > 0}
     <div class="buttons">
     {#each buttons as button, i}
         <button class="button outlined thick" 
@@ -167,6 +173,7 @@ function exportRecordings() {
         </button>
     {/each}
     </div>
+    {/if}
     {#if $debugMode}
         <div class="debug buttons">
             {#if feedback?.debug?.performanceSummary}
@@ -176,15 +183,30 @@ function exportRecordings() {
             <Dialog open={showingPerformanceSummary}
               on:dialog-closed={() => showingPerformanceSummary = false}>
                 <span slot="title">Performance Summary</span>
-                <pre class="dialogcontent microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+                <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
             {/if}
-            {#if feedback?.debug?.llmReflection}
-            <button class="button" on:click={() => showingLLMReflection = true }>View LLM Reflection</button>
-            <Dialog open={showingLLMReflection}
-                on:dialog-closed={() => showingLLMReflection = false}>
-                <span slot="title">LLM Reflection</span>
-                <p>{feedback.debug.llmReflection}</p>
+            {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
+            <button class="button" on:click={() => showingLLMOutput = true }>View LLM Output</button>
+            <Dialog open={showingLLMOutput}
+                on:dialog-closed={() => showingLLMOutput = false}>
+                <span slot="title">LLM Data</span>
+                {#if feedback?.debug?.llmInput}
+                    <h3>Input</h3>
+                    <pre class="microlight">{JSON.stringify(feedback?.debug?.llmInput, undefined, 2)}</pre>
+                {/if}
+                {#if feedback?.debug?.llmOutput}
+                    <h3>Output</h3>
+                    <pre class="microlight">{JSON.stringify(feedback?.debug?.llmOutput, undefined, 2)}</pre>
+                {/if}
+            </Dialog>
+            {/if}
+            {#if feedback}
+            <button class="button" on:click={() => showingTerminalFeedbackJson = true }>View Terminal Feedback</button>
+            <Dialog open={showingTerminalFeedbackJson}
+                on:dialog-closed={() => showingTerminalFeedbackJson = false}>
+                <span slot="title">TerminalFeedback JSON</span>
+                <pre style="microlight">{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
             {#if feedback?.debug?.recordedTrack}
@@ -207,7 +229,7 @@ function exportRecordings() {
     max-width: 100%;
     flex-shrink: 1;
     flex-grow: 1;
-    gap: 0.25rem;
+    gap: 0.5rem;
     overflow: scroll;
     font-size: 1.5rem;
 
@@ -242,6 +264,24 @@ h2, p {
     margin : 0;
 }
 
+.info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 1rem;
+    padding: 1rem;
+    & .icon {
+        font-size: 1rem;
+    }
+
+    & .message {
+        color: var(--color-text);
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: auto;
+    }
+}
 h2 {
     margin-top: 1rem;
     font-weight: 600;
@@ -257,6 +297,10 @@ pre {
 
 .debug {
     font-size: 0.5em;
+}
+
+pre {
+    white-space: pre-wrap;
 }
 
 button.primary {
@@ -278,6 +322,6 @@ button.secondary {
     gap: 0.5rem;
     flex-wrap: wrap;
     width: 100%;
-    margin-top: 1rem;
+    // margin-top: 1rem;
 }
 </style>

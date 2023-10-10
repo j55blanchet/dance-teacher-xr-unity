@@ -3,6 +3,75 @@ import {PoseLandmarkIds, type PoseLandmarkIndex, type Pose2DPixelLandmarks, Pose
 
 export type PoseVectorIdPair = [PoseLandmarkIndex, PoseLandmarkIndex]
 export type VectorAngleComparisonInfo = { vec1: PoseVectorIdPair, vec2: PoseVectorIdPair, rangeOfMotion: number};
+export type ReadonlyPoseVectorIdPair = Readonly<PoseVectorIdPair>;
+export type ReadonlyVectorAngleComparisonInfo = Readonly<{vec1: ReadonlyPoseVectorIdPair, vec2: ReadonlyPoseVectorIdPair, rangeOfMotion: number}>;
+
+/**
+ * Calculate the norm of a vector.
+ * @param v Vector as an 1D array
+ * @param norm The norm to use for the vector. Defaults to 2 (Euclidean norm).
+ * 
+ * Using a higher norm will emphasize larger values in the vector, while using a lower norm weight
+ * the contributions more evenly.
+ * 
+ * Given X = [x1, x2, ..., xn] with norm L, the norm is calculated as:
+ *   (x1^L + x2^L + ... + xn^L)^(1/L)
+ * 
+ * @example
+ * ```
+ * GetVectorNorm([0.2, 0.8], 1) // 1.0  manhatten distance
+ * GetVectorNorm([0.2, 0.8], 2) // 0.82 euclidean distance
+ * GetVectorNorm([0.2, 0.8], 3) // 0.804 3rd root distance
+ * GetVectorNorm([0.2, 0.8], 100) // 0.8 100th root distance (aprooaching a max function)
+ * ```
+ */
+export function GetVectorPNorm(v: number[], pnorm = 2) {
+    const sum = v.reduce((sum, val) => sum + Math.pow(val, pnorm), 0)
+    return Math.pow(sum, 1 / pnorm)
+}
+
+export function GetPNormalizedVector(v: number[], pnorm = 2) {
+    const mag = GetVectorPNorm(v, pnorm);
+    return v.map((val) => val / mag);
+}
+
+export function GetMean(v: number[]) {
+    return v.reduce((sum, val) => sum + val, 0) / v.length;
+}
+
+/**
+ * Calculates an average of the vector elements, normalized by the vector length.
+ * @param v 1D vector as an array
+ * @param norm The norm to use for calculating the average. Defaults to 2 (Euclidean norm)
+ * @returns An average of the vector elements, normalized by the vector length
+ * 
+ * Using a higher norm will emphasize larger values in the vector, while using a lower norm will
+ * emphasize smaller values in the vector.
+ * 
+ * Given X = [x1, x2, ..., xn] with norm L, the norm average is calculated as:
+ *   (x1^L + x2^L + ... + xn^L)^(1/L) / n^(1/L)
+ * 
+ * @example```
+ * GetVectorNormAverage([0, 1], 1.0) // 0.5, even weighting
+ * GetVectorNormAverage([0, 1], 0.5) // 0.25, tends towards smaller values
+ * GetVectorNormAverage([0, 1], 2.0) // 0.7, tends towards larger values
+ * GetVectorNormAverage([0, 1], 100) // 0.99, like a max function
+ * GetVectorNormAverage([0, 1], 0.01) // 0.0009, like a min function
+ * ```
+ */
+export function GetVectorPNormAverage(v: number[], pnorm = 2) { 
+    return GetVectorPNorm(v, pnorm) / Math.pow(v.length, 1 / pnorm) 
+}
+
+export function GetHarmonicMean(v: number[]) {
+    return v.length / v.reduce((sum, val) => sum + 1 / val, 0)
+}
+export function GetGeometricMean(v: number[]) {
+    return Math.pow(v.reduce((prod, val) => prod * val, 1), 1 / v.length)
+}
+export function GetGeometricMeanAdjustedForZero(v: number[]) {
+    return Math.pow(v.reduce((prod, val) => prod * (val + 1), 1), 1 / v.length) - 1
+}
 
 /**
  * Calculate a scale indicator for a set of 2D pose landmarks. The size of people in pixels
@@ -91,7 +160,7 @@ export const ComparisonVectorToTerminalFeedbackBodyPartMap = new Map<TerminalFee
  * Different body joints may be capable of different ranges of motion, so the range of motion of 
  * joint is included in the comparison info, to allow for normalization of the angle values if needed.
  */
-export const BodyInnerAnglesComparisons: Readonly<Record<string, VectorAngleComparisonInfo>> = Object.freeze({
+export const BodyInnerAnglesComparisons = {
    'left-shoulder-pitch': {
         vec1: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftElbow], 
         vec2: [PoseLandmarkIds.leftShoulder, PoseLandmarkIds.leftHip],
@@ -135,7 +204,7 @@ export const BodyInnerAnglesComparisons: Readonly<Record<string, VectorAngleComp
         vec2: [PoseLandmarkIds.rightElbow, PoseLandmarkIds.rightWrist],
         rangeOfMotion: Math.PI
     },
-});
+} as const;
 
 /**
  * Calculate the inner angle between two 3D vectors, in radians. 
@@ -223,7 +292,7 @@ export function getArraySum(v: Readonly<Array<number>>) {
  * @param v - Array of numbers
  * @returns Mean of the array elements
  */
-export function getArrayMean(v: Readonly<Array<number>>) {
+export function GetArithmeticMean(v: Readonly<Array<number>>) {
     return getArraySum(v) / v.length
 }
 
@@ -343,8 +412,6 @@ export function getMatricesRMSE(v1: readonly (number | undefined)[][], v2: reado
         return undefined;
     }
 
-    console.log(errors)
-
     rmse /= denominator;
     rmse = Math.pow(rmse, 0.5);
 
@@ -386,8 +453,7 @@ export function GetNormalized2DVector(
 ){
     // TODO: utilize a vector arithmetic library?
     const [vec_x, vec_y] = Get2DVector(pixelLandmarks, srcLandmark, destLandmark)
-    const mag = getMagnitude2DVec([vec_x, vec_y]);
-    return [vec_x / mag, vec_y / mag]
+    return GetPNormalizedVector([vec_x, vec_y], 2)
 }
 
 /**
@@ -413,6 +479,5 @@ export function Get3DNormalizedVector(
     destLandmark: number
 ) {
     const [vec_x, vec_y, vec_z] = Get3DVector(landmarks, srcLandmark, destLandmark)
-    const mag = getMagnitude3DVec([vec_x, vec_y, vec_z]);
-    return [vec_x / mag, vec_y / mag, vec_z / mag] as [number, number, number]
+    return GetPNormalizedVector([vec_x, vec_y, vec_z], 2) as [number, number, number]
 }

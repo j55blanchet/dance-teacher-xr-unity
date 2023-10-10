@@ -1,12 +1,28 @@
+<script lang="ts" context="module">
+export type NodeHighlight = {
+    color?: string,
+    label?: string,
+    pulse?: boolean
+}
+</script>
 <script lang="ts">
-import { debugMode } from '$lib/model/settings';
+import { debugMode, summaryFeedback_skeleton3d_goodPerformanceThreshold, summaryFeedback_skeleton3d_mediumPerformanceThreshold } from '$lib/model/settings';
 import { createEventDispatcher } from 'svelte';
-import { findDanceTreeNode, type DanceTreeNode, findDanceTreeSubNode } from '$lib/data/dances-store';
+import { findDanceTreeNode, type DanceTreeNode, findDanceTreeSubNode, type DanceTree } from '$lib/data/dances-store';
+
+import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
+import { derived } from 'svelte/store';
 
 export let enableClick: boolean = false;
 export let currentTime: number = 0;
+export let danceTree: DanceTree | undefined = undefined;
 export let node: DanceTreeNode;
 export let playingFocusMode: 'hide-others' | 'hide-non-descendant' | 'show-all' = 'show-all';
+export let enableColorCoding: boolean = false;
+
+export let nodeHighlights: Record<string, NodeHighlight> = {};
+let highlight: NodeHighlight | undefined = undefined;
+$: highlight = nodeHighlights[node.id];
 
 export let showProgressNode: DanceTreeNode | undefined;
 export let beatTimes: Array<number> = [];
@@ -17,6 +33,36 @@ $: node_title = node.id.split("-").findLast(() => true);
 
 let showProgress = false;
 $: showProgress = (showProgressNode != undefined) && node === showProgressNode;
+
+let nodePerformanceHistory = frontendPerformanceHistory.getDanceSegmentPerformanceHistory(
+    danceTree?.clip_relativepath ?? "",
+    "skeleton3DAngleSimilarity",
+    node?.id
+)
+$: nodePerformanceHistory = frontendPerformanceHistory.getDanceSegmentPerformanceHistory(
+    danceTree?.clip_relativepath ?? "",
+    "skeleton3DAngleSimilarity",
+    node?.id
+)
+
+const bestScore = derived(nodePerformanceHistory, ($nodePerformanceHistory) => {
+    const bestFoundScore = $nodePerformanceHistory.reduce((best, current) => {
+        const curScore = current.summary?.overall ?? -Infinity;
+        if (curScore > best.score) {
+            return {
+                score: curScore,
+                date: current.date
+            };
+        } else {
+            return best;
+        }
+    }, { score: -Infinity, date: new Date()});
+    if (bestFoundScore.score === -Infinity) {
+        return undefined;
+    } else {
+        return bestFoundScore;
+    }
+})
 
 function shouldHideBar(a_node: DanceTreeNode, progressNode: DanceTreeNode | undefined, focusMode: typeof playingFocusMode) {
     if (focusMode === 'hide-others') {
@@ -31,19 +77,24 @@ function shouldHideBar(a_node: DanceTreeNode, progressNode: DanceTreeNode | unde
     }
 }
 
+function getHasNodeInSubtree(a_node: DanceTreeNode, progressNode: DanceTreeNode | undefined) {
+    return progressNode !== undefined
+        && findDanceTreeSubNode(a_node, progressNode.id) !== null;
+}
+
 function shouldHideAllChildrenNodes(parentNode: DanceTreeNode, progressNode: DanceTreeNode | undefined, focusMode: typeof playingFocusMode) {
-    const isFocusNode = progressNode !== undefined && parentNode.id === progressNode.id;
-    const hasFocusNodeInSubtree = progressNode && findDanceTreeSubNode(parentNode, progressNode.id);
-    const isAChildOfFocusNode = progressNode && findDanceTreeSubNode(progressNode, parentNode.id);
-    if (focusMode === 'hide-others') {
-        // Can hide all of this node's children if the progress node is not a descendant of this node.
-        return progressNode !== undefined && (isFocusNode || !hasFocusNodeInSubtree);
-    } else if (focusMode === 'hide-non-descendant') {
-        return progressNode !== undefined && 
-            !isFocusNode && 
-            !hasFocusNodeInSubtree &&                                   
-            !isAChildOfFocusNode;
-    }
+    // const isFocusNode = progressNode !== undefined && parentNode.id === progressNode.id;
+    // const hasFocusNodeInSubtree = progressNode && findDanceTreeSubNode(parentNode, progressNode.id);
+    // const isAChildOfFocusNode = progressNode && findDanceTreeSubNode(progressNode, parentNode.id);
+    // if (focusMode === 'hide-others') {
+    //     // Can hide all of this node's children if the progress node is not a descendant of this node.
+    //     return progressNode !== undefined && (isFocusNode || !hasFocusNodeInSubtree);
+    // } else if (focusMode === 'hide-non-descendant') {
+    //     return progressNode !== undefined && 
+    //         !isFocusNode && 
+    //         !hasFocusNodeInSubtree &&                                   
+    //         !isAChildOfFocusNode;
+    // }
 
     return false;
 }
@@ -60,8 +111,10 @@ let isNodeHidden = false;
 $: {
     isNodeHidden = isBarHidden && areAllChildrenHidden;
 }
-
-
+let hasNodeInSubtree = false;
+$: {
+    hasNodeInSubtree = getHasNodeInSubtree(node, showProgressNode);
+}
 
 let nodeTitleString = "";
 $: {
@@ -70,8 +123,8 @@ $: {
         const duration = node.end_time - node.start_time;
         const complexityPerSecond = node.complexity / (node.end_time - node.start_time);
         const nodeComplexityString = `${complexityPerSecond.toFixed(2)}/s ${node.complexity.toFixed(2)} total`
-        
-        nodeTitleString = `${node.id}\nComplexity: ${nodeComplexityString}\nDuration: ${duration.toFixed(2)}s`;
+        const highlightStr = highlight !== undefined ? `\nhighlight: ${JSON.stringify(highlight)}` : "";
+        nodeTitleString = `${node.id}\nComplexity: ${nodeComplexityString}\nDuration: ${duration.toFixed(2)}s${highlightStr}`;
     } 
 }
 const dispatch = createEventDispatcher();
@@ -85,16 +138,26 @@ function barClicked () {
 
 <div class="node" 
     style="--node-duration:{node.end_time - node.start_time}"
-    class:hidden={isNodeHidden}>
+    class:hidden={isNodeHidden}
+    class:hasNodeInSubtree={hasNodeInSubtree}
+    class:hiddenBar={isBarHidden}>
 
     <a class="bar outlined" 
        class:hidden={isBarHidden}
        class:button={enableClick} 
        class:active={showProgress}
+       class:hasScore={enableColorCoding && $bestScore !== undefined}
+       class:hasGoodScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_goodPerformanceThreshold}
+       class:hasMediumScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_mediumPerformanceThreshold && $bestScore.score <= $summaryFeedback_skeleton3d_goodPerformanceThreshold}
+       class:hasBadScore={enableColorCoding && $bestScore !== undefined && $bestScore.score <= $summaryFeedback_skeleton3d_mediumPerformanceThreshold}
+       class:highlighted={highlight !== undefined}
+       class:highlighted-pulse={highlight?.pulse ?? false}
+       class:labeled={highlight?.label !== undefined}
        on:click={barClicked}
        role="menuitem"
        tabindex="0"
        title={nodeTitleString}
+       style="--highlight-color: {highlight?.color ?? 'var(--color-theme-1)'};"
     >   
         {#if showProgress}<span class="progress outlined" style="width:{progressPercent*100}%">
             <!-- {currentTime.toFixed(1)} -->
@@ -108,6 +171,10 @@ function barClicked () {
                 {/if}
             {/each}
         {/if}
+        
+        {#if highlight?.label !== undefined}
+        <span class="label">{highlight?.label}</span>
+        {/if}
     </a>
     {#if node.children.length > 0}
         <div class="children" class:hidden={areAllChildrenHidden}>
@@ -119,6 +186,9 @@ function barClicked () {
                 showProgressNode={showProgressNode}
                 {beatTimes}
                 {playingFocusMode}
+                {danceTree}
+                {nodeHighlights}
+                {enableColorCoding}
                 on:nodeClicked 
                 />
         {/each}
@@ -129,7 +199,8 @@ function barClicked () {
 <style lang="scss">
 
 .node {
-    --hide-transition-duration: 1.5s;
+    --hide-transition-duration: 0.75s;
+    --highlight-color: #eaff00;
 }
     
     .bar {
@@ -137,11 +208,53 @@ function barClicked () {
         position: relative;
         // min-width: 100%;
         text-align: center;
-        height: 1em;
+        min-height: 1em;
         transition: height var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
         overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bar.highlighted {
+        // border-color: var(--highlight-color);
+        // border-width: calc(0.12em * var(--border-scale));
+        min-height: 1.5em;
+        box-shadow: 0 0 0.1em 0.1em var(--highlight-color), inset 0 0 0.075em 0.075em var(--highlight-color);
+    }
+
+    .bar.highlighted.highlighted-pulse {
+        animation-name: highlightPulse;
+        animation-duration: 0.5s;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+    }
+    // .bar .label {
+    //     // color: var(--highlight-color);
+    // }
+
+    @keyframes highlightPulse {
+        from {
+            box-shadow: 0 0 0.05em 0.05em var(--highlight-color), inset 0 0 0.05em 0.05em var(--highlight-color);
+        }
+        to {
+            box-shadow: 0 0 0.2em 0.2em var(--highlight-color), inset 0 0 0.1em 0.1em var(--highlight-color);
+        }
+    }
+
+    .bar.hasScore {
+        background: gray;
+    }
+    .bar.hasGoodScore {
+        background: hsl(120, 19%, 62%);
+    }
+    .bar.hasMediumScore {
+        background: hsl(62, 55%, 70%);
+    }
+    .bar.hasBadScore {
+        background: hsl(0, 66%, 63%);
     }
 
     .bar.active {
@@ -152,13 +265,16 @@ function barClicked () {
     .bar.hidden {
         box-shadow: 0;
         // border: 0;
-        height: 0;
+        min-height: 0;
         opacity: 0.2;
     }
 
     .bar .progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
         display: block;
-        height: 100%;
         background-color: rgba(0, 0, 0, 0.3);
         border-width: 0.12em;
     }
@@ -198,9 +314,12 @@ function barClicked () {
         transition: flex-grow var(--hide-transition-duration) ease-in-out;
     }
 
-    .node.hidden {
-        flex-basis: 0;
-        flex-grow: 0;
+    .node.hiddenBar {
+        // flex-basis: 0;
+        flex-grow:  calc(var(--node-duration) / 2);
+    }
 
+    .node.hiddenBar.hasNodeInSubtree {
+        flex-grow: var(--node-duration);
     }
 </style>

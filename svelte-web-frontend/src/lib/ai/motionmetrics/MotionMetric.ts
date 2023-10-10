@@ -9,7 +9,7 @@ export type TrackHistory = {
     user2DFrameHistory: Pose2DPixelLandmarks[],
 };
 
-export interface BaseMetric<SummaryType> {
+export interface BaseMetric<SummaryType, FormattedSummaryType extends Record<string, number | string | null>> {
     
     /**
      * Format the summary object into a 1D row for display in a table & saving to CSV. In particular, 
@@ -19,7 +19,7 @@ export interface BaseMetric<SummaryType> {
      */
     formatSummary(
         summary: Readonly<SummaryType>
-    ): Record<string, number | string | null>;
+    ): FormattedSummaryType;
 }
 
 /**
@@ -28,7 +28,7 @@ export interface BaseMetric<SummaryType> {
  * @type FrameResultType 
  * @type SummaryType 
  */
-export interface LiveEvaluationMetric<FrameResultType, SummaryType> extends BaseMetric<SummaryType>{
+export interface LiveEvaluationMetric<FrameResultType, SummaryType, FormattedSummaryType extends Record<string, number | string | null>> extends BaseMetric<SummaryType, FormattedSummaryType>{
 
     /**
      * Compute the metric for a single frame. The metric is provided a large amount of information
@@ -73,7 +73,7 @@ export interface LiveEvaluationMetric<FrameResultType, SummaryType> extends Base
  * the entire track to be processed before they can be calculated, or those that will not be used
  * for concurrent feedback
  */
-export interface SummaryMetric<SummaryType> extends BaseMetric<SummaryType>{
+export interface SummaryMetric<SummaryType, FormattedSummaryType extends Record<string, number | string | null>> extends BaseMetric<SummaryType, FormattedSummaryType>{
 
     /**
      * Compute the metric for the entire track. This is called after the track has been fully

@@ -7,8 +7,9 @@ import { TerminalFeedbackBodyParts, type TerminalFeedbackAction, type TerminalFe
 import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 import { ComparisonVectorToTerminalFeedbackBodyPartMap, QijiaMethodComparisionVectorNamesToIndexMap } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
-import { distillDanceTreeStructureToTextualRepresentation, distillFrontendPerformanceSummaryToTextualRepresentation } from "./textual-distillation";
+import { distillDanceTreeStructureToTextualRepresentation, distillFrontendPerformanceSummaryToTextualRepresentation, distillPerformanceHistoryToTextualRepresentation } from "./textual-distillation";
 import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./precomputed-feedback-msgs";
+import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
 
 // Variable to store the value of the evaluation threshold, initialized to 1.0
 let evaluation_GoodBadTrialThresholdValue = 1.0;
@@ -26,7 +27,7 @@ evaluation_GoodBadTrialThreshold.subscribe((value) => {
  */
 export function generateFeedbackRuleBased(
     qijiaOverallScore: number,
-    qijiaByVectorScores: Map<string, number>,
+    qijiaByVectorScores: Record<string, number>,
 ): TerminalFeedback {
 
     let headline: string;
@@ -36,10 +37,10 @@ export function generateFeedbackRuleBased(
     let correctBodyPartsToHighlight: TerminalFeedbackBodyPart[] | undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [worstComparisonVectorIndex, worstVectorScore] = [... qijiaByVectorScores.keys()].map((vectorName) => {
+    const [worstComparisonVectorIndex, worstVectorScore] = Object.keys(qijiaByVectorScores).map((vectorName: string) => {
         const vectorIndex = QijiaMethodComparisionVectorNamesToIndexMap.get(vectorName);
         if (vectorIndex === undefined) { throw new Error("Unexpected vector name: " + vectorName); }
-        const vectorScore = qijiaByVectorScores.get(vectorName);
+        const vectorScore = qijiaByVectorScores[vectorName];
         if (vectorScore === undefined) { throw new Error("Unable to retrieve score for " + vectorName); }
 
         return [vectorIndex, vectorScore] as [number, number];
@@ -91,28 +92,48 @@ export async function generateFeedbackWithClaudeLLM(
     danceTree: DanceTree | undefined,
     currentSectionName: string,
     performance: FrontendPerformanceSummary | undefined,
+    dancePerformanceHistory: FrontendDancePeformanceHistory | undefined,
+    mediumScoreThreshold: number,
+    goodScoreThreshold: number,
+    attemptHistory: { date: Date, score: number, segmentId: string }[],
 ): Promise<TerminalFeedback> {
 
-    const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree) : "missing";
-    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance): "missing";
+    const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree): undefined;
+    const danceStructureDistillationIsMissing = danceStructureDistillation === undefined;
+    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance, mediumScoreThreshold, goodScoreThreshold) : undefined;
+    const performanceDistillationIsMissing = performanceDistillation === undefined;
+    const performanceHistoryDistillation = dancePerformanceHistory ? distillPerformanceHistoryToTextualRepresentation(dancePerformanceHistory) : undefined;
+    const performanceHistoryDistillationIsMissing = performanceHistoryDistillation === undefined;
 
-    console.log('Requesting feedback from Claude LLM', currentSectionName, danceStructureDistillation, performanceDistillation);
+    const attemptHistoryDistillation = "The last few attempts the user has tried have been: \n" +
+        attemptHistory.map((attempt) => {
+            const score = attempt.score.toFixed(2);
+            return `* ${attempt.date.toISOString()} ${attempt.segmentId}: ${score}`;
+        }).join('\n');
+
+    console.log('Requesting feedback from Claude LLM', 
+        `currentSectionName: ${currentSectionName}`,
+        `danceStructureDistillationIsMissing: ${danceStructureDistillationIsMissing}`,
+        `performanceDistillationIsMissing: ${performanceDistillationIsMissing}`,
+        `performanceHistoryDistillationIsMissing: ${performanceHistoryDistillationIsMissing}`,);
 
     // Call into our API route to get the feedback message. The paramaters here
     // must match with the corresponding API route is expecting.
+
+    const llmInput = { 
+        currentSectionName,
+        danceStructureDistillation, 
+        performanceDistillation,
+        performanceHistoryDistillation: `${performanceHistoryDistillation}\n${attemptHistoryDistillation}`,
+    };
+
     const claudeApiData = await fetch('/restapi/get_feedback', {
         'headers': { 'Content-Type': 'application/json' },
         'method': 'POST',
-        'body': JSON.stringify({ 
-            currentSectionName,
-            danceStructureDistillation,
-            performanceDistillation
-        }),
-    }).then((res) => res.json());
-
+        'body': JSON.stringify(llmInput),
+    }).then((res) => res.json())
 
     const feedbackMessage = claudeApiData['feedbackMessage'];
-    const coachingReflection = claudeApiData['coachingReflection'];
     const claudeSuggestedNextSection = claudeApiData['nextSection'];
     const coachingMessage = claudeApiData['coachingMessage'];
     const feedbackTitle = claudeApiData['feedbackTitle'];
@@ -134,9 +155,14 @@ export async function generateFeedbackWithClaudeLLM(
         paragraphs: [feedbackMessage, coachingMessage],
         // note the double equals here, we want to compare the string values
         suggestedAction: suggestedSection == currentSectionName ? "repeat" : "navigate", 
-        navigateOptions: suggestedURL ? [{ label: `Try section ${suggestedSection}`, url: suggestedURL }] : undefined,
+        navigateOptions: suggestedURL ? [{ 
+            label: `Try section ${suggestedSection}`, 
+            url: suggestedURL,
+            nodeId: suggestedSection,
+        }] : undefined,
         debug: {
-            llmReflection: coachingReflection,
+            llmInput: llmInput,
+            llmOutput: claudeApiData,
         }
     }
 }

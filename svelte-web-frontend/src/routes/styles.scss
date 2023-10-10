@@ -11,17 +11,16 @@
 		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; */
 	--font-body: 'Grandstander', 'Patrick Hand SC', cursive;
 	--font-mono: 'Recursive', 'Fira Mono', monospace; 
-	--color-bg-0: rgb(202, 216, 228);
-	--color-bg-1: hsl(209, 36%, 86%);
-	--color-bg-2: hsl(224, 44%, 95%);
+	--color-bg-0: rgb(193, 198, 202);
+	--color-bg-1: hsl(209, 14%, 64%);
+	--color-bg-2: hsl(223, 35%, 84%);
 	--color-red: #ff3e00;
 	--color-blue: #4075a6;
 	--color-theme-1: var(--color-blue);
 	--color-theme-2: #var(--color-red);
 	--color-text: rgba(0, 0, 0, 0.7);
 	--color-text-disabled: rgba(100, 100, 100, 0.5);
-	--column-width: 42rem;
-	--column-margin-top: 4rem;
+	
 	--max-line-width: 50ch;
 	// --std-border-radius: 1rem;
 	--std-border-radius: 5% 1% 5% 1%/1% 5% 1% 5%;
@@ -35,12 +34,12 @@ body {
 	background-attachment: fixed;
 	background-color: var(--color-bg-1);
 	background-size: 100vw 100vh;
-	background-image: radial-gradient(
-			50% 50% at 50% 50%,
-			rgba(255, 255, 255, 0.75) 0%,
-			rgba(255, 255, 255, 0) 100%
-		),
-		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
+	--radial-focusing-gradient: radial-gradient(
+		50% 50% at 50% 50%,
+		rgba(255, 255, 255, 0.75) 0%,
+		rgba(255, 255, 255, 0) 100%
+	);
+	background-image: var(--radial-focusing-gradient), linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
 }
 
 h1,
@@ -189,6 +188,10 @@ a.button {
 .ta-right {
 	text-align: right;
 }
+.p-1 {
+	padding: 0.25em;
+}
+
 .margin-auto {
 	margin: auto;
 }

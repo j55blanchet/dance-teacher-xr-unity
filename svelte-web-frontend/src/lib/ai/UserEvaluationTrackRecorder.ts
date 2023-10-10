@@ -36,10 +36,10 @@ export class PerformanceEvaluationTrack<T extends Record<string, unknown>> {
         timeSeriesEvaluationMetrics: T) {
 
         const evaluationKeys = Object.keys(timeSeriesEvaluationMetrics) as Array<keyof T>;
-
+        const existingCurrentFrames = this.videoFrameTimesInSecs.length;
         const lastFrameTime = this.videoFrameTimesInSecs.slice(-1)[0] ?? -Infinity
         if (videoTimeSecs < lastFrameTime) {
-            throw new Error("Frame time must be increasing")
+            throw new Error(`Frame time must be increasing. Id: ${this.id}, frame time: ${videoTimeSecs}, last frame time: ${lastFrameTime}, frameCount: ${existingCurrentFrames}`);
         }
 
         this.videoFrameTimesInSecs.push(videoTimeSecs)
@@ -121,7 +121,7 @@ export class PerformanceEvaluationTrack<T extends Record<string, unknown>> {
  * @template LiveMetricResultsType - The type of evaluation data to be recorded.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class UserEvaluationRecorder<LiveMetricResultsType extends Record<string, any>> {
+export class UserEvaluationTrackRecorder<LiveMetricResultsType extends Record<string, any>> {
 
     public tracks: Map<string, PerformanceEvaluationTrack<LiveMetricResultsType>> = new Map();
 

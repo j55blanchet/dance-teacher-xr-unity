@@ -24,13 +24,15 @@ type KinematicErrorMetricOutputForSomeDimension = {
     velsRSME: number | null;
 };
 
+
 type KinematicErrorMetricOutput = {
     summary2D: KinematicErrorMetricOutputForSomeDimension,
     summary3D: KinematicErrorMetricOutputForSomeDimension,
 };
 
+type KinematicErrorMetricFormattedOutput = ReturnType<KinematicErrorMetric['formatSummary']>;
 
-export default class KinematicErrorMetric implements SummaryMetric<KinematicErrorMetricOutput> {
+export default class KinematicErrorMetric implements SummaryMetric<KinematicErrorMetricOutput, KinematicErrorMetricFormattedOutput> {
 
     summarizeMetric(history: TrackHistory): KinematicErrorMetricOutput {
         const summary3D = calculate3DKinematicErrorDescriptors(

@@ -1,6 +1,7 @@
 import type { DanceTree, DanceTreeNode } from "$lib/data/dances-store";
+import { GetArithmeticMean, type BodyInnerAnglesComparisons } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
-
+import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
 
 /**
  * Distills the performance summary to a condensed representation containing only the features
@@ -8,14 +9,15 @@ import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
  * @param summary Summary of the performance
  * @returns A condensed representation of the summary, highlighting only the most important things
  */
-export function distillFrontendPerformanceSummaryToTextualRepresentation(summary: FrontendPerformanceSummary): string {
+export function distillFrontendPerformanceSummaryToTextualRepresentation(summary: FrontendPerformanceSummary, mediumScoreThreshold: number, goodScoreThreshold: number): string {
 
-    const { wholePerformance, subsections } = summary;
+    const { wholePerformance, subsections, segmentDescription } = summary;
 
-    const perfPercentage = (wholePerformance.skeleton3DAngleSimilarity.overallScore * 100).toFixed(0);
-    let distillation = `Overall, the user had a ${perfPercentage}% match with the reference dance.`;
+    const perfPercentage = wholePerformance.skeleton3DAngleSimilarity.overallScore.toFixed(2);
+    let distillation = `The user just performed "${segmentDescription}". Overall, the user had a ${perfPercentage} match with the reference dance.`;
+    distillation += `A match of above ${mediumScoreThreshold.toFixed(2)} is considered a "fair" performance, and a match of above ${goodScoreThreshold.toFixed(2)} is considered a "good" performance.`
 
-    const [worstJointName, worstJointScore] = [...wholePerformance.skeleton3DAngleSimilarity.individualScores.entries()].reduce((prev, curr) => {
+    const [worstJointName, worstJointScore] = Object.entries(wholePerformance.skeleton3DAngleSimilarity.individualScores).reduce((prev, curr) => {
         const pAngleScore = prev[1] as number
         const angleScore = curr[1] as number
         if (angleScore < pAngleScore) {
@@ -29,7 +31,7 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
 
     const subsectionNames = Object.keys(subsections);
     const subsectionOverallScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity.overallScore);
-    const subsectionWorstJointScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity.individualScores.get(worstJointName));
+    const subsectionWorstJointScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity.individualScores[worstJointName as keyof typeof BodyInnerAnglesComparisons ]);
 
     if (subsectionNames.length > 1) {
         // Describe subsections if there were some.
@@ -61,9 +63,32 @@ function distillDanceSubTree(danceNode: DanceTreeNode, depth = 0) {
     const nodeDuration = danceNode.end_time - danceNode.start_time;
     const nodeNoun = depth === 0 ? "The dance" : `The ${'sub'.repeat(depth-1)}section`;
     const indentation = "  ".repeat(depth);
-    let description = `${indentation}${nodeNoun} "${danceNode.id}" is ${nodeDuration.toFixed(2)}s long, has a complexity of ${danceNode.complexity.toFixed(2)}, and has ${danceNode.children.length} subsections\n`;
+    let subsectionList = "";
+    if (danceNode.children.length > 0) {
+        subsectionList += ": ";
+        subsectionList += danceNode.children.slice(0, -1).map((child) => `"${child.id}"`).join(', ') + ", and " + `"${danceNode.children[danceNode.children.length-1].id}"`;
+    }
+    let description = `${indentation}${nodeNoun} "${danceNode.id}" is ${nodeDuration.toFixed(2)}s long, has a complexity of ${danceNode.complexity.toFixed(2)}, and has ${danceNode.children.length} subsections${subsectionList}\n`;
     danceNode.children.forEach((child) => {
         description += distillDanceSubTree(child as DanceTreeNode, depth + 1);
     });
+    return description;
+}
+
+export function distillPerformanceHistoryToTextualRepresentation(dancePerformanceHistory: FrontendDancePeformanceHistory) {
+    let description = "";
+    for (const segmentId of Object.keys(dancePerformanceHistory)) {
+        const segmentHistory = dancePerformanceHistory[segmentId];
+        const skeleton3DAngleSimilarity = segmentHistory.skeleton3DAngleSimilarity ?? [];
+        const attemptCount = skeleton3DAngleSimilarity.length;
+        const nonnullOverallScoreAttempts = skeleton3DAngleSimilarity
+            .filter((n) => n.summary.overall !== undefined)
+            .map(x => ({
+                date: x.date, 
+                score: x.summary.overall as number
+            }));
+        const meanScore = GetArithmeticMean(nonnullOverallScoreAttempts.map(x => x.score));
+        description += `Tne user has attempted segment "${segmentId}" ${attemptCount} times, achiving an average score of ${meanScore.toFixed(2)} on this segment\n`;
+    }
     return description;
 }

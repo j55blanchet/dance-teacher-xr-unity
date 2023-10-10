@@ -1,6 +1,24 @@
+import type { ValueOf } from "$lib/data/dances-store";
 import type { Pose3DLandmarkFrame, Pose2DPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-import { BodyInnerAnglesComparisons, getInnerAngleFromFrame, getArrayMean } from "../EvaluationCommonUtils";
+import { BodyInnerAnglesComparisons, getInnerAngleFromFrame, GetHarmonicMean } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
+
+type AngleComparisonKey = keyof typeof BodyInnerAnglesComparisons;
+type AngleComparisonValue = ValueOf<typeof BodyInnerAnglesComparisons>;
+
+function compute3dAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame, comparison: AngleComparisonValue) {
+    const userInnerAngle = getInnerAngleFromFrame(userLandmarks, comparison.vec1, comparison.vec2);
+    const refInnerAngle = getInnerAngleFromFrame(refLandmarks, comparison.vec1, comparison.vec2);
+    const angleDiff = Math.abs(userInnerAngle - refInnerAngle);
+    const scaledAngleDiff = angleDiff / comparison.rangeOfMotion;
+    return { 
+        user: userInnerAngle, 
+        ref: refInnerAngle, 
+        diff: angleDiff,
+        diffDegrees: angleDiff * 180 / Math.PI,
+        score: (1 - scaledAngleDiff)
+    };
+}
 
 /**
  * Calculate the similarity of two 3D poses, based on inner angle between preset pairs of  
@@ -13,22 +31,13 @@ import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 function computeSkeleton3DVectorAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame) {
 
     const results = Object.fromEntries(
-        Object.entries(BodyInnerAnglesComparisons).map(([key, comparison]) => {
-            const userInnerAngle = getInnerAngleFromFrame(userLandmarks, comparison.vec1, comparison.vec2);
-            const refInnerAngle = getInnerAngleFromFrame(refLandmarks, comparison.vec1, comparison.vec2);
-            const angleDiff = Math.abs(userInnerAngle - refInnerAngle);
-            const scaledAngleDiff = angleDiff / comparison.rangeOfMotion;
-            return [key, { 
-                user: userInnerAngle, 
-                ref: refInnerAngle, 
-                diff: angleDiff,
-                diffDegrees: angleDiff * 180 / Math.PI,
-                score: (1 - scaledAngleDiff)
-            }];
+        (Object.entries(BodyInnerAnglesComparisons) as [AngleComparisonKey, AngleComparisonValue][]).map((v) => {
+            const [key, comparison] = v;
+            return [key, compute3dAngleSimilarity(refLandmarks, userLandmarks, comparison)];
         })
-    );
+    ) as Record<AngleComparisonKey, ReturnType<typeof compute3dAngleSimilarity>>;
 
-    const meanScore = getArrayMean(Object.values(results).map((r) => r.score));
+    const meanScore = GetHarmonicMean(Object.values(results).map((r) => r.score));
 
     return {
         overallScore: meanScore,
@@ -42,10 +51,12 @@ type Angle3DMetricSummaryOutput = {
     minPossibleScore: number;
     maxPossibleScore: number;
     overallScore: number;
-    individualScores: Map<string, number>;
+    individualScores: Record<AngleComparisonKey, number>;
 }
 
-export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvaluationMetric<Angle3DMetricSingleFrameOutput, Angle3DMetricSummaryOutput> {
+type Angle3DMetricSummaryFormattedOutput = ReturnType<Skeleton3dVectorAngleSimilarityMetric["formatSummary"]>;
+
+export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvaluationMetric<Angle3DMetricSingleFrameOutput, Angle3DMetricSummaryOutput, Angle3DMetricSummaryFormattedOutput> {
     
     computeMetric(_history: TrackHistory, _metricHistory: Angle3DMetricSingleFrameOutput[], _videoFrameTimeInSecs: number, _actualTimesInMs: number, _user2dPose: Pose2DPixelLandmarks, user3dPose: Pose3DLandmarkFrame, _ref2dPose: Pose2DPixelLandmarks, ref3dPose: Pose3DLandmarkFrame): Angle3DMetricSingleFrameOutput {
         return computeSkeleton3DVectorAngleSimilarity(ref3dPose, user3dPose)
@@ -53,18 +64,20 @@ export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvalua
 
     summarizeMetric(_history: TrackHistory, metricHistory: Angle3DMetricSingleFrameOutput[]): Angle3DMetricSummaryOutput {
         
-        const overallScore = getArrayMean(
+        const overallScore = GetHarmonicMean(
             metricHistory.map(m => m.overallScore)
                             .filter((n) => !isNaN(n))
         );
         
-        const angleSimilarityVectorScoreKeyValues = Object.keys(BodyInnerAnglesComparisons).map((key) => {
+        const angleSimilarityVectorScoreKeyValues = (Object.keys(BodyInnerAnglesComparisons) as AngleComparisonKey[])
+            .map((key) => {
             const vecScores = metricHistory.map((scores) => scores.individualScores[key].score)
                                                       .filter((n) => !isNaN(n));
-            const meanScore = getArrayMean(vecScores);
-            return [key, meanScore] as [string, number];
+            const meanScore = GetHarmonicMean(vecScores);
+            return [key, meanScore] as const;
         });
-        const angleSimilarityIndividualScores = new Map(angleSimilarityVectorScoreKeyValues)
+
+        const angleSimilarityIndividualScores = Object.fromEntries(angleSimilarityVectorScoreKeyValues) as Record<AngleComparisonKey, number>;
     
         return {
             overallScore: overallScore,
@@ -74,10 +87,10 @@ export default class Skeleton3dVectorAngleSimilarityMetric implements LiveEvalua
         }
     }
 
-    formatSummary(summary: Angle3DMetricSummaryOutput): Record<string, string | number> {
+    formatSummary(summary: Angle3DMetricSummaryOutput) {
         return {
             "overall": summary.overallScore,
-            ...Object.fromEntries(summary.individualScores.entries())
-        }
+            ...summary.individualScores
+        } as const;
     }
 }
