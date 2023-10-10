@@ -82,7 +82,7 @@ describe('MeanComparisons', () => {
 
         for(const vector of testVectors) { 
             data.push({
-                vectors: vector.toSorted().map(x => x.toFixed(2)).join(','),
+                vectors: [...vector].sort().map(x => x.toFixed(2)).join(','),
                 mins: Math.min(...vector),
                 negInfNorms: utils.GetVectorPNormAverage(vector, -Infinity),
                 neg100Norms: utils.GetVectorPNormAverage(vector, -100),
