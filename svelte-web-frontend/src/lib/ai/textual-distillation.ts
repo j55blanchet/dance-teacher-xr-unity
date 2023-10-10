@@ -80,15 +80,21 @@ export function distillPerformanceHistoryToTextualRepresentation(dancePerformanc
     for (const segmentId of Object.keys(dancePerformanceHistory)) {
         const segmentHistory = dancePerformanceHistory[segmentId];
         const skeleton3DAngleSimilarity = segmentHistory.skeleton3DAngleSimilarity ?? [];
-        const attemptCount = skeleton3DAngleSimilarity.length;
+        
         const nonnullOverallScoreAttempts = skeleton3DAngleSimilarity
             .filter((n) => n.summary.overall !== undefined)
             .map(x => ({
                 date: x.date, 
-                score: x.summary.overall as number
+                score: x.summary.overall as number,
+                partOfLargerPerformance: x.partOfLargerPerformance ?? true,
             }));
+        const attemptCount = nonnullOverallScoreAttempts.length;
+        const attemptsAsPartOfLargerPerformance = nonnullOverallScoreAttempts.filter(x => x.partOfLargerPerformance).length;
+        const attemptsNotAsPartOfLargerPerformance = attemptCount - attemptsAsPartOfLargerPerformance;
         const meanScore = GetArithmeticMean(nonnullOverallScoreAttempts.map(x => x.score));
-        description += `Tne user has attempted segment "${segmentId}" ${attemptCount} times, achiving an average score of ${meanScore.toFixed(2)} on this segment\n`;
+        const bestScore = Math.max(...nonnullOverallScoreAttempts.map(x => x.score));
+        const worstScore = Math.min(...nonnullOverallScoreAttempts.map(x => x.score));
+        description += `The user has attempted segment "${segmentId}" ${attemptsNotAsPartOfLargerPerformance} times individually, and ${attemptsAsPartOfLargerPerformance} time as a subsection of a larger performance, and has achived an average score of ${meanScore.toFixed(2)} (worst: ${worstScore.toFixed(2)}, best: ${bestScore.toFixed(2)}) on this segment\n`;
     }
     return description;
 }
