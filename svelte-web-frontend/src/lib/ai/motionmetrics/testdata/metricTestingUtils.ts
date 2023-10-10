@@ -59,7 +59,7 @@ export function* generateAllTestTracks() {
  * @param track Track to run the metric on
  * @returns Metric output with `metricHistory` (frame-by-frame) and `summary` properties
  */
-export function runLiveEvaluationMetricOnTestTrack<T extends LiveEvaluationMetric<any, any>>(metric: T, track: TestTrack) {
+export function runLiveEvaluationMetricOnTestTrack<T extends LiveEvaluationMetric<any, any, any>>(metric: T, track: TestTrack) {
     
     const metricHistory = [] as ReturnType<T['computeMetric']>[];
 
@@ -116,7 +116,7 @@ export function runLiveEvaluationMetricOnTestTrack<T extends LiveEvaluationMetri
  * @param track Track to run the metric on
  * @returns An object with the summary metric output (in the `summary` property)
  */
-export function runSummaryMetricOnTestTrack<T extends SummaryMetric<any>>(metric: T, track: TestTrack) {
+export function runSummaryMetricOnTestTrack<T extends SummaryMetric<any, any>>(metric: T, track: TestTrack) {
 
     const summary = metric.summarizeMetric(
         {
@@ -152,7 +152,7 @@ export function ensureDirectoryExistence(dirPath: string) {
  * @param metric Live evaluation metric to publish the output for
  * @param tracks Tracks to publish the output for (should be a generator, to avoid loading all tracks into memory)
  */
-function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any> | SummaryMetric<any>>(
+function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any, any> | SummaryMetric<any, any>>(
     metric: T,
     summarizer: (metric: T, track: TestTrack) => ReturnType<T['summarizeMetric']>,
     tracks: Generator<TestTrack>,
@@ -206,7 +206,7 @@ function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any> |
  * @param metric Metric to publish the output for
  * @param tracks Tracks to publish the output for (should be a generator, to avoid loading all tracks into memory)
  */
-export function publishLiveMetricOutputForTracks<T extends LiveEvaluationMetric<any, any>>(
+export function publishLiveMetricOutputForTracks<T extends LiveEvaluationMetric<any, any, any>>(
     metric: T,
     tracks: Generator<TestTrack>,
 ) {
@@ -223,7 +223,7 @@ export function publishLiveMetricOutputForTracks<T extends LiveEvaluationMetric<
  * @param metric Metric to publish the output for
  * @param tracks Tracks to publish the output for (should be a generator, to avoid loading all tracks into memory)
  */
-export function publishSummaryMetricOutputForTracks<T extends SummaryMetric<any>>(
+export function publishSummaryMetricOutputForTracks<T extends SummaryMetric<any, any>>(
     metric: T,
     tracks: Generator<TestTrack>,
 ) {
