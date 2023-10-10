@@ -44,15 +44,15 @@ function replaceNaNsWithUndefined(num: number) {
  *  Sensitivity to Large Errors: RMSE gives higher weight to larger errors due to squaring the differences. This makes it more suitable when large errors need to be penalized more.
  *  Differentiability: RMSE is differentiable at all points, which can be important for optimization problems.
  * approximate range (to be updated):
- * jerksMAE Range: Approximately 4,200 to 6,900
- * jerksRSME Range: Approximately 7,600 to 23,300
- * accsMAE Range: Approximately 34 to 176
- * accsRSME Range: Approximately 63 to 797
- * velsMAE Range: Approximately 2.6 to 9.0
- * velsRSME Range: Approximately 4.5 to 57.1
+ * velsMAE Range: Approximately 2.03 to 3.96
+ * velsRSME Range: Approximately 4.16 to 7.01
+ * accsMAE Range: Approximately 63.59 to 151.47
+ * accsRSME Range: Approximately 121.72 to 272.82
+ * jerksMAE Range: Approximately 2,432.82 to 6,765.74
+ * jerksRSME Range: Approximately 4,119.88 to 11,878.2
  * @throws {Error} Throws an error if there is invalid input data, mismatched array lengths, or bad unique frametimes.
  */
-export function calculateKinematicErrorDescriptors(
+export function calculate3DKinematicErrorDescriptors(
     matchingUserPoses: Pose3DLandmarkFrame[],
     referencePoses: Pose3DLandmarkFrame[],
     frameTimes: number[],

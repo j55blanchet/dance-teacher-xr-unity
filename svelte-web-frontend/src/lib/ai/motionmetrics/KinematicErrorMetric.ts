@@ -1,7 +1,5 @@
-// const { matchingUserPoses, uniqueFrameTimes } = removeDuplicateFrameTimes(track.userPoses, track.frameTimes);
-// const [jerksMAE, jerksRSME, accsMAE, accsRSME, velsMAE, velsRSME] = calculateMotionDescriptorsScore(matchingUserPoses, this.reference2DData.get2DLandmarks(uniqueFrameTimes), uniqueFrameTimes);
-
 import type { SummaryMetric, TrackHistory } from "./MotionMetric";
+import { calculate3DKinematicErrorDescriptors } from "./compute-kinematic-motion-descriptors-3D";
 import { calculateKinematicErrorDescriptors } from "./compute-kinematic-motion-descriptors";
 
 type KinematicErrorMetricOutput = {
@@ -16,14 +14,31 @@ type KinematicErrorMetricOutput = {
 export default class KinematicErrorMetric implements SummaryMetric<KinematicErrorMetricOutput> {
 
     summarizeMetric(history: TrackHistory): KinematicErrorMetricOutput {
-        return calculateKinematicErrorDescriptors(
+        const summary3D = calculate3DKinematicErrorDescriptors(
+            history.user3DFrameHistory,
+            history.ref3DFrameHistory,
+            history.videoFrameTimesInSecs
+        );
+        const summary2D = calculateKinematicErrorDescriptors(
             history.user2DFrameHistory,
             history.ref2DFrameHistory,
             history.videoFrameTimesInSecs
-        )
+        );
+
+        // Combine the 2D and 3D summaries into a single summary object
+        const combinedSummary: KinematicErrorMetricOutput = {
+            ...summary2D,
+            ...summary3D,
+        };
+
+        return combinedSummary;
     }
 
     formatSummary(summary: Readonly<KinematicErrorMetricOutput>): Record<string, string | number | null> {
         return summary; // no formatting needed, already in a row-compatible format
     }
 }
+
+
+
+
