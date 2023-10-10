@@ -136,7 +136,7 @@ function exportRecordings() {
     
     {#if feedback?.paragraphs}
     <div class="paragraphs">
-        <SpeechInterface textToSpeak={feedback.paragraphs.map(x => x.trim()).join("\n\n")}/>
+        <SpeechInterface textToSpeak={feedback.paragraphs.map(x => x?.trim()).join("\n\n")}/>
     </div>
     {/if}
     <div class="info ta-center outlined thin dashed p-1">

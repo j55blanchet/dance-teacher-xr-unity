@@ -4,6 +4,7 @@ import fs from 'fs';
 import track1url from './badperf_alignedwithcamera.other_laxed_siren_beat.track.json?url';
 import track2url from './goodperf_alignedwithcamera.other_laxed_siren_beat.track.json?url';
 import track3url from './goodperf_skewedtocamera.other_laxed_siren_beat.track.json?url';
+import track4url from './literallydidntdoanything.other_renegade.track.json?url';
 
 import Papa from 'papaparse';
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
@@ -11,7 +12,8 @@ import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from '$lib/webcam/medi
 const testTrackURLs = Object.freeze([
     track1url, 
     track2url, 
-    track3url
+    track3url,
+    track4url
 ]);
 
 export type TestTrack = {
