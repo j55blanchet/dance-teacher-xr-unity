@@ -20,7 +20,7 @@ $: {
     <div class="topBar">
         <h3><slot name="title"></slot></h3>
         <div class="closeContainer">
-            <CloseButton on:click={() => dispatcher('dialog-closed') } />
+            <CloseButton isVisible={open} on:click={() => dispatcher('dialog-closed') } />
         </div>
     </div>
     <div class="dialogcontent">

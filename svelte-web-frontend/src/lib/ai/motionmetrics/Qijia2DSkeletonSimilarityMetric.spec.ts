@@ -21,14 +21,14 @@ describe('Qijia2DSkeletonSimilarityMetric', () => {
         expect(summary?.overallScore).toMatchInlineSnapshot(4.356392371095064);
         
         const vecScores = summary?.vectorByVectorScore;
-        expect(vecScores?.get('leftShoulder -> rightShoulder')).toMatchInlineSnapshot('4.6906651077597985');
-        expect(vecScores?.get('leftShoulder -> leftHip')).toMatchInlineSnapshot('4.7926083824442225');
-        expect(vecScores?.get('leftHip -> rightHip')).toMatchInlineSnapshot('4.689848018675444');
-        expect(vecScores?.get('rightHip -> rightShoulder')).toMatchInlineSnapshot('4.746243015495103');
-        expect(vecScores?.get('leftShoulder -> leftElbow')).toMatchInlineSnapshot('3.8061246949524525');
-        expect(vecScores?.get('leftElbow -> leftWrist')).toMatchInlineSnapshot('3.5868967567952272');
-        expect(vecScores?.get('rightShoulder -> rightElbow')).toMatchInlineSnapshot('4.305274846896869');
-        expect(vecScores?.get('rightElbow -> rightWrist')).toMatchInlineSnapshot('3.4184171877019267');
+        expect(vecScores['leftShoulder -> rightShoulder']).toMatchInlineSnapshot('4.6906651077597985');
+        expect(vecScores['leftShoulder -> leftHip']).toMatchInlineSnapshot('4.7926083824442225');
+        expect(vecScores['leftHip -> rightHip']).toMatchInlineSnapshot('4.689848018675444');
+        expect(vecScores['rightHip -> rightShoulder']).toMatchInlineSnapshot('4.746243015495103');
+        expect(vecScores['leftShoulder -> leftElbow']).toMatchInlineSnapshot('3.8061246949524525');
+        expect(vecScores['leftElbow -> leftWrist']).toMatchInlineSnapshot('3.5868967567952272');
+        expect(vecScores['rightShoulder -> rightElbow']).toMatchInlineSnapshot('4.305274846896869');
+        expect(vecScores['rightElbow -> rightWrist']).toMatchInlineSnapshot('3.4184171877019267');
         
     });
 

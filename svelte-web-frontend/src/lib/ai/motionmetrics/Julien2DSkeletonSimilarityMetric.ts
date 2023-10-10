@@ -1,6 +1,6 @@
 import { lerp } from "$lib/utils/math";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
-import { QijiaMethodComparisonVectors, Get2DVector, Get2DScaleIndicator, getMagnitude2DVec, getInnerAngle, getArrayMean, QijiaMethodComparisionVectorNames } from "../EvaluationCommonUtils";
+import { QijiaMethodComparisonVectors, Get2DVector, Get2DScaleIndicator, getMagnitude2DVec, getInnerAngle, GetArithmeticMean, QijiaMethodComparisionVectorNames } from "../EvaluationCommonUtils";
 import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 
 // Constants for reliable 2D angle determination (in pixels)
@@ -83,7 +83,7 @@ function computeSkeleton2DDissimilarityJulienMethod(
 
     return {
         // Score is scaled between 0 and 1 - 0 is the best and 1 is the worst.
-        overallScore: getArrayMean(vectorScoreInfos.map((s) => s.score)),
+        overallScore: GetArithmeticMean(vectorScoreInfos.map((s) => s.score)),
         vectorByVectorScores: vectorScoreInfos
     };
 }
@@ -94,8 +94,10 @@ type JulienMetricSummaryOutput = {
     minPossibleScore: number;
     maxPossibleScore: number;
     overallScore: number;
-    vectorByVectorScore: Map<string, number>;
+    vectorByVectorScore: Record<string, number>;
 }
+
+type JulienMetricFormattedSummaryOutput = ReturnType<Julien2DSkeletonSimilarityMetric["formatSummary"]>;
 
 /**
  * Metric that computes the similarity between two poses using the Julien method.
@@ -106,7 +108,7 @@ type JulienMetricSummaryOutput = {
  * @param userLandmarks - User landmarks (learner)
  * @returns Object containing the dissimilarity score and information by vector
  */
-export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput> {
+export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput, JulienMetricFormattedSummaryOutput> {
     
     computeMetric(_history: Readonly<TrackHistory>, _metricHistory: Readonly<JulienMetricSingleFrameOutput[]>, _videoFrameTimeInSecs: Readonly<number>, _actualTimesInMs: number, user2dPose: Readonly<Pose2DPixelLandmarks>, _user3dPose: Readonly<Pose3DLandmarkFrame>, ref2dPose: Readonly<Pose2DPixelLandmarks>, _ref3dPose: Readonly<Pose3DLandmarkFrame>): JulienMetricSingleFrameOutput {
         return computeSkeleton2DDissimilarityJulienMethod(ref2dPose, user2dPose)
@@ -114,7 +116,7 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
 
     summarizeMetric(_history: Readonly<TrackHistory>, metricHistory: Readonly<JulienMetricSingleFrameOutput[]>): JulienMetricSummaryOutput {
         
-        const overallScore = getArrayMean(metricHistory
+        const overallScore = GetArithmeticMean(metricHistory
             .map(m => m.overallScore)
             .filter((n) => !isNaN(n))
         );
@@ -125,10 +127,10 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
             const thisVecScores = arrayOfVecScores
                 .map(vecbyVecScores => vecbyVecScores[i].score)
                 .filter((n) => !isNaN(n));
-            const meanScore = getArrayMean(thisVecScores);
+            const meanScore = GetArithmeticMean(thisVecScores);
             return [key, meanScore] as [string, number];
         });
-        const byVectorScores = new Map(vectorScoreKeyValues)
+        const byVectorScores = Object.fromEntries(vectorScoreKeyValues) as Record<string, number>;
 
         return {
             overallScore: overallScore,
@@ -138,10 +140,10 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
         }
     }
 
-    formatSummary(summary: Readonly<JulienMetricSummaryOutput>): Record<string, string | number> {
+    formatSummary(summary: Readonly<JulienMetricSummaryOutput>) {
         return {
             "overall": summary.overallScore,
-            ...Object.fromEntries(summary.vectorByVectorScore.entries())
+            ...summary.vectorByVectorScore,
         }
     }
 }

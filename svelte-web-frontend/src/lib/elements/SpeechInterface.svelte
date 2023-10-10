@@ -121,6 +121,7 @@ const speakWithSpeechSynthesis =
 
                 utterance.onend = () => {
                     alreadySpokenText = textToSpeak;
+                    currentlySpeakingText = "";
                     notYetSpokenText = "";
                     resolve();
                     dispatch("speech-ended");

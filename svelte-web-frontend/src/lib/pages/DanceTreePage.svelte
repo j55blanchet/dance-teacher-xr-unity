@@ -9,9 +9,8 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
-	import { debugMode } from '$lib/model/settings';
-	import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-
+import { debugMode } from '$lib/model/settings';
+import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 
 export let dance: Dance;
 export let danceTree: DanceTree;
@@ -103,6 +102,7 @@ async function practiceClicked() {
                 on:nodeClicked={onNodeClicked} 
                 enableClick 
                 node={danceTree.root}
+                danceTree={danceTree}
                 showProgressNode={currentPlayingNode ?? undefined}
                 currentTime={videoCurrentTime}
                 beatTimes={danceBeatTimes}

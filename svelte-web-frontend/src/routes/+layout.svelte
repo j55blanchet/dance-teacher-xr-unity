@@ -31,7 +31,7 @@
 	</div>
 
 	<dialog class="settingsDialog" bind:this={settingsDialog}>
-		<CloseButton on:click={toggleSettings} />
+		<CloseButton isVisible={showingSettings} on:click={toggleSettings} />
 		<div class="settingsContainer outlined">
 			<SettingsPage />
 		</div>

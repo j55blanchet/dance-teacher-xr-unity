@@ -6,10 +6,12 @@ const DEFAULT_SETTINGS = {
    practiceFallbackPlaybackSpeed: 0.5,
    debugPauseDurationSecs : 1.0,
    evaluation_GoodBadTrialThreshold : 4.0,
-   feedback_YellowThreshold : 3.0,
-   feedback_GreenThreshold : 4.2,
+   livefeedback_qijia2d_YellowThreshold : 3.0,
+   livefeedback_qijia2d_GreenThreshold : 4.2,
    useAIFeedback: true,
    useTextToSpeech: true,
+   summaryFeedback_skeleton3d_mediumPerformanceThreshold: 0.8,
+   summaryFeedback_skeleton3d_goodPerformanceThreshold: 0.9,
    evaluation_summarizeSubsections: 'allnodes' as const,
    
 }
@@ -48,8 +50,8 @@ export const pauseInPracticePage = createBoolSettingsStore("pauseInPracticePage"
 export const debugPauseDurationSecs = createNumberSettingsStore("debugPauseDurationSecs", DEFAULT_SETTINGS.debugPauseDurationSecs);
 export const practiceFallbackPlaybackSpeed = createNumberSettingsStore("practiceFallbackPlaybackSpeed", DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
 export const evaluation_GoodBadTrialThreshold = createNumberSettingsStore("evaluation_GoodBadTrialThreshold", DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
-export const feedback_YellowThreshold = createNumberSettingsStore("feedback_YellowThreshold", DEFAULT_SETTINGS.feedback_YellowThreshold);
-export const feedback_GreenThreshold = createNumberSettingsStore("feedback_GreenThreshold", DEFAULT_SETTINGS.feedback_GreenThreshold);
+export const feedback_YellowThreshold = createNumberSettingsStore("feedback_YellowThreshold", DEFAULT_SETTINGS.livefeedback_qijia2d_YellowThreshold);
+export const feedback_GreenThreshold = createNumberSettingsStore("feedback_GreenThreshold", DEFAULT_SETTINGS.livefeedback_qijia2d_GreenThreshold);
 export const useAIFeedback = createBoolSettingsStore("useAIFeedback", DEFAULT_SETTINGS.useAIFeedback);
 export const useTextToSpeech = createBoolSettingsStore("useTextToSpeech", DEFAULT_SETTINGS.useTextToSpeech);
 export const evaluation_summarizeSubsectionsOptions = {
@@ -61,6 +63,8 @@ export const evaluation_summarizeSubsectionsOptions = {
 export const evaluation_summarizeSubsections = createOptionsSettingsStore(
     "evaluation_analyzeSubsections", DEFAULT_SETTINGS.evaluation_summarizeSubsections, evaluation_summarizeSubsectionsOptions
 );
+export const summaryFeedback_skeleton3d_mediumPerformanceThreshold = createNumberSettingsStore("summaryFeedback_skeleton3d_mediumPerformanceThreshold", DEFAULT_SETTINGS.summaryFeedback_skeleton3d_mediumPerformanceThreshold);
+export const summaryFeedback_skeleton3d_goodPerformanceThreshold = createNumberSettingsStore("summaryFeedback_skeleton3d_goodPerformanceThreshold", DEFAULT_SETTINGS.summaryFeedback_skeleton3d_goodPerformanceThreshold);
     
 
 // Reset all variables to their default values
@@ -70,9 +74,11 @@ export function resetSettingsToDefault() {
     debugPauseDurationSecs.set(DEFAULT_SETTINGS.debugPauseDurationSecs);
     practiceFallbackPlaybackSpeed.set(DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
     evaluation_GoodBadTrialThreshold.set(DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
-    feedback_YellowThreshold.set(DEFAULT_SETTINGS.feedback_YellowThreshold);
-    feedback_GreenThreshold.set(DEFAULT_SETTINGS.feedback_GreenThreshold);
+    feedback_YellowThreshold.set(DEFAULT_SETTINGS.livefeedback_qijia2d_YellowThreshold);
+    feedback_GreenThreshold.set(DEFAULT_SETTINGS.livefeedback_qijia2d_GreenThreshold);
     useAIFeedback.set(DEFAULT_SETTINGS.useAIFeedback);
     useTextToSpeech.set(DEFAULT_SETTINGS.useTextToSpeech);
+    summaryFeedback_skeleton3d_mediumPerformanceThreshold.set(DEFAULT_SETTINGS.summaryFeedback_skeleton3d_mediumPerformanceThreshold);
+    summaryFeedback_skeleton3d_goodPerformanceThreshold.set(DEFAULT_SETTINGS.summaryFeedback_skeleton3d_goodPerformanceThreshold);
     evaluation_summarizeSubsections.set(DEFAULT_SETTINGS.evaluation_summarizeSubsections)
 }
