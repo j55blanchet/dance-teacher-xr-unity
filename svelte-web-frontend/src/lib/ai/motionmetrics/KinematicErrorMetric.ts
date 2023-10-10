@@ -2,7 +2,20 @@ import type { SummaryMetric, TrackHistory } from "./MotionMetric";
 import { calculate3DKinematicErrorDescriptors } from "./compute-kinematic-motion-descriptors-3D";
 import { calculateKinematicErrorDescriptors } from "./compute-kinematic-motion-descriptors";
 
-type KinematicErrorMetricOutput = {
+
+function prependObjectKeys<T extends Record<string, any>, prefixT extends string>(obj: T, prefix: prefixT): { [K in keyof T as `${prefixT}${Extract<K, string>}`]: T[K]}  {
+   return Object.keys(obj).reduce(
+    (newObjSoFar, key) => ({
+      ...newObjSoFar,
+        [prefix + key]: obj[key],
+    }),
+    {}
+  ) as { 
+    [K in keyof T as `${prefixT}${Extract<K, string>}`]: T[K]
+  };
+}
+
+type KinematicErrorMetricOutputForSomeDimension = {
     jerksMAE: number | null; 
     jerksRSME: number | null; 
     accsMAE: number | null; 
@@ -10,6 +23,12 @@ type KinematicErrorMetricOutput = {
     velsMAE: number | null; 
     velsRSME: number | null;
 };
+
+type KinematicErrorMetricOutput = {
+    summary2D: KinematicErrorMetricOutputForSomeDimension,
+    summary3D: KinematicErrorMetricOutputForSomeDimension,
+};
+
 
 export default class KinematicErrorMetric implements SummaryMetric<KinematicErrorMetricOutput> {
 
@@ -27,15 +46,19 @@ export default class KinematicErrorMetric implements SummaryMetric<KinematicErro
 
         // Combine the 2D and 3D summaries into a single summary object
         const combinedSummary: KinematicErrorMetricOutput = {
-            ...summary2D,
-            ...summary3D,
+            summary2D,
+            summary3D,
         };
 
         return combinedSummary;
     }
 
-    formatSummary(summary: Readonly<KinematicErrorMetricOutput>): Record<string, string | number | null> {
-        return summary; // no formatting needed, already in a row-compatible format
+    formatSummary(summary: Readonly<KinematicErrorMetricOutput>) {
+        
+        return {
+            ...prependObjectKeys(summary.summary2D, 'd2_'),
+            ...prependObjectKeys(summary.summary3D, 'd3_'),
+        }        
     }
 }
 

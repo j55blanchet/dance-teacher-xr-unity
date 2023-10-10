@@ -19,12 +19,12 @@ describe('KinematicErrorMetric', () => {
             track,
         );
         
-        expect(summary?.accsMAE).toMatchInlineSnapshot('35.04371748697044');
-        expect(summary?.accsRSME).toMatchInlineSnapshot('66.0219538282359');
-        expect(summary?.jerksMAE).toMatchInlineSnapshot('1527.287960036425');
-        expect(summary?.jerksRSME).toMatchInlineSnapshot('2854.5514189008704');
-        expect(summary?.velsMAE).toMatchInlineSnapshot('1.2096341768203411');
-        expect(summary?.velsRSME).toMatchInlineSnapshot('2.29461575412213');
+        expect(summary?.summary2D?.accsMAE).toMatchInlineSnapshot('35.04371748697044');
+        expect(summary?.summary2D?.accsRSME).toMatchInlineSnapshot('66.0219538282359');
+        expect(summary?.summary2D?.jerksMAE).toMatchInlineSnapshot('1527.287960036425');
+        expect(summary?.summary2D?.jerksRSME).toMatchInlineSnapshot('2854.5514189008704');
+        expect(summary?.summary2D?.velsMAE).toMatchInlineSnapshot('1.2096341768203411');
+        expect(summary?.summary2D?.velsRSME).toMatchInlineSnapshot('2.29461575412213');
     });
 
     it('publishing metric outputs should not throw', ({ expect }) => {
@@ -37,4 +37,4 @@ describe('KinematicErrorMetric', () => {
 
         }).not.toThrow();
     });
-});;
+});
