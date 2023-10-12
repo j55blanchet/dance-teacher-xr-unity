@@ -104,6 +104,7 @@ def run_dancetree_pipeline(
         database_path=database_csv_path,
         output_dir=trees_with_complexity_dir,
         complexity_method=complexity_method,
+        trim_zero_complexity=True,
         get_print_prefix=lambda: f'{step()} add complexity:',
     )
 

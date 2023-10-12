@@ -140,7 +140,8 @@ function barClicked () {
     style="--node-duration:{node.end_time - node.start_time}"
     class:hidden={isNodeHidden}
     class:hasNodeInSubtree={hasNodeInSubtree}
-    class:hiddenBar={isBarHidden}>
+    class:hiddenBar={isBarHidden}
+    class:labeled={highlight?.label !== undefined}>
 
     <a class="bar outlined" 
        class:hidden={isBarHidden}
@@ -209,7 +210,7 @@ function barClicked () {
         // min-width: 100%;
         text-align: center;
         min-height: 1em;
-        transition: height var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out;
+        transition: height var(--hide-transition-duration) ease-in-out, width var(--hide-transition-duration) ease-in-out, padding var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
         overflow: hidden;
@@ -222,6 +223,7 @@ function barClicked () {
         // border-color: var(--highlight-color);
         // border-width: calc(0.12em * var(--border-scale));
         min-height: 1.5em;
+        padding: 0.25em;
         box-shadow: 0 0 0.1em 0.1em var(--highlight-color), inset 0 0 0.075em 0.075em var(--highlight-color);
     }
 
@@ -311,7 +313,11 @@ function barClicked () {
         gap: 0.25em;
         flex-basis: 0;
         flex-grow: var(--node-duration);
-        transition: flex-grow var(--hide-transition-duration) ease-in-out;
+        transition: flex-grow var(--hide-transition-duration) ease-in-out, flex-basis var(--hide-transition-duration) ease-in-out;
+    }
+
+    .node.labeled {
+        flex-basis: min-content;
     }
 
     .node.hiddenBar {

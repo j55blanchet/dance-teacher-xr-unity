@@ -39,17 +39,47 @@ def add_complexity_to_dancetree(
         frame_end = complexity.index.get_indexer([target_frame_end], method='nearest')[0]
         frame_start = complexity.index.get_indexer([target_frame_start], method='nearest')[0]
         
-        node.complexity = complexity.loc[frame_end] - complexity.loc[frame_start]
+        node.complexity = complexity.loc[frame_end] - complexity.loc[frame_start] 
+
         # replace NaNs with 0
         if pd.isna(node.complexity):
             node.complexity = 0
+
+        last_frame_with_complexity_change = frame_start
+        if node.complexity > 0:
+            # Find the last frame where the complexity changed
+            for frame in range(frame_start, frame_end):
+                if complexity.loc[frame] != complexity.loc[frame+1]:
+                    last_frame_with_complexity_change = frame+1
+        
+        node.metrics['time_of_last_complexity_change'] = last_frame_with_complexity_change / fps
 
         for child in node.children:
             add_complexity_to_treenode(child)
 
     add_complexity_to_treenode(tree.root)
+
     return tree
 
+
+def trim_dancenodes_with_zero_complexity(tree: DanceTree):
+    def trim_dancenodes_with_zero_complexity_recursive(node: DanceTreeNode):
+       
+        # Trim end time to the last time the complexity changed
+        node.end_time = node.metrics['time_of_last_complexity_change']
+
+        # Pop any children that start after the end time (which will have 0 complexity)
+        for childIndex in range(len(node.children)-1, -1, -1):
+            child = node.children[childIndex]
+            if child.start_time >= node.end_time:
+                assert child.complexity <= 0
+                node.children.pop(childIndex)
+
+        # Recurse on children (adjust their times and pop zero-complexity nodes down the tree)
+        for remainingChild in node.children:
+            trim_dancenodes_with_zero_complexity_recursive(remainingChild)
+            
+    trim_dancenodes_with_zero_complexity_recursive(tree.root)
 
 def add_complexities_to_dancetrees(
         tree_srcdir: Path,    
@@ -57,6 +87,7 @@ def add_complexities_to_dancetrees(
         database_path: Path,
         output_dir: Path,
         complexity_method: str = 'mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase',
+        trim_zero_complexity: bool = True,
         get_print_prefix: t.Callable[[], str] = lambda: '',
     ):
     import json
@@ -94,6 +125,9 @@ def add_complexities_to_dancetrees(
         
         fps = matching_db_entry['fps']
         tree = add_complexity_to_dancetree(tree, complexity, fps)
+
+        if trim_zero_complexity:
+            trim_dancenodes_with_zero_complexity(tree)
             
         output_path = output_dir / relative_filepath
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -111,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--database_path', type=Path, required=True)
     parser.add_argument('--output_dir', type=Path, required=True)
     parser.add_argument('--complexity_method', type=str, default='mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase')
+    parser.add_argument('--skip_trim_zero_complexity', action='store_true')
     args = parser.parse_args()
 
     add_complexities_to_dancetrees(
@@ -118,5 +153,6 @@ if __name__ == '__main__':
         complexity_srcdir=args.complexity_srcdir,
         database_path=args.database_path,
         output_dir=args.output_dir,
+        trim_zero_complexity=not args.trim_zero_complexity,
         complexity_method=args.complexity_method,
     )

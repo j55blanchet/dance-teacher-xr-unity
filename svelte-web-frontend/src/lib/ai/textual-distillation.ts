@@ -38,7 +38,7 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
         const subsectionsAndScores = subsectionNames.map((subsectionName, subsectionIndex) => {
             const score = subsectionOverallScores[subsectionIndex];
             const worstJointScore = subsectionWorstJointScores?.[subsectionIndex];
-            return `* Section "${subsectionName}" : full-body: ${score?.toFixed(2)}, ${worstJointName}: ${worstJointScore?.toFixed(2)})`;
+            return `* Section "${subsectionName}" : full-body accuracy: ${score?.toFixed(2)}, worst joint: ${worstJointName}, accuracy: ${worstJointScore?.toFixed(2)})`;
         });
         distillation += subsectionsAndScores.join("\n");
     }
