@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { danceVideoVolume } from './../model/settings.ts';
 
 import type { Dance, PoseReferenceData } from "$lib/data/dances-store";
-import { onDestroy, onMount } from "svelte";
+import { onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import { DrawingUtils, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
@@ -15,7 +16,6 @@ export let fitToFlexbox: boolean = false;
 export let currentTime: number = 0;
 export let playbackRate: number = 1.0;
 export let paused: boolean = true;
-export let volume: number = 1.0;
 export let muted: boolean = false;
 export let videoWidth: number = 0;
 export let videoHeight: number = 0;
@@ -130,7 +130,7 @@ onMount(() => {
         bind:currentTime
         bind:playbackRate
         bind:paused
-        bind:volume
+        bind:volume={$danceVideoVolume}
         bind:muted
         bind:videoWidth
         bind:videoHeight
