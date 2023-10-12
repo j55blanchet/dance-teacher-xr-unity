@@ -29,6 +29,7 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
+import { browser } from '$app/environment';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -270,11 +271,14 @@ $: {
             );
 
             if (trialId) {
-                recordedTrack = evaluator?.trackRecorder.tracks.get(trialId) ?? null;
                 performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+                recordedTrack = performanceSummary?.adjustedTrack ?? null;
             }
             trialId = null;
             state = "feedback";
+            if (metronomeTimer) {
+                clearTimeout(metronomeTimer)
+            }
             getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
                     terminalFeedback = feedback;
@@ -306,6 +310,26 @@ function playClickSound() {
     clickAudioElement.play();
 }
 
+let metronomePlaying = false;
+let metronomeTimer: number | null = null;
+async function launchMetronome() {
+    if (!browser) return;
+    if (metronomePlaying) return;
+    metronomePlaying = true;
+    let beatCount = 0;
+    while (state !== "feedback") {
+        playClickSound();
+        
+        await new Promise<void>((res) => {
+            metronomeTimer = window.setTimeout(() => {
+                res();
+            }, 1000 * beatDuration);
+        })
+    }
+    metronomePlaying = false;
+    metronomeTimer = null;
+}
+
 async function startCountdown() {
     if (countdownActive) return;
 
@@ -318,28 +342,24 @@ async function startCountdown() {
     }
     await waitSecs(beatDuration);
 
+    const beatOffset = practiceActivity?.dance?.beat_offset ?? 0;
+
     state = "countdown";
     countdownActive = true;
-    await waitSecs(beatDuration);
-
-    countdown = 5;
-    playClickSound();
-    await waitSecs(beatDuration);
-
-    countdown = 6;
-    playClickSound();
-    await waitSecs(beatDuration);
-
-    countdown = 7;
-    playClickSound();
-    await waitSecs(beatDuration);
-
-    countdown = 8;
-    playClickSound();
-    await waitSecs(beatDuration);
+    
+    countdown = 4;
+    launchMetronome();
+    while (countdown  < 8) {
+        countdown++;
+        await waitSecs(beatDuration);
+    }
+    
+    practiceActivity?.dance?.all_beat_times ??  [];
+    
 
     trialId = generateUUIDv4();
-    state = "playing"
+    state = "playing";
+    
     countdown = -1;
 
     resolveWebcamRecordedObjectUrl = null;
@@ -382,6 +402,9 @@ export async function reset() {
     if(!virtualMirrorElement) {
         await tick();
     }
+    if (metronomeTimer) {
+        clearTimeout(metronomeTimer)
+    }
 
     terminalFeedback = null;
     trialId = null;
@@ -393,8 +416,6 @@ export async function reset() {
     const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
     
-
-
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
     const promises = [] as Promise<any>[];
@@ -542,6 +563,9 @@ onMount(() => {
     reset();
 
     return () => {
+        if (metronomeTimer) {
+            clearTimeout(metronomeTimer);
+        }
         if (unpauseVideoTimeout) {
             clearTimeout(unpauseVideoTimeout);
         }
@@ -576,6 +600,7 @@ onMount(() => {
                 'show-all':
                 'hide-others'
             }/>
+            
     </div>
     {/if}
 

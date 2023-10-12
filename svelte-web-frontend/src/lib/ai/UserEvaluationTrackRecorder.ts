@@ -1,3 +1,4 @@
+import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 
 /**
@@ -6,6 +7,47 @@ import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/medi
  */
 type ArrayVersions<T> = {
     [K in keyof T]: T[K][];
+}
+
+/**
+ * Adjust a time array to account for duplicate frame times.
+ * 
+ * In practice, the video currentTime binding lags behind the actual timestamp of the video. This
+ * results in duplicate frameTimes, even though the video is progressing. This function adjusts the
+ * time array to account for this. It does this by linearly interpolating the duplicate frame times.
+ * 
+ * Example:
+ *    input:  [0, 0,   0.2, 0.2, 0.2, 0.5, 0.5, 0.7]
+ *    output: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+ * @param timeArray 
+ */
+export function adjustTimeArray(timeArray: number[]) {
+    if (timeArray.length < 1) return timeArray;
+
+    let lastChangedNumberIndex = 0;
+    let duplicateCount = 1;
+
+    // Search for the next unique number
+    for(let i = 1; i < timeArray.length; i++) {
+        const currentNumber = timeArray[lastChangedNumberIndex]
+
+        // Found another duplicate
+        if (timeArray[i] === currentNumber) {
+            duplicateCount++;
+            continue;
+        }
+
+        // Found a unique number! Now adjust all values since the last unique number
+        const increment = (timeArray[i] - currentNumber) / duplicateCount;
+        for(let j = 1; j < duplicateCount; j++) {
+            const frameIndex = lastChangedNumberIndex + j;
+            const adjustedTime = currentNumber + j * increment;
+            timeArray[frameIndex] = adjustedTime;
+        }
+        lastChangedNumberIndex = i;
+    }
+
+    return timeArray
 }
 
 // Type definition for a performance evaluation track.
@@ -59,6 +101,50 @@ export class PerformanceEvaluationTrack<T extends Record<string, unknown>> {
         for(const key of evaluationKeys) {
             this.timeSeriesResults[key].push(timeSeriesEvaluationMetrics[key])
         }
+    }
+
+    withRecomputedFrameTimes(
+        reference2DData: PoseReferenceData<Pose2DPixelLandmarks>,
+        reference3DData: PoseReferenceData<Pose3DLandmarkFrame>
+    ) {
+
+
+        const firstFrameTime = this.videoFrameTimesInSecs[0];
+        let firstNonDuplicateFrame = 1;
+        while (this.videoFrameTimesInSecs[firstNonDuplicateFrame] === firstFrameTime) {
+            firstNonDuplicateFrame++;
+        }
+        const lastFrameTime = this.videoFrameTimesInSecs[this.videoFrameTimesInSecs.length - 1];
+        let lastNonDuplicateFrame = this.videoFrameTimesInSecs.length - 2;
+        while (this.videoFrameTimesInSecs[lastNonDuplicateFrame] === lastFrameTime) {
+            lastNonDuplicateFrame--;
+        }
+
+        const sclicedVideoFrameTimesInSecs = this.videoFrameTimesInSecs.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
+        const actualTimesInMs = this.actualTimesInMs.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
+        const user2dPoses = this.user2dPoses.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
+        const user3dPoses = this.user3dPoses.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
+
+        const adjustedVideoFrameTimesInSecs =  adjustTimeArray(sclicedVideoFrameTimesInSecs);
+        const ref2dPoses = adjustedVideoFrameTimesInSecs.map((frameTime) => {
+            return reference2DData.getReferencePoseAtTime(frameTime) as Pose2DPixelLandmarks;
+        });
+        const ref3dPoses = adjustedVideoFrameTimesInSecs.map((frameTime) => {
+            return reference3DData.getReferencePoseAtTime(frameTime) as Pose3DLandmarkFrame;
+        });
+
+        return new PerformanceEvaluationTrack<T>(
+            this.id,
+            this.danceRelativeStem,
+            this.segmentDescription,
+            this.creationDate,
+            adjustedVideoFrameTimesInSecs,
+            actualTimesInMs,
+            user2dPoses,
+            user3dPoses,
+            ref2dPoses,
+            ref3dPoses,
+        )
     }
 
     asDictWithoutTimeSeriesResults(): Record<string, unknown> {

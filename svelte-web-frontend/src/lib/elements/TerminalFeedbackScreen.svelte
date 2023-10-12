@@ -67,6 +67,16 @@ let showingPerformanceSummary = false;
 let showingLLMOutput = false;
 let showingTerminalFeedbackJson = false;
 
+let performanceSummaryWithoutTrack: any | undefined;
+$: {
+    performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
+    if (performanceSummaryWithoutTrack) {
+        performanceSummaryWithoutTrack = {
+            ...performanceSummaryWithoutTrack,
+            adjustedTrack: undefined,
+        }
+    }
+}
 let skeletonHighlights: BodyPartHighlight[] = [];
 
 $: {
@@ -176,14 +186,14 @@ function exportRecordings() {
     {/if}
     {#if $debugMode}
         <div class="debug buttons">
-            {#if feedback?.debug?.performanceSummary}
+            {#if performanceSummaryWithoutTrack}
             <button class="button" on:click={() => showingPerformanceSummary = true }>
                 View Performance Summary
             </button>
             <Dialog open={showingPerformanceSummary}
               on:dialog-closed={() => showingPerformanceSummary = false}>
                 <span slot="title">Performance Summary</span>
-                <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+                <pre class="microlight">{JSON.stringify(performanceSummaryWithoutTrack, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
             {/if}
             {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}

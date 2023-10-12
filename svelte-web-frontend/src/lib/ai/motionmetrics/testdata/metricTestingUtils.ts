@@ -35,9 +35,20 @@ export type TestTrack = {
  * @param url Path of the test track json file
  * @returns The test track JSON object.
  */
-export function loadTestTrack(url: string) {
+export function loadTestTrack(url: string, frames?: number) {
     const json = fs.readFileSync(process.cwd() + url, 'utf-8');
-    return JSON.parse(json) as TestTrack;
+    const track = JSON.parse(json) as TestTrack;
+
+    if (frames !== undefined) {
+        track.videoFrameTimesInSecs = track.videoFrameTimesInSecs.slice(0, frames);
+        track.actualTimesInMs = track.actualTimesInMs.slice(0, frames);
+        track.user2dPoses = track.user2dPoses.slice(0, frames);
+        track.user3dPoses = track.user3dPoses.slice(0, frames);
+        track.ref2dPoses = track.ref2dPoses.slice(0, frames);
+        track.ref3dPoses = track.ref3dPoses.slice(0, frames);
+    }
+    
+    return track
 }
 
 /**
