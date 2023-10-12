@@ -127,11 +127,29 @@ export async function generateFeedbackWithClaudeLLM(
         performanceHistoryDistillation: `${performanceHistoryDistillation}\n${attemptHistoryDistillation}`,
     };
 
-    const claudeApiData = await fetch('/restapi/get_feedback', {
-        'headers': { 'Content-Type': 'application/json' },
-        'method': 'POST',
-        'body': JSON.stringify(llmInput),
-    }).then((res) => res.json())
+    const getClaudeFeedback = async () => {
+        return await fetch('/restapi/get_feedback', {
+            'headers': { 'Content-Type': 'application/json' },
+            'method': 'POST',
+            'body': JSON.stringify(llmInput),
+        });
+    };
+
+    let claudeApiResponse = await getClaudeFeedback();
+
+    const maxRetries = 3;
+    let retries = 0;
+    while (claudeApiResponse.status >= 400 && retries < maxRetries) {
+        retries++;
+        console.log(`Failed to get feedback from Claude LLM. Retrying... (attempt ${retries})`);
+        claudeApiResponse = await getClaudeFeedback();
+    }
+
+    if(claudeApiResponse.status >= 400) {
+        throw new Error(`Failed to get feedback from Claude LLM. Status: ${claudeApiResponse.status}. Response: ${await claudeApiResponse.text()}`);
+    }
+
+    const claudeApiData = await claudeApiResponse.json();
 
     const feedbackMessage = claudeApiData['feedbackMessage'];
     const claudeSuggestedNextSection = claudeApiData['nextSection'];
