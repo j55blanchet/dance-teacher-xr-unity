@@ -30,6 +30,7 @@ export type TerminalFeedback = {
         performanceSummary?: object;
         recordedTrack?: FrontendEvaluationTrack;
         recordedVideoUrl?: string;
+        recordedVideoMimeType?: string;
         llmInput?: any;
         llmOutput?: any;
     }

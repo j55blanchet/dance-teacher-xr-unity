@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-export type PracticePageState = "waitWebcam" | "waitStart" | "countdown" | "playing" | "paused" | "feedback";
+export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
@@ -29,6 +29,7 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
+	import Dialog from '$lib/elements/Dialog.svelte';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -79,11 +80,14 @@ $: {
 
 let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
 let virtualMirrorElement: VirtualMirror;
+let videoWithSkeleton: VideoWithSkeleton;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
 let videoDuration: number = 0;
+let videoVolume: number = 0.5;
 $: console.log("VideoDuration", videoDuration);
 let isVideoPausedBinding: boolean = true;
+let showStartCountdownDialog = false;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
@@ -153,6 +157,7 @@ let countdownActive = false;
 const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
 let currentPlaybackEndtime = practiceActivity?.endTime ?? 0;
 
+let webcamRecorderMimeType = 'video/webm';
 let webcamRecorder: MediaRecorder | null = null;
 let webcamRecordedChunks: Blob[] = [];
 
@@ -166,14 +171,6 @@ $: {
 
 $: {
     poseEstimationEnabled = pageActive && (countdownActive || !isVideoPausedBinding || state==="paused") && currentActivityType === 'drill';
-}
-$: { 
-    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
-    if (practiceActivity?.playbackSpeed !== 'default' && 
-        practiceActivity?.playbackSpeed !== undefined &&
-        !isNaN(practiceActivity.playbackSpeed)) {
-        videoPlaybackSpeed = practiceActivity.playbackSpeed;
-    }
 }
 
 let lastNAttempts = frontendPerformanceHistory.lastNAttempts(
@@ -198,7 +195,11 @@ function unPauseVideo() {
     state = "playing";
 }
 
+
 async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
+    if (gettingFeedback) return;
+
+    gettingFeedback = true;
 
     const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
     const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
@@ -246,11 +247,15 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         performanceSummary: performanceSummary ?? undefined,
         recordedTrack: recordedTrack ?? undefined,
         recordedVideoUrl: videoURL,
+        recordedVideoMimeType: webcamRecorderMimeType,
     }
+
+    gettingFeedback = false;
 
     return feedback;
 }
 
+let gettingFeedback = false;
 // Auto-pause the video when the practice activity is over
 $: {
     if ((practiceActivity?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
@@ -295,32 +300,59 @@ async function waitSecs(secs: number): Promise<void> {
     })
 }
 
-$: {
-    if ($webcamStream && state === "waitWebcam") {
-        state = "waitStart";
-    }
-}
+// $: {
+//     if ($webcamStream && state === "waitWebcam") {
+//         state = "waitStart";
+//     }
+// }
 
-function playClickSound() {
+async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
-    clickAudioElement.play();
+    clickAudioElement.volume = silent ? 0 : 1;
+    return clickAudioElement.play();
 }
 
 async function startCountdown() {
     if (countdownActive) return;
 
-    isVideoPausedBinding = true;
-    videoCurrentTime = practiceActivity?.startTime ?? 0;
-    await tick();
-    if (poseEstimationEnabled) {
-        console.log("Triggering pose estimation priming");
-        await virtualMirrorElement.primePoseEstimation();
-    }
-    await waitSecs(beatDuration);
-
     state = "countdown";
     countdownActive = true;
-    await waitSecs(beatDuration);
+
+    // Safari / webkit disallows media elements from auto-playing without user interaction. We
+    // want to be able to control the playback of the video element programatically, which safari
+    // will only allow once the user has triggered playback through a user interaction. So, we try 
+    // starting playback at the beginning of the countdown. If the 
+    playClickSound(true);
+    videoVolume = 0.01;
+    videoPlaybackSpeed = 0.01;
+    let testPlaybackSuccessful = true;
+    try {
+        await playClickSound(true);
+        await videoWithSkeleton.play();
+    }
+    catch(e) {
+        testPlaybackSuccessful = false
+        console.warn('startCountdown: test playback unsuccessful. Will try again after user interaction.', e);
+    }
+
+    isVideoPausedBinding = true;
+    videoCurrentTime = practiceActivity?.startTime ?? 0;
+    videoVolume = 0.5;
+    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
+    if (practiceActivity?.playbackSpeed !== 'default' && 
+        practiceActivity?.playbackSpeed !== undefined &&
+        !isNaN(practiceActivity.playbackSpeed)) {
+        videoPlaybackSpeed = practiceActivity.playbackSpeed;
+    }
+
+    if (!testPlaybackSuccessful) {
+        state = 'waitStartUserInteraction';
+        showStartCountdownDialog = true;
+        countdownActive = false;
+        return;
+    }
+
+    await tick();
 
     countdown = 5;
     playClickSound();
@@ -354,7 +386,13 @@ async function startCountdown() {
             resolveWebcamRecordedObjectUrl = resolve;
             rejectWebcamRecordedObjectUrl = reject;
         });
-        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: 'video/webm' });
+
+        if (MediaRecorder.isTypeSupported('video/webm')) {
+            webcamRecorderMimeType = 'video/webm';
+        } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+            webcamRecorderMimeType = 'video/mp4';
+        }
+        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: webcamRecorderMimeType });
         webcamRecordedChunks = [];
         webcamRecorder.addEventListener('dataavailable', (e) => {
             webcamRecordedChunks.push(e.data);
@@ -392,9 +430,8 @@ export async function reset() {
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
+    gettingFeedback = false;
     
-
-
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
     const promises = [] as Promise<any>[];
@@ -421,7 +458,17 @@ export async function reset() {
         referenceDancePoses2D!,
         referenceDancePoses3D!
     );
-    // console.lUserDanceEvaluator await poseEstimationReady;
+
+    isVideoPausedBinding = true;
+    videoCurrentTime = practiceActivity?.startTime ?? 0;
+
+    await tick();
+
+    if (poseEstimationEnabled) {
+        console.log("Triggering pose estimation priming");
+        await virtualMirrorElement.primePoseEstimation();
+    }
+    await waitSecs(beatDuration);
 
     startCountdown();
 }
@@ -582,6 +629,7 @@ onMount(() => {
     
     <div class="demovid" style:display={state === "feedback" ? 'none' : 'flex'}>
         <VideoWithSkeleton
+            bind:this={videoWithSkeleton}
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
             bind:paused={isVideoPausedBinding}
@@ -590,6 +638,7 @@ onMount(() => {
             fitToFlexbox={fitVideoToFlexbox}
             poseData={referenceDancePoses2D}
             drawSkeleton={drawReferenceDanceSkeleton}
+            volume={videoVolume}
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
@@ -599,6 +648,13 @@ onMount(() => {
                     {countdown}
                 </span>
             </div>
+        {/if}
+        {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
+        <div class="startCountdown">
+            <button class="button" on:click={() => startCountdown()}>
+                Start Countdown
+            </button>
+        </div>
         {/if}
     </div>
     {#if state === "feedback"}
@@ -632,6 +688,15 @@ onMount(() => {
         </div>
         {/if}
     </div>
+
+    <Dialog open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
+        on:dialog-closed={() => showStartCountdownDialog = false}>
+        <span slot="title">Click to Start</span>
+        <p>We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
+        <button class="button" on:click={() => startCountdown()}>
+            Start Countdown
+        </button>
+    </Dialog>
 </section>
 
 <style lang="scss">
@@ -686,6 +751,17 @@ section {
         justify-content: stretch;
         flex-direction: column;
     }
+}
+
+.startCountdown {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .countdown {

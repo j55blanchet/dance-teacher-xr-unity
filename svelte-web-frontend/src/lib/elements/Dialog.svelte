@@ -6,10 +6,16 @@ const dispatcher = createEventDispatcher();
 
 let dialogElement: HTMLDialogElement | undefined;
 export let open = false;
+export let modal = true;
+export let showCloseButton = true;
 
 $: {
     if (open) {
-        dialogElement?.showModal();
+        if (modal) {
+            dialogElement?.showModal();
+        } else {
+            dialogElement?.show();
+        }
     } else {
         dialogElement?.close();
     }
@@ -19,9 +25,11 @@ $: {
 <dialog bind:this={dialogElement} class="outlined">
     <div class="topBar">
         <h3><slot name="title"></slot></h3>
+        {#if showCloseButton}
         <div class="closeContainer">
             <CloseButton isVisible={open} on:click={() => dispatcher('dialog-closed') } />
         </div>
+        {/if}
     </div>
     <div class="dialogcontent">
         <slot></slot>
