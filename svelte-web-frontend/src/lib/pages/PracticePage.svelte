@@ -558,14 +558,14 @@ function poseEstimationFrameReceived(e: any) {
     if (!evaluation2DPose) { return; }
     try {
         lastEvaluationResult = evaluator?.evaluateFrame(
-            trialId ?? 'null', 
+            trialId, 
             dance.clipRelativeStem,
             practiceActivity?.segmentDescription ?? 'undefined',
             videoTimeSecs,
             actualTimeInMs,
             evaluation2DPose,
             evaluation3DPose,
-            pageState !== 'playing' && trialId !== null,
+            pageState !== 'playing' || trialId === null,
         ) ?? null;
     }
     catch (e) {
