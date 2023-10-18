@@ -1,18 +1,35 @@
 import { formatOrdinals } from "$lib/utils/formatting";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
 
+/**
+ * An object that defines the possible output targets for achievements.
+ */
 export const OutputTarget = Object.freeze({
+    /** Output a user-facing achievement string */
     user: 'user',
+
+    /** Output a system-facing achievement string */
     system: 'system'
 });
+
+/**
+ * The type of an output target for achievements.
+ */
 export type OutputTargetType = keyof typeof OutputTarget;
 
+/**
+ * An object that defines the parameters that will be used for achievement detection.
+ */
 export type AchievementParams = {
     performanceHistory: FrontendDancePeformanceHistory;
     attemptedNodeId: string;
     outputTarget: OutputTargetType;
 }
 
+/**
+ * A map between the number of attempts and the achievement explamation message
+ * for attempts of a single node.
+ */
 const SINGLE_NODE_ATTEMPT_ACHIEVEMENTS = new Map([
         [5, 'Good job!'], 
         [10, 'Nice work!'], 
@@ -20,7 +37,14 @@ const SINGLE_NODE_ATTEMPT_ACHIEVEMENTS = new Map([
         [20, 'Incredible persistence!'],
 ]);
 
-export function getSingleNodeAttemptAchivement(attemptCount: number, sectionName: string, outputTarget: OutputTargetType) {
+/**
+ * Detects achievement if the user has achieved a certain number of attempts for a single node.
+ * @param attemptCount The number of attempts.
+ * @param sectionName The name of the section.
+ * @param outputTarget The output target for the achievement.
+ * @returns The achievement message, or null if no achievement is detected.
+ */
+export function detectSingleNodeAttemptsAchivement(attemptCount: number, sectionName: string, outputTarget: OutputTargetType) {
     const exalamation = SINGLE_NODE_ATTEMPT_ACHIEVEMENTS.get(attemptCount);
     if (exalamation === undefined) {
         return null;
@@ -36,8 +60,12 @@ export function getSingleNodeAttemptAchivement(attemptCount: number, sectionName
     throw new Error('Unknown output target: ' + outputTarget);
 }
 
-
 const defaultAllNodeAchievementSuffixFunction = (attemptCount: number) => `That was your ${formatOrdinals(attemptCount)} attempt!`;
+
+/** 
+ * Map between the attempt count number and objects defining how to construct 
+ * the user-facing achievement message.
+*/
 const ALL_NODES_ATTEMPT_ACHIEVEMENTS = new Map([
     [1, { prefix: 'Great start!', suffixFn: (attemptCount: number) => `You've completed your ${formatOrdinals(attemptCount)} attempt!` }],
     [5, { prefix: 'That a way!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
@@ -48,6 +76,12 @@ const ALL_NODES_ATTEMPT_ACHIEVEMENTS = new Map([
     [100, { prefix: 'Absolutely incredible!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
 ]);
 
+/**
+ * Detects achievement if the user has achieved a certain number of attempts in total for this dance.
+ * @param attemptCount The number of attempts.
+ * @param outputTarget The output target for the achievement.
+ * @returns The achievement message, or null if no achievement is detected.
+ */
 export function getAllNodesAttemptAchievement(attemptCount: number, outputTarget: OutputTargetType) {
     const exalamation = ALL_NODES_ATTEMPT_ACHIEVEMENTS.get(attemptCount);
     if (exalamation === undefined) { 
@@ -64,28 +98,41 @@ export function getAllNodesAttemptAchievement(attemptCount: number, outputTarget
     throw new Error('Unknown output target: ' + outputTarget);
 }
 
+/**
+ * Detects achievements that the user has achieved with this performance. 
+ * @param params Parameters on the users performance state & history.
+ * @returns A list of achievement messages
+ */
 export default function detectAchievements(params: AchievementParams): string[] {
     
     let achievements = [] as string[];
 
-    const singleNodeAttemptCount = getAttemptCount(params, 1, 'attemptedNode');
-    const singleNodeAchivement = getSingleNodeAttemptAchivement(singleNodeAttemptCount, params.attemptedNodeId, params.outputTarget);
+    // Add an achievement if the user has attempted a the current node a special number of times.
+    const singleNodeAttemptCount = getAttemptCount(params, 'attemptedNode');
+    const singleNodeAchivement = detectSingleNodeAttemptsAchivement(singleNodeAttemptCount, params.attemptedNodeId, params.outputTarget);
     if (singleNodeAchivement) {
         achievements.push(singleNodeAchivement);
     }
 
-    const allNodeAttemptCounts = getAttemptCount(params, 1, 'allNodes');
+    // Add an achievement if the user has attempted all nodes a special number of times.
+    const allNodeAttemptCounts = getAttemptCount(params, 'allNodes');
     const allNodeAchivement = getAllNodesAttemptAchievement(allNodeAttemptCounts, params.outputTarget);
     if (allNodeAchivement) {
         achievements.push(allNodeAchivement);
     }
 
-    // achievements.push('Congrats! You have an achievement!');
-
     return achievements
 }
 
-export function getAttemptCount(params: AchievementParams, nTrials: number, target: 'attemptedNode' | 'allNodes'): number {
+/**
+ * Calculate the number of practice attempts the user has made. This is the number of 
+ * times the user has played the dance, excluding any attempts that were part of a larger
+ * performance.
+ * @param params Parameters on the users performance state & history.
+ * @param target Whether to count attempts for the current node, or all nodes.
+ * @returns The number of practice attempts the user has made.
+ */
+export function getAttemptCount(params: AchievementParams, target: 'attemptedNode' | 'allNodes'): number {
 
     let attemptCount: number;
     if (target === 'attemptedNode') {
