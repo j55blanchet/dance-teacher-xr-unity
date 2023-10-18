@@ -238,7 +238,14 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     }
 
     if (!feedback) {
-        feedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+        const perfHistory = $frontendPerformanceHistory;
+        const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
+        feedback = generateFeedbackRuleBased(
+            qijiaOverallScore, 
+            qijiaByVectorScores,
+            dancePerfHistory ?? undefined,
+            practiceActivity?.danceTreeNode?.id,
+        );
     }
     
     feedback.debug = {
@@ -639,9 +646,11 @@ onMount(() => {
 div.demovid { grid-area: demovid; }
 div.mirror {  grid-area: mirror;  }
 div.treevis { grid-area: treevis; }
-div.feedback { grid-area: feedback; }
+
+div.feedback { grid-area: feedback; overflow: hidden;}
 
 section {
+    overflow: hidden;
     display: grid;
     grid-template: "demovid mirror" 1fr / 1fr 1fr;
 

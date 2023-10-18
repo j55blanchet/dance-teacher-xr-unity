@@ -136,13 +136,12 @@ function exportRecordings() {
     
     {#if feedback?.paragraphs}
     <div class="paragraphs">
-        <SpeechInterface textToSpeak={feedback.paragraphs.map(x => x?.trim()).join("\n\n")}/>
+        <SpeechInterface textToSpeak={[
+            ...feedback.paragraphs.map(x => x?.trim()),
+            ...(feedback.incorrectBodyPartsToHighlight ?? []).map(x => `Try focusing on your ${x} next time.`)
+        ].join("\n\n")}/>
     </div>
     {/if}
-    <div class="info ta-center outlined thin dashed p-1">
-        <span class="icon"><Icon type={Icons.info} /></span>
-        <span class="message">Click any part of the dance above to practice that segment.</span>
-    </div>
     <!-- {#each feedback?.paragraphs ?? [] as paragraph}
         <p>{paragraph}</p>
     {/each} -->
@@ -150,9 +149,7 @@ function exportRecordings() {
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
     {/if}
-    {#each feedback?.incorrectBodyPartsToHighlight ?? [] as badbodypart}
-        <p>Try focusing on your {badbodypart} next time.</p>
-    {/each}
+
     {#if skeletonHighlights.length > 0}
     <div class="skeleton">
         <StaticSkeletonVisual 
@@ -160,6 +157,10 @@ function exportRecordings() {
         />
     </div>
     {/if}
+    <div class="info ta-center outlined thin dashed p-1 mt-1">
+        <span class="icon"><Icon type={Icons.info} /></span>
+        <span class="message">Click any part of the dance above to practice that segment.</span>
+    </div>
     {#if buttons.length > 0}
     <div class="buttons">
     {#each buttons as button, i}

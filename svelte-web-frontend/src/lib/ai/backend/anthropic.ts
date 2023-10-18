@@ -35,15 +35,17 @@ export async function getFeedback(
     currentSectionName: string,
     performanceDistillation: string,
     performanceHistoryDistillation: string,
-
+    achivementsDistillation?: string,
 ){
     
+    const achievmentDistillationEntry = achivementsDistillation ? `<achievmentsDistillation>${achivementsDistillation}</achievmentsDistillation>` : '';
+
     const dynamicData = `
 <danceStructureDistillation>${danceStructureDistillation}</danceStructureDistillation>
 <currentSectionName>${currentSectionName}</currentSectionName>
 <performanceDistillation>${performanceDistillation}</performanceDistillation>
 <performanceHistoryDistillation>${performanceHistoryDistillation}</performanceHistoryDistillation>
-`
+${achievmentDistillationEntry}`
     
     const prompt = taskStatement + example + dynamicData + Anthropic.AI_PROMPT;
     
