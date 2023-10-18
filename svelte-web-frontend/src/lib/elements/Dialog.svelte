@@ -49,6 +49,7 @@ dialog {
 dialog::backdrop {
     background: rgba(0, 0, 0, 0.2);
 	backdrop-filter: blur(5px);
+    --webkit-backdrop-filter: blur(5px);
 }
 
 .topBar {

@@ -282,7 +282,7 @@ $: {
             state = "feedback";
             getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
-                    terminalFeedback = feedback;
+                    terminalFeedback = feedback ?? null;
                 });
         }
         else {
@@ -299,12 +299,6 @@ async function waitSecs(secs: number): Promise<void> {
         setTimeout(resolve, secs * 1000);
     })
 }
-
-// $: {
-//     if ($webcamStream && state === "waitWebcam") {
-//         state = "waitStart";
-//     }
-// }
 
 async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
@@ -468,7 +462,7 @@ export async function reset() {
         console.log("Triggering pose estimation priming");
         await virtualMirrorElement.primePoseEstimation();
     }
-    await waitSecs(beatDuration);
+    await tick();
 
     startCountdown();
 }
@@ -651,7 +645,7 @@ onMount(() => {
         {/if}
         {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
         <div class="startCountdown">
-            <button class="button" on:click={() => startCountdown()}>
+            <button class="button thick" on:click={() => startCountdown()}>
                 Start Countdown
             </button>
         </div>
@@ -692,7 +686,7 @@ onMount(() => {
     <Dialog open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
         on:dialog-closed={() => showStartCountdownDialog = false}>
         <span slot="title">Click to Start</span>
-        <p>We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
+        <p class="limit-line-width">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
         <button class="button" on:click={() => startCountdown()}>
             Start Countdown
         </button>
@@ -762,6 +756,13 @@ section {
     display: flex;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    // background-color: rgba(0, 0, 0, 0.2);
+
+    & .button {
+        padding: 1em;
+    }
 }
 
 .countdown {
