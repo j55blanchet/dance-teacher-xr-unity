@@ -10,6 +10,7 @@ import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
 import { distillDanceTreeStructureToTextualRepresentation, distillFrontendPerformanceSummaryToTextualRepresentation, distillPerformanceHistoryToTextualRepresentation } from "./textual-distillation";
 import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./precomputed-feedback-msgs";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
+import detectAchievements from "./detectAchievements";
 
 // Variable to store the value of the evaluation threshold, initialized to 1.0
 let evaluation_GoodBadTrialThresholdValue = 1.0;
@@ -28,6 +29,8 @@ evaluation_GoodBadTrialThreshold.subscribe((value) => {
 export function generateFeedbackRuleBased(
     qijiaOverallScore: number,
     qijiaByVectorScores: Record<string, number>,
+    dancePerformanceHistory: FrontendDancePeformanceHistory | undefined,
+    currentSectionName: string | undefined,
 ): TerminalFeedback {
 
     let headline: string;
@@ -69,9 +72,18 @@ export function generateFeedbackRuleBased(
         }
     }
 
+    let achievements = [] as string[];
+    if (currentSectionName && dancePerformanceHistory) {
+        achievements = detectAchievements({
+            attemptedNodeId: currentSectionName,
+            performanceHistory: dancePerformanceHistory,
+            outputTarget: 'user',
+        });
+    }
+
     return {
         headline: headline,
-        paragraphs: [subHeadline],
+        paragraphs: [...achievements, subHeadline],
         score: {
             achieved: qijiaOverallScore,
             maximumPossible: 5.0,
@@ -111,11 +123,20 @@ export async function generateFeedbackWithClaudeLLM(
             return `* ${attempt.date.toISOString()} ${attempt.segmentId}: ${score}`;
         }).join('\n');
 
+    const achievements = detectAchievements({
+        attemptedNodeId: currentSectionName,
+        performanceHistory: dancePerformanceHistory ?? {},
+        outputTarget: 'system',
+    });
+
+    const achivementsDistillation = achievements.join('\n');
+
     console.log('Requesting feedback from Claude LLM', 
         `currentSectionName: ${currentSectionName}`,
         `danceStructureDistillationIsMissing: ${danceStructureDistillationIsMissing}`,
         `performanceDistillationIsMissing: ${performanceDistillationIsMissing}`,
-        `performanceHistoryDistillationIsMissing: ${performanceHistoryDistillationIsMissing}`,);
+        `performanceHistoryDistillationIsMissing: ${performanceHistoryDistillationIsMissing}`,
+        `achivementsDistillation: ${achivementsDistillation}`,);
 
     // Call into our API route to get the feedback message. The paramaters here
     // must match with the corresponding API route is expecting.
@@ -125,6 +146,7 @@ export async function generateFeedbackWithClaudeLLM(
         danceStructureDistillation, 
         performanceDistillation,
         performanceHistoryDistillation: `${performanceHistoryDistillation}\n${attemptHistoryDistillation}`,
+        achivementsDistillation,
     };
 
     const getClaudeFeedback = async () => {
