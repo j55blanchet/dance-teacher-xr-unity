@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { writable } from 'svelte/store';
-	import { setContext } from 'svelte';
+	import { onMount } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
 	import SettingsPage from '$lib/pages/SettingsPage.svelte';
 	import CloseButton from '$lib/elements/CloseButton.svelte';
+	import { invalidate } from '$app/navigation'
 
 	let settingsDialog: HTMLDialogElement;
 
@@ -18,6 +18,21 @@
 			settingsDialog.close();
 		}
 	}
+
+	export let data
+
+	let { supabase, session } = data
+	$: ({ supabase, session } = data)
+
+	onMount(() => {
+		const { data } = supabase.auth.onAuthStateChange((event, _session) => {
+			if (_session?.expires_at !== session?.expires_at) {
+				invalidate('supabase:auth')
+			}
+		})
+
+		return () => data.subscription.unsubscribe()
+	})
 </script>
 
 <div class="app" class:noNavBar={$navbarProps.collapsed}>

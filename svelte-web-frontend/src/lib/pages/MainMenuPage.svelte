@@ -113,8 +113,8 @@ function toggleSelectDance(dance: Dance) {
 		</div>
 		{/if}
 	</div>
-    <div>
-        <a href="/settings">Settings Page</a>
+    <div class="links">
+        <a href="/account">Account Page</a>
     </div>
 	
 	<!-- <Counter /> -->
@@ -136,4 +136,9 @@ function toggleSelectDance(dance: Dance) {
 		padding: 0.25em 0.5em;
 		
 	}
+
+    .links {
+        flex-flow: row wrap;
+        gap: 1em;
+    }
 </style>
