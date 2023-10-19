@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { danceVideoVolume } from './../model/settings.ts';
-
 import type { Dance, PoseReferenceData } from "$lib/data/dances-store";
 import { onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
@@ -20,6 +18,7 @@ export let muted: boolean = false;
 export let videoWidth: number = 0;
 export let videoHeight: number = 0;
 export let flipHorizontal: boolean = false;
+export let volume: number = 1.0;
 
 let videoAspectRatio = 1;
 $: if (videoWidth > 0 && videoHeight > 0) {
@@ -134,7 +133,7 @@ export async function play() {
         bind:currentTime
         bind:playbackRate
         bind:paused
-        bind:volume={$danceVideoVolume}
+        bind:volume
         bind:muted
         bind:videoWidth
         bind:videoHeight

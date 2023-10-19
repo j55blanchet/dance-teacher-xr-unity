@@ -1,4 +1,5 @@
 <script lang="ts">
+import frontendPerformanceHistory from "$lib/ai/frontendPerformanceHistory";
 import { 
     debugMode, 
     pauseInPracticePage, 
@@ -39,6 +40,13 @@ $: pauseDurationStep = Math.round(10 * lerp(
 
 const qijiaScoreMin = 0;
 const qijiaScoreMax = 5;
+
+function clearPerformanceHistory() {
+    if (!confirm('Are you sure you want to erase all performance history?')) {
+        return;
+    }
+    frontendPerformanceHistory.clearAllHistory();
+}
 </script>
 
 <section class="settingsPage">
@@ -109,11 +117,12 @@ const qijiaScoreMax = 5;
         </div>
     </div>
     <div>
+        <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
+    </div>
+    <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
 </section>
-
-
 
 <style lang="scss">
 .settingsPage {

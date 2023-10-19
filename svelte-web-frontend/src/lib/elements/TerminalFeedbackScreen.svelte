@@ -11,8 +11,6 @@ import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
 import { createEventDispatcher, onMount, tick } from 'svelte';
 import { debugMode } from '$lib/model/settings';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { goto } from '$app/navigation';
-import CloseButton from './CloseButton.svelte';
 import Dialog from './Dialog.svelte';
 import ProgressEllipses from './ProgressEllipses.svelte';
 import SpeechInterface from './SpeechInterface.svelte';
@@ -146,9 +144,10 @@ function exportRecordings() {
         ].join("\n\n")}/>
     </div>
     {/if}
-    <!-- {#each feedback?.paragraphs ?? [] as paragraph}
-        <p>{paragraph}</p>
-    {/each} -->
+
+    {#each feedback?.achievements ?? [] as achivement}
+        <p class="achivement"><Icon type="star"/> {achivement}</p>
+    {/each}
     
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
@@ -294,6 +293,13 @@ h2 {
 }
 p {
     margin-top: 1rem;
+}
+
+.achivement {
+    color: var(--color-theme-1);
+    background-color: #EEF;
+    padding: 0.5em 1em;
+    border-radius: 1em;
 }
 
 pre {

@@ -9,4 +9,9 @@ const danceTree: DanceTree = data.danceTree;
 
 </script>
 
+<svelte:head>
+	<title>{dance.title} (Preview)</title>
+	<meta name="description" content="App for learning the dance: {dance.title}" />
+</svelte:head>
+
 <DanceTreePage {dance} {danceTree} />

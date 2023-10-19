@@ -17,6 +17,7 @@ export type TerminalFeedbackAction = 'repeat' | 'next' | 'navigate';
 export type TerminalFeedback = {
     headline: string;
     paragraphs: string[]; 
+    achievements?: string[];
     suggestedAction: TerminalFeedbackAction;
     navigateOptions?: { label: string, url: string, nodeId?: string}[];
     

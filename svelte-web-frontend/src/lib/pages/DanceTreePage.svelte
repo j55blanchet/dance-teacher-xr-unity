@@ -30,18 +30,8 @@ let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
 let currentPlayingNode: DanceTreeNode | null = null;
-let showProgressNodes: Array<DanceTreeNode> = [];
 
 let videoDuration: number;
-
-$: navbarProps.set({
-    collapsed: false,
-    pageTitle: dance.title,
-    back: {
-        url: '/',
-        title: 'Home',
-    },
-});
 
 $: if (videoCurrentTime > stopTime) {
     videoPaused = true;
@@ -50,7 +40,7 @@ $: if (videoCurrentTime > stopTime) {
 $: {
     navbarProps.update(props => ({
         ...props,
-        pageTitle: dance.title,
+        pageTitle: `${dance.title} (Preview)`,
         backPageUrl: '/',
         backPageTitle: 'Home',
     }));
@@ -89,11 +79,6 @@ async function practiceClicked() {
 }
 
 </script>
-
-<svelte:head>
-	<title>Dance | {dance.title}</title>
-	<meta name="description" content="App for learning the dance: {dance.title}" />
-</svelte:head>
 
 <section class:nodeSelected={currentPlayingNode ?? false }>
     <div class="visual-tree">

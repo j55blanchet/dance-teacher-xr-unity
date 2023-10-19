@@ -250,6 +250,7 @@
             drawX = (canvasElement.width - drawWidth) / 2;
 
         }
+        canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
         canvasContext.drawImage(videoElement, drawX, drawY, drawWidth, drawHeight);
 
         const isValidFrame = 
