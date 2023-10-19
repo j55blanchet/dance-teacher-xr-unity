@@ -325,7 +325,7 @@ async function startCountdown() {
     // starting playback at the beginning of the countdown. If the 
     playClickSound(true);
     videoVolume = 0.01;
-    videoPlaybackSpeed = 0.01;
+    videoPlaybackSpeed = 0.0625;// Minimum playback rate: https://stackoverflow.com/questions/30970920/html5-video-what-is-the-maximum-playback-rate
     let testPlaybackSuccessful = true;
     try {
         await playClickSound(true);
@@ -469,7 +469,8 @@ export async function reset() {
         console.log("Triggering pose estimation priming");
         await virtualMirrorElement.primePoseEstimation();
     }
-    await tick();
+
+    await waitSecs(beatDuration);
 
     startCountdown();
 }
@@ -618,7 +619,7 @@ onMount(() => {
             danceTree={practiceActivity.danceTree}
             nodeHighlights={nodeHighlights}
             enableClick={isShowingFeedback}
-            enableColorCoding={isShowingFeedback}
+            enableColorCoding={ isShowingFeedback ? true : 'yesExceptCurrentNode'}
             on:nodeClicked={(e) => onNodeClicked(e.detail)}
             playingFocusMode={isShowingFeedback ?  
                 'show-all':

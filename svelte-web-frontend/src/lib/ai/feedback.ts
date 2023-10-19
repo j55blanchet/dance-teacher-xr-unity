@@ -83,7 +83,8 @@ export function generateFeedbackRuleBased(
 
     return {
         headline: headline,
-        paragraphs: [...achievements, subHeadline],
+        paragraphs: [subHeadline],
+        achievements: achievements,
         score: {
             achieved: qijiaOverallScore,
             maximumPossible: 5.0,
@@ -127,6 +128,11 @@ export async function generateFeedbackWithClaudeLLM(
         attemptedNodeId: currentSectionName,
         performanceHistory: dancePerformanceHistory ?? {},
         outputTarget: 'system',
+    });
+    const userFacingAchievements = detectAchievements({
+        attemptedNodeId: currentSectionName,
+        performanceHistory: dancePerformanceHistory ?? {},
+        outputTarget: 'user',
     });
 
     const achivementsDistillation = achievements.join('\n');
@@ -193,6 +199,7 @@ export async function generateFeedbackWithClaudeLLM(
     return {
         headline: feedbackTitle,
         paragraphs: [feedbackMessage, coachingMessage],
+        achievements: userFacingAchievements,
         // note the double equals here, we want to compare the string values
         suggestedAction: suggestedSection == currentSectionName ? "repeat" : "navigate", 
         navigateOptions: suggestedURL ? [{ 

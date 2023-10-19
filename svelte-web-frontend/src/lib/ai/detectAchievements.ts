@@ -31,10 +31,29 @@ export type AchievementParams = {
  * for attempts of a single node.
  */
 const SINGLE_NODE_ATTEMPT_ACHIEVEMENTS = new Map([
-        [5, 'Good job!'], 
-        [10, 'Nice work!'], 
-        [15, 'Great persistance!'], 
-        [20, 'Incredible persistence!'],
+    [5, 'Good job!'], 
+    [10, 'Nice work!'], 
+    [15, 'Great persistance!'], 
+    [20, 'Incredible persistence!'],
+    [25, 'You are getting there!'], 
+    [30, 'You are making progress!'], 
+    [35, 'You are doing great!'], 
+    [40, 'You are doing amazing!'],
+    [50, 'You are a pro!'],
+    [60, 'You are a master!'],
+    [70, 'You are a legend!'],
+    [80, 'You are unstoppable!'],
+    [90, "You're like a dance god!"],
+    [100, 'Are you a dance deity?'],
+    [150, 'You are a dance deity!'],
+    [200, 'Your persistance is admirable!'],
+    [300, "You're maniacal!"],
+    [450, "You're crazy!"],
+    [600, "You're insane!"],
+    [800, "Stop it already!"],
+    [1000, "This is too much!"],
+    [1250, "You're a robot!"],
+    [1500, "Even robots would have stopped by now!"],
 ]);
 
 /**
@@ -70,10 +89,24 @@ const ALL_NODES_ATTEMPT_ACHIEVEMENTS = new Map([
     [1, { prefix: 'Great start!', suffixFn: (attemptCount: number) => `You've completed your ${formatOrdinals(attemptCount)} attempt!` }],
     [5, { prefix: 'That a way!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
     [10, { prefix: 'Keep it up!', suffixFn: (attemptCount: number) => `You've reached ${attemptCount} total attempts!` }],
-    [25, { prefix: 'Amazing!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [20, { prefix: 'Amazing!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
     [40, { prefix: "You're a rockstar!", suffixFn: defaultAllNodeAchievementSuffixFunction }],
-    [50, { prefix: 'Incredible!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [60, { prefix: 'Incredible!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [80, { prefix: 'Remarkable!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
     [100, { prefix: 'Absolutely incredible!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [150, { prefix: 'Wowza!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [200, { prefix: 'Unbelievable!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [300, { prefix: 'Legendary!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [400, { prefix: 'Mythical!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [500, { prefix: 'Godlike!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [600, { prefix: 'Unstoppable!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [700, { prefix: 'Epic!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [800, { prefix: 'Unreal!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [900, { prefix: 'Unbelievable!?!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [1000, { prefix: "Stop hunting for all the achievements", suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [1250, { prefix: "There are no more achievements after this", suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [1500, { prefix: "Seriously, stop it", suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [2000, { prefix: "Well...", suffixFn: defaultAllNodeAchievementSuffixFunction }],
 ]);
 
 /**
@@ -105,7 +138,7 @@ export function getAllNodesAttemptAchievement(attemptCount: number, outputTarget
  */
 export default function detectAchievements(params: AchievementParams): string[] {
     
-    let achievements = [] as string[];
+    const achievements = [] as string[];
 
     // Add an achievement if the user has attempted a the current node a special number of times.
     const singleNodeAttemptCount = getAttemptCount(params, 'attemptedNode');
