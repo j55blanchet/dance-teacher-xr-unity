@@ -64,7 +64,6 @@ ${achievmentDistillationEntry}`
     console.log('\nLooking for tags...')
 
     const coachingReflection = claudeText.match(/<coachingreflection>([\s\S]*?)<\/coachingreflection>/)?.[1];
-
     const feedbackMessage = claudeText.match(/<feedbackmessage>([\s\S]*?)<\/feedbackmessage>/)?.[1];
     const nextSection = claudeText.match(/<nextsection>([\s\S]*?)<\/nextsection>/)?.[1];
     const coachingMessage = claudeText.match(/<coachingmessage>([\s\S]*?)<\/coachingmessage>/)?.[1];

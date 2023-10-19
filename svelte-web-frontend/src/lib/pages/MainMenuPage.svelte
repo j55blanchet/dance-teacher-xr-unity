@@ -176,9 +176,6 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
     </div>
     {/if}
     <div>
-        <a href="/settings">Settings Page</a>
-    </div>
-	
 	<!-- <Counter /> -->
 </section>
 
@@ -263,4 +260,9 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 		padding: 0.25em 0.5em;
 		
 	}
+
+    .links {
+        flex-flow: row wrap;
+        gap: 1em;
+    }
 </style>
