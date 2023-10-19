@@ -122,6 +122,10 @@ onMount(() => {
     }
 });
 
+export async function play() {
+    await videoElement.play();
+}
+
 </script>
 
 <div class:fitToFlexbox={fitToFlexbox} class="videoWithSkeleton">

@@ -125,7 +125,11 @@ function exportRecordings() {
 
     const webcamRecording = feedback?.debug?.recordedVideoUrl;
     if (webcamRecording) {
-        promptDownload(webcamRecording, `${filenameRoot}.userrecording.webm`)
+        let extension = 'webm';
+        if (feedback?.debug?.recordedVideoMimeType == 'video/mp4' || webcamRecording.endsWith('.mp4')) {
+            extension = 'mp4';
+        }
+        promptDownload(webcamRecording, `${filenameRoot}.userrecording.${extension}`);
     }
 }
 

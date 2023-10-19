@@ -250,13 +250,13 @@ function barClicked () {
         background: gray;
     }
     .bar.hasGoodScore {
-        background: hsl(120, 19%, 62%);
+        background: hsl(120, 55%, 83%);
     }
     .bar.hasMediumScore {
-        background: hsl(62, 55%, 70%);
+        background: hsl(61, 69%, 83%);
     }
     .bar.hasBadScore {
-        background: hsl(0, 66%, 63%);
+        background: hsl(0, 58%, 83%);
     }
 
     .bar.active {
