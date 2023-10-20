@@ -14,7 +14,7 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
     const { wholePerformance, subsections, segmentDescription } = summary;
 
     const overallPerformance = wholePerformance.skeleton3DAngleSimilarity.overallScore?.toFixed(2);
-    let distillation = `The user just performed "${segmentDescription}". Overall, the user had a ${overallPerformance} match with the reference dance.`;
+    let distillation = `The user just performed "${segmentDescription}", at timestamp: ${new Date().toISOString()}. Overall, the user had a ${overallPerformance} match with the reference dance.`;
     distillation += `A match of above ${mediumScoreThreshold.toFixed(2)} is considered a "fair" performance, and a match of above ${goodScoreThreshold.toFixed(2)} is considered a "good" performance.`
 
     const [worstJointName, worstJointScore] = Object.entries(wholePerformance.skeleton3DAngleSimilarity.individualScores).reduce((prev, curr) => {
@@ -26,7 +26,11 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
         return prev;
     }, ["null", Infinity] as [string, number]);
 
-    distillation += ` The worst joint overall was the ${worstJointName} joint, with an accuracy of ${worstJointScore?.toFixed(2)}.`;
+    if (worstJointScore < mediumScoreThreshold) {
+        distillation += ` The worst joint overall was the ${worstJointName}, with a ${worstJointScore?.toFixed(2)} match to the ${worstJointName} of the reference dancer.`;
+    } else {
+        distillation += ` No joints were particularly bad.`
+    }
 
     const subsectionNames = Object.keys(subsections);
     const subsectionOverallScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity?.overallScore);
@@ -38,7 +42,8 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
         const subsectionsAndScores = subsectionNames.map((subsectionName, subsectionIndex) => {
             const score = subsectionOverallScores[subsectionIndex];
             const worstJointScore = subsectionWorstJointScores?.[subsectionIndex];
-            return `* Section "${subsectionName}" : full-body accuracy: ${score?.toFixed(2)}, worst joint: ${worstJointName}, accuracy: ${worstJointScore?.toFixed(2)})`;
+            const worstJointString = worstJointScore >= mediumScoreThreshold ? " (all joints ok)" : ` (worst joint: ${worstJointName}, match: ${worstJointScore?.toFixed(2)})`;
+            return `* Section "${subsectionName}" : full-body accuracy: ${score?.toFixed(2)}${worstJointString}`;
         });
         distillation += subsectionsAndScores.join("\n");
     }

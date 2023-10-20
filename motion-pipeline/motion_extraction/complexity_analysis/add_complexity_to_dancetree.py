@@ -46,11 +46,11 @@ def add_complexity_to_dancetree(
             node.complexity = 0
 
         last_frame_with_complexity_change = frame_start
-        if node.complexity > 0:
-            # Find the last frame where the complexity changed
-            for frame in range(frame_start, frame_end):
-                if complexity.loc[frame] != complexity.loc[frame+1]:
-                    last_frame_with_complexity_change = frame+1
+        
+        # Find the last frame where the complexity changed
+        for frame in range(frame_start, frame_end):
+            if complexity.loc[frame] != complexity.loc[frame+1]:
+                last_frame_with_complexity_change = frame+1
         
         node.metrics['time_of_last_complexity_change'] = last_frame_with_complexity_change / fps
 

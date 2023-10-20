@@ -102,6 +102,13 @@ export function createPerformanceHistoryStore<MetricTypes extends Record<string,
                 attempts.sort((a, b) => b.date.getTime() - a.date.getTime());
                 return attempts.slice(-n);
             });
+        },
+
+        clearAllHistory() {
+            update(() => {
+                localStorage.removeItem("performanceHistory");
+                return {} as CompletePerformanceHistory<MetricTypes>;
+            });
         }
 	};
 }
