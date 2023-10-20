@@ -1,6 +1,6 @@
 <!-- src/routes/account/+page.svelte -->
 <script lang="ts">
-	import { enhance, type SubmitFunction } from '$app/forms'
+	import { enhance } from '$app/forms'
     import { navbarProps } from "$lib/elements/NavBar.svelte";
     import { onMount } from "svelte";
 
@@ -26,17 +26,18 @@
 	let loading = false
 	let fullName: string = profile?.full_name ?? ''
 	let username: string = profile?.username ?? ''
-	let website: string = profile?.website ?? ''
 	let avatarUrl: string = profile?.avatar_url ?? ''
 
-	const handleSubmit: SubmitFunction = () => {
+    /** @type {import('./$types').SubmitFunction} */    
+	const handleSubmit = () => {
 		loading = true
 		return async () => {
 			loading = false
 		}
 	}
 
-	const handleSignOut: SubmitFunction = () => {
+    /** @type {import('./$types').SubmitFunction} */    
+	const handleSignOut = () => {
 		loading = true
 		return async ({ update }) => {
 			loading = false
@@ -67,11 +68,6 @@
             <div>
                 <label for="username">Username</label>
                 <input id="username" name="username" type="text" value={form?.username ?? username} />
-            </div>
-
-            <div>
-                <label for="website">Website</label>
-                <input id="website" name="website" type="url" value={form?.website ?? website} />
             </div>
 
             <div>
