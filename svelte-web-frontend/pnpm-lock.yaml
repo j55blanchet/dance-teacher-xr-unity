@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@anthropic-ai/sdk':
-    specifier: ^0.6.2
-    version: 0.6.2
+    specifier: ^0.7.0
+    version: 0.7.0
   '@mediapipe/tasks-vision':
     specifier: ^0.10.6
     version: 0.10.6
@@ -105,8 +105,8 @@ packages:
       '@jridgewell/trace-mapping': 0.3.19
     dev: true
 
-  /@anthropic-ai/sdk@0.6.2:
-    resolution: {integrity: sha512-fB9PUj9RFT+XjkL+E9Ol864ZIJi+1P8WnbHspN3N3/GK2uSzjd0cbVIKTGgf4v3N8MwaQu+UWnU7C4BG/fap/g==}
+  /@anthropic-ai/sdk@0.7.0:
+    resolution: {integrity: sha512-qEXJ+R9LcNhSYM8Av/9dUALtNnvo2ub3IaF4WXipHLOoawFF6zJprCjzYDrnE8M4WNmEGvD11BSt0REUlv8MMQ==}
     dependencies:
       '@types/node': 18.17.17
       '@types/node-fetch': 2.6.5
@@ -116,6 +116,7 @@ packages:
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
       node-fetch: 2.7.0
+      web-streams-polyfill: 3.2.1
     transitivePeerDependencies:
       - encoding
     dev: true
@@ -2861,6 +2862,11 @@ packages:
 
   /wasm-feature-detect@1.5.1:
     resolution: {integrity: sha512-GHr23qmuehNXHY4902/hJ6EV5sUANIJC3R/yMfQ7hWDg3nfhlcJfnIL96R2ohpIwa62araN6aN4bLzzzq5GXkg==}
+    dev: true
+
+  /web-streams-polyfill@3.2.1:
+    resolution: {integrity: sha512-e0MO3wdXWKrLbL0DgGnUV7WHVuw9OUvL4hjgnPkIeEvESk74gAITi5G606JtZPp39cd8HA9VQzCIvA49LpPN5Q==}
+    engines: {node: '>= 8'}
     dev: true
 
   /web-streams-polyfill@4.0.0-beta.3:
