@@ -50,6 +50,7 @@ const allBodyParts = Object.keys(bodyPartPaths) as TerminalFeedbackBodyPart[];
 
 <style lang="scss">
 svg {
+    height: 100%;
     max-height: 100%;
     max-width: 100%;
     min-height: 150px;

@@ -39,7 +39,7 @@ export default class UserDanceEvaluator<
      * @param disableRecording If true, the evaluation will not be recorded in the evaluation history
      */
     evaluateFrame(
-        trialId: string, 
+        trialId: string | null, 
         danceRelativeStem: string, 
         segmentDescription: string, 
         videoTimeSecs: number, 
@@ -54,12 +54,11 @@ export default class UserDanceEvaluator<
             return null;
         }
         
-        if (!disableRecording && !this.trackRecorder.tracks.has(trialId)) {
+        if (!disableRecording && trialId !== null && !this.trackRecorder.tracks.has(trialId)) {
             this.trackRecorder.startNewTrack(trialId, danceRelativeStem, segmentDescription);
         }
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const track = this.trackRecorder.tracks.get(trialId)
-
+        
+        const track = trialId !== null ? this.trackRecorder.tracks.get(trialId) : null;
         
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
         const metricResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
@@ -84,7 +83,10 @@ export default class UserDanceEvaluator<
             )]
         })) as {[K in keyof T]: ReturnType<T[K]["computeMetric"]>};
 
-        if (!disableRecording) {
+        if (!disableRecording && trialId !== null) {
+            if (!track) { 
+                throw new Error('User Evaluation Track does not exist for trial ID ' + trialId);
+            }
             this.trackRecorder.recordEvaluationFrame(
                 trialId,
                 videoTimeSecs,

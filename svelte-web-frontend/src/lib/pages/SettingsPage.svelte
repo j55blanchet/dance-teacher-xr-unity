@@ -1,4 +1,5 @@
 <script lang="ts">
+import frontendPerformanceHistory from "$lib/ai/frontendPerformanceHistory";
 import { 
     debugMode, 
     pauseInPracticePage, 
@@ -14,12 +15,11 @@ import {
     useAIFeedback,
     evaluation_summarizeSubsections,
     evaluation_summarizeSubsectionsOptions,
-
 	useTextToSpeech,
-
 	practiceFallbackPlaybackSpeed,
 	summaryFeedback_skeleton3d_mediumPerformanceThreshold,
-    summaryFeedback_skeleton3d_goodPerformanceThreshold
+    summaryFeedback_skeleton3d_goodPerformanceThreshold,
+	danceVideoVolume
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -40,6 +40,13 @@ $: pauseDurationStep = Math.round(10 * lerp(
 
 const qijiaScoreMin = 0;
 const qijiaScoreMax = 5;
+
+function clearPerformanceHistory() {
+    if (!confirm('Are you sure you want to erase all performance history?')) {
+        return;
+    }
+    frontendPerformanceHistory.clearAllHistory();
+}
 </script>
 
 <section class="settingsPage">
@@ -71,6 +78,11 @@ const qijiaScoreMax = 5;
         <div>
             <label for="feedback_GreenThreshold">Live Feedback - Green Threshold</label>
             <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+        </div>
+        <div>
+            <label for="danceVideoVolume">Dance Video Volume</label>
+            <input class="outlined thin" type="range" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>
+            <input class="outlined thin" type="number" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>
         </div>
     </div>
     <div class="group">
@@ -105,11 +117,12 @@ const qijiaScoreMax = 5;
         </div>
     </div>
     <div>
+        <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
+    </div>
+    <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
 </section>
-
-
 
 <style lang="scss">
 .settingsPage {
@@ -141,9 +154,21 @@ div.group {
     }
 }
 
+
+div.group > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 input[type=number] {
     width: 4em;
     font-size: 1em;
+}
+
+input[type=range] {
+    width: 7em;
 }
 
 </style>

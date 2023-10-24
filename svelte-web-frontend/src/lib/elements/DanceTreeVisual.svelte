@@ -18,7 +18,7 @@ export let currentTime: number = 0;
 export let danceTree: DanceTree | undefined = undefined;
 export let node: DanceTreeNode;
 export let playingFocusMode: 'hide-others' | 'hide-non-descendant' | 'show-all' = 'show-all';
-export let enableColorCoding: boolean = false;
+export let enableColorCoding: false | true | 'yesExceptCurrentNode' = false;
 
 export let nodeHighlights: Record<string, NodeHighlight> = {};
 let highlight: NodeHighlight | undefined = undefined;
@@ -26,6 +26,17 @@ $: highlight = nodeHighlights[node.id];
 
 export let showProgressNode: DanceTreeNode | undefined;
 export let beatTimes: Array<number> = [];
+
+let enableThisNodeColorCoding = false;
+$: {
+    if (enableColorCoding === true) {
+        enableThisNodeColorCoding = true;
+    } else if (enableColorCoding === 'yesExceptCurrentNode' && node.id !== showProgressNode?.id) {
+        enableThisNodeColorCoding = true;
+    } else {
+        enableThisNodeColorCoding = false;
+    }
+}
 
 let progressPercent = 0;
 $: progressPercent = (currentTime - node.start_time) / (node.end_time - node.start_time);
@@ -147,10 +158,10 @@ function barClicked () {
        class:hidden={isBarHidden}
        class:button={enableClick} 
        class:active={showProgress}
-       class:hasScore={enableColorCoding && $bestScore !== undefined}
-       class:hasGoodScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_goodPerformanceThreshold}
-       class:hasMediumScore={enableColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_mediumPerformanceThreshold && $bestScore.score <= $summaryFeedback_skeleton3d_goodPerformanceThreshold}
-       class:hasBadScore={enableColorCoding && $bestScore !== undefined && $bestScore.score <= $summaryFeedback_skeleton3d_mediumPerformanceThreshold}
+       class:hasScore={enableThisNodeColorCoding && $bestScore !== undefined}
+       class:hasGoodScore={enableThisNodeColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_goodPerformanceThreshold}
+       class:hasMediumScore={enableThisNodeColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_mediumPerformanceThreshold && $bestScore.score <= $summaryFeedback_skeleton3d_goodPerformanceThreshold}
+       class:hasBadScore={enableThisNodeColorCoding && $bestScore !== undefined && $bestScore.score <= $summaryFeedback_skeleton3d_mediumPerformanceThreshold}
        class:highlighted={highlight !== undefined}
        class:highlighted-pulse={highlight?.pulse ?? false}
        class:labeled={highlight?.label !== undefined}
@@ -177,6 +188,7 @@ function barClicked () {
         <span class="label">{highlight?.label}</span>
         {/if}
     </a>
+
     {#if node.children.length > 0}
         <div class="children" class:hidden={areAllChildrenHidden}>
         {#each node.children as child}
@@ -205,12 +217,13 @@ function barClicked () {
 }
     
     .bar {
+        background: lightgray;
         box-sizing: border-box;
         position: relative;
         // min-width: 100%;
         text-align: center;
         min-height: 1em;
-        transition: height var(--hide-transition-duration) ease-in-out, width var(--hide-transition-duration) ease-in-out, padding var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out;
+        transition: height var(--hide-transition-duration) ease-in-out, width var(--hide-transition-duration) ease-in-out, padding var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out, background-color var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
         overflow: hidden;
@@ -250,13 +263,13 @@ function barClicked () {
         background: gray;
     }
     .bar.hasGoodScore {
-        background: hsl(120, 19%, 62%);
+        background: hsl(120, 55%, 83%);
     }
     .bar.hasMediumScore {
-        background: hsl(62, 55%, 70%);
+        background: hsl(61, 69%, 83%);
     }
     .bar.hasBadScore {
-        background: hsl(0, 66%, 63%);
+        background: hsl(0, 58%, 83%);
     }
 
     .bar.active {
@@ -267,7 +280,7 @@ function barClicked () {
     .bar.hidden {
         box-shadow: 0;
         // border: 0;
-        min-height: 0;
+        min-height: 0.5em;
         opacity: 0.2;
     }
 

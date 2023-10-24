@@ -46,6 +46,11 @@ $: {
 
 </script>
 
+<svelte:head>
+	<title>{dance.title} '{node.id}' Practice</title>
+	<meta name="description" content="Practice page for section {node.id} of dance: {dance.title}" />
+</svelte:head>
+
 <section>
     <PracticePage 
         {dance} 

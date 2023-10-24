@@ -2,7 +2,7 @@
 export let disabled: boolean = false
 </script>
 
-<button on:click disabled={disabled}>
+<button on:click disabled={disabled} >
     <span>
         <slot></slot>
     </span>

@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-export type PracticePageState = "waitWebcam" | "waitStart" | "countdown" | "playing" | "paused" | "feedback";
+export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
@@ -29,6 +29,7 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
+import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
 
 export let mirrorForEvaluation: boolean = true;
@@ -80,11 +81,14 @@ $: {
 
 let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
 let virtualMirrorElement: VirtualMirror;
+let videoWithSkeleton: VideoWithSkeleton;
 let videoCurrentTime: number = 0;
 let videoPlaybackSpeed: number = 1;
 let videoDuration: number = 0;
+let videoVolume: number = 0.5;
 $: console.log("VideoDuration", videoDuration);
 let isVideoPausedBinding: boolean = true;
+let showStartCountdownDialog = false;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
@@ -154,6 +158,7 @@ let countdownActive = false;
 const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
 let currentPlaybackEndtime = practiceActivity?.endTime ?? 0;
 
+let webcamRecorderMimeType = 'video/webm';
 let webcamRecorder: MediaRecorder | null = null;
 let webcamRecordedChunks: Blob[] = [];
 
@@ -167,14 +172,6 @@ $: {
 
 $: {
     poseEstimationEnabled = pageActive && (countdownActive || !isVideoPausedBinding || state==="paused") && currentActivityType === 'drill';
-}
-$: { 
-    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
-    if (practiceActivity?.playbackSpeed !== 'default' && 
-        practiceActivity?.playbackSpeed !== undefined &&
-        !isNaN(practiceActivity.playbackSpeed)) {
-        videoPlaybackSpeed = practiceActivity.playbackSpeed;
-    }
 }
 
 let lastNAttempts = frontendPerformanceHistory.lastNAttempts(
@@ -199,7 +196,11 @@ function unPauseVideo() {
     state = "playing";
 }
 
+
 async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
+    if (gettingFeedback) return;
+
+    gettingFeedback = true;
 
     const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
     const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
@@ -239,7 +240,14 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     }
 
     if (!feedback) {
-        feedback = generateFeedbackRuleBased(qijiaOverallScore, qijiaByVectorScores);
+        const perfHistory = $frontendPerformanceHistory;
+        const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
+        feedback = generateFeedbackRuleBased(
+            qijiaOverallScore, 
+            qijiaByVectorScores,
+            dancePerfHistory ?? undefined,
+            practiceActivity?.danceTreeNode?.id,
+        );
     }
     
     feedback.debug = {
@@ -247,11 +255,15 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         performanceSummary: performanceSummary ?? undefined,
         recordedTrack: recordedTrack ?? undefined,
         recordedVideoUrl: videoURL,
+        recordedVideoMimeType: webcamRecorderMimeType,
     }
+
+    gettingFeedback = false;
 
     return feedback;
 }
 
+let gettingFeedback = false;
 // Auto-pause the video when the practice activity is over
 $: {
     if ((practiceActivity?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
@@ -281,7 +293,7 @@ $: {
             }
             getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
-                    terminalFeedback = feedback;
+                    terminalFeedback = feedback ?? null;
                 });
         }
         else {
@@ -299,15 +311,10 @@ async function waitSecs(secs: number): Promise<void> {
     })
 }
 
-$: {
-    if ($webcamStream && state === "waitWebcam") {
-        state = "waitStart";
-    }
-}
-
-function playClickSound() {
+async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
-    clickAudioElement.play();
+    clickAudioElement.volume = silent ? 0 : 1;
+    return clickAudioElement.play();
 }
 
 let metronomePlaying = false;
@@ -333,8 +340,43 @@ async function launchMetronome() {
 async function startCountdown() {
     if (countdownActive) return;
 
+    state = "countdown";
+    countdownActive = true;
+
+    // Safari / webkit disallows media elements from auto-playing without user interaction. We
+    // want to be able to control the playback of the video element programatically, which safari
+    // will only allow once the user has triggered playback through a user interaction. So, we try 
+    // starting playback at the beginning of the countdown. If the 
+    playClickSound(true);
+    videoVolume = 0.01;
+    videoPlaybackSpeed = 0.0625;// Minimum playback rate: https://stackoverflow.com/questions/30970920/html5-video-what-is-the-maximum-playback-rate
+    let testPlaybackSuccessful = true;
+    try {
+        await playClickSound(true);
+        await videoWithSkeleton.play();
+    }
+    catch(e) {
+        testPlaybackSuccessful = false
+        console.warn('startCountdown: test playback unsuccessful. Will try again after user interaction.', e);
+    }
+
     isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
+    videoVolume = 0.5;
+    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
+    if (practiceActivity?.playbackSpeed !== 'default' && 
+        practiceActivity?.playbackSpeed !== undefined &&
+        !isNaN(practiceActivity.playbackSpeed)) {
+        videoPlaybackSpeed = practiceActivity.playbackSpeed;
+    }
+
+    if (!testPlaybackSuccessful) {
+        state = 'waitStartUserInteraction';
+        showStartCountdownDialog = true;
+        countdownActive = false;
+        return;
+    }
+
     await tick();
     if (poseEstimationEnabled) {
         console.log("Triggering pose estimation priming");
@@ -342,20 +384,25 @@ async function startCountdown() {
     }
     await waitSecs(beatDuration);
 
-    const beatOffset = practiceActivity?.dance?.beat_offset ?? 0;
-
     state = "countdown";
     countdownActive = true;
-    
-    countdown = 4;
-    launchMetronome();
-    while (countdown  < 8) {
-        countdown++;
-        await waitSecs(beatDuration);
-    }
-    
-    practiceActivity?.dance?.all_beat_times ??  [];
-    
+    await waitSecs(beatDuration);
+
+    countdown = 5;
+    playClickSound();
+    await waitSecs(beatDuration);
+
+    countdown = 6;
+    playClickSound();
+    await waitSecs(beatDuration);
+
+    countdown = 7;
+    playClickSound();
+    await waitSecs(beatDuration);
+
+    countdown = 8;
+    playClickSound();
+    await waitSecs(beatDuration);
 
     trialId = generateUUIDv4();
     state = "playing";
@@ -374,7 +421,13 @@ async function startCountdown() {
             resolveWebcamRecordedObjectUrl = resolve;
             rejectWebcamRecordedObjectUrl = reject;
         });
-        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: 'video/webm' });
+
+        if (MediaRecorder.isTypeSupported('video/webm')) {
+            webcamRecorderMimeType = 'video/webm';
+        } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+            webcamRecorderMimeType = 'video/mp4';
+        }
+        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: webcamRecorderMimeType });
         webcamRecordedChunks = [];
         webcamRecorder.addEventListener('dataavailable', (e) => {
             webcamRecordedChunks.push(e.data);
@@ -416,6 +469,8 @@ export async function reset() {
     const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
     
+
+
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
     const promises = [] as Promise<any>[];
@@ -442,7 +497,18 @@ export async function reset() {
         referenceDancePoses2D!,
         referenceDancePoses3D!
     );
-    // console.lUserDanceEvaluator await poseEstimationReady;
+
+    isVideoPausedBinding = true;
+    videoCurrentTime = practiceActivity?.startTime ?? 0;
+
+    await tick();
+
+    if (poseEstimationEnabled) {
+        console.log("Triggering pose estimation priming");
+        await virtualMirrorElement.primePoseEstimation();
+    }
+
+    await waitSecs(beatDuration);
 
     startCountdown();
 }
@@ -532,14 +598,14 @@ function poseEstimationFrameReceived(e: any) {
     if (!evaluation2DPose) { return; }
     try {
         lastEvaluationResult = evaluator?.evaluateFrame(
-            trialId ?? 'null', 
+            trialId, 
             dance.clipRelativeStem,
             practiceActivity?.segmentDescription ?? 'undefined',
             videoTimeSecs,
             actualTimeInMs,
             evaluation2DPose,
             evaluation3DPose,
-            pageState !== 'playing' && trialId !== null,
+            pageState !== 'playing' || trialId === null,
         ) ?? null;
     }
     catch (e) {
@@ -594,7 +660,7 @@ onMount(() => {
             danceTree={practiceActivity.danceTree}
             nodeHighlights={nodeHighlights}
             enableClick={isShowingFeedback}
-            enableColorCoding={isShowingFeedback}
+            enableColorCoding={ isShowingFeedback ? true : 'yesExceptCurrentNode'}
             on:nodeClicked={(e) => onNodeClicked(e.detail)}
             playingFocusMode={isShowingFeedback ?  
                 'show-all':
@@ -607,6 +673,7 @@ onMount(() => {
     
     <div class="demovid" style:display={state === "feedback" ? 'none' : 'flex'}>
         <VideoWithSkeleton
+            bind:this={videoWithSkeleton}
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
             bind:paused={isVideoPausedBinding}
@@ -615,6 +682,7 @@ onMount(() => {
             fitToFlexbox={fitVideoToFlexbox}
             poseData={referenceDancePoses2D}
             drawSkeleton={drawReferenceDanceSkeleton}
+            volume={videoVolume}
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
@@ -624,6 +692,13 @@ onMount(() => {
                     {countdown}
                 </span>
             </div>
+        {/if}
+        {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
+        <div class="startCountdown">
+            <button class="button thick" on:click={() => startCountdown()}>
+                Start Countdown
+            </button>
+        </div>
         {/if}
     </div>
     {#if state === "feedback"}
@@ -657,6 +732,15 @@ onMount(() => {
         </div>
         {/if}
     </div>
+
+    <Dialog open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
+        on:dialog-closed={() => showStartCountdownDialog = false}>
+        <span slot="title">Click to Start</span>
+        <p class="limit-line-width">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
+        <button class="button" on:click={() => startCountdown()}>
+            Start Countdown
+        </button>
+    </Dialog>
 </section>
 
 <style lang="scss">
@@ -664,9 +748,11 @@ onMount(() => {
 div.demovid { grid-area: demovid; }
 div.mirror {  grid-area: mirror;  }
 div.treevis { grid-area: treevis; }
-div.feedback { grid-area: feedback; }
+
+div.feedback { grid-area: feedback; overflow: hidden;}
 
 section {
+    overflow: hidden;
     display: grid;
     grid-template: "demovid mirror" 1fr / 1fr 1fr;
 
@@ -710,6 +796,24 @@ section {
         align-items: stretch;
         justify-content: stretch;
         flex-direction: column;
+    }
+}
+
+.startCountdown {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    // background-color: rgba(0, 0, 0, 0.2);
+
+    & .button {
+        padding: 1em;
     }
 }
 

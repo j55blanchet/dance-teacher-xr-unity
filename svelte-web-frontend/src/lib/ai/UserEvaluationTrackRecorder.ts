@@ -81,7 +81,7 @@ export class PerformanceEvaluationTrack<T extends Record<string, unknown>> {
         const existingCurrentFrames = this.videoFrameTimesInSecs.length;
         const lastFrameTime = this.videoFrameTimesInSecs.slice(-1)[0] ?? -Infinity
         if (videoTimeSecs < lastFrameTime) {
-            throw new Error(`Frame time must be increasing. Id: ${this.id}, frame time: ${videoTimeSecs}, last frame time: ${lastFrameTime}, frameCount: ${existingCurrentFrames}`);
+            throw new Error(`Frame time must be increasing. Id: ${this.id}, frame time: ${videoTimeSecs}, last frame time: ${lastFrameTime}, frameCount: ${existingCurrentFrames}, videoTimeInSecs: ${videoTimeSecs}, actualTimeInSecs: ${actualTimeMs / 1000}`);
         }
 
         this.videoFrameTimesInSecs.push(videoTimeSecs)

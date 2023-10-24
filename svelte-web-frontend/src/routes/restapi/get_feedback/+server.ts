@@ -10,6 +10,7 @@ export async function POST(event: RequestEvent) {
     const currentSectionName = data.currentSectionName;
     const performanceDistillation = data.performanceDistillation;
     const performanceHistoryDistillation = data.performanceHistoryDistillation;
+    const achivementsDistillation = data.achivementsDistillation as string | undefined;
     
     if (!danceStructureDistillation || !currentSectionName || !performanceDistillation || !performanceHistoryDistillation) {
         const missingParameters = [
@@ -31,6 +32,7 @@ export async function POST(event: RequestEvent) {
         currentSectionName,
         performanceDistillation,
         performanceHistoryDistillation,
+        achivementsDistillation,
     );
 
     return json(feedbackData);
