@@ -23,6 +23,13 @@ npm install -g pnpm
 pnpm install
 ```
 
+5. Configure supabase
+```bash
+pnpm supabase init
+pnpm supabase login # you'll need to provide an access token, which you can get from the supabase dashboard
+pnpm supabase start
+```
+
 5. Run the app:
 
 ```bash
