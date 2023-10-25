@@ -56,6 +56,14 @@ function clearPerformanceHistory() {
             <label for="debugMode">Debug Mode</label>
             <input type="checkbox" name="debugMode" bind:checked={$debugMode}>
         </div>
+    </div>
+    <div class="group">
+        <h3>Practice Page</h3>
+        <div>
+            <label for="practiceFallbackPlaybackSpeed">Practice Page Default Speed</label>
+            <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
+        </div>
+        {#if $debugMode}
         <div>
             <label for="pauseInPracticePage">Pause in Practice Page</label>
             <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>
@@ -63,13 +71,6 @@ function clearPerformanceHistory() {
         <div>
             <label for="debugPauseDuration">Debug Pause Duration</label>
             <input class="outlined thin" type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
-        </div>
-    </div>
-    <div class="group">
-        <h3>Practice Page</h3>
-        <div>
-            <label for="practiceFallbackPlaybackSpeed">Practice Page Default Speed</label>
-            <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
         </div>
         <div>
             <label for="feedback_YellowThreshold">Live Feedback - Yellow Threshold</label>
@@ -79,12 +80,14 @@ function clearPerformanceHistory() {
             <label for="feedback_GreenThreshold">Live Feedback - Green Threshold</label>
             <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
         </div>
+        {/if}
         <div>
             <label for="danceVideoVolume">Dance Video Volume</label>
             <input class="outlined thin" type="range" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>
             <input class="outlined thin" type="number" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>
         </div>
     </div>
+    {#if $debugMode}
     <div class="group">
         <h3>Summary Feedback</h3>
         <div>
@@ -119,6 +122,7 @@ function clearPerformanceHistory() {
     <div>
         <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
     </div>
+    {/if}
     <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
