@@ -185,6 +185,12 @@ a.button {
 	flex: 1;
 	flex-basis: 0;
 }
+.col.vcenter {
+	align-self: center;
+}
+.col.vfill {
+	height: 100%;
+}
 
 .ta-center {
 	text-align: center;
@@ -193,10 +199,25 @@ a.button {
 	text-align: right;
 }
 .p-1 {
-	padding: 0.25em;
+	padding: 0.25rem;
+}
+.p-4 {
+	padding: 1rem;
+}
+.pb-4 {
+	padding-bottom: 1rem;
 }
 .mt-1 {
-	margin-top: 0.25em;
+	margin-top: 0.25rem;
+}
+.m-4 {
+	margin: 1rem;
+}
+.ml-4 {
+	margin-left: 1rem;
+}
+.mb-4 {
+	margin-bottom: 1rem;
 }
 
 .margin-auto {
@@ -237,3 +258,41 @@ div.spinner {
 }
   
 
+.flex {
+	display: flex;
+	box-sizing: border-box;
+}
+.flex-row {
+	flex-direction: row;
+}
+.flex-col {
+	flex-direction: column;
+}
+.flex-wrap {
+	flex-wrap: wrap;
+}
+.flex-nowrap {
+	flex-wrap: nowrap;
+}
+.flex-mainaxis-center {
+	justify-content: center;
+}
+
+.flex-crossaxis-center {
+	align-items: center;
+}
+.flex-center {
+	justify-content: center;
+	align-items: center;
+}
+
+.flex-mainaxis-stretch {
+	justify-content: stretch;
+}
+.flex-crossaxis-stretch {
+	align-items: stretch;
+}
+.flex-stretch {
+	justify-content: stretch;
+	align-items: stretch;
+}

@@ -201,13 +201,16 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
         position: relative;
         border-radius: 0.5rem;
         text-decoration: none;
+        overflow: hidden;
         color: var(--color-text);
-        background-color: rgba(255, 255, 255, 0.15);
         display: flex;
         flex-direction: row;
         justify-content: left;
-        overflow: hidden;
-        box-shadow: 0.2rem 0.2rem 0.5rem rgba(0, 0, 0, 0.15);
+
+        background-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0.2rem 0.2rem 0.5rem rgba(0, 0, 0, 0.25);
+        
+        transition: all 0.05s ease-out;
 
         & .thumbnail {
             align-self: center;
@@ -224,10 +227,9 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     }
 
     .tile:hover {
-        background-color: rgba(255, 255, 255, 0.25);
-        border-color: var(--color-theme-1);
+        background-color: rgba(245, 255, 245, 0.4);
+        box-shadow: 0.15rem 0.15rem 0.6rem rgba(0, 0, 0, 0.4);
         color: var(--color-theme-1);
-        box-shadow: 0.2rem 0.2rem 0.5rem rgba(0, 0, 0, 0.25);
     }
 
     .tile-details {
