@@ -91,6 +91,7 @@ async function practiceClicked() {
                 showProgressNode={currentPlayingNode ?? undefined}
                 currentTime={videoCurrentTime}
                 beatTimes={danceBeatTimes}
+                enableColorCoding={true}
             /> 
         </div>
     </div>
