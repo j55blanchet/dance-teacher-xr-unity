@@ -52,6 +52,7 @@ let isPlayingOrCountdown = INITIAL_STATE === "playing" || INITIAL_STATE === "cou
 $: isPlayingOrCountdown = state === "playing" || state === "countdown";
 let isShowingFeedback = state === 'feedback';
 $: isShowingFeedback = state === 'feedback';
+let isMounted = false;
 
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
@@ -354,18 +355,22 @@ async function startCountdown() {
     countdown = 5;
     playClickSound();
     await waitSecs(beatDuration);
-
+    if (!isMounted) return
+    
     countdown = 6;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     countdown = 7;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     countdown = 8;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     trialId = generateUUIDv4();
     state = "playing"
@@ -585,6 +590,7 @@ onMount(() => {
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
+    isMounted = true;
 
     return () => {
         if (unpauseVideoTimeout) {
@@ -597,6 +603,7 @@ onMount(() => {
             webcamRecorder.stop();
             webcamRecorder = null;
         }
+        isMounted = false;
     }
 })
 
