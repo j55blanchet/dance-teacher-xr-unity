@@ -29,7 +29,8 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
-	import Dialog from '$lib/elements/Dialog.svelte';
+import Dialog from '$lib/elements/Dialog.svelte';
+import { waitSecs } from '$lib/utils/async';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -299,12 +300,6 @@ $: {
             }
         }
     }
-}
-
-async function waitSecs(secs: number): Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(resolve, secs * 1000);
-    })
 }
 
 async function playClickSound(silent: boolean = false) {

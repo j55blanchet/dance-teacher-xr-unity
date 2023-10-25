@@ -1,20 +1,29 @@
 <script lang="ts">
 	import { writable } from 'svelte/store';
-	import { setContext } from 'svelte';
+	import { setContext, tick } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
 	import SettingsPage from '$lib/pages/SettingsPage.svelte';
 	import CloseButton from '$lib/elements/CloseButton.svelte';
+	import { waitSecs } from '$lib/utils/async';
 
 	let settingsDialog: HTMLDialogElement;
 
 	let showingSettings = false;
-	function toggleSettings() {
+	let showingSettingsCloseButton = false;
+	async function toggleSettings() {
 		showingSettings = !showingSettings;
 		if (showingSettings) {
 			settingsDialog.showModal();
+			
+			// Delay showing the close button until the dialog has finished opening,
+			// so that the animation can be appreciated
+			await tick();
+			await waitSecs(0.1);
+			showingSettingsCloseButton = true;
 		} else {
+			showingSettingsCloseButton = false;
 			settingsDialog.close();
 		}
 	}
@@ -31,7 +40,9 @@
 	</div>
 
 	<dialog class="settingsDialog" bind:this={settingsDialog}>
-		<CloseButton isVisible={showingSettings} on:click={toggleSettings} />
+		<div class="closeButtonContainer">
+			<CloseButton isVisible={showingSettingsCloseButton} on:click={toggleSettings} />
+		</div>
 		<div class="settingsContainer outlined">
 			<SettingsPage />
 		</div>
@@ -72,6 +83,12 @@
 		background: none;
 		border: none;
 		/* background: rgba(0, 0, 0, 0.5); */
+	}
+
+	.closeButtonContainer {
+		display: flex;
+		justify-content: flex-end;
+		
 	}
 
 	.settingsDialog::backdrop {
