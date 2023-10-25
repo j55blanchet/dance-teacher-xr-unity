@@ -9,10 +9,11 @@
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
+		"types": ["unplugin-icons/types/svelte"] // expose unplugin-icons types to vite
 	},  
 	"exclude": [
 		"testResults"
-	]
+	],
 // Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
 	//
 	// If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes
