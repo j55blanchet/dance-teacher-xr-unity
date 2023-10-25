@@ -3,6 +3,7 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
+import { danceVideoVolume } from './../model/settings.ts';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -335,7 +336,7 @@ async function startCountdown() {
 
     isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
-    videoVolume = 0.5;
+    videoVolume = $danceVideoVolume;
     videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
     if (practiceActivity?.playbackSpeed !== 'default' && 
         practiceActivity?.playbackSpeed !== undefined &&

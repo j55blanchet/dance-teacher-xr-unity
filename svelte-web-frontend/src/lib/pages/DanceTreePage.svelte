@@ -10,7 +10,7 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
-import { debugMode } from '$lib/model/settings';
+import { danceVideoVolume, debugMode } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 
 export let dance: Dance;
@@ -122,6 +122,7 @@ $: {
                 bind:paused={videoPaused}
                 fitToFlexbox={false}
                 drawSkeleton={false}
+                volume={$danceVideoVolume}
                 >
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>
