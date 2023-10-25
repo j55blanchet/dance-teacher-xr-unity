@@ -62,3 +62,21 @@ You can also run tests from the command line:
 * You can also execute `pnpm run test --coverage` to run the tests and generate a coverage report.
 
 Many motion metric tests include a test that runs the metric against multiple pre-recorded dance performance and outputs the formatted summaries of the results in the `testResults` directory. These CSV files are very useful for getting an overview of a given metric's output for many different performances. You can record a new performance by loading up the site, enabling debug mode, and practicing a segment. Then, click "Export Recorded Track", enter a description for the track, and the files will be saved.
+
+## Development Tips
+
+### Using Icons
+
+We use the [unplugin-icons](https://github.com/unplugin/unplugin-icons) package. For consistency, we prefer to use icons form the `IconPark Outline` library, searchable [here](https://icon-sets.iconify.design/icon-park-outline/).
+
+To put an icon in your code, first import it like so:
+
+```js
+import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
+```
+
+Then use it like so:
+
+```html
+<ClockIcon />
+```
