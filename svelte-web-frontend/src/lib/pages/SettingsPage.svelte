@@ -59,11 +59,11 @@ function clearPerformanceHistory() {
     </div>
     <div class="group">
         <h3>Practice Page</h3>
+        {#if $debugMode}
         <div>
             <label for="practiceFallbackPlaybackSpeed">Practice Page Default Speed</label>
             <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
         </div>
-        {#if $debugMode}
         <div>
             <label for="pauseInPracticePage">Pause in Practice Page</label>
             <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>

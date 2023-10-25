@@ -161,12 +161,17 @@ export async function play() {
     flex-shrink: 1;
     flex-grow: 1;
     max-width: 100%;
+    max-height: 100%;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
 }
 
 video {
     max-width: 100%;
     // width: 100%;
-    height: 100%;
+    max-height: 100%;
     border-radius: var(--std-border-radius);
 }
 

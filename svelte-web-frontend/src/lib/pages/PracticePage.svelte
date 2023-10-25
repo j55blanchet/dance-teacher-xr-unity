@@ -144,10 +144,11 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
     const danceTree = practiceActivity.danceTree;
     const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
     const nodeSlug = clickedNode.id;
-    const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}`;
+    
+    const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}?playbackSpeed=${practiceActivity.playbackSpeed}`;
     await goto(url);
     
-    let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, 'default');
+    let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, practiceActivity.playbackSpeed);
     practiceActivity = newActivity;
     await reset();
 }

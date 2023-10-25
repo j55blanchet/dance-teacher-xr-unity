@@ -5,6 +5,7 @@ import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 import SketchButton from '$lib/elements/SketchButton.svelte';
 import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode } from '$lib/data/dances-store';
+import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 
@@ -70,11 +71,26 @@ async function practiceClicked() {
 
         // @ts-ignore
         const curPath: string = $page?.path ?? "";
-        const url = curPath + "practicenode/" + currentPlayingNode.id;
+        const url = `${curPath}practicenode/${currentPlayingNode.id}?playbackSpeed=${videoPlaybackSpeed}`;
         await goto(url);
     } 
     catch(e) {
         console.error("Error navigating to practice page", e);
+    }
+}
+
+let nodeHighlights: Record<string, NodeHighlight> = {};
+$: {
+    if (currentPlayingNode) {
+        nodeHighlights = {
+            [currentPlayingNode.id]: {
+                color: 'var(--color-theme-1)',
+                label: currentPlayingNode.id,
+            }
+        };
+    }
+    else {
+        nodeHighlights = {};
     }
 }
 
@@ -92,48 +108,50 @@ async function practiceClicked() {
                 currentTime={videoCurrentTime}
                 beatTimes={danceBeatTimes}
                 enableColorCoding={true}
+                nodeHighlights={nodeHighlights}
             /> 
         </div>
     </div>
-    
-    
-    <div class="ta-center">
-        {#if currentPlayingNode}
-            {#if $debugMode}
-            <span>{currentPlayingNode.id}</span>
-            {/if}
-            <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
-                {#if $navigating}
-                    Navigating<ProgressEllipses />
-                {:else}
-                    Practice
-                {/if}
-            </SketchButton>
-        {:else}
-            <span>Select a node to practice</span>
-        {/if}
-    </div>
-    
-    
-    <div class="preview">
-       
-        <VideoWithSkeleton bind:currentTime={videoCurrentTime}
-            bind:playbackRate={videoPlaybackSpeed}
-            bind:duration={videoDuration}
-            bind:paused={videoPaused}
-            bind:fitToFlexbox={fitVideoToFlexbox}
-            drawSkeleton={false}
-            >
-            <source src={danceSrc} type="video/mp4" />
-        </VideoWithSkeleton>
-        {#if $debugMode}
-        <div class="controls">
-            <div class="control">
-                <span><label for="playbackSpeed">Playback Speed</label>:&nbsp;{videoPlaybackSpeed.toFixed(1)}x</span>
-                <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.5" max="2" step="0.1" />
-            </div>
+     
+    <div class="preview-container cols">
+        <div class="col ml-4 pb-4 vfill flex flex-col flex-crossaxis-center flex-mainaxis-stretch">
+        
+            <VideoWithSkeleton bind:currentTime={videoCurrentTime}
+                bind:playbackRate={videoPlaybackSpeed}
+                bind:duration={videoDuration}
+                bind:paused={videoPaused}
+                fitToFlexbox={false}
+                drawSkeleton={false}
+                >
+                <source src={danceSrc} type="video/mp4" />
+            </VideoWithSkeleton>
         </div>
-        {/if}
+        <div class="col vfill flex flex-col flex-center controls">
+            <h3>
+                {#if currentPlayingNode}
+                    Playing '{currentPlayingNode.id}'
+                {:else}
+                    Select a part of the song to practice
+                {/if}
+            </h3>
+            <div class="control">
+                <label for="playbackSpeed">Speed:</label>
+                <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.4" max="1.2" step="0.1" />
+                {videoPlaybackSpeed.toFixed(1)}x
+            </div>
+            {#if currentPlayingNode}
+                {#if $debugMode}
+                <span>{currentPlayingNode.id}</span>
+                {/if}
+                <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
+                    {#if $navigating}
+                        Navigating<ProgressEllipses />
+                    {:else}
+                        Practice {currentPlayingNode.id}
+                    {/if}
+                </SketchButton>
+            {/if}
+        </div>
     </div>
 </section>
 
@@ -145,18 +163,12 @@ section {
     height: var(--content_height);
     box-sizing: border-box;
     display: grid;
-    overflow: hidden;
-    grid-template-rows: auto auto minmax(0, 1fr); 
+    grid-template-rows: auto minmax(0, 1fr); 
     gap: 1rem;
 }
 
-.preview {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch;
-    overflow: hidden;
-    padding-bottom: 1rem;
+.preview-container {
+    position: relative;
 }
 
 .visual-tree {
@@ -173,10 +185,19 @@ section {
     // margin-bottom: 1rem;
 // }
 
+.controls {
+    gap: 0.5rem;
+}
+
 .control {
     display: flex;
-    flex-direction: column; 
+    flex-direction: row; 
     align-items: center;
     justify-content: center;
+    gap: 1ch;
+
+    input[type="range"] {
+        max-width: 10ch;
+    }
 }
 </style>
