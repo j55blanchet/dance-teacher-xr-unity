@@ -3,7 +3,7 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { danceVideoVolume } from './../model/settings.ts';
+import { danceVideoVolume } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -322,7 +322,7 @@ async function launchMetronome() {
     if (metronomePlaying) return;
     metronomePlaying = true;
     let beatCount = 0;
-    while (state !== "feedback") {
+    while (state !== "feedback" && isMounted) {
         playClickSound();
         
         await new Promise<void>((res) => {

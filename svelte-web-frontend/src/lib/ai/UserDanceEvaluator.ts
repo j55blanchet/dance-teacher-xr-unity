@@ -117,7 +117,12 @@ export default class UserDanceEvaluator<
         if (!track) {
             return null;
         }
-        const adjustedTrack = track.withRecomputedFrameTimes(
+        const {
+            track: adjustedTrack,
+            discardedEndFrames,
+            discardedStartFrames,
+            interpolatedFrameCount,
+        } = track.withRecomputedFrameTimes(
             this.reference2DData,
             this.reference3DData
         )
@@ -139,7 +144,10 @@ export default class UserDanceEvaluator<
                 }
                 return [subsectionName, this.generateMetricSummariesForTrackSection(subsectionName, subsectionTrack, true)];
             })) as {[K in keyof T]: ReturnType<typeof this.generateMetricSummariesForTrackSection>},
-            adjustedTrack: adjustedTrack,
+            discardedStartFrames,
+            discardedEndFrames,
+            interpolatedFrameCount,
+            adjustedTrack,
         }
     }
 

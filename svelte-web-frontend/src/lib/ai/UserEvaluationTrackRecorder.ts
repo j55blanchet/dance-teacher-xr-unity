@@ -108,22 +108,31 @@ export class PerformanceEvaluationTrack<T extends Record<string, unknown>> {
         reference3DData: PoseReferenceData<Pose3DLandmarkFrame>
     ) {
 
-
         const firstFrameTime = this.videoFrameTimesInSecs[0];
-        let firstNonDuplicateFrame = 1;
-        while (this.videoFrameTimesInSecs[firstNonDuplicateFrame] === firstFrameTime) {
-            firstNonDuplicateFrame++;
+        let firstDifferingFrame = 1;
+        while (this.videoFrameTimesInSecs[firstDifferingFrame] === firstFrameTime) {
+            firstDifferingFrame++;
         }
         const lastFrameTime = this.videoFrameTimesInSecs[this.videoFrameTimesInSecs.length - 1];
-        let lastNonDuplicateFrame = this.videoFrameTimesInSecs.length - 2;
-        while (this.videoFrameTimesInSecs[lastNonDuplicateFrame] === lastFrameTime) {
-            lastNonDuplicateFrame--;
+        let lastDifferingFrame = this.videoFrameTimesInSecs.length - 1;
+        while (lastDifferingFrame > 0 && this.videoFrameTimesInSecs[lastDifferingFrame - 1] === lastFrameTime) {
+            lastDifferingFrame--;
         }
 
-        const sclicedVideoFrameTimesInSecs = this.videoFrameTimesInSecs.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
-        const actualTimesInMs = this.actualTimesInMs.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
-        const user2dPoses = this.user2dPoses.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
-        const user3dPoses = this.user3dPoses.slice(firstNonDuplicateFrame - 1 , lastNonDuplicateFrame + 2);
+        // Start the frame before the first differing frame (so as to only cancel the duplicate start frames). 
+        // End with the last differing frame (need to add one to include the last frame in the slice function).
+        const sclicedVideoFrameTimesInSecs = this.videoFrameTimesInSecs.slice(firstDifferingFrame - 1 , lastDifferingFrame + 1);
+
+        const slicedVideoFrameDuplicateCount = sclicedVideoFrameTimesInSecs.reduce((acc, curr, index, array) => {
+            if (index > 0 && curr === array[index - 1]) {
+              return acc + 1;
+            }
+            return acc;
+          }, 0);
+
+        const actualTimesInMs = this.actualTimesInMs.slice(firstDifferingFrame - 1 , lastDifferingFrame + 2);
+        const user2dPoses = this.user2dPoses.slice(firstDifferingFrame - 1 , lastDifferingFrame + 2);
+        const user3dPoses = this.user3dPoses.slice(firstDifferingFrame - 1 , lastDifferingFrame + 2);
 
         const adjustedVideoFrameTimesInSecs =  adjustTimeArray(sclicedVideoFrameTimesInSecs);
         const ref2dPoses = adjustedVideoFrameTimesInSecs.map((frameTime) => {
@@ -133,18 +142,23 @@ export class PerformanceEvaluationTrack<T extends Record<string, unknown>> {
             return reference3DData.getReferencePoseAtTime(frameTime) as Pose3DLandmarkFrame;
         });
 
-        return new PerformanceEvaluationTrack<T>(
-            this.id,
-            this.danceRelativeStem,
-            this.segmentDescription,
-            this.creationDate,
-            adjustedVideoFrameTimesInSecs,
-            actualTimesInMs,
-            user2dPoses,
-            user3dPoses,
-            ref2dPoses,
-            ref3dPoses,
-        )
+        return {
+            track: new PerformanceEvaluationTrack<T>(
+                this.id,
+                this.danceRelativeStem,
+                this.segmentDescription,
+                this.creationDate,
+                adjustedVideoFrameTimesInSecs,
+                actualTimesInMs,
+                user2dPoses,
+                user3dPoses,
+                ref2dPoses,
+                ref3dPoses,
+            ),
+            discardedStartFrames: firstDifferingFrame - 1,
+            discardedEndFrames: this.videoFrameTimesInSecs.length - (lastDifferingFrame + 1),
+            interpolatedFrameCount: slicedVideoFrameDuplicateCount,
+        }
     }
 
     asDictWithoutTimeSeriesResults(): Record<string, unknown> {

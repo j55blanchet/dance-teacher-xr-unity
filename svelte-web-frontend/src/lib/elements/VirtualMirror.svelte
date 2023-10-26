@@ -126,7 +126,7 @@
             } else if (msg.data.type === PoseEsimationResponses.error 
                       || msg.data.type === PoseEsimationResponses.resetError
             ) {
-                console.error("PoseEstim Error Message", msg.data.type, msg.data.error);
+                console.error("Got error from PoseEstim", msg.data.type, msg.data.error);
 
                 if (msg.data.frameId === lastFrameSent) {
                     lastFrameSent = -1;
@@ -160,10 +160,13 @@
         console.log("Priming pose estimation")
         poseEstimationPrimedPromise = new Promise<void>((res) => resolvePoseEstimationPrimed = res);
 
+        const timeSinceStart = new Date().getTime() - mirrorStartedTime;
+        
         // Send a single pose estimation request to the worker to make sure it's ready
         poseEstimationWorker.postMessage({
             type: PoseEstimationMessages.requestPoseEstimation,
             frameId: INITIALIZING_FRAME_ID,
+            timestampMs: timeSinceStart, // any negative value should do. Just need to make sure the timestampMs is increasing 
             image: canvasContext!.getImageData(0, 0, canvasElement!.width, canvasElement!.height)
         });
 
