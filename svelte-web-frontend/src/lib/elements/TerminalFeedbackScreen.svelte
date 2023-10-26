@@ -191,6 +191,10 @@ function exportRecordings() {
 <div class="feedbackForm">
     <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
     
+    {#each feedback?.achievements ?? [] as achivement, i}
+        <p class="achievement animate pop"><StarIcon /><span>{achivement}</span></p>
+    {/each}
+
     {#if feedback?.paragraphs}
     <div class="paragraphs">
         <SpeechInterface textToSpeak={[
@@ -199,10 +203,6 @@ function exportRecordings() {
         ].join("\n\n")}/>
     </div>
     {/if}
-
-    {#each feedback?.achievements ?? [] as achivement, i}
-        <p class="achievement animate pop"><StarIcon /><span>{achivement}</span></p>
-    {/each}
     
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
@@ -356,6 +356,7 @@ p {
     background-color: #EEF;
     padding: 0.5em 1em;
     border-radius: 1em;
+    margin-bottom: 1rem;
     display: flex;
     flex-direction: row;
     align-items: center;
