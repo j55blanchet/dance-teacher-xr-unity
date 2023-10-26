@@ -3,7 +3,7 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { danceVideoVolume, debugMode__addPlaceholderAchievement, onboarding__practicePage__nodeClickCount, practicePage__enablePerformanceRecording } from './../model/settings';
+import { danceVideoVolume, debugMode__addPlaceholderAchievement, practicePage__enablePerformanceRecording } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -163,8 +163,6 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
     const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}?playbackSpeed=${practiceActivity.playbackSpeed}`;
     await goto(url);
     
-    $onboarding__practicePage__nodeClickCount += 1;
-
     let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, practiceActivity.playbackSpeed);
     practiceActivity = newActivity;
     await reset();
@@ -702,7 +700,7 @@ onMount(() => {
     </div>
     {/if}
 
-    
+
     <div class="demovid" style:display={state === "feedback" ? 'none' : 'flex'}>
         <VideoWithSkeleton
             bind:this={videoWithSkeleton}

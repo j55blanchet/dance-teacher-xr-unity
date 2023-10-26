@@ -24,8 +24,6 @@ import {
 	summaryFeedback_skeleton3d_mediumPerformanceThreshold,
     summaryFeedback_skeleton3d_goodPerformanceThreshold,
 	danceVideoVolume,
-	resetOnboardingHints,
-	onboarding__practicePage__nodeClickCount
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -149,15 +147,6 @@ function clearPerformanceHistory() {
     <div>
         <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
     </div>
-    {/if}
-    <div>
-        <button class="button" on:click={resetOnboardingHints}>Reset Hints</button>
-    </div>    
-    {#if $debugMode}
-    <details>
-        <summary>Onboarding Trackers</summary>
-        <div><code>practicePage__nodeClickCount</code>: {$onboarding__practicePage__nodeClickCount}</div>
-    </details>
     {/if}
     <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>

@@ -8,7 +8,7 @@ import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
 import { createEventDispatcher, onMount, tick } from 'svelte';
-import { ONBOARDING_CONSTS, debugMode, onboarding__practicePage__nodeClickCount } from '$lib/model/settings';
+import { debugMode } from '$lib/model/settings';
 import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import Dialog from './Dialog.svelte';
 import ProgressEllipses from './ProgressEllipses.svelte';
@@ -20,11 +20,6 @@ import StarIcon from 'virtual:icons/mdi/star';
 const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
-
-let suggestingRepeat = false;
-$: {
-    suggestingRepeat = feedback?.suggestedAction === "repeat";
-}
 
 type ActionData = {
     title: string,
@@ -43,42 +38,47 @@ const repeatAction: ActionData = {
 //     action: async () => { dispatch("continue-clicked"); },
 // }
 
-let actions = [] as ActionData[];
-$: {
 
-    if (feedback) {
-        actions = [];
-        actions.push({
-            ...repeatAction,
-            suggested: suggestingRepeat,
-        });
+function generateActions(
+    feedback: TerminalFeedback | null,
+) : ActionData[] {
+    if (!feedback) return []
 
-        if (feedback?.videoRecording) {
-        const terminalFeedbackNavOptions = feedback?.navigateOptions ?? [];
-        const navOptionsSuggestingOtherNodes = terminalFeedbackNavOptions.filter(
-            opt => opt.nodeId && opt.nodeId !== feedback?.segmentName
-        );
+    const actions: ActionData[] = [];
 
-        const navigateActions: ActionData[] = navOptionsSuggestingOtherNodes.map(navOpt => {
-            return {
-                title: `${navOpt.label}`,
-                onClick: async () => {
-                    dispatch("practice-action-clicked", navOpt.nodeId);
-                },
-                type: 'button',
-                suggested: true,
-            }
-        });
-        actions.push(...navigateActions);
+    let isSuggestingRepeat = feedback?.suggestedAction === "repeat"
 
-        actions.push({
-            title: 'ℹ️ Or, click on a part of the dance above',
-            type: 'info',
-        });
-    } else {
-        actions = [];
-    }
+    actions.push({
+        ...repeatAction,
+        suggested: isSuggestingRepeat,
+    });
+
+    const terminalFeedbackNavOptions = feedback?.navigateOptions ?? [];
+    const navOptionsSuggestingOtherNodes = terminalFeedbackNavOptions.filter(
+        opt => opt.nodeId && opt.nodeId !== feedback?.segmentName
+    );
+    const navigateActions: ActionData[] = navOptionsSuggestingOtherNodes.map(navOpt => {
+        return {
+            title: `${navOpt.label}`,
+            onClick: async () => {
+                dispatch("practice-action-clicked", navOpt.nodeId);
+            },
+            type: 'button',
+            suggested: true,
+        }
+    });
+    actions.push(...navigateActions);
+
+    actions.push({
+        title: 'ℹ️ Or, click on a part of the dance above',
+        type: 'info',
+    });
+    
+    return actions;
 }
+
+let actions = [] as ActionData[];
+$: actions = generateActions(feedback);
 
 let showingPerformanceSummary = false;
 let showingLLMOutput = false;
@@ -309,24 +309,6 @@ h2, p {
     margin : 0;
 }
 
-.info {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 1rem;
-    padding: 1rem;
-    & .icon {
-        font-size: 1rem;
-    }
-
-    & .message {
-        color: var(--color-text);
-        flex-grow: 1;
-        flex-shrink: 1;
-        flex-basis: auto;
-    }
-}
 h2 {
     margin-top: 1rem;
     font-weight: 600;
