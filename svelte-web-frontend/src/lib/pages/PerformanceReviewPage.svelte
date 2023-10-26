@@ -41,6 +41,25 @@ $: referenceVideoEnd = referenceVideoStart + recordingDuration * recordingSpeed;
 let referenceVideoPaused = true;
 let recordingVideoPaused = true;
 
+let recordingVideoWidth = 1;
+let recordingVideoHeight = 1;
+let referenceVideoWidth = 1;
+let referenceVideoHeight = 1;
+let recordingAspectRatio = 1;
+$: {
+    recordingAspectRatio = recordingVideoWidth / recordingVideoHeight;
+    if (isNaN(recordingAspectRatio)) {
+        recordingAspectRatio = 1;
+    }
+}
+let referenceAspectRatio = 1;
+$: {
+    referenceAspectRatio = referenceVideoWidth / referenceVideoHeight;
+    if (isNaN(referenceAspectRatio)) {
+        referenceAspectRatio = 1;
+    }
+}
+
 function togglePlayPauseRecording() {
     if (isAtEndOfRecording) {
         referenceVideoTime = referenceVideoStart;
@@ -55,29 +74,33 @@ function togglePlayPauseRecording() {
 </script>
 
 
-<section class="reviewPage">
-    <div class="refVideoWrapper">
-        <!-- <video 
+<section class="reviewPage" style:grid-template-columns={`${referenceAspectRatio}fr ${recordingAspectRatio}fr`}>
+    <div class="refVideoWrapper videoWrapper">
+        <video 
             src={referenceVideoUrl + "#t=" + recordingStartOffset} 
             class="refVideo" 
             bind:currentTime={referenceVideoTime}
             bind:playbackRate={recordingSpeed}
             bind:paused={referenceVideoPaused}
-            ></video> -->
+            bind:videoWidth={referenceVideoWidth}
+            bind:videoHeight={referenceVideoHeight}
+            ></video>
     </div>
-    <div class="recordedVideoWrapper">
-        <!-- <video 
+    <div class="recordedVideoWrapper videoWrapper">
+        <video 
             src={recordingUrl} 
             class="recordedVideo" 
             bind:currentTime={recordingVideoTime} 
             bind:duration={recordingDuration}
-            bind:paused={recordingVideoPaused}></video> -->
+            bind:paused={recordingVideoPaused}
+            bind:videoWidth={recordingVideoWidth}
+            bind:videoHeight={recordingVideoHeight}></video>
     </div>
     <div class="controls">
-        <div class="control">
-            <input type="range" name="videoTime" id="" min={0} max={recordingDuration} bind:value={recordingVideoTime}>
+        <div class="control-row">
+            <input class="seeker" type="range" name="videoTime" min={referenceVideoStart} max={referenceVideoEnd} bind:value={referenceVideoTime} step={1/30}>
         </div>
-        <div>
+        <div class="control-row">
             <button class="button" on:click={togglePlayPauseRecording}>
                 {#if isAtEndOfRecording}
                     Replay
@@ -120,17 +143,37 @@ function togglePlayPauseRecording() {
     }
 }
 
-.refVideoWrapper {
-    grid-area: "refVideo";
+
+.videoWrapper {
     min-height: 0;
     min-width: 0;
-    background: blue;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.refVideoWrapper {
+    grid-area: refVideo;
+    // background: blue;
 }
 .recordedVideoWrapper {
-    grid-area: "recordedVideo";
-    min-height: 0;
-    min-width: 0;
-    background: red;
+    grid-area: recordedVideo;
+    // background: red;
 }
+.controls {
+    grid-area: controls;
+}
+
+.seeker {
+    width: 100%
+}
+
+.control-row {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: start;
+    justify-content: center;
+}
+
+
 
 </style>

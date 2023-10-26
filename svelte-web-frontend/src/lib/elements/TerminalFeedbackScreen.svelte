@@ -14,12 +14,16 @@ import Dialog from './Dialog.svelte';
 import ProgressEllipses from './ProgressEllipses.svelte';
 import SpeechInterface from './SpeechInterface.svelte';
 
+import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
+
 import InfoIcon from 'virtual:icons/mdi/information';
 import StarIcon from 'virtual:icons/mdi/star';
 
 const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
+
+let showingPerformanceReviewPage = false;
 
 type ActionData = {
     title: string,
@@ -45,13 +49,25 @@ function generateActions(
     if (!feedback) return []
 
     const actions: ActionData[] = [];
-
+    
     let isSuggestingRepeat = feedback?.suggestedAction === "repeat"
 
     actions.push({
         ...repeatAction,
         suggested: isSuggestingRepeat,
     });
+
+    if (feedback?.videoRecording) {
+        const videoRecording = feedback.videoRecording;
+        actions.push({
+            title: "Review 📹",
+            onClick: async () => {
+                showingPerformanceReviewPage = true;
+                dispatch("view-recording-clicked", videoRecording);
+            },
+            type: 'button',
+        })
+    }
 
     const terminalFeedbackNavOptions = feedback?.navigateOptions ?? [];
     const navOptionsSuggestingOtherNodes = terminalFeedbackNavOptions.filter(
@@ -261,6 +277,23 @@ function exportRecordings() {
             {/if}
         </div>
     {/if}
+    
+    <Dialog 
+        open={showingPerformanceReviewPage} 
+        on:dialog-closed={() => showingPerformanceReviewPage = false }>
+        <span slot="title">Performance Review</span>
+        <div class="reviewPageWrapper">
+            {#if feedback?.videoRecording !== undefined}
+            <PerformanceReviewPage 
+                recordingUrl={feedback.videoRecording.url}
+                recordingMimeType={feedback.videoRecording.mimeType}
+                referenceVideoUrl={feedback.videoRecording.referenceVideoUrl}
+                recordingStartOffset={feedback.videoRecording.recordingStartOffset}
+                recordingSpeed={feedback.videoRecording.recordingSpeed}
+            />
+            {/if}
+        </div>
+    </Dialog>
 </div>
 
 
@@ -390,5 +423,10 @@ pre {
 .actionInfo {
     padding: 0.5em;
     font-size: 0.8em;
+}
+
+.reviewPageWrapper {
+    width: 80vw;
+    height: calc(80vh - 2rem);
 }
 </style>
