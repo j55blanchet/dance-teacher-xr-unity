@@ -376,10 +376,6 @@ async function startCountdown() {
     }
 
     await tick();
-    if (poseEstimationEnabled) {
-        console.log("Triggering pose estimation priming");
-        await virtualMirrorElement.primePoseEstimation();
-    }
     await waitSecs(beatDuration);
 
     state = "countdown";
