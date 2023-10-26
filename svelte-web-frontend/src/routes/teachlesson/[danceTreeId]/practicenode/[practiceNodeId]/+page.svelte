@@ -27,7 +27,7 @@ $: {
 }
 let pageState: PracticePageState = INITIAL_STATE;
 
-const StatesWithHiddenBackButton = new Set(["countdown", "playing", "paused"]);
+const StatesWithHiddenBackButton = new Set([] as string[]);
 let hideNavBar = false;
 $: {
     hideNavBar = StatesWithHiddenBackButton.has(pageState);

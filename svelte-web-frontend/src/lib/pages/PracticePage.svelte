@@ -3,6 +3,7 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
+import { danceVideoVolume } from './../model/settings.ts';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -31,6 +32,7 @@ import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
+import { waitSecs } from '$lib/utils/async';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -52,6 +54,7 @@ let isPlayingOrCountdown = INITIAL_STATE === "playing" || INITIAL_STATE === "cou
 $: isPlayingOrCountdown = state === "playing" || state === "countdown";
 let isShowingFeedback = state === 'feedback';
 $: isShowingFeedback = state === 'feedback';
+let isMounted = false;
 
 let currentActivityStepIndex: number = 0;
 let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
@@ -144,10 +147,11 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
     const danceTree = practiceActivity.danceTree;
     const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
     const nodeSlug = clickedNode.id;
-    const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}`;
+    
+    const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}?playbackSpeed=${practiceActivity.playbackSpeed}`;
     await goto(url);
     
-    let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, 'default');
+    let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, practiceActivity.playbackSpeed);
     practiceActivity = newActivity;
     await reset();
 }
@@ -305,12 +309,6 @@ $: {
     }
 }
 
-async function waitSecs(secs: number): Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(resolve, secs * 1000);
-    })
-}
-
 async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
     clickAudioElement.volume = silent ? 0 : 1;
@@ -362,7 +360,7 @@ async function startCountdown() {
 
     isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
-    videoVolume = 0.5;
+    videoVolume = $danceVideoVolume;
     videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
     if (practiceActivity?.playbackSpeed !== 'default' && 
         practiceActivity?.playbackSpeed !== undefined &&
@@ -391,18 +389,22 @@ async function startCountdown() {
     countdown = 5;
     playClickSound();
     await waitSecs(beatDuration);
-
+    if (!isMounted) return
+    
     countdown = 6;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     countdown = 7;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     countdown = 8;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     trialId = generateUUIDv4();
     state = "playing";
@@ -627,6 +629,7 @@ onMount(() => {
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
+    isMounted = true;
 
     return () => {
         if (metronomeTimer) {
@@ -642,6 +645,7 @@ onMount(() => {
             webcamRecorder.stop();
             webcamRecorder = null;
         }
+        isMounted = false;
     }
 })
 

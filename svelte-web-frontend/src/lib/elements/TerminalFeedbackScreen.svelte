@@ -3,7 +3,6 @@
 //
 // A component for offering feedback after a user has completed a
 // practice attempt of a dance. 
-import Icon, { Icons } from '$lib/elements/Icon.svelte';
 import { reset } from 'microlight';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
@@ -14,6 +13,9 @@ import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import Dialog from './Dialog.svelte';
 import ProgressEllipses from './ProgressEllipses.svelte';
 import SpeechInterface from './SpeechInterface.svelte';
+
+import InfoIcon from 'virtual:icons/mdi/information';
+import StarIcon from 'virtual:icons/mdi/star';
 
 const dispatch = createEventDispatcher();
 
@@ -156,7 +158,7 @@ function exportRecordings() {
     {/if}
 
     {#each feedback?.achievements ?? [] as achivement}
-        <p class="achivement"><Icon type="star"/> {achivement}</p>
+        <p class="achivement"><StarIcon /> {achivement}</p>
     {/each}
     
     {#if feedback?.score}
@@ -171,7 +173,7 @@ function exportRecordings() {
     </div>
     {/if}
     <div class="info ta-center outlined thin dashed p-1 mt-1">
-        <span class="icon"><Icon type={Icons.info} /></span>
+        <span class="icon"><InfoIcon /></span>
         <span class="message">Click any part of the dance above to practice that segment.</span>
     </div>
     {#if buttons.length > 0}

@@ -1,8 +1,15 @@
 <script lang="ts">
-import { dances, danceTrees, makeDanceTreeSlug } from '$lib/data/dances-store';
+import { derived } from 'svelte/store';
+import { dances, danceTrees, getThumbnailUrl, makeDanceTreeSlug, userVisibleDances } from '$lib/data/dances-store';
 import type { DanceTree, Dance } from '$lib/data/dances-store';
 import FolderMenu from '$lib/elements/FolderMenu.svelte';
 import type { FolderContents, FolderMenuItem, FileMenuItem, MenuItem } from '$lib/elements/FolderMenu.svelte';
+import { debugMode } from '$lib/model/settings';
+import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
+
+import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
+import ConfoundedFaceIcon from 'virtual:icons/icon-park-outline/confounded-face';
+import DanceIcon from 'virtual:icons/mdi/human-female-dance';
 
 let menuData: FolderContents<Dance> = [];
 
@@ -81,12 +88,38 @@ function toggleSelectDance(dance: Dance) {
         selectedDance = dance;
     }
 }
+
+function getDisplayData(visibleDances: [Dance, DanceTree][]) {
+    return visibleDances.map(([dance, danceTree]) => {
+        return [
+            dance,
+            danceTree,
+            frontendPerformanceHistory.lastNAttemptsAllSegments(
+                dance.clipRelativeStem,
+                'skeleton3DAngleSimilarity',
+            ),
+        ] as const;
+    })
+}
+
+const perfHistoryStores = userVisibleDances.map(([dance, danceTree]) => frontendPerformanceHistory.lastNAttemptsAllSegments(
+        dance.clipRelativeStem,
+        'skeleton3DAngleSimilarity',
+    
+    )
+)
+const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
+    return stores;
+});
+
 </script>
 
 <section>
 	<h1>
 		Pick a dance
 	</h1>
+
+    {#if $debugMode}
 	<div class="cols">
 		<div class="col dance-picking ta-center" style="max-width: 60ch;">
 			<FolderMenu menuContents={menuData} 
@@ -113,6 +146,27 @@ function toggleSelectDance(dance: Dance) {
 		</div>
 		{/if}
 	</div>
+    {:else}
+    <div class="tiles">
+        {#each userVisibleDances as [dance, danceTree], i (dance.clipRelativeStem)}
+        <a class="tile" href={"/teachlesson/" + makeDanceTreeSlug(danceTree)}>
+            <img class="thumbnail" src={getThumbnailUrl(dance)} alt={dance.title + " thumbnail"}>
+            <div class="tile-details">
+                <h3>{dance.title}</h3>
+                <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span>
+                <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span>
+
+                <div class="detail">
+                    <span class="label" title="Dance Attempts"><DanceIcon /></span>
+                    <div class="performance-history">
+                        {$perfHistoryAggregatedStore[i].length}
+                    </div>
+                </div>
+            </div>
+        </a>
+        {/each}
+    </div>
+    {/if}
     <div>
         <a href="/settings">Settings Page</a>
     </div>
@@ -121,15 +175,80 @@ function toggleSelectDance(dance: Dance) {
 </section>
 
 <style lang="scss">
-	section {
+    section {
 		width: 100%;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 		flex: 0.6;
-		margin: 0 1rem;
+		// margin: 0 1rem;
 	}
+    .tiles {
+        margin-bottom: 2rem;
+        max-width: 100%;
+        display: flex;
+        flex-flow: row wrap;
+        margin: 1rem;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .tile {
+        
+        flex-grow: 1;
+        max-width: calc(320px - 2rem);
+        position: relative;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        overflow: hidden;
+        color: var(--color-text);
+        display: flex;
+        flex-direction: row;
+        justify-content: left;
+
+        background-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0.2rem 0.2rem 0.5rem rgba(0, 0, 0, 0.25);
+        
+        transition: all 0.05s ease-out;
+
+        & .thumbnail {
+            align-self: center;
+            height: 10rem;
+            // min-height: 100%;
+            // flex-grow: 1;
+            object-fit: contain;
+            // border-radius: 0.5rem;
+        }
+
+        & h3 {
+            margin-top: 1rem;
+        }
+    }
+
+    .tile:hover {
+        background-color: rgba(245, 255, 245, 0.4);
+        box-shadow: 0.15rem 0.15rem 0.6rem rgba(0, 0, 0, 0.4);
+        color: var(--color-theme-1);
+    }
+
+    .tile-details {
+        padding: 0 1rem 0rem 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        align-items: start;
+        text-align: center;
+        
+        & .detail {
+            display: flex;
+            flex-direction: row;
+            justify-content: start;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        // transition: all 0.1s ease-in-out;
+    }
 	p {
 		font-size: 1.1rem;
 		margin-bottom: 0;

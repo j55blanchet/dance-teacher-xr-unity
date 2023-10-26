@@ -17,7 +17,7 @@
                 "--temp_dir=${workspaceFolder}/data/temp",
                 "--bundle_export_path=${workspaceFolder}/../svelte-web-frontend/src/lib/data/bundle",
                 "--bundle_media_export_path=${workspaceFolder}/../svelte-web-frontend/static/bundle/",
-                // "--include_thumbnail_in_bundle",
+                "--include_thumbnail_in_bundle",
                 // "--include_audio_in_bundle",
 
                 // Feel free to comment out any of the following
