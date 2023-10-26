@@ -4,8 +4,10 @@ const DEFAULT_SETTINGS = {
    debugMode: false,
    debugMode__viewBeatsOnDanceTreepage: false,
    debugMode__viewDanceMenuAsList: false,
+   debugMode__addPlaceholderAchievement: false,
    pauseInPracticePage : false,
    practiceFallbackPlaybackSpeed: 0.5,
+   practicePage__enablePerformanceRecording: true,
    debugPauseDurationSecs : 1.0,
    evaluation_GoodBadTrialThreshold : 4.0,
    livefeedback_qijia2d_YellowThreshold : 3.0,
@@ -50,10 +52,11 @@ function createOptionsSettingsStore<T extends Record<string, string>>(key: strin
 export const debugMode = createBoolSettingsStore("debugMode", DEFAULT_SETTINGS.debugMode);
 export const debugMode__viewBeatsOnDanceTreepage = createBoolSettingsStore("debugMode__viewBeatsOnDanceTreepage", DEFAULT_SETTINGS.debugMode__viewBeatsOnDanceTreepage);
 export const debugMode__viewDanceMenuAsList = createBoolSettingsStore("debugMode__viewDanceMenuAsList", DEFAULT_SETTINGS.debugMode__viewDanceMenuAsList);
-
+export const debugMode__addPlaceholderAchievement = createBoolSettingsStore("debugMode__addPlaceholderAchievement", DEFAULT_SETTINGS.debugMode__addPlaceholderAchievement);
 export const pauseInPracticePage = createBoolSettingsStore("pauseInPracticePage", DEFAULT_SETTINGS.pauseInPracticePage);
 export const debugPauseDurationSecs = createNumberSettingsStore("debugPauseDurationSecs", DEFAULT_SETTINGS.debugPauseDurationSecs);
 export const practiceFallbackPlaybackSpeed = createNumberSettingsStore("practiceFallbackPlaybackSpeed", DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
+export const practicePage__enablePerformanceRecording = createBoolSettingsStore("practicePage__enablePerformanceRecording", DEFAULT_SETTINGS.practicePage__enablePerformanceRecording);
 export const evaluation_GoodBadTrialThreshold = createNumberSettingsStore("evaluation_GoodBadTrialThreshold", DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
 export const feedback_YellowThreshold = createNumberSettingsStore("feedback_YellowThreshold", DEFAULT_SETTINGS.livefeedback_qijia2d_YellowThreshold);
 export const feedback_GreenThreshold = createNumberSettingsStore("feedback_GreenThreshold", DEFAULT_SETTINGS.livefeedback_qijia2d_GreenThreshold);
@@ -77,9 +80,11 @@ export function resetSettingsToDefault() {
     debugMode.set(DEFAULT_SETTINGS.debugMode);
     debugMode__viewBeatsOnDanceTreepage.set(DEFAULT_SETTINGS.debugMode__viewBeatsOnDanceTreepage);
     debugMode__viewDanceMenuAsList.set(DEFAULT_SETTINGS.debugMode__viewDanceMenuAsList);
+    debugMode__addPlaceholderAchievement.set(DEFAULT_SETTINGS.debugMode__addPlaceholderAchievement);
     pauseInPracticePage.set(DEFAULT_SETTINGS.pauseInPracticePage);
     debugPauseDurationSecs.set(DEFAULT_SETTINGS.debugPauseDurationSecs);
     practiceFallbackPlaybackSpeed.set(DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
+    practicePage__enablePerformanceRecording.set(DEFAULT_SETTINGS.practicePage__enablePerformanceRecording);
     evaluation_GoodBadTrialThreshold.set(DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
     feedback_YellowThreshold.set(DEFAULT_SETTINGS.livefeedback_qijia2d_YellowThreshold);
     feedback_GreenThreshold.set(DEFAULT_SETTINGS.livefeedback_qijia2d_GreenThreshold);

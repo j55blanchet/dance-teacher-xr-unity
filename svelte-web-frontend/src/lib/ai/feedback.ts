@@ -203,7 +203,7 @@ export async function generateFeedbackWithClaudeLLM(
         // note the double equals here, we want to compare the string values
         suggestedAction: suggestedSection == currentSectionName ? "repeat" : "navigate", 
         navigateOptions: suggestedURL ? [{ 
-            label: `Try section ${suggestedSection}`, 
+            label: `Try '${suggestedSection}'`, 
             url: suggestedURL,
             nodeId: suggestedSection,
         }] : undefined,
