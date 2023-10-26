@@ -3,7 +3,7 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { danceVideoVolume } from './../model/settings.ts';
+import { danceVideoVolume } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -31,6 +31,7 @@ import { goto, invalidateAll } from '$app/navigation';
 import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
+import { browser } from '$app/environment';
 import { waitSecs } from '$lib/utils/async';
 
 export let mirrorForEvaluation: boolean = true;
@@ -286,11 +287,14 @@ $: {
             );
 
             if (trialId) {
-                recordedTrack = evaluator?.trackRecorder.tracks.get(trialId) ?? null;
                 performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+                recordedTrack = performanceSummary?.adjustedTrack ?? null;
             }
             trialId = null;
             state = "feedback";
+            if (metronomeTimer) {
+                clearTimeout(metronomeTimer)
+            }
             getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
@@ -309,6 +313,26 @@ async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
     clickAudioElement.volume = silent ? 0 : 1;
     return clickAudioElement.play();
+}
+
+let metronomePlaying = false;
+let metronomeTimer: number | null = null;
+async function launchMetronome() {
+    if (!browser) return;
+    if (metronomePlaying) return;
+    metronomePlaying = true;
+    let beatCount = 0;
+    while (state !== "feedback" && isMounted) {
+        playClickSound();
+        
+        await new Promise<void>((res) => {
+            metronomeTimer = window.setTimeout(() => {
+                res();
+            }, 1000 * beatDuration);
+        })
+    }
+    metronomePlaying = false;
+    metronomeTimer = null;
 }
 
 async function startCountdown() {
@@ -352,6 +376,11 @@ async function startCountdown() {
     }
 
     await tick();
+    await waitSecs(beatDuration);
+
+    state = "countdown";
+    countdownActive = true;
+    await waitSecs(beatDuration);
 
     countdown = 5;
     playClickSound();
@@ -374,7 +403,8 @@ async function startCountdown() {
     if (!isMounted) return
 
     trialId = generateUUIDv4();
-    state = "playing"
+    state = "playing";
+    
     countdown = -1;
 
     resolveWebcamRecordedObjectUrl = null;
@@ -423,6 +453,9 @@ export async function reset() {
     if(!virtualMirrorElement) {
         await tick();
     }
+    if (metronomeTimer) {
+        clearTimeout(metronomeTimer)
+    }
 
     terminalFeedback = null;
     trialId = null;
@@ -433,8 +466,9 @@ export async function reset() {
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
-    gettingFeedback = false;
     
+
+
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
     const promises = [] as Promise<any>[];
@@ -594,6 +628,9 @@ onMount(() => {
     isMounted = true;
 
     return () => {
+        if (metronomeTimer) {
+            clearTimeout(metronomeTimer);
+        }
         if (unpauseVideoTimeout) {
             clearTimeout(unpauseVideoTimeout);
         }
@@ -629,6 +666,7 @@ onMount(() => {
                 'show-all':
                 'hide-others'
             }/>
+            
     </div>
     {/if}
 

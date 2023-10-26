@@ -2,6 +2,8 @@
 import frontendPerformanceHistory from "$lib/ai/frontendPerformanceHistory";
 import { 
     debugMode, 
+    debugMode__viewBeatsOnDanceTreepage,
+    debugMode__viewDanceMenuAsList,
     pauseInPracticePage, 
     debugPauseDurationSecs,
     evaluation_GoodBadTrialThreshold,
@@ -57,15 +59,28 @@ function clearPerformanceHistory() {
             <input type="checkbox" name="debugMode" bind:checked={$debugMode}>
         </div>
     </div>
+    {#if $debugMode}
+    <div class="group">
+        <h3>Debug Settings</h3>
+        <div>
+            <label for="debugMode__viewBeatsOnDanceTreepage">View Beats on Dance Tree Page</label>
+            <input type="checkbox" name="debugMode__viewBeatsOnDanceTreepage" bind:checked={$debugMode__viewBeatsOnDanceTreepage}>
+        </div>
+        <div>
+            <label for="debugMode__viewDanceMenuAsList">View Dance Menu as List</label>
+            <input type="checkbox" name="debugMode__viewDanceMenuAsList" bind:checked={$debugMode__viewDanceMenuAsList}>
+        </div>
+    </div>
+    {/if}
     <div class="group">
         <h3>Practice Page</h3>
         {#if $debugMode}
         <div>
-            <label for="practiceFallbackPlaybackSpeed">Practice Page Default Speed</label>
+            <label for="practiceFallbackPlaybackSpeed">Fallback Speed</label>
             <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
         </div>
         <div>
-            <label for="pauseInPracticePage">Pause in Practice Page</label>
+            <label for="pauseInPracticePage">Add midway Pause</label>
             <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>
         </div>
         <div>

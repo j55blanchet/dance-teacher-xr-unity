@@ -10,7 +10,7 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
-import { danceVideoVolume, debugMode } from '$lib/model/settings';
+import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 
 export let dance: Dance;
@@ -106,7 +106,7 @@ $: {
                 danceTree={danceTree}
                 showProgressNode={currentPlayingNode ?? undefined}
                 currentTime={videoCurrentTime}
-                beatTimes={danceBeatTimes}
+                beatTimes={$debugMode && $debugMode__viewBeatsOnDanceTreepage ? danceBeatTimes : []}
                 enableColorCoding={true}
                 nodeHighlights={nodeHighlights}
             /> 

@@ -1,4 +1,5 @@
 <script lang="ts">
+import { debugMode__viewDanceMenuAsList } from '$lib/model/settings';
 import { derived } from 'svelte/store';
 import { dances, danceTrees, getThumbnailUrl, makeDanceTreeSlug, userVisibleDances } from '$lib/data/dances-store';
 import type { DanceTree, Dance } from '$lib/data/dances-store';
@@ -119,7 +120,7 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 		Pick a dance
 	</h1>
 
-    {#if $debugMode}
+    {#if $debugMode && $debugMode__viewDanceMenuAsList}
 	<div class="cols">
 		<div class="col dance-picking ta-center" style="max-width: 60ch;">
 			<FolderMenu menuContents={menuData} 
@@ -197,7 +198,7 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     .tile {
         
         flex-grow: 1;
-        max-width: calc(320px - 2rem);
+        max-width: calc(400px);
         position: relative;
         border-radius: 0.5rem;
         text-decoration: none;
@@ -214,7 +215,7 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 
         & .thumbnail {
             align-self: center;
-            height: 10rem;
+            height: 12rem;
             // min-height: 100%;
             // flex-grow: 1;
             object-fit: contain;
@@ -233,7 +234,7 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     }
 
     .tile-details {
-        padding: 0 1rem 0rem 1rem;
+        padding: 0 1.5rem 0rem 1.5rem;
         display: flex;
         flex-direction: column;
         justify-content: start;

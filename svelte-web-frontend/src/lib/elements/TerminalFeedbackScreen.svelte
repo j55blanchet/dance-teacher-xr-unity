@@ -67,6 +67,16 @@ let showingPerformanceSummary = false;
 let showingLLMOutput = false;
 let showingTerminalFeedbackJson = false;
 
+let performanceSummaryWithoutTrack: any | undefined;
+$: {
+    performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
+    if (performanceSummaryWithoutTrack) {
+        performanceSummaryWithoutTrack = {
+            ...performanceSummaryWithoutTrack,
+            adjustedTrack: undefined,
+        }
+    }
+}
 let skeletonHighlights: BodyPartHighlight[] = [];
 
 $: {
@@ -99,6 +109,17 @@ function promptDownload(objUrl: string, filename: string) {
     link.click();
 }
 
+function getTrackDataUrl(track: any, description: string) {
+    let trackDictionary = track.asDictWithoutTimeSeriesResults();
+    trackDictionary = {
+        ...trackDictionary,
+        trackDescription: description,
+    }
+    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
+    const blob = new Blob([trackJson], {type: "application/json"});
+    return URL.createObjectURL(blob);
+}
+
 function exportRecordings() {
 
     const track = feedback?.debug?.recordedTrack;
@@ -107,21 +128,22 @@ function exportRecordings() {
         return;
     }
 
+    
+
     const trackDescription = prompt('Please describe this track');
     if (!trackDescription?.length){
         return;
     }
 
     const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-    let trackDictionary = track.asDictWithoutTimeSeriesResults()
-    trackDictionary = {
-        ...trackDictionary,
-        trackDescription,
-    }
-    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
-    const blob = new Blob([trackJson], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
+    const url = getTrackDataUrl(track, trackDescription);
     promptDownload(url, `${filenameRoot}.track.json`)
+
+    const adjustedTrack = (feedback?.debug?.performanceSummary as any)?.adjustedTrack;
+    if (adjustedTrack) {
+        const url = getTrackDataUrl(adjustedTrack, trackDescription + "-adjusted");
+        promptDownload(url, `${filenameRoot}.adjustedtrack.json`);
+    }
 
     const webcamRecording = feedback?.debug?.recordedVideoUrl;
     if (webcamRecording) {
@@ -182,14 +204,14 @@ function exportRecordings() {
     {/if}
     {#if $debugMode}
         <div class="debug buttons">
-            {#if feedback?.debug?.performanceSummary}
+            {#if performanceSummaryWithoutTrack}
             <button class="button" on:click={() => showingPerformanceSummary = true }>
                 View Performance Summary
             </button>
             <Dialog open={showingPerformanceSummary}
               on:dialog-closed={() => showingPerformanceSummary = false}>
                 <span slot="title">Performance Summary</span>
-                <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+                <pre class="microlight">{JSON.stringify(performanceSummaryWithoutTrack, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
             {/if}
             {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
