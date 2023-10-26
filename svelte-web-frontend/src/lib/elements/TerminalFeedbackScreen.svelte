@@ -109,6 +109,17 @@ function promptDownload(objUrl: string, filename: string) {
     link.click();
 }
 
+function getTrackDataUrl(track: any, description: string) {
+    let trackDictionary = track.asDictWithoutTimeSeriesResults();
+    trackDictionary = {
+        ...trackDictionary,
+        trackDescription: description,
+    }
+    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
+    const blob = new Blob([trackJson], {type: "application/json"});
+    return URL.createObjectURL(blob);
+}
+
 function exportRecordings() {
 
     const track = feedback?.debug?.recordedTrack;
@@ -117,21 +128,22 @@ function exportRecordings() {
         return;
     }
 
+    
+
     const trackDescription = prompt('Please describe this track');
     if (!trackDescription?.length){
         return;
     }
 
     const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-    let trackDictionary = track.asDictWithoutTimeSeriesResults()
-    trackDictionary = {
-        ...trackDictionary,
-        trackDescription,
-    }
-    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
-    const blob = new Blob([trackJson], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
+    const url = getTrackDataUrl(track, trackDescription);
     promptDownload(url, `${filenameRoot}.track.json`)
+
+    const adjustedTrack = (feedback?.debug?.performanceSummary as any)?.adjustedTrack;
+    if (adjustedTrack) {
+        const url = getTrackDataUrl(adjustedTrack, trackDescription + "-adjusted");
+        promptDownload(url, `${filenameRoot}.adjustedtrack.json`);
+    }
 
     const webcamRecording = feedback?.debug?.recordedVideoUrl;
     if (webcamRecording) {
