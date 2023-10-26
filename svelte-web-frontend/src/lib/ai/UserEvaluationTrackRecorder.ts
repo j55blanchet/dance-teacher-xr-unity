@@ -24,12 +24,12 @@ type ArrayVersions<T> = {
 export function adjustTimeArray(timeArray: number[]) {
     if (timeArray.length < 1) return timeArray;
 
-    let lastChangedNumberIndex = 0;
-    let duplicateCount = 1;
+    let refNumberIndex = 0;
+    let duplicateCount = 0; // Number of duplicates of the reference number
 
     // Search for the next unique number
     for(let i = 1; i < timeArray.length; i++) {
-        const currentNumber = timeArray[lastChangedNumberIndex]
+        const currentNumber = timeArray[refNumberIndex]
 
         // Found another duplicate
         if (timeArray[i] === currentNumber) {
@@ -38,13 +38,19 @@ export function adjustTimeArray(timeArray: number[]) {
         }
 
         // Found a unique number! Now adjust all values since the last unique number
-        const increment = (timeArray[i] - currentNumber) / duplicateCount;
-        for(let j = 1; j < duplicateCount; j++) {
-            const frameIndex = lastChangedNumberIndex + j;
-            const adjustedTime = currentNumber + j * increment;
+        const nextNonDuplicateIndex = i;
+        const nextNonDuplicateNumber = timeArray[nextNonDuplicateIndex];
+        const valueDifference = nextNonDuplicateNumber - currentNumber;
+        const incrementCount = duplicateCount + 1;
+        const increment = valueDifference / incrementCount;
+        for(let j = 0; j < duplicateCount; j++) {
+            const frameIndex = refNumberIndex + 1 + j;
+            const adjustedTime = currentNumber + (j + 1) * increment;
             timeArray[frameIndex] = adjustedTime;
         }
-        lastChangedNumberIndex = i;
+
+        refNumberIndex = i;
+        duplicateCount = 0;
     }
 
     return timeArray
