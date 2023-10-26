@@ -124,7 +124,7 @@ $: {
             }
             return [navOpts.nodeId, {
                 ...defaultHighlight,
-                label: navOpts.nodeId
+                label: `${navOpts.nodeId} ➡️`
             }]
         })
     );
@@ -135,7 +135,7 @@ $: {
         nodeHighlights[currentNodeId] = {
             color: 'var(--color-text, green)',
             pulse: false,
-            label: terminalFeedback?.suggestedAction === "repeat" ? "🔁" : "✔️"
+            label: terminalFeedback?.suggestedAction === "repeat" ? `${currentNodeId} 🔁` : `✔️ ${currentNodeId}`,
         }
     }
 }
