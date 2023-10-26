@@ -111,7 +111,7 @@ $: {
     const navOptionsSuggestingANode = terminalFeedbackNavOptions.filter(opt => opt.nodeId);
    
     const defaultHighlight: NodeHighlight = {
-        color: 'yellow',
+        color: 'var(--color-theme-1, yellow)',
         pulse: true,
     };
     nodeHighlights = Object.fromEntries(
@@ -133,7 +133,7 @@ $: {
     // we will highlight the segment we just performed.
     if (isShowingFeedback && currentNodeId && nodeHighlights[currentNodeId] === undefined) {
         nodeHighlights[currentNodeId] = {
-            color: 'green',
+            color: 'var(--color-text, green)',
             pulse: false,
             label: terminalFeedback?.suggestedAction === "repeat" ? "🔁" : "✔️"
         }
