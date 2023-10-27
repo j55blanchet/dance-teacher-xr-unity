@@ -463,7 +463,7 @@ async function startCountdown() {
             webcamRecordedChunks.push(e.data);
         });
         webcamRecorder.addEventListener('stop', () => {
-            let recordedVideoURL = URL.createObjectURL(new Blob(webcamRecordedChunks));
+            let recordedVideoURL = URL.createObjectURL(new Blob(webcamRecordedChunks, {type: webcamRecorderMimeType}));
             resolveWebcamRecordedObjectUrl?.(recordedVideoURL);
         });
         webcamRecorder.start();
