@@ -108,12 +108,13 @@ export async function generateFeedbackWithClaudeLLM(
     dancePerformanceHistory: FrontendDancePeformanceHistory | undefined,
     mediumScoreThreshold: number,
     goodScoreThreshold: number,
+    badJointSDThreshold: number,
     attemptHistory: { date: Date, score: number, segmentId: string }[],
 ): Promise<TerminalFeedback> {
 
     const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree): undefined;
     const danceStructureDistillationIsMissing = danceStructureDistillation === undefined;
-    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance, mediumScoreThreshold, goodScoreThreshold) : undefined;
+    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance, mediumScoreThreshold, goodScoreThreshold, badJointSDThreshold) : undefined;
     const performanceDistillationIsMissing = performanceDistillation === undefined;
     const performanceHistoryDistillation = dancePerformanceHistory ? distillPerformanceHistoryToTextualRepresentation(dancePerformanceHistory) : undefined;
     const performanceHistoryDistillationIsMissing = performanceHistoryDistillation === undefined;

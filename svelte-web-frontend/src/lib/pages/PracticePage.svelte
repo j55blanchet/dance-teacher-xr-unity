@@ -3,7 +3,7 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { danceVideoVolume, debugMode__addPlaceholderAchievement, practicePage__enablePerformanceRecording } from './../model/settings';
+import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practicePage__enablePerformanceRecording } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -248,6 +248,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
                 dancePerfHistory ?? undefined,
                 $summaryFeedback_skeleton3d_mediumPerformanceThreshold,
                 $summaryFeedback_skeleton3d_goodPerformanceThreshold,
+                $metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
                 attemptHistory,
             )
         } catch(e) {
