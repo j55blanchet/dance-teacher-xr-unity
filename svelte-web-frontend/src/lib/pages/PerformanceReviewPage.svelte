@@ -104,6 +104,7 @@ const debugDigits = 2;
         <video 
             src={recordingUrl} 
             class="recordedVideo" 
+            style="transform: scaleX(-1);"
             bind:currentTime={recordingVideoTime} 
             bind:duration={recordingDuration}
             bind:paused={recordingVideoPaused}
@@ -113,8 +114,9 @@ const debugDigits = 2;
                 referenceVideoPaused = true;
                 recordingVideoPaused = true;
             }}
-            ></video>
+        ></video>
     </div>
+    
     <div class="controls">
         <div class="control-row">
             <input class="seeker" type="range" name="videoTime" min={referenceVideoStart} max={referenceVideoEnd - 4/30} value={referenceVideoTime} step={1/30} on:input={(e) => setBothTimes(+e.currentTarget.value)}>
