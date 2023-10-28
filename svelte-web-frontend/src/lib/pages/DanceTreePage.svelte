@@ -12,6 +12,8 @@ import { tick } from 'svelte';
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
 import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
+import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
+import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 export let dance: Dance;
 export let danceTree: DanceTree;
@@ -29,10 +31,30 @@ $: danceBeatTimes = dance?.all_beat_times ?? [];
 let videoPaused: boolean = true;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
-let videoPlaybackSpeed: number = 1;
 let currentPlayingNode: DanceTreeNode | null = null;
 
+let videoPlaybackSpeed: number = 1;
 let videoDuration: number;
+
+let practiceActivityInterfaceMode: PracticeInterfaceModeKey = PracticeActivityDefaultInterfaceSetting;
+const interfaceModeOptions: {
+    title: string,
+    value: PracticeInterfaceModeKey,
+    iconUrl?: string,
+}[] = [
+    {
+        title: 'Demo Video',
+        value: 'watchDemo'
+    },
+    {
+        title: 'Demo + Mirror',
+        value: 'bothVideos',
+    },
+    {
+        title: 'Mirror',
+        value: 'userVideoOnly',
+    },
+]
 
 $: if (videoCurrentTime > stopTime) {
     videoPaused = true;
@@ -68,10 +90,17 @@ function showProgress(node: DanceTreeNode) {
 async function practiceClicked() {
     try {
         if (!currentPlayingNode) throw new Error('No node selected');
-
-        // @ts-ignore
-        const curPath: string = $page?.path ?? "";
-        const url = `${curPath}practicenode/${currentPlayingNode.id}?playbackSpeed=${videoPlaybackSpeed}`;
+        
+        const { activity, url} = GeneratePracticeActivity({
+            dance: dance,
+            danceTree: danceTree,
+            danceTreeNode: currentPlayingNode,
+            playbackSpeed: videoPlaybackSpeed,
+            interfaceMode: practiceActivityInterfaceMode,
+            terminalFeedbackEnabled: true,
+            enableUserSkeletonColorCoding: true,
+        });
+        
         await goto(url);
     } 
     catch(e) {
@@ -128,29 +157,32 @@ $: {
             </VideoWithSkeleton>
         </div>
         <div class="col vfill flex flex-col flex-center controls">
-            <h3>
                 {#if currentPlayingNode}
-                    Playing '{currentPlayingNode.id}'
-                {:else}
-                    Select a part of the song to practice
-                {/if}
-            </h3>
-            <div class="control">
-                <label for="playbackSpeed">Speed:</label>
-                <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.4" max="1.2" step="0.1" />
-                {videoPlaybackSpeed.toFixed(1)}x
-            </div>
-            {#if currentPlayingNode}
-                {#if $debugMode}
-                <span>{currentPlayingNode.id}</span>
-                {/if}
-                <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
-                    {#if $navigating}
-                        Navigating<ProgressEllipses />
-                    {:else}
-                        Practice {currentPlayingNode.id}
-                    {/if}
-                </SketchButton>
+                <h3>Playing '{currentPlayingNode.id}'</h3>
+                <div class="control">
+                    <label for="playbackSpeed">Speed:</label>
+                    <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.4" max="1.3" step="0.1" />
+                    {videoPlaybackSpeed.toFixed(1)}x
+                </div>
+                <div class="control interfaceMode" >
+                    {#each interfaceModeOptions as interfaceModeOption}
+                    <label class="button outlined thin" class:selected={interfaceModeOption.value === practiceActivityInterfaceMode }>
+                        {interfaceModeOption.title}
+                        <input type="radio" name="practiceActivityInterfaceMode" value={interfaceModeOption.value} bind:group={practiceActivityInterfaceMode}/>
+                    </label>
+                    {/each}
+                </div>
+                <div class="control mt-4">
+                    <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
+                        {#if $navigating}
+                            Navigating<ProgressEllipses />
+                        {:else}
+                            Practice {currentPlayingNode.id} ➡️
+                        {/if}
+                    </SketchButton>
+                </div>
+            {:else}
+                <h3>Click above to select a part of the song to practice</h3>
             {/if}
         </div>
     </div>
@@ -200,5 +232,40 @@ section {
     input[type="range"] {
         max-width: 10ch;
     }
+
+    &.interfaceMode label {
+        box-sizing: border-box;
+        padding: 0.25em;
+        width: 5em;
+        height: 5em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        // border-radius: var(--std-border-radius);
+        box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.3);
+
+        & input {
+            position:absolute;
+            left: -50%;
+            opacity: 0;
+            width: 0;
+            height: 0;
+
+        }
+
+        &:has( > input:checked) {
+            color: red;
+        }
+
+        &.selected {
+            color: var(--color-theme-1);
+            border-color: var(--color-theme-1);
+            border-width: 3px;
+            background: white;
+        }
+    }
+
+    // &.interfaceMode label:has(input[selected=true])
 }
 </style>

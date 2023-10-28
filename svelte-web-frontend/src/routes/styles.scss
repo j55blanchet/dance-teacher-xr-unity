@@ -1,6 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Grandstander:wght@100;200;400;600&display=swap');
-@import url(https://fonts.googleapis.com/css?family=Patrick+Hand+SC);
-@import url('https://fonts.googleapis.com/css2?family=Recursive:wght,CASL,CRSV,MONO@450,1,1,1&display=swap'); 
+// @import url('https://fonts.googleapis.com/css2?family=Grandstander:wght@100;200;400;600&display=swap');
+// @import url(https://fonts.googleapis.com/css?family=Patrick+Hand+SC);
+// @import url('https://fonts.googleapis.com/css2?family=Recursive:wght,CASL,CRSV,MONO@450,1,1,1&display=swap'); 
 // @import '@fontsource/fira-mono';
 // @import 'simple-grid.scss';
 
@@ -8,9 +8,10 @@
 
 :root {
 	/* --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; */
-	--font-body: 'Grandstander', 'Patrick Hand SC', cursive;
-	--font-mono: 'Recursive', 'Fira Mono', monospace; 
+		Cantarell, , sans-serif; */
+	// --font-body: 'Grandstander', 'Patrick Hand SC', cursive;
+	--font-body: -apple-system, BlinkMacSystemFont, Roboto, Ubuntu, 'Segoe UI', 'Open Sans', 'Helvetica Neue', 'Arial', sans-serif;
+	--font-mono: monospace; 
 	--color-bg-0: rgb(193, 198, 202);
 	--color-bg-1: hsl(209, 14%, 64%);
 	--color-bg-2: hsl(223, 35%, 84%);
@@ -218,6 +219,9 @@ a.button {
 }
 .mb-4 {
 	margin-bottom: 1rem;
+}
+.mt-4 {
+	margin-top: 1rem;
 }
 
 .margin-auto {

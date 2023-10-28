@@ -31,7 +31,7 @@ export const PracticeInterfaceModes = {
         },
         userVideo: {
             visibility: 'hidden',
-            skeleton: 'none',
+        skeleton: 'none',
         },
     } as PracticeActivityInterfaceSettings,
 

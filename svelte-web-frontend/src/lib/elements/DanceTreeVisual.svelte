@@ -222,7 +222,7 @@ function barClicked () {
         position: relative;
         // min-width: 100%;
         text-align: center;
-        min-height: 1em;
+        min-height: 1.25em;
         transition: height var(--hide-transition-duration) ease-in-out, width var(--hide-transition-duration) ease-in-out, padding var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out, background-color var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
