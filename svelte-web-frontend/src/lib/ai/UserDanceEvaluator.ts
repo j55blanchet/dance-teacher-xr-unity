@@ -221,7 +221,7 @@ export default class UserDanceEvaluator<
                     )
                 }
             } catch(e) {
-                console.warn(`Unable to summarize metric ${String(summaryMetricKey)} for section ${sectionName}${partOfLargerPerformance ? ' as part of a larger performance.': ''}`, e);
+                console.error(`Unable to summarize metric ${String(summaryMetricKey)} for section ${sectionName}${partOfLargerPerformance ? ' as part of a larger performance.': ''}`, e);
             }
             
             return [summaryMetricKey, metricSummaryResult]

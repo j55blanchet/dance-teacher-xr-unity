@@ -2,7 +2,8 @@
 export type NodeHighlight = {
     color?: string,
     label?: string,
-    pulse?: boolean
+    pulse?: boolean,
+    borderColor?: string,
 }
 </script>
 <script lang="ts">
@@ -164,12 +165,14 @@ function barClicked () {
        class:hasBadScore={enableThisNodeColorCoding && $bestScore !== undefined && $bestScore.score <= $summaryFeedback_skeleton3d_mediumPerformanceThreshold}
        class:highlighted={highlight !== undefined}
        class:highlighted-pulse={highlight?.pulse ?? false}
+       class:highlighted-colorborder={highlight?.borderColor !== undefined}
        class:labeled={highlight?.label !== undefined}
+       style:--highlight-color={highlight?.color ?? 'var(--color-theme-1'}
+       style:--custom-border-color={highlight?.borderColor ?? 'var(--color-text)'}
        on:click={barClicked}
        role="menuitem"
        tabindex="0"
        title={nodeTitleString}
-       style="--highlight-color: {highlight?.color ?? 'var(--color-theme-1)'};"
     >   
         {#if showProgress}<span class="progress" style="width:{progressPercent*100}%">
             <!-- {currentTime.toFixed(1)} -->
@@ -213,7 +216,7 @@ function barClicked () {
 
 .node {
     --hide-transition-duration: 0.75s;
-    --highlight-color: #eaff00;
+    --highlight-color: #eaff00;    
 }
     
     .bar {
@@ -223,7 +226,7 @@ function barClicked () {
         // min-width: 100%;
         text-align: center;
         min-height: 1.25em;
-        transition: height var(--hide-transition-duration) ease-in-out, width var(--hide-transition-duration) ease-in-out, padding var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out, background-color var(--hide-transition-duration) ease-in-out;
+        transition: height var(--height-transition-duration, --hide-transition-duration) ease-in-out, width var(--hide-transition-duration) ease-in-out, padding var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out, background-color var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
         overflow: hidden;
@@ -245,6 +248,10 @@ function barClicked () {
         animation-duration: 0.5s;
         animation-iteration-count: infinite;
         animation-direction: alternate;
+    }
+
+    .bar.highlighted-colorborder {
+        border-color: var(--custom-border-color);
     }
     // .bar .label {
     //     // color: var(--highlight-color);

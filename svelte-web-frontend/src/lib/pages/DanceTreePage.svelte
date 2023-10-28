@@ -16,6 +16,11 @@ import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
 import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 import InfoIcon from 'virtual:icons/icon-park-outline/info';
+import NameIcon from 'virtual:icons/icon-park-outline/info';
+import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
+import DanceIcon from 'virtual:icons/mdi/human-female-dance';
+
+import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 
 export let dance: Dance;
 export let danceTree: DanceTree;
@@ -39,6 +44,10 @@ let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
 let currentPlayingNode: DanceTreeNode | null = preselectedNodeId === null ? null : findDanceTreeNode(danceTree, preselectedNodeId);
 $: dispatch('selected-node', currentPlayingNode?.id);
+
+let lastNAttemptsOfDance = frontendPerformanceHistory.lastNAttemptsAllSegments(dance.clipRelativeStem, 'basicInfo');
+let currentSegmentAttemptCount: number;
+$: currentSegmentAttemptCount = currentPlayingNode ? $lastNAttemptsOfDance.filter(x => x.segmentId === currentPlayingNode?.id).length : 0;
 
 let videoPlaybackSpeed: number = 1;
 let videoDuration: number;
@@ -126,6 +135,8 @@ $: {
             [currentPlayingNode.id]: {
                 color: 'var(--color-theme-1)',
                 label: currentPlayingNode.id,
+                pulse: false,
+                borderColor: 'black'
             }
         };
     }
@@ -183,7 +194,7 @@ onMount(() => {
     </div>
      
     <div class="preview-container cols">
-        <div class="col ml-4 pb-4 vfill flex flex-col flex-crossaxis-center flex-mainaxis-stretch">
+        <div class="col ml-4 pb-4 vfill flex flex-col flex-crossaxis-end flex-mainaxis-stretch">
         
             <VideoWithSkeleton 
                 bind:this={videoElement}
@@ -198,7 +209,15 @@ onMount(() => {
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>
         </div>
-        <div class="col vfill flex flex-col flex-center controls">
+        <div class="col flex flex-col flex-center controls">
+            {#if currentPlayingNode}
+            <h3>Information</h3>
+            <div class="infoList">
+                <span class="label" title="Section Name"><NameIcon /></span><span class="data">{currentPlayingNode.id}</span>
+                <span class="label" title="Duration"><ClockIcon /></span><span class="data">{(currentPlayingNode.end_time - currentPlayingNode.start_time).toFixed(2)}s</span>
+                <span class="label" title="Attempts"><DanceIcon /></span><span class="data">{currentSegmentAttemptCount}</span>
+            </div>
+            {/if}
             <h3>Pratice Configuration</h3>
             {#if currentPlayingNode}
                 <div class="control">
@@ -240,6 +259,8 @@ section {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr); 
     gap: 1rem;
+
+    --height-transition-duration: 0.25s;
 }
 
 .preview-container {
@@ -262,6 +283,34 @@ section {
 
 .controls {
     gap: 0.5rem;
+    // flex-basis: auto;
+    // flex-grow: 0;
+    margin-right: 1rem;
+}
+h3 {
+    margin-bottom: 0.25rem;;
+}
+.infoList {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.25rem;
+    margin: 0rem 0 1rem 0;
+
+    & .label {
+        color: var(--color-text-label);
+        font-weight: 500;
+        justify-self: end;
+        align-self: center;
+        margin-right: 0.25rem;
+    }
+
+    & .data {
+        // font-family: monospace;
+        // font-size: 0.9em;
+        justify-self: start;
+        align-self: center;
+        // color: var(--color-text-label);
+    }
 }
 
 .control {
