@@ -3,11 +3,11 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { danceVideoVolume } from './../model/settings';
+import { danceVideoVolume, debugMode__addPlaceholderAchievement, practicePage__enablePerformanceRecording } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
+import { findDanceTreeNode, getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
@@ -111,7 +111,7 @@ $: {
     const navOptionsSuggestingANode = terminalFeedbackNavOptions.filter(opt => opt.nodeId);
    
     const defaultHighlight: NodeHighlight = {
-        color: 'yellow',
+        color: 'var(--color-theme-1, yellow)',
         pulse: true,
     };
     nodeHighlights = Object.fromEntries(
@@ -124,7 +124,7 @@ $: {
             }
             return [navOpts.nodeId, {
                 ...defaultHighlight,
-                label: navOpts.nodeId
+                label: `${navOpts.nodeId} ➡️`
             }]
         })
     );
@@ -133,12 +133,24 @@ $: {
     // we will highlight the segment we just performed.
     if (isShowingFeedback && currentNodeId && nodeHighlights[currentNodeId] === undefined) {
         nodeHighlights[currentNodeId] = {
-            color: 'green',
+            color: 'var(--color-text, green)',
             pulse: false,
-            label: terminalFeedback?.suggestedAction === "repeat" ? "🔁" : "✔️"
+            label: terminalFeedback?.suggestedAction === "repeat" ? `${currentNodeId} 🔁` : `✔️ ${currentNodeId}`,
         }
     }
 }
+
+async function onNodeClickedById(id: string) {
+    // find node;
+    if (!practiceActivity) return;
+    const node = findDanceTreeNode(practiceActivity.danceTree as any, id);
+
+    if (!node) {
+        console.warn("Ignoring onNodeClickedById: can't find node with id: " + id);
+    }
+    return onNodeClicked(node as DanceTreeNode);
+}
+
 async function onNodeClicked(clickedNode: DanceTreeNode) {
     if (isPlayingOrCountdown) return;
 
@@ -258,11 +270,29 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         ...feedback.debug,
         performanceSummary: performanceSummary ?? undefined,
         recordedTrack: recordedTrack ?? undefined,
-        recordedVideoUrl: videoURL,
-        recordedVideoMimeType: webcamRecorderMimeType,
     }
 
+    if (videoURL) {
+        let playbackSpeed = practiceActivity?.playbackSpeed;
+        if (playbackSpeed === 'default' || playbackSpeed === undefined) {
+            playbackSpeed = $practiceFallbackPlaybackSpeed;
+        }
+        feedback.videoRecording = {
+            url: videoURL,
+            mimeType: webcamRecorderMimeType,
+            referenceVideoUrl: danceSrc,
+            recordingStartOffset: practiceActivity?.startTime ?? 0,
+            recordingSpeed: playbackSpeed,
+        };
+    }
+
+    feedback.segmentName = practiceActivity?.danceTreeNode?.id;
+
     gettingFeedback = false;
+
+    if ($debugMode && $debugMode__addPlaceholderAchievement) {
+        feedback.achievements?.push("placeholder achievement");
+    }
 
     return feedback;
 }
@@ -375,6 +405,7 @@ async function startCountdown() {
         return;
     }
 
+    clickAudioElement.volume = 1;
     await tick();
     await waitSecs(beatDuration);
 
@@ -414,7 +445,7 @@ async function startCountdown() {
     webcamRecorder = null;
     webcamRecordedChunks = [];
 
-    if ($debugMode) {
+    if ($practicePage__enablePerformanceRecording) {
         webcamRecordedObjectURL = new Promise((resolve, reject) => {
             resolveWebcamRecordedObjectUrl = resolve;
             rejectWebcamRecordedObjectUrl = reject;
@@ -666,11 +697,10 @@ onMount(() => {
                 'show-all':
                 'hide-others'
             }/>
-            
     </div>
     {/if}
 
-    
+
     <div class="demovid" style:display={state === "feedback" ? 'none' : 'flex'}>
         <VideoWithSkeleton
             bind:this={videoWithSkeleton}
@@ -707,7 +737,7 @@ onMount(() => {
             feedback={terminalFeedback}
             on:repeat-clicked={reset}
             on:continue-clicked={() => dispatch('continue-clicked')}
-
+            on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
         />
         <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
     </div>
@@ -838,6 +868,7 @@ section {
     background-color: rgba(0, 0, 0, 0.2);
     //  add background blur
     backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 
     padding: 3rem;
     border-radius: 50%;

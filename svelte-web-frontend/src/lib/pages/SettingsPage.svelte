@@ -4,6 +4,7 @@ import {
     debugMode, 
     debugMode__viewBeatsOnDanceTreepage,
     debugMode__viewDanceMenuAsList,
+    debugMode__addPlaceholderAchievement,
     pauseInPracticePage, 
     debugPauseDurationSecs,
     evaluation_GoodBadTrialThreshold,
@@ -19,9 +20,10 @@ import {
     evaluation_summarizeSubsectionsOptions,
 	useTextToSpeech,
 	practiceFallbackPlaybackSpeed,
+    practicePage__enablePerformanceRecording,
 	summaryFeedback_skeleton3d_mediumPerformanceThreshold,
     summaryFeedback_skeleton3d_goodPerformanceThreshold,
-	danceVideoVolume
+	danceVideoVolume,
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -70,6 +72,10 @@ function clearPerformanceHistory() {
             <label for="debugMode__viewDanceMenuAsList">View Dance Menu as List</label>
             <input type="checkbox" name="debugMode__viewDanceMenuAsList" bind:checked={$debugMode__viewDanceMenuAsList}>
         </div>
+        <div>
+            <label for="debugMode__addPlaceholderAchievement">Add placeholder achievement</label>
+            <input type="checkbox" name="debugMode__addPlaceholderAchievement" bind:checked={$debugMode__addPlaceholderAchievement}>
+        </div>
     </div>
     {/if}
     <div class="group">
@@ -96,6 +102,10 @@ function clearPerformanceHistory() {
             <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
         </div>
         {/if}
+        <div>
+            <label for="practicePage__enablePerformanceRecording">Record Performances</label>
+            <input type="checkbox" name="practicePage__enablePerformanceRecording" bind:checked={$practicePage__enablePerformanceRecording}>
+        </div>
         <div>
             <label for="danceVideoVolume">Dance Video Volume</label>
             <input class="outlined thin" type="range" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>

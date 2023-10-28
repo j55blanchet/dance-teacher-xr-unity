@@ -86,8 +86,8 @@ const defaultAllNodeAchievementSuffixFunction = (attemptCount: number) => `That 
  * the user-facing achievement message.
 */
 const ALL_NODES_ATTEMPT_ACHIEVEMENTS = new Map([
-    [1, { prefix: 'Great start!', suffixFn: (attemptCount: number) => `You've completed your ${formatOrdinals(attemptCount)} attempt!` }],
-    [5, { prefix: 'That a way!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
+    [1, { prefix: 'Great start on your first attempt!', suffixFn: (attemptCount: number) => `` }],
+    [5, { prefix: 'That a way! Five attempts already!', suffixFn: () => `` }],
     [10, { prefix: 'Keep it up!', suffixFn: (attemptCount: number) => `You've reached ${attemptCount} total attempts!` }],
     [20, { prefix: 'Amazing!', suffixFn: defaultAllNodeAchievementSuffixFunction }],
     [40, { prefix: "You're a rockstar!", suffixFn: defaultAllNodeAchievementSuffixFunction }],
@@ -140,18 +140,20 @@ export default function detectAchievements(params: AchievementParams): string[] 
     
     const achievements = [] as string[];
 
-    // Add an achievement if the user has attempted a the current node a special number of times.
-    const singleNodeAttemptCount = getAttemptCount(params, 'attemptedNode');
-    const singleNodeAchivement = detectSingleNodeAttemptsAchivement(singleNodeAttemptCount, params.attemptedNodeId, params.outputTarget);
-    if (singleNodeAchivement) {
-        achievements.push(singleNodeAchivement);
-    }
-
     // Add an achievement if the user has attempted all nodes a special number of times.
     const allNodeAttemptCounts = getAttemptCount(params, 'allNodes');
     const allNodeAchivement = getAllNodesAttemptAchievement(allNodeAttemptCounts, params.outputTarget);
     if (allNodeAchivement) {
         achievements.push(allNodeAchivement);
+    }
+    
+    // Add an achievement if the user has attempted a the current node a special number of times.
+    const singleNodeAttemptCount = getAttemptCount(params, 'attemptedNode');
+    const singleNodeAchivement = detectSingleNodeAttemptsAchivement(singleNodeAttemptCount, params.attemptedNodeId, params.outputTarget);
+
+    // prevent there from being two very similar "you've done this x times" achievements.
+    if (!allNodeAchivement && singleNodeAchivement) {
+        achievements.push(singleNodeAchivement);
     }
 
     return achievements

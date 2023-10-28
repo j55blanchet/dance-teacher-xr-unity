@@ -171,7 +171,7 @@ function barClicked () {
        title={nodeTitleString}
        style="--highlight-color: {highlight?.color ?? 'var(--color-theme-1)'};"
     >   
-        {#if showProgress}<span class="progress outlined" style="width:{progressPercent*100}%">
+        {#if showProgress}<span class="progress" style="width:{progressPercent*100}%">
             <!-- {currentTime.toFixed(1)} -->
         </span>{/if}
 
@@ -274,8 +274,8 @@ function barClicked () {
 
     .bar.active {
         // border-width: 0.12em;
-        box-shadow: 0 0 1px black;
-        border: 0 solid transparent;
+        box-shadow: 1px 1px 2px 2px var(--color-theme-1);
+        // border: 0 solid transparent;
     }
     .bar.hidden {
         box-shadow: 0;
