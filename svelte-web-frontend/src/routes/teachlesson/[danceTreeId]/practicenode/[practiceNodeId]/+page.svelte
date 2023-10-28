@@ -5,21 +5,30 @@ import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } fro
 import PracticePage from '$lib/pages/PracticePage.svelte';
 import { INITIAL_STATE, type PracticePageState } from '$lib/pages/PracticePage.svelte';
 import { navbarProps } from '$lib/elements/NavBar.svelte';
+import type PracticeActivity from '$lib/model/PracticeActivity';
+import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 /** @type {import('./$types').PageData} */    
 export let data;
 const dance: Dance = data.dance;
 const danceTree: DanceTree = data.danceTree;
-const node: DanceTreeNode = data.danceTreeNode;
+const danceTreeNode: DanceTreeNode = data.danceTreeNode;
 const playbackSpeed: number = data.playbackSpeed;
 
-let practiceActivity = GeneratePracticeActivity (
+const interfaceModeKey: PracticeInterfaceModeKey = data.interfaceMode;
+const terminalFeedbackEnabled: boolean = data.terminalFeedbackEnabled;
+const enableUserSkeletonColorCoding: boolean = data.enableUserSkeletonColorCoding;
+
+let { activity, url } = GeneratePracticeActivity({
     dance,
     danceTree,
-    node,
+    danceTreeNode,
     playbackSpeed,
-    // {} //  UserDancePerformanceLog
-)
+    interfaceMode: interfaceModeKey,
+    terminalFeedbackEnabled,
+    enableUserSkeletonColorCoding,
+})
+let practiceActivity: PracticeActivity = activity;
 
 let parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
 $: {
@@ -36,7 +45,7 @@ $: {
 $: {
     navbarProps.set({
         collapsed: hideNavBar,
-        pageTitle: `${dance.title}: ${node.id}`,
+        pageTitle: `${dance.title}: ${danceTreeNode.id}`,
         back: {
             url: parentURL,
             title: 'Back',
@@ -47,8 +56,8 @@ $: {
 </script>
 
 <svelte:head>
-	<title>{dance.title} '{node.id}' Practice</title>
-	<meta name="description" content="Practice page for section {node.id} of dance: {dance.title}" />
+	<title>{dance.title} '{danceTreeNode.id}' Practice</title>
+	<meta name="description" content="Practice page for section {danceTreeNode.id} of dance: {dance.title}" />
 </svelte:head>
 
 <section>

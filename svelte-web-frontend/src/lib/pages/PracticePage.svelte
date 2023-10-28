@@ -33,6 +33,7 @@ import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
 import { waitSecs } from '$lib/utils/async';
+import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeActivityInterfaceSettings } from '$lib/model/PracticeActivity';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -41,6 +42,9 @@ export let dance: Dance;
 export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
+
+let interfaceSettings: PracticeActivityInterfaceSettings = PracticeInterfaceModes[PracticeActivityDefaultInterfaceSetting];
+$: interfaceSettings = PracticeInterfaceModes[practiceActivity?.interfaceMode ?? PracticeActivityDefaultInterfaceSetting];
 
 const dispatch = createEventDispatcher();
 
@@ -57,12 +61,6 @@ $: isShowingFeedback = state === 'feedback';
 let isMounted = false;
 
 let currentActivityStepIndex: number = 0;
-let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
-$: {
-    if (practiceActivity) {
-        currentActivityType = practiceActivity.activityTypes[currentActivityStepIndex];
-    }
-}
 
 let containingDanceTreeLeafNodes = [] as DanceTreeNode[];
 $: {
@@ -159,11 +157,18 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
     const danceTree = practiceActivity.danceTree;
     const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
     const nodeSlug = clickedNode.id;
-    
-    const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}?playbackSpeed=${practiceActivity.playbackSpeed}`;
+        
+    let { activity: newActivity, url} = await GeneratePracticeActivity({
+        dance, 
+        danceTree, 
+        danceTreeNode: clickedNode, 
+        playbackSpeed: practiceActivity.playbackSpeed,
+        interfaceMode: practiceActivity.interfaceMode,
+        terminalFeedbackEnabled: practiceActivity.terminalFeedbackEnabled,
+        enableUserSkeletonColorCoding: practiceActivity.enableUserSkeletonColorCoding,
+    });
     await goto(url);
-    
-    let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, practiceActivity.playbackSpeed);
+
     practiceActivity = newActivity;
     await reset();
 }
@@ -182,12 +187,25 @@ let resolveWebcamRecordedObjectUrl: ((url: string) => void) | null = null;
 let rejectWebcamRecordedObjectUrl: ((reason?: any) => void) | null = null;
 let webcamRecordedObjectURL: Promise<string> | null = null;
 
+
+let isDoingSomeSortOfFeedback = false;
+$: {
+    isDoingSomeSortOfFeedback = (practiceActivity?.terminalFeedbackEnabled ?? false)
+        || ((practiceActivity?.enableUserSkeletonColorCoding ?? true)
+            &&  ((interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
+                    || (interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user')
+                )
+            )
+}
+
 $: {
     danceSrc = getDanceVideoSrc(dance);
 }
 
 $: {
-    poseEstimationEnabled = pageActive && (countdownActive || !isVideoPausedBinding || state==="paused") && currentActivityType === 'drill';
+    poseEstimationEnabled = pageActive 
+        && isDoingSomeSortOfFeedback 
+        &&  (countdownActive || !isVideoPausedBinding || state==="paused");
 }
 
 let lastNAttempts = frontendPerformanceHistory.lastNAttempts(
