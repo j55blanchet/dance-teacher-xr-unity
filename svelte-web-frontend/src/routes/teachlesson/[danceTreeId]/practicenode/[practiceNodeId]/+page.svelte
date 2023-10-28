@@ -30,9 +30,9 @@ let { activity, url } = GeneratePracticeActivity({
 })
 let practiceActivity: PracticeActivity = activity;
 
-let parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
+let parentURL: string;
 $: {
-    parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
+    parentURL = `/teachlesson/${makeDanceTreeSlug(danceTree)}?preselectedNodeId=${danceTreeNode.id}`
 }
 let pageState: PracticePageState = INITIAL_STATE;
 

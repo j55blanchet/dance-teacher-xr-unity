@@ -46,6 +46,12 @@ export let flipVideo: boolean = false;
 let interfaceSettings: PracticeActivityInterfaceSettings = PracticeInterfaceModes[PracticeActivityDefaultInterfaceSetting];
 $: interfaceSettings = PracticeInterfaceModes[practiceActivity?.interfaceMode ?? PracticeActivityDefaultInterfaceSetting];
 
+let hasVisibleReferenceVideo: boolean;
+$: hasVisibleReferenceVideo = interfaceSettings.referenceVideo.visibility === 'visible';
+
+let hasUserWebcamVisible: boolean;
+$: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible'
+
 const dispatch = createEventDispatcher();
 
 let fitVideoToFlexbox = true;
@@ -464,7 +470,7 @@ async function startCountdown() {
     webcamRecorder = null;
     webcamRecordedChunks = [];
 
-    if ($practicePage__enablePerformanceRecording) {
+    if ($practicePage__enablePerformanceRecording && $webcamStream) {
         webcamRecordedObjectURL = new Promise((resolve, reject) => {
             resolveWebcamRecordedObjectUrl = resolve;
             rejectWebcamRecordedObjectUrl = reject;
@@ -475,7 +481,7 @@ async function startCountdown() {
         } else if (MediaRecorder.isTypeSupported('video/mp4')) {
             webcamRecorderMimeType = 'video/mp4';
         }
-        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: webcamRecorderMimeType });
+        webcamRecorder = new MediaRecorder($webcamStream, { mimeType: webcamRecorderMimeType });
         webcamRecordedChunks = [];
         webcamRecorder.addEventListener('dataavailable', (e) => {
             webcamRecordedChunks.push(e.data);
@@ -522,7 +528,7 @@ export async function reset() {
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
     const promises = [] as Promise<any>[];
-    if (virtualMirrorElement) {
+    if (virtualMirrorElement && hasUserWebcamVisible) {
         promises.push(virtualMirrorElement.webcamStartedPromise);
     }
     let ref2dPosesPromise: ReturnType<typeof load2DPoseInformation> | null = null;
@@ -558,6 +564,8 @@ export async function reset() {
 
     await waitSecs(beatDuration);
 
+    // state = 'waitStartUserInteraction';
+    // showStartCountdownDialog = true;
     startCountdown();
 }
 
@@ -700,6 +708,9 @@ onMount(() => {
 <section class="practicePage" 
     class:hasDanceTree={practiceActivity?.danceTree}
     class:hasFeedback={isShowingFeedback}
+    class:isPracticing={!isShowingFeedback}
+    class:hasOnlyDemoVideo={hasVisibleReferenceVideo && !hasUserWebcamVisible}
+    class:hasOnlyUserMirror={hasUserWebcamVisible && !hasVisibleReferenceVideo}
     >
     {#if practiceActivity?.danceTree}
     <div class="treevis">
@@ -720,7 +731,7 @@ onMount(() => {
     {/if}
 
 
-    <div class="demovid" style:display={state === "feedback" ? 'none' : 'flex'}>
+    <div class="demovid" style:display={state === "feedback" || !hasVisibleReferenceVideo ? 'none' : 'flex'}>
         <VideoWithSkeleton
             bind:this={videoWithSkeleton}
             bind:currentTime={videoCurrentTime}
@@ -735,13 +746,6 @@ onMount(() => {
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-        {#if countdown >= 0}
-            <div class="countdown">
-                <span class="count">
-                    {countdown}
-                </span>
-            </div>
-        {/if}
         {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
         <div class="startCountdown">
             <button class="button thick" on:click={() => startCountdown()}>
@@ -763,7 +767,7 @@ onMount(() => {
     {/if}
     <div 
         class="mirror"
-        style:display={state === "feedback" ? 'none' : 'flex'}
+        style:display={state === "feedback" || !hasUserWebcamVisible ? 'none' : 'flex'}
         >
         <VirtualMirror
             bind:this={virtualMirrorElement}
@@ -782,12 +786,21 @@ onMount(() => {
         {/if}
     </div>
 
+    {#if countdown >= 0}
+    <div class="countdown">
+        <span class="count">
+            {countdown}
+        </span>
+    </div>
+    {/if}
+
     <Dialog open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
         on:dialog-closed={() => showStartCountdownDialog = false}>
         <span slot="title">Click to Start</span>
         <p class="limit-line-width">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
         <button class="button" on:click={() => startCountdown()}>
             Start Countdown
+            
         </button>
     </Dialog>
 </section>
@@ -804,6 +817,12 @@ section {
     overflow: hidden;
     display: grid;
     grid-template: "demovid mirror" 1fr / 1fr 1fr;
+    &.hasOnlyDemoVideo {
+        grid-template: "demovid" 1fr / 1fr;
+    }
+    &.hasOnlyUserMirror {
+        grid-template: "mirror" 1fr / 1fr;
+    }
 
     &.hasDanceTree {
         grid-template-areas:
@@ -814,6 +833,17 @@ section {
         // grid-template:
         //     "treevis treevis" auto
         //     "demovid mirror" 1fr / 1fr 1fr;
+
+        &.hasOnlyDemoVideo {
+            grid-template-areas:
+                "treevis treevis"
+                "demovid  demovid";
+        }
+        &.hasOnlyUserMirror {
+            grid-template-areas:
+                "treevis treevis"
+                "mirror  mirror";
+        }
     }
     &.hasFeedback {
         grid-template: "feedback feedback" 1fr / 1fr 1fr;
