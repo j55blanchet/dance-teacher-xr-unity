@@ -4,6 +4,7 @@ import { page, navigating } from '$app/stores'
 import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 import SketchButton from '$lib/elements/SketchButton.svelte';
+import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
 import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode, findDanceTreeNode } from '$lib/data/dances-store';
 import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
@@ -225,27 +226,10 @@ onMount(() => {
             {/if}
             <h3>Pratice Configuration</h3>
             {#if currentPlayingNode}
-                <div class="control">
-                    <label for="playbackSpeed">Speed:</label>
-                    <input type="range" name="playbackSpeed" bind:value={practiceActivityParams.playbackSpeed} min="0.4" max="1.3" step="0.1" />
-                    {practiceActivityParams.playbackSpeed.toFixed(1)}x
-                </div>
-                <div class="control interfaceMode" >
-                    {#each interfaceModeOptions as interfaceModeOption}
-                    <label class="button outlined thin" class:selected={interfaceModeOption.value === practiceActivityParams.interfaceMode }>
-                        {interfaceModeOption.title}
-                        <input type="radio" name="practiceActivityInterfaceMode" value={interfaceModeOption.value} bind:group={practiceActivityParams.interfaceMode}/>
-                    </label>
-                    {/each}
-                </div>
-                <div class="control">
-                    <label for="enableUserSkeletonColorCoding">Live Color Coding</label>
-                    <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.userSkeletonColorCodingEnabled} />
-                </div>
-                <div class="control">
-                    <label for="terminalFeedbackEnabled">Provide Feedback</label>
-                    <input type="checkbox" name="terminalFeedbackEnabled" bind:checked={practiceActivityParams.terminalFeedbackEnabled} />
-                </div>
+                <PracticeActivityConfigurator 
+                    persistInSettings={true}
+                    bind:practiceActivityParams={practiceActivityParams}
+                />
                 <div class="control mt-4">
                     <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
                         {#if $navigating}
@@ -326,50 +310,4 @@ h3 {
     }
 }
 
-.control {
-    display: flex;
-    flex-direction: row; 
-    align-items: center;
-    justify-content: center;
-    gap: 1ch;
-
-    input[type="range"] {
-        max-width: 10ch;
-    }
-
-    &.interfaceMode label {
-        box-sizing: border-box;
-        padding: 0.25em;
-        width: 5em;
-        height: 5em;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        // border-radius: var(--std-border-radius);
-        box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.3);
-
-        & input {
-            position:absolute;
-            left: -50%;
-            opacity: 0;
-            width: 0;
-            height: 0;
-
-        }
-
-        &:has( > input:checked) {
-            color: red;
-        }
-
-        &.selected {
-            color: var(--color-theme-1);
-            border-color: var(--color-theme-1);
-            border-width: 3px;
-            background: white;
-        }
-    }
-
-    // &.interfaceMode label:has(input[selected=true])
-}
 </style>
