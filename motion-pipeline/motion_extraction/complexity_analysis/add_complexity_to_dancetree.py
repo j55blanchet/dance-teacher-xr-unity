@@ -81,8 +81,8 @@ def trim_dancenodes_with_zero_complexity(tree: DanceTree):
         last_node = node.children[-1]
         second_last_node = node.children[-2]
         
-        if last_node.duration < second_last_node.duration / 2:
-            # If the last node is less than half the duration of the second-last node, merge them
+        if last_node.duration < 1:
+            # If the last node is less than 1 second long, merge it with earlier nodes
             second_last_node.end_time = last_node.end_time
             second_last_node.children = last_node.children
             node.alternate_ids.append(last_node.id)
