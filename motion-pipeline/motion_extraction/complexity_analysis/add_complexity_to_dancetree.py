@@ -97,8 +97,6 @@ def trim_dancenodes_with_zero_complexity(tree: DanceTree):
         
 
     def trim_dancenodes_with_zero_complexity_recursive(node: DanceTreeNode):
-        original_end_time = node.end_time
-
         # Trim end time to the last time the complexity changed
         node.end_time = node.metrics['time_of_last_complexity_change']
 
@@ -113,7 +111,7 @@ def trim_dancenodes_with_zero_complexity(tree: DanceTree):
         for remainingChild in node.children:
             trim_dancenodes_with_zero_complexity_recursive(remainingChild)
 
-        merge_too_short_child_nodes(node, original_end_time)
+        merge_too_short_child_nodes(node)
             
     trim_dancenodes_with_zero_complexity_recursive(tree.root)
 
