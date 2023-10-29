@@ -204,21 +204,28 @@ export default class UserDanceEvaluator<
         const summaryMetricKeys = Object.keys(this.summaryMetrics) as (keyof U)[];
         const summaryMetricResults = Object.fromEntries(summaryMetricKeys.map((summaryMetricKey) => {
             const metric = this.summaryMetrics[summaryMetricKey];
-            const metricSummary = (metric).summarizeMetric(
-                trackHistory,
-            )
-            if (this.performanceHistoryStore) {
-                const formattedSummary = metric.formatSummary(metricSummary as any);
-                this.performanceHistoryStore.recordPerformance(
-                    track.danceRelativeStem,
-                    sectionName,
-                    summaryMetricKey,
-                    formattedSummary as any,
-                    partOfLargerPerformance
+            let metricSummaryResult = undefined;
+            try {
+                const metricSummary = (metric).summarizeMetric(
+                    trackHistory,
                 )
+                metricSummaryResult = metricSummary;
+                if (this.performanceHistoryStore) {
+                    const formattedSummary = metric.formatSummary(metricSummary as any);
+                    this.performanceHistoryStore.recordPerformance(
+                        track.danceRelativeStem,
+                        sectionName,
+                        summaryMetricKey,
+                        formattedSummary as any,
+                        partOfLargerPerformance
+                    )
+                }
+            } catch(e) {
+                console.error(`Unable to summarize metric ${String(summaryMetricKey)} for section ${sectionName}${partOfLargerPerformance ? ' as part of a larger performance.': ''}`, e);
             }
-            return [summaryMetricKey, metricSummary]
-        })) as {[K in keyof U]: ReturnType<U[K]["summarizeMetric"]>};
+            
+            return [summaryMetricKey, metricSummaryResult]
+        })) as {[K in keyof U]: ReturnType<U[K]["summarizeMetric"]> | undefined};
 
         return {
             ...liveMetricSummaryResults,

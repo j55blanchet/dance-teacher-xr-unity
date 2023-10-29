@@ -5,25 +5,37 @@ import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } fro
 import PracticePage from '$lib/pages/PracticePage.svelte';
 import { INITIAL_STATE, type PracticePageState } from '$lib/pages/PracticePage.svelte';
 import { navbarProps } from '$lib/elements/NavBar.svelte';
+import type PracticeActivity from '$lib/model/PracticeActivity';
+import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
+	import { practiceActivities__playbackSpeed } from '$lib/model/settings';
 
 /** @type {import('./$types').PageData} */    
 export let data;
 const dance: Dance = data.dance;
 const danceTree: DanceTree = data.danceTree;
-const node: DanceTreeNode = data.danceTreeNode;
-const playbackSpeed: number = data.playbackSpeed;
+const danceTreeNode: DanceTreeNode = data.danceTreeNode;
+const playbackSpeed: number = data.playbackSpeed ?? $practiceActivities__playbackSpeed; 
 
-let practiceActivity = GeneratePracticeActivity (
+const interfaceMode: PracticeInterfaceModeKey = data.interfaceMode;
+const terminalFeedbackEnabled: boolean = data.terminalFeedbackEnabled;
+const showUserSkeleton: boolean = data.showUserSkeleton;
+
+let { activity, url } = GeneratePracticeActivity(
     dance,
     danceTree,
-    node,
-    playbackSpeed,
-    // {} //  UserDancePerformanceLog
+    danceTreeNode,
+    {
+        playbackSpeed,
+        interfaceMode,
+        terminalFeedbackEnabled,
+        showUserSkeleton: showUserSkeleton,
+    }
 )
+let practiceActivity: PracticeActivity = activity;
 
-let parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
+let parentURL: string;
 $: {
-    parentURL = "/teachlesson/" + makeDanceTreeSlug(danceTree)
+    parentURL = `/teachlesson/${makeDanceTreeSlug(danceTree)}?preselectedNodeId=${danceTreeNode.id}`
 }
 let pageState: PracticePageState = INITIAL_STATE;
 
@@ -36,7 +48,7 @@ $: {
 $: {
     navbarProps.set({
         collapsed: hideNavBar,
-        pageTitle: `${dance.title}: ${node.id}`,
+        pageTitle: `${dance.title}: ${danceTreeNode.id}`,
         back: {
             url: parentURL,
             title: 'Back',
@@ -47,8 +59,8 @@ $: {
 </script>
 
 <svelte:head>
-	<title>{dance.title} '{node.id}' Practice</title>
-	<meta name="description" content="Practice page for section {node.id} of dance: {dance.title}" />
+	<title>{dance.title} '{danceTreeNode.id}' Practice</title>
+	<meta name="description" content="Practice page for section {danceTreeNode.id} of dance: {dance.title}" />
 </svelte:head>
 
 <section>

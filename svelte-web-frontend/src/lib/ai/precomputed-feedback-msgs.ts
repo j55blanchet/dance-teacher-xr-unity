@@ -18,8 +18,13 @@ const GoodTrialHeadlines = Object.freeze([
     "You're a Pro!",
     "Outstanding Performance!"
 ])
+let lastGoodTrialHeadlineIndex = -1;
 export function getRandomGoodTrialHeadline() {
-    return GoodTrialHeadlines[Math.floor(Math.random() * GoodTrialHeadlines.length)]
+    let index = lastGoodTrialHeadlineIndex;
+    while (index === lastGoodTrialHeadlineIndex) {
+        index = Math.floor(Math.random() * GoodTrialHeadlines.length)
+    }
+    return GoodTrialHeadlines[index];
 }
 
 // Headlines for feedback when the user didn't do particularly well (and should try again).
@@ -46,6 +51,28 @@ const BadTrialHeadline = Object.freeze([
     "Stay Tenacious!"
 ])
 
+let lastBadTrialHeadlineIndex = -1;
 export function getRandomBadTrialHeadline() {
-    return BadTrialHeadline[Math.floor(Math.random() * BadTrialHeadline.length)]
+    let index = lastBadTrialHeadlineIndex;
+    while (index === lastBadTrialHeadlineIndex) {
+        index = Math.floor(Math.random() * BadTrialHeadline.length)
+    }
+    return BadTrialHeadline[index];
+}
+
+
+const NoFeedbackHeadlines = Object.freeze([
+    "What next?",
+    "What are you thinking now?",
+    "What do you think?",
+    "How did you feel?",
+])
+
+let lastNoFeedbackHeadlineIndex = -1;
+export function getRandomNoFeedbackHeadline() {
+    let index = lastNoFeedbackHeadlineIndex;
+    while (index === lastNoFeedbackHeadlineIndex) {
+        index = Math.floor(Math.random() * NoFeedbackHeadlines.length)
+    }
+    return NoFeedbackHeadlines[index];
 }

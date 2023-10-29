@@ -1,7 +1,25 @@
 import type { DanceTree, DanceTreeNode } from "$lib/data/dances-store";
-import { GetArithmeticMean, type BodyInnerAnglesComparisons } from "./EvaluationCommonUtils";
+import { GetArithmeticMean, type BodyInnerAnglesComparisons, GetHarmonicMean } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
+import type { Angle3DMetricSummaryOutput } from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
+
+function GetInaccurateJoints(skeleton3DSimilarity: Angle3DMetricSummaryOutput, badJointSDThreshold: number, overallScore?: number, overallScoreSD?: number) {
+
+    const comparisonMean = overallScore ?? skeleton3DSimilarity.overallScore;
+    const comparisonSD = overallScoreSD ?? skeleton3DSimilarity.overallScoreSD;
+
+    const jointScoreEntries = Object.entries(skeleton3DSimilarity.individualScores);
+
+    // get all the joints that are 1 standard deviation below the mean.
+    const badJoints = jointScoreEntries
+        .filter(
+            ([joint, score]) => 
+            score < comparisonMean - (badJointSDThreshold * comparisonSD)
+        );
+
+    return badJoints;
+}
 
 /**
  * Distills the performance summary to a condensed representation containing only the features
@@ -9,43 +27,50 @@ import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistor
  * @param summary Summary of the performance
  * @returns A condensed representation of the summary, highlighting only the most important things
  */
-export function distillFrontendPerformanceSummaryToTextualRepresentation(summary: FrontendPerformanceSummary, mediumScoreThreshold: number, goodScoreThreshold: number): string {
+export function distillFrontendPerformanceSummaryToTextualRepresentation(summary: FrontendPerformanceSummary, mediumScoreThreshold: number, goodScoreThreshold: number, badJointSDThreshold: number): string {
 
     const { wholePerformance, subsections, segmentDescription } = summary;
 
-    const overallPerformance = wholePerformance.skeleton3DAngleSimilarity.overallScore?.toFixed(2);
-    let distillation = `The user just performed "${segmentDescription}", at timestamp: ${new Date().toISOString()}. Overall, the user had a ${overallPerformance} match with the reference dance.`;
+    const overallPerformanceScore = wholePerformance.skeleton3DAngleSimilarity.overallScore;
+    const overallPerformanceSD = wholePerformance.skeleton3DAngleSimilarity.overallScoreSD;
+    const overallPerformanceScoreString = overallPerformanceScore?.toFixed(2);
+    let distillation = `The user just performed "${segmentDescription}", at timestamp: ${new Date().toISOString()}. Overall, the user had a ${overallPerformanceScoreString} match with the reference dance.`;
     distillation += `A match of above ${mediumScoreThreshold.toFixed(2)} is considered a "fair" performance, and a match of above ${goodScoreThreshold.toFixed(2)} is considered a "good" performance.`
 
-    const [worstJointName, worstJointScore] = Object.entries(wholePerformance.skeleton3DAngleSimilarity.individualScores).reduce((prev, curr) => {
-        const pAngleScore = prev[1] as number
-        const angleScore = curr[1] as number
-        if (angleScore < pAngleScore) {
-            return curr;
-        }
-        return prev;
-    }, ["null", Infinity] as [string, number]);
+    const badJoints = GetInaccurateJoints(wholePerformance.skeleton3DAngleSimilarity, badJointSDThreshold)
 
-    if (worstJointScore < mediumScoreThreshold) {
-        distillation += ` The worst joint overall was the ${worstJointName}, with a ${worstJointScore?.toFixed(2)} match to the ${worstJointName} of the reference dancer.`;
+    if (badJoints.length > 0) {
+        distillation += ` The joint angles that were the most troublesome for the user were: `;
+        const badJointStrings = badJoints.map(([joint, score]) => `${joint} (match: ${score.toFixed(2)})`);
+        distillation += badJointStrings.join(", ");
+        distillation += `.`;
     } else {
-        distillation += ` No joints were particularly bad.`
+        distillation += ` No joints angles were particularly bad.`
     }
 
     const subsectionNames = Object.keys(subsections);
-    const subsectionOverallScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity?.overallScore);
-    const subsectionWorstJointScores = subsectionNames.map((name) => subsections[name].skeleton3DAngleSimilarity?.individualScores?.[worstJointName as keyof typeof BodyInnerAnglesComparisons ]);
 
     if (subsectionNames.length > 1) {
         // Describe subsections if there were some.
         distillation += ` The user's performance was broken down into ${subsectionNames.length} subsections:\n`;
-        const subsectionsAndScores = subsectionNames.map((subsectionName, subsectionIndex) => {
-            const score = subsectionOverallScores[subsectionIndex];
-            const worstJointScore = subsectionWorstJointScores?.[subsectionIndex];
-            const worstJointString = worstJointScore >= mediumScoreThreshold ? " (all joints ok)" : ` (worst joint: ${worstJointName}, match: ${worstJointScore?.toFixed(2)})`;
-            return `* Section "${subsectionName}" : full-body accuracy: ${score?.toFixed(2)}${worstJointString}`;
+        const subsectionEntries = Object.entries(subsections);
+        const subsectionDistillationStrings = subsectionEntries.map(([subsectionName, subsection]) => {
+            const angleSimilarity = subsection.skeleton3DAngleSimilarity;
+
+            // Compare the badness of the joints relative to the distrubition of the entire performance.
+            const badJoints = GetInaccurateJoints(
+                wholePerformance.skeleton3DAngleSimilarity,
+                badJointSDThreshold,
+                overallPerformanceScore,
+                overallPerformanceSD
+            )
+            
+            const badJointNameList = badJoints.map(([jointName, _]) => jointName).join(',');
+            const badJointsString = badJoints.length > 0 ? ` Troublesome joints angles: ${badJointNameList}` : 'No particularly troublesome joints';
+            return `* Section "${subsectionName}" : full-body accuracy: ${angleSimilarity.overallScore.toFixed(2)}. ${badJointsString}`;
         });
-        distillation += subsectionsAndScores.join("\n");
+      
+        distillation += subsectionDistillationStrings.join("\n");
     }
 
     return distillation;
@@ -91,12 +116,15 @@ export function distillPerformanceHistoryToTextualRepresentation(dancePerformanc
                 partOfLargerPerformance: x.partOfLargerPerformance ?? true,
             }));
         const attemptCount = nonnullOverallScoreAttempts.length;
+        const secondMostRecentAttempt = nonnullOverallScoreAttempts[attemptCount - 2];
+        const secondMostRecentAttemptDate = secondMostRecentAttempt?.date?.toISOString() ?? "never";
+        const secondMostReceentAttemptString = secondMostRecentAttempt ? ` The next most recent attempt, performed ${secondMostRecentAttemptDate}, got a score of ${secondMostRecentAttempt?.score.toFixed(2)}` : '';
         const attemptsAsPartOfLargerPerformance = nonnullOverallScoreAttempts.filter(x => x.partOfLargerPerformance).length;
         const attemptsNotAsPartOfLargerPerformance = attemptCount - attemptsAsPartOfLargerPerformance;
         const meanScore = GetArithmeticMean(nonnullOverallScoreAttempts.map(x => x.score));
         const bestScore = Math.max(...nonnullOverallScoreAttempts.map(x => x.score));
         const worstScore = Math.min(...nonnullOverallScoreAttempts.map(x => x.score));
-        description += `The user has attempted segment "${segmentId}" ${attemptsNotAsPartOfLargerPerformance} times individually, and ${attemptsAsPartOfLargerPerformance} time as a subsection of a larger performance, and has achived an average score of ${meanScore.toFixed(2)} (worst: ${worstScore.toFixed(2)}, best: ${bestScore.toFixed(2)}) on this segment\n`;
+        description += `The user has attempted segment "${segmentId}" ${attemptsNotAsPartOfLargerPerformance} times individually, and ${attemptsAsPartOfLargerPerformance} time as a subsection of a larger performance, and has achived an average score of ${meanScore.toFixed(2)} (worst: ${worstScore.toFixed(2)}, best: ${bestScore.toFixed(2)}) on this segment.${secondMostReceentAttemptString}\n`;
     }
     return description;
 }

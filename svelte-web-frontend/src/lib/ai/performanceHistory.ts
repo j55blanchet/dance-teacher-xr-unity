@@ -38,6 +38,8 @@ function loadPerformanceHistoryFromLocalstorage<MetricTypes extends Record<strin
     }
 }
 
+let a =  writable(0);
+
 export function createPerformanceHistoryStore<MetricTypes extends Record<string, BaseMetric<any, any>>>() {
 	const { subscribe, update } = writable(loadPerformanceHistoryFromLocalstorage() as CompletePerformanceHistory<MetricTypes>);
 
@@ -106,7 +108,7 @@ export function createPerformanceHistoryStore<MetricTypes extends Record<string,
                 return attempts;
             });
         },
-        lastNAttempts<T extends keyof MetricTypes>(danceRelativeStem: string, metricName: T, n: number) {
+        lastNAttempts<T extends keyof MetricTypes>(danceRelativeStem: string, metricName: T, n?: number) {
             return derived(this, ($history) => {
                 if (!$history) return [];
                 const danceHistory = $history[danceRelativeStem] ?? {};
@@ -130,7 +132,11 @@ export function createPerformanceHistoryStore<MetricTypes extends Record<string,
 
                 // Sort attempts - most recent first
                 attempts.sort((a, b) => b.date.getTime() - a.date.getTime());
-                return attempts.slice(-n);
+
+                if (n !== undefined) {
+                    return attempts.slice(-n);    
+                }
+                return attempts;
             });
         },
 
