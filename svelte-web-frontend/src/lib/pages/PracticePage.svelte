@@ -724,7 +724,6 @@ onMount(() => {
 <section class="practicePage" 
     class:hasDanceTree={practiceActivity?.danceTree}
     class:hasFeedback={isShowingFeedback}
-    class:hasActivityConfigurator={isShowingFeedback && isShowingNextActivityConfigurator}
     class:isPracticing={!isShowingFeedback}
     class:hasOnlyDemoVideo={hasVisibleReferenceVideo && !hasUserWebcamVisible}
     class:hasOnlyUserMirror={hasUserWebcamVisible && !hasVisibleReferenceVideo}
@@ -809,16 +808,14 @@ onMount(() => {
         />
         <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
     </div>
-        {#if isShowingNextActivityConfigurator}
-        <div class="activityConfigurator">
-            <CloseButton isVisible={isShowingNextActivityConfigurator} on:click={() => isShowingNextActivityConfigurator = false } />
-            <h3>Pratice Configuration</h3>
-            <PracticeActivityConfigurator 
+    <Dialog open={isShowingNextActivityConfigurator}
+        on:dialog-closed={() => isShowingNextActivityConfigurator = false}>
+        <span slot="title">Pratice Configuration</span>
+        <PracticeActivityConfigurator 
                 persistInSettings={true}
                 bind:practiceActivityParams={nextPracticeActivityParams}
             />
-        </div>
-        {/if}
+    </Dialog>
     {/if}
 
     {#if countdown >= 0}
@@ -881,20 +878,11 @@ section {
     }
     &.hasFeedback {
         grid-template: "feedback feedback" 1fr / 1fr 1fr;
-        &.hasActivityConfigurator {
-            grid-template: "feedback activityConfigurator" 1fr / auto 1fr;
-        }
     }
     &.hasDanceTree.hasFeedback {
         grid-template:
             "treevis treevis" auto
             "feedback feedback" 1fr / 1fr 1fr;
-
-        &.hasActivityConfigurator {
-            grid-template:
-                "treevis treevis" auto
-                "feedback activityConfigurator" 1fr / 1fr auto;
-        }
     }
     
     align-items: center;
