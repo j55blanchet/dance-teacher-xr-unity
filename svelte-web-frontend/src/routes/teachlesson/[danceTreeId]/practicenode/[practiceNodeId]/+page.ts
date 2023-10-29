@@ -27,9 +27,9 @@ export async function load({ url, params })  {
         terminalFeedbackEnabled = false;
     }
 
-    let userSkeletonColorCodingEnabled = true;
-    if (url.searchParams.get('userSkeletonColorCodingEnabled') === `${false}`) {
-        userSkeletonColorCodingEnabled = false;
+    let showUserSkeleton = true;
+    if (url.searchParams.get('showUserSkeleton') === `${false}`) {
+        showUserSkeleton = false;
     }
 
     const danceTreeId: string = params.danceTreeId;
@@ -51,7 +51,7 @@ export async function load({ url, params })  {
         playbackSpeed,
         interfaceMode,
         terminalFeedbackEnabled,
-        userSkeletonColorCodingEnabled,
+        showUserSkeleton,
     }
 }
 

@@ -70,7 +70,7 @@ export default interface PracticeActivity {
     endTime: number;
     interfaceMode: PracticeInterfaceModeKey;
     terminalFeedbackEnabled: boolean;
-    userSkeletonColorCodingEnabled: boolean;
+    showUserSkeleton: boolean;
     playbackSpeed: number;
     segmentDescription: string;
     dance?: Dance;

@@ -18,7 +18,7 @@ const playbackSpeed: number = data.playbackSpeed ?? $practiceActivities__playbac
 
 const interfaceMode: PracticeInterfaceModeKey = data.interfaceMode;
 const terminalFeedbackEnabled: boolean = data.terminalFeedbackEnabled;
-const userSkeletonColorCodingEnabled: boolean = data.userSkeletonColorCodingEnabled;
+const showUserSkeleton: boolean = data.showUserSkeleton;
 
 let { activity, url } = GeneratePracticeActivity(
     dance,
@@ -28,7 +28,7 @@ let { activity, url } = GeneratePracticeActivity(
         playbackSpeed,
         interfaceMode,
         terminalFeedbackEnabled,
-        userSkeletonColorCodingEnabled,
+        showUserSkeleton: showUserSkeleton,
     }
 )
 let practiceActivity: PracticeActivity = activity;

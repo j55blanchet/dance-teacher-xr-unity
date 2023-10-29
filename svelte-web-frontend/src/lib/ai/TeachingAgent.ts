@@ -12,7 +12,7 @@ export type GeneratePracticeActivityOptions = {
     playbackSpeed: number,
     interfaceMode: PracticeInterfaceModeKey,
     terminalFeedbackEnabled: boolean,
-    userSkeletonColorCodingEnabled: boolean,
+    showUserSkeleton: boolean,
 };
 
 export function GeneratePracticeActivity(
@@ -30,13 +30,13 @@ export function GeneratePracticeActivity(
             endTime: danceTreeNode.end_time,
             interfaceMode: opts.interfaceMode,
             terminalFeedbackEnabled: opts.terminalFeedbackEnabled,
-            userSkeletonColorCodingEnabled: opts.userSkeletonColorCodingEnabled,
+            showUserSkeleton: opts.showUserSkeleton,
             playbackSpeed: opts.playbackSpeed,
             dance: dance,
             danceTree: danceTree,
             danceTreeNode: danceTreeNode,
         },
-        url: `/teachlesson/${danceTreeSlug}/practicenode/${danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&userSkeletonColorCodingEnabled=${opts.userSkeletonColorCodingEnabled}`,
+        url: `/teachlesson/${danceTreeSlug}/practicenode/${danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&showUserSkeleton=${opts.showUserSkeleton}`,
     }
 }
 

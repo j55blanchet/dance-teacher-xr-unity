@@ -3,7 +3,7 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__userSkeletonColorCodingEnabled } from './../model/settings';
+import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, practiceActivities__playbackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
@@ -163,7 +163,7 @@ let nextPracticeActivityParams: GeneratePracticeActivityOptions = {
     playbackSpeed: practiceActivity?.playbackSpeed ?? $practiceActivities__playbackSpeed,
     interfaceMode: practiceActivity?.interfaceMode ?? $practiceActivities__interfaceMode,
     terminalFeedbackEnabled: practiceActivity?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
-    userSkeletonColorCodingEnabled: practiceActivity?.userSkeletonColorCodingEnabled ?? $practiceActivities__userSkeletonColorCodingEnabled,
+    showUserSkeleton: practiceActivity?.showUserSkeleton ?? $practiceActivities__showUserSkeleton,
 }
 
 async function onNodeClicked(clickedNode: DanceTreeNode) {
@@ -208,8 +208,8 @@ $: {
         || (interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
         || (interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
 }
-let colorCodingEnabled: boolean;
-$: colorCodingEnabled = practiceActivity?.userSkeletonColorCodingEnabled ?? true;
+let skeletonDrawingEnabled: boolean;
+$: skeletonDrawingEnabled = practiceActivity?.showUserSkeleton ?? true;
 let terminalFeedbackEnabled: boolean;
 $: terminalFeedbackEnabled = practiceActivity?.terminalFeedbackEnabled ?? true;
 
@@ -781,7 +781,9 @@ onMount(() => {
             drawSkeleton={false}
             poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
             customDrawFn={(ctx, pose) => {
-                const evalResToPass = colorCodingEnabled ? lastEvaluationResult : null;
+                if (!skeletonDrawingEnabled) return;
+                
+                const evalResToPass = skeletonDrawingEnabled ? lastEvaluationResult : null;
                 Draw2dSkeleton(ctx, pose, evalResToPass, mirrorForEvaluation);
             }}
             on:poseEstimationFrameSent={poseEstimationFrameSent}

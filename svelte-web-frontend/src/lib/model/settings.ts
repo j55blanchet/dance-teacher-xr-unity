@@ -23,7 +23,7 @@ const DEFAULT_SETTINGS = {
    practiceActivities__playbackSpeed: 0.5,
    practiceActivities__interfaceMode: 'bothVideos' as PracticeInterfaceModeKey,
    practiceActivities__terminalFeedbackEnabled: true,
-   practiceActivities__userSkeletonColorCodingEnabled: true,
+   practiceActivities__showUserSkeleton: true,
 }
 
 export const pauseDurationMin = 0.1;
@@ -85,7 +85,7 @@ export const practiceActivities__interfaceMode = createOptionsSettingsStore("pra
 export const practiceActivities__enablePerformanceRecording = createBoolSettingsStore("practiceActivities__enablePerformanceRecording", DEFAULT_SETTINGS.practiceActivities__enablePerformanceRecording);
 
 export const practiceActivities__terminalFeedbackEnabled = createBoolSettingsStore("practiceActivities__terminalFeedbackEnabled", DEFAULT_SETTINGS.practiceActivities__terminalFeedbackEnabled);
-export const practiceActivities__userSkeletonColorCodingEnabled = createBoolSettingsStore("practiceActivities__userSkeletonColorCodingEnabled", DEFAULT_SETTINGS.practiceActivities__userSkeletonColorCodingEnabled);
+export const practiceActivities__showUserSkeleton = createBoolSettingsStore("practiceActivities__showUserSkeleton", DEFAULT_SETTINGS.practiceActivities__showUserSkeleton);
 
 // Reset all variables to their default values
 export function resetSettingsToDefault() {
@@ -110,5 +110,5 @@ export function resetSettingsToDefault() {
     practiceActivities__interfaceMode.set(DEFAULT_SETTINGS.practiceActivities__interfaceMode);
     practiceActivities__enablePerformanceRecording.set(DEFAULT_SETTINGS.practiceActivities__enablePerformanceRecording);
     practiceActivities__terminalFeedbackEnabled.set(DEFAULT_SETTINGS.practiceActivities__terminalFeedbackEnabled);
-    practiceActivities__userSkeletonColorCodingEnabled.set(DEFAULT_SETTINGS.practiceActivities__userSkeletonColorCodingEnabled);
+    practiceActivities__showUserSkeleton.set(DEFAULT_SETTINGS.practiceActivities__showUserSkeleton);
 }

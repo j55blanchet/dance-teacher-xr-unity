@@ -1,21 +1,21 @@
 <script lang="ts">
 import type { GeneratePracticeActivityOptions } from "$lib/ai/TeachingAgent";
 import { PracticeInterfaceModeOptions } from "$lib/model/PracticeActivity";
-import { practiceActivities__playbackSpeed, practiceActivities__userSkeletonColorCodingEnabled, practiceActivities__terminalFeedbackEnabled, practiceActivities__interfaceMode } from "$lib/model/settings";
+import { practiceActivities__playbackSpeed, practiceActivities__showUserSkeleton, practiceActivities__terminalFeedbackEnabled, practiceActivities__interfaceMode } from "$lib/model/settings";
 
 export let persistInSettings = false;
 export let practiceActivityParams: GeneratePracticeActivityOptions = {
     playbackSpeed: $practiceActivities__playbackSpeed,
     interfaceMode: $practiceActivities__interfaceMode,
     terminalFeedbackEnabled: $practiceActivities__terminalFeedbackEnabled,
-    userSkeletonColorCodingEnabled: $practiceActivities__userSkeletonColorCodingEnabled,
+    showUserSkeleton: $practiceActivities__showUserSkeleton,
 }
 
 $: {
     if (persistInSettings) {
         $practiceActivities__playbackSpeed = practiceActivityParams.playbackSpeed;
         $practiceActivities__terminalFeedbackEnabled = practiceActivityParams.terminalFeedbackEnabled;
-        $practiceActivities__userSkeletonColorCodingEnabled = practiceActivityParams.userSkeletonColorCodingEnabled;
+        $practiceActivities__showUserSkeleton = practiceActivityParams.showUserSkeleton;
     }
 }
 </script>
@@ -35,8 +35,8 @@ $: {
         {/each}
     </div>
     <div class="control">
-        <label for="enableUserSkeletonColorCoding">Live Color Coding</label>
-        <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.userSkeletonColorCodingEnabled} />
+        <label for="enableUserSkeletonColorCoding">Show Skeleton</label>
+        <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.showUserSkeleton} />
     </div>
     <div class="control">
         <label for="terminalFeedbackEnabled">Provide Feedback</label>

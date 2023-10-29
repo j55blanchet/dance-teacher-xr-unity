@@ -56,7 +56,7 @@ let practiceActivityParams: GeneratePracticeActivityOptions = {
     playbackSpeed: $practiceActivities__playbackSpeed,
     interfaceMode: PracticeActivityDefaultInterfaceSetting,
     terminalFeedbackEnabled: true,
-    userSkeletonColorCodingEnabled: true,
+    showUserSkeleton: true,
 }
 $: {
     $practiceActivities__playbackSpeed = practiceActivityParams.playbackSpeed;
