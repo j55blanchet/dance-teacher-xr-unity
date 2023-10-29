@@ -7,15 +7,17 @@ import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 //     // similarityByNode: Map<DanceTreeNode["id"], number>;
 // }
 
-export function GeneratePracticeActivity(opts: {
+export type GeneratePracticeActivityParams = {
     dance: Dance,
     danceTree: DanceTree,
     danceTreeNode: DanceTreeNode,
-    playbackSpeed: number | 'default',
+    playbackSpeed: number,
     interfaceMode: PracticeInterfaceModeKey,
     terminalFeedbackEnabled: boolean,
-    enableUserSkeletonColorCoding: boolean,
-}) {
+    userSkeletonColorCodingEnabled: boolean,
+};
+
+export function GeneratePracticeActivity(opts: GeneratePracticeActivityParams) {
     
     const danceTreeSlug =  makeDanceTreeSlug(opts.danceTree);
     return {
@@ -24,14 +26,14 @@ export function GeneratePracticeActivity(opts: {
             startTime: opts.danceTreeNode.start_time,
             endTime: opts.danceTreeNode.end_time,
             interfaceMode: opts.interfaceMode,
-            terminalFeedbackEnabled: true,
-            enableUserSkeletonColorCoding: opts.enableUserSkeletonColorCoding,
+            terminalFeedbackEnabled: opts.terminalFeedbackEnabled,
+            userSkeletonColorCodingEnabled: opts.userSkeletonColorCodingEnabled,
             playbackSpeed: opts.playbackSpeed,
             dance: opts.dance,
             danceTree: opts.danceTree,
             danceTreeNode: opts.danceTreeNode,
         },
-        url: `/teachlesson/${danceTreeSlug}/practicenode/${opts.danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}`,
+        url: `/teachlesson/${danceTreeSlug}/practicenode/${opts.danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&userSkeletonColorCodingEnabled=${opts.userSkeletonColorCodingEnabled}`,
     }
 }
 

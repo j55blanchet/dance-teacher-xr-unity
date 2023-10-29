@@ -10,9 +10,9 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { createEventDispatcher, onMount, tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
-import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage } from '$lib/model/settings';
+import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage, practiceFallbackPlaybackSpeed } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeActivity, type GeneratePracticeActivityParams } from '$lib/ai/TeachingAgent';
 import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 import InfoIcon from 'virtual:icons/icon-park-outline/info';
@@ -49,10 +49,21 @@ let lastNAttemptsOfDance = frontendPerformanceHistory.lastNAttemptsAllSegments(d
 let currentSegmentAttemptCount: number;
 $: currentSegmentAttemptCount = currentPlayingNode ? $lastNAttemptsOfDance.filter(x => x.segmentId === currentPlayingNode?.id).length : 0;
 
-let videoPlaybackSpeed: number = 1;
 let videoDuration: number;
 
-let practiceActivityInterfaceMode: PracticeInterfaceModeKey = PracticeActivityDefaultInterfaceSetting;
+let practiceActivityParams: GeneratePracticeActivityParams = {
+    dance: dance,
+    danceTree: danceTree,
+    danceTreeNode: currentPlayingNode as DanceTreeNode,
+    playbackSpeed: $practiceFallbackPlaybackSpeed,
+    interfaceMode: PracticeActivityDefaultInterfaceSetting,
+    terminalFeedbackEnabled: true,
+    userSkeletonColorCodingEnabled: true,
+}
+$: {
+    $practiceFallbackPlaybackSpeed = practiceActivityParams.playbackSpeed;
+}
+
 const interfaceModeOptions: {
     title: string,
     value: PracticeInterfaceModeKey,
@@ -111,15 +122,7 @@ async function practiceClicked() {
     try {
         if (!currentPlayingNode) throw new Error('No node selected');
         
-        const { activity, url} = GeneratePracticeActivity({
-            dance: dance,
-            danceTree: danceTree,
-            danceTreeNode: currentPlayingNode,
-            playbackSpeed: videoPlaybackSpeed,
-            interfaceMode: practiceActivityInterfaceMode,
-            terminalFeedbackEnabled: true,
-            enableUserSkeletonColorCoding: true,
-        });
+        const { activity, url} = GeneratePracticeActivity(practiceActivityParams);
         
         await goto(url);
     } 
@@ -199,7 +202,7 @@ onMount(() => {
             <VideoWithSkeleton 
                 bind:this={videoElement}
                 bind:currentTime={videoCurrentTime}
-                bind:playbackRate={videoPlaybackSpeed}
+                bind:playbackRate={practiceActivityParams.playbackSpeed}
                 bind:duration={videoDuration}
                 bind:paused={videoPaused}
                 fitToFlexbox={false}
@@ -222,16 +225,24 @@ onMount(() => {
             {#if currentPlayingNode}
                 <div class="control">
                     <label for="playbackSpeed">Speed:</label>
-                    <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.4" max="1.3" step="0.1" />
-                    {videoPlaybackSpeed.toFixed(1)}x
+                    <input type="range" name="playbackSpeed" bind:value={practiceActivityParams.playbackSpeed} min="0.4" max="1.3" step="0.1" />
+                    {practiceActivityParams.playbackSpeed.toFixed(1)}x
                 </div>
                 <div class="control interfaceMode" >
                     {#each interfaceModeOptions as interfaceModeOption}
-                    <label class="button outlined thin" class:selected={interfaceModeOption.value === practiceActivityInterfaceMode }>
+                    <label class="button outlined thin" class:selected={interfaceModeOption.value === practiceActivityParams.interfaceMode }>
                         {interfaceModeOption.title}
-                        <input type="radio" name="practiceActivityInterfaceMode" value={interfaceModeOption.value} bind:group={practiceActivityInterfaceMode}/>
+                        <input type="radio" name="practiceActivityInterfaceMode" value={interfaceModeOption.value} bind:group={practiceActivityParams.interfaceMode}/>
                     </label>
                     {/each}
+                </div>
+                <div class="control">
+                    <label for="enableUserSkeletonColorCoding">Live Color Coding</label>
+                    <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.userSkeletonColorCodingEnabled} />
+                </div>
+                <div class="control">
+                    <label for="terminalFeedbackEnabled">Provide Feedback</label>
+                    <input type="checkbox" name="terminalFeedbackEnabled" bind:checked={practiceActivityParams.terminalFeedbackEnabled} />
                 </div>
                 <div class="control mt-4">
                     <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>

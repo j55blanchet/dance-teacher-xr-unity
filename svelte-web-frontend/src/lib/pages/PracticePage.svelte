@@ -12,8 +12,8 @@ import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback }
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
 import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation, type DanceTreeNode } from "$lib/data/dances-store";
-import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai/feedback';
-import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
+import { generateFeedbackNoPerformance, generateFeedbackRuleBased, generateFeedbackWithClaudeLLM } from '$lib/ai/feedback';
+import { Draw2dSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
@@ -171,7 +171,7 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
         playbackSpeed: practiceActivity.playbackSpeed,
         interfaceMode: practiceActivity.interfaceMode,
         terminalFeedbackEnabled: practiceActivity.terminalFeedbackEnabled,
-        enableUserSkeletonColorCoding: practiceActivity.enableUserSkeletonColorCoding,
+        userSkeletonColorCodingEnabled: practiceActivity.userSkeletonColorCodingEnabled,
     });
     await goto(url);
 
@@ -197,12 +197,13 @@ let webcamRecordedObjectURL: Promise<string> | null = null;
 let isDoingSomeSortOfFeedback = false;
 $: {
     isDoingSomeSortOfFeedback = (practiceActivity?.terminalFeedbackEnabled ?? false)
-        || ((practiceActivity?.enableUserSkeletonColorCoding ?? true)
-            &&  ((interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
-                    || (interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user')
-                )
-            )
+        || (interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
+        || (interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
 }
+let colorCodingEnabled: boolean;
+$: colorCodingEnabled = practiceActivity?.userSkeletonColorCodingEnabled ?? true;
+let terminalFeedbackEnabled: boolean;
+$: terminalFeedbackEnabled = practiceActivity?.terminalFeedbackEnabled ?? true;
 
 $: {
     danceSrc = getDanceVideoSrc(dance);
@@ -214,14 +215,13 @@ $: {
         &&  (countdownActive || !isVideoPausedBinding || state==="paused");
 }
 
-let lastNAttempts = frontendPerformanceHistory.lastNAttempts(
+let lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
     practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
     'skeleton3DAngleSimilarity',
     20,
-)
-
+);
 $: {
-    lastNAttempts = frontendPerformanceHistory.lastNAttempts(
+    lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
         practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
         'skeleton3DAngleSimilarity',
         20,
@@ -241,18 +241,14 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     if (gettingFeedback) return;
 
     gettingFeedback = true;
-
-    const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
-    const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
-    const qijiaBestPossibleScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.maxPossibleScore ?? 0;
-
+    
     webcamRecorder?.stop();
     let videoURL: undefined | string = undefined;
     if (webcamRecordedObjectURL) {
         videoURL = await webcamRecordedObjectURL;
     }
 
-    const attemptHistory = $lastNAttempts.map((a) => {
+    const attemptHistory = $lastNAttemptsAngleSimilarity.map((a) => {
         return {
             score: a.summary?.overall ?? NaN, 
             date: a.date,
@@ -260,8 +256,18 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         }
     });
 
+
     let feedback: TerminalFeedback | undefined = undefined;
-    if ($useAIFeedback) {
+
+    if (!terminalFeedbackEnabled) {
+        feedback = generateFeedbackNoPerformance(
+            dance.clipRelativeStem,
+            $frontendPerformanceHistory,
+            practiceActivity?.danceTreeNode?.id ?? '',
+        );
+    }
+
+    if ($useAIFeedback && !feedback) {
         try {
             const perfHistory = $frontendPerformanceHistory;
             const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
@@ -281,6 +287,9 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     }
 
     if (!feedback) {
+        const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
+        const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
+
         const perfHistory = $frontendPerformanceHistory;
         const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
         feedback = generateFeedbackRuleBased(
@@ -299,7 +308,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
 
     if (videoURL) {
         let playbackSpeed = practiceActivity?.playbackSpeed;
-        if (playbackSpeed === 'default' || playbackSpeed === undefined) {
+        if (playbackSpeed === undefined) {
             playbackSpeed = $practiceFallbackPlaybackSpeed;
         }
         feedback.videoRecording = {
@@ -417,8 +426,7 @@ async function startCountdown() {
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     videoVolume = $danceVideoVolume;
     videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
-    if (practiceActivity?.playbackSpeed !== 'default' && 
-        practiceActivity?.playbackSpeed !== undefined &&
+    if (practiceActivity?.playbackSpeed !== undefined &&
         !isNaN(practiceActivity.playbackSpeed)) {
         videoPlaybackSpeed = practiceActivity.playbackSpeed;
     }
@@ -774,7 +782,10 @@ onMount(() => {
             {poseEstimationEnabled}
             drawSkeleton={false}
             poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
-            customDrawFn={(ctx, pose) => DrawColorCodedSkeleton(ctx, pose, lastEvaluationResult, mirrorForEvaluation)}
+            customDrawFn={(ctx, pose) => {
+                const evalResToPass = colorCodingEnabled ? lastEvaluationResult : null;
+                Draw2dSkeleton(ctx, pose, evalResToPass, mirrorForEvaluation);
+            }}
             on:poseEstimationFrameSent={poseEstimationFrameSent}
             on:poseEstimationResult={poseEstimationFrameReceived}
         />
@@ -800,7 +811,6 @@ onMount(() => {
         <p class="limit-line-width">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
         <button class="button" on:click={() => startCountdown()}>
             Start Countdown
-            
         </button>
     </Dialog>
 </section>
@@ -905,6 +915,7 @@ section {
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
 }
 
 .count {

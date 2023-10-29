@@ -65,8 +65,8 @@ export default interface PracticeActivity {
     endTime: number;
     interfaceMode: PracticeInterfaceModeKey;
     terminalFeedbackEnabled: boolean;
-    enableUserSkeletonColorCoding: boolean;
-    playbackSpeed: number | 'default';
+    userSkeletonColorCodingEnabled: boolean;
+    playbackSpeed: number;
     segmentDescription: string;
     dance?: Dance;
     danceTree?: DanceTree;

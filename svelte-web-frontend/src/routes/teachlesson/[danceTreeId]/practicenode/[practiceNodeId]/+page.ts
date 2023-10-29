@@ -8,13 +8,14 @@ export async function load({ url, params })  {
 
     const playbackSpeedSearchParam = url.searchParams.get('playbackSpeed');
 
-    let playbackSpeed = 'default' as 'default' | number;
+    let playbackSpeed: number | undefined;
     if (playbackSpeedSearchParam) {
         const parsedPlaybackSpeed = parseFloat(playbackSpeedSearchParam);
         if (!isNaN(parsedPlaybackSpeed)) {
             playbackSpeed = parsedPlaybackSpeed
         }
     }
+
     let interfaceMode = url.searchParams.get('interfaceMode');
     if (!interfaceMode || Object.keys(PracticeInterfaceModes).indexOf(interfaceMode) === -1) {
         interfaceMode = 'bothVideos';
@@ -26,9 +27,9 @@ export async function load({ url, params })  {
         terminalFeedbackEnabled = false;
     }
 
-    let enableUserSkeletonColorCoding = true;
-    if (url.searchParams.get('enableUserSkeletonColorCoding') === `${false}`) {
-        enableUserSkeletonColorCoding = false;
+    let userSkeletonColorCodingEnabled = true;
+    if (url.searchParams.get('userSkeletonColorCodingEnabled') === `${false}`) {
+        userSkeletonColorCodingEnabled = false;
     }
 
     const danceTreeId: string = params.danceTreeId;
@@ -50,7 +51,7 @@ export async function load({ url, params })  {
         playbackSpeed,
         interfaceMode,
         terminalFeedbackEnabled,
-        enableUserSkeletonColorCoding,
+        userSkeletonColorCodingEnabled,
     }
 }
 

@@ -38,6 +38,8 @@ function loadPerformanceHistoryFromLocalstorage<MetricTypes extends Record<strin
     }
 }
 
+let a =  writable(0);
+
 export function createPerformanceHistoryStore<MetricTypes extends Record<string, BaseMetric<any, any>>>() {
 	const { subscribe, update } = writable(loadPerformanceHistoryFromLocalstorage() as CompletePerformanceHistory<MetricTypes>);
 

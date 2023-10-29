@@ -7,26 +7,27 @@ import { INITIAL_STATE, type PracticePageState } from '$lib/pages/PracticePage.s
 import { navbarProps } from '$lib/elements/NavBar.svelte';
 import type PracticeActivity from '$lib/model/PracticeActivity';
 import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
+	import { practiceFallbackPlaybackSpeed } from '$lib/model/settings';
 
 /** @type {import('./$types').PageData} */    
 export let data;
 const dance: Dance = data.dance;
 const danceTree: DanceTree = data.danceTree;
 const danceTreeNode: DanceTreeNode = data.danceTreeNode;
-const playbackSpeed: number = data.playbackSpeed;
+const playbackSpeed: number = data.playbackSpeed ?? $practiceFallbackPlaybackSpeed; 
 
-const interfaceModeKey: PracticeInterfaceModeKey = data.interfaceMode;
+const interfaceMode: PracticeInterfaceModeKey = data.interfaceMode;
 const terminalFeedbackEnabled: boolean = data.terminalFeedbackEnabled;
-const enableUserSkeletonColorCoding: boolean = data.enableUserSkeletonColorCoding;
+const userSkeletonColorCodingEnabled: boolean = data.userSkeletonColorCodingEnabled;
 
 let { activity, url } = GeneratePracticeActivity({
     dance,
     danceTree,
     danceTreeNode,
     playbackSpeed,
-    interfaceMode: interfaceModeKey,
+    interfaceMode,
     terminalFeedbackEnabled,
-    enableUserSkeletonColorCoding,
+    userSkeletonColorCodingEnabled,
 })
 let practiceActivity: PracticeActivity = activity;
 
