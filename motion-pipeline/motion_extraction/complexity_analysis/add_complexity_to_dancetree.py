@@ -4,6 +4,11 @@ from ..dancetree.DanceTree import DanceTree, DanceTreeNode
 from ..update_database import load_db
 import typing as t
 
+MIN_NODE_DURATION_BEATS_BY_LEVEL = [
+    0, # Level 0 (whole song)
+    16, # Level 1 (16 beats)
+]
+
 def find_complexity_df(clip_relative_path: Path,
     complexity_byfile_dir: Path = Path('data/complexities/byfile'),
     complexity_method: str = 'mw-decreasing_by_quarter_lmw-balanced_byvisibility_includebase'):
@@ -63,8 +68,37 @@ def add_complexity_to_dancetree(
 
 
 def trim_dancenodes_with_zero_complexity(tree: DanceTree):
+
+    def merge_too_short_child_nodes(node: DanceTreeNode):
+        if len(node.children) == 0:
+            return
+        if len(node.children) == 1:
+            node.alternate_ids.append(node.children[0].id)
+            # Eliminate any single-branch children - they're redundant
+            node.children = []
+            return
+        
+        last_node = node.children[-1]
+        second_last_node = node.children[-2]
+        
+        if last_node.duration < second_last_node.duration / 2:
+            # If the last node is less than half the duration of the second-last node, merge them
+            second_last_node.end_time = last_node.end_time
+            second_last_node.children = last_node.children
+            node.alternate_ids.append(last_node.id)
+            node.children.pop()
+        
+        # If there's now just a single child, pop that child
+        if len(node.children) == 1:
+            # Eliminate any single-branch children - they're redundant
+            node.children = []
+            node.alternate_ids.append(second_last_node.id)
+            return
+        
+
     def trim_dancenodes_with_zero_complexity_recursive(node: DanceTreeNode):
-       
+        original_end_time = node.end_time
+
         # Trim end time to the last time the complexity changed
         node.end_time = node.metrics['time_of_last_complexity_change']
 
@@ -78,6 +112,8 @@ def trim_dancenodes_with_zero_complexity(tree: DanceTree):
         # Recurse on children (adjust their times and pop zero-complexity nodes down the tree)
         for remainingChild in node.children:
             trim_dancenodes_with_zero_complexity_recursive(remainingChild)
+
+        merge_too_short_child_nodes(node, original_end_time)
             
     trim_dancenodes_with_zero_complexity_recursive(tree.root)
 
