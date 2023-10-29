@@ -47,9 +47,6 @@ def bundle_dance_data_as_json(
     print_with_prefix('Saving dance and dancetree json files...')
     for dance in dances:
         relativeStem = Path(dance['clipRelativeStem'])
-
-        if "Charlene" in relativeStem.name:
-            breakpoint()
             
         audio_analysis_dir = get_audio_result_subdirectory(audio_results_dir, result_type='analysis')
         audio_analysis_filepath = get_audio_analysis_filepath(audio_analysis_dir, relativeStem)
