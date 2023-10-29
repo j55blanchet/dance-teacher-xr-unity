@@ -1,0 +1,104 @@
+<script lang="ts">
+import type { GeneratePracticeActivityOptions } from "$lib/ai/TeachingAgent";
+import { PracticeInterfaceModeOptions } from "$lib/model/PracticeActivity";
+import { practiceActivities__playbackSpeed, practiceActivities__userSkeletonColorCodingEnabled, practiceActivities__terminalFeedbackEnabled, practiceActivities__interfaceMode } from "$lib/model/settings";
+
+export let persistInSettings = false;
+export let practiceActivityParams: GeneratePracticeActivityOptions = {
+    playbackSpeed: $practiceActivities__playbackSpeed,
+    interfaceMode: $practiceActivities__interfaceMode,
+    terminalFeedbackEnabled: $practiceActivities__terminalFeedbackEnabled,
+    userSkeletonColorCodingEnabled: $practiceActivities__userSkeletonColorCodingEnabled,
+}
+
+$: {
+    if (persistInSettings) {
+        $practiceActivities__playbackSpeed = practiceActivityParams.playbackSpeed;
+        $practiceActivities__terminalFeedbackEnabled = practiceActivityParams.terminalFeedbackEnabled;
+        $practiceActivities__userSkeletonColorCodingEnabled = practiceActivityParams.userSkeletonColorCodingEnabled;
+    }
+}
+</script>
+
+<div class="practiceActivityConfigurator">
+    <div class="control">
+        <label for="playbackSpeed">Speed:</label>
+        <input type="range" name="playbackSpeed" bind:value={practiceActivityParams.playbackSpeed} min="0.4" max="1.3" step="0.1" />
+        {practiceActivityParams.playbackSpeed.toFixed(1)}x
+    </div>
+    <div class="control interfaceMode" >
+        {#each Object.entries(PracticeInterfaceModeOptions) as [modeOptionValue, modeOptionTitle]}
+        <label class="button outlined thin" class:selected={modeOptionValue === practiceActivityParams.interfaceMode }>
+            {modeOptionTitle}
+            <input type="radio" name="practiceActivityInterfaceMode" value={modeOptionValue} bind:group={practiceActivityParams.interfaceMode}/>
+        </label>
+        {/each}
+    </div>
+    <div class="control">
+        <label for="enableUserSkeletonColorCoding">Live Color Coding</label>
+        <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.userSkeletonColorCodingEnabled} />
+    </div>
+    <div class="control">
+        <label for="terminalFeedbackEnabled">Provide Feedback</label>
+        <input type="checkbox" name="terminalFeedbackEnabled" bind:checked={practiceActivityParams.terminalFeedbackEnabled} />
+    </div>
+</div>
+
+<style lang="scss">
+
+.practiceActivityConfigurator {
+    display: flex;
+    flex-direction: column;
+    // grid-template-rows: "label" auto "input" auto;
+    gap: 0.5rem;
+    margin: 0rem 0 1rem 0;
+    display: flex;
+}
+
+.control {
+    display: flex;
+    flex-direction: row; 
+    align-items: center;
+    justify-content: center;
+    gap: 1ch;
+
+    input[type="range"] {
+        max-width: 10ch;
+    }
+
+    &.interfaceMode label {
+        box-sizing: border-box;
+        padding: 0.25em;
+        width: 5em;
+        height: 5em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        // border-radius: var(--std-border-radius);
+        box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.3);
+
+        & input {
+            position:absolute;
+            left: -50%;
+            opacity: 0;
+            width: 0;
+            height: 0;
+
+        }
+
+        &:has( > input:checked) {
+            color: red;
+        }
+
+        &.selected {
+            color: var(--color-theme-1);
+            border-color: var(--color-theme-1);
+            border-width: 3px;
+            background: white;
+        }
+    }
+
+    // &.interfaceMode label:has(input[selected=true])
+}
+</style>

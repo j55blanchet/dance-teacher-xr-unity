@@ -13,7 +13,6 @@ import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import Dialog from './Dialog.svelte';
 import ProgressEllipses from './ProgressEllipses.svelte';
 import SpeechInterface from './SpeechInterface.svelte';
-
 import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
 
 import InfoIcon from 'virtual:icons/mdi/information';
@@ -22,6 +21,7 @@ import StarIcon from 'virtual:icons/mdi/star';
 const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
+export let showActivityConfiguratorButton = false;
 
 let showingPerformanceReviewPage = false;
 
@@ -56,6 +56,14 @@ function generateActions(
         ...repeatAction,
         suggested: isSuggestingRepeat,
     });
+
+    if (showActivityConfiguratorButton) {
+        actions.push({
+            title: "Practice Settings ⚙️",
+            onClick: async () => { dispatch("configure-activity-clicked"); },
+            type: 'button',
+        })
+    }
 
     if (feedback?.videoRecording) {
         const videoRecording = feedback.videoRecording;

@@ -3,9 +3,9 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practicePage__enablePerformanceRecording } from './../model/settings';
+import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__userSkeletonColorCodingEnabled } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
-import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
+import { evaluation_summarizeSubsections, practiceActivities__playbackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { findDanceTreeNode, getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
@@ -28,12 +28,14 @@ import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
-import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
 import { waitSecs } from '$lib/utils/async';
 import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeActivityInterfaceSettings } from '$lib/model/PracticeActivity';
+import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
+import CloseButton from '$lib/elements/CloseButton.svelte';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -60,11 +62,12 @@ let state: PracticePageState = INITIAL_STATE;
 $: console.log("PracticePage state", state);
 $: dispatch('stateChanged', state); 
 
-let isPlayingOrCountdown = INITIAL_STATE === "playing" || INITIAL_STATE === "countdown";
+let isPlayingOrCountdown: boolean;
 $: isPlayingOrCountdown = state === "playing" || state === "countdown";
-let isShowingFeedback = state === 'feedback';
+let isShowingFeedback: boolean;
 $: isShowingFeedback = state === 'feedback';
 let isMounted = false;
+let isShowingNextActivityConfigurator = false;
 
 let currentActivityStepIndex: number = 0;
 
@@ -155,6 +158,14 @@ async function onNodeClickedById(id: string) {
     return onNodeClicked(node as DanceTreeNode);
 }
 
+// Base the settings for the next practice activity based on the current one
+let nextPracticeActivityParams: GeneratePracticeActivityOptions = {
+    playbackSpeed: practiceActivity?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+    interfaceMode: practiceActivity?.interfaceMode ?? $practiceActivities__interfaceMode,
+    terminalFeedbackEnabled: practiceActivity?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
+    userSkeletonColorCodingEnabled: practiceActivity?.userSkeletonColorCodingEnabled ?? $practiceActivities__userSkeletonColorCodingEnabled,
+}
+
 async function onNodeClicked(clickedNode: DanceTreeNode) {
     if (isPlayingOrCountdown) return;
 
@@ -164,15 +175,12 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
     const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
     const nodeSlug = clickedNode.id;
         
-    let { activity: newActivity, url} = await GeneratePracticeActivity({
+    let { activity: newActivity, url} = await GeneratePracticeActivity(
         dance, 
         danceTree, 
-        danceTreeNode: clickedNode, 
-        playbackSpeed: practiceActivity.playbackSpeed,
-        interfaceMode: practiceActivity.interfaceMode,
-        terminalFeedbackEnabled: practiceActivity.terminalFeedbackEnabled,
-        userSkeletonColorCodingEnabled: practiceActivity.userSkeletonColorCodingEnabled,
-    });
+        clickedNode, 
+        nextPracticeActivityParams,
+    );
     await goto(url);
 
     practiceActivity = newActivity;
@@ -309,7 +317,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     if (videoURL) {
         let playbackSpeed = practiceActivity?.playbackSpeed;
         if (playbackSpeed === undefined) {
-            playbackSpeed = $practiceFallbackPlaybackSpeed;
+            playbackSpeed = $practiceActivities__playbackSpeed;
         }
         feedback.videoRecording = {
             url: videoURL,
@@ -425,7 +433,7 @@ async function startCountdown() {
     isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     videoVolume = $danceVideoVolume;
-    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
+    videoPlaybackSpeed = $practiceActivities__playbackSpeed;
     if (practiceActivity?.playbackSpeed !== undefined &&
         !isNaN(practiceActivity.playbackSpeed)) {
         videoPlaybackSpeed = practiceActivity.playbackSpeed;
@@ -478,7 +486,7 @@ async function startCountdown() {
     webcamRecorder = null;
     webcamRecordedChunks = [];
 
-    if ($practicePage__enablePerformanceRecording && $webcamStream) {
+    if ($practiceActivities__enablePerformanceRecording && $webcamStream) {
         webcamRecordedObjectURL = new Promise((resolve, reject) => {
             resolveWebcamRecordedObjectUrl = resolve;
             rejectWebcamRecordedObjectUrl = reject;
@@ -716,6 +724,7 @@ onMount(() => {
 <section class="practicePage" 
     class:hasDanceTree={practiceActivity?.danceTree}
     class:hasFeedback={isShowingFeedback}
+    class:hasActivityConfigurator={isShowingFeedback && isShowingNextActivityConfigurator}
     class:isPracticing={!isShowingFeedback}
     class:hasOnlyDemoVideo={hasVisibleReferenceVideo && !hasUserWebcamVisible}
     class:hasOnlyUserMirror={hasUserWebcamVisible && !hasVisibleReferenceVideo}
@@ -762,17 +771,6 @@ onMount(() => {
         </div>
         {/if}
     </div>
-    {#if state === "feedback"}
-    <div class="feedback">
-        <TerminalFeedbackDialog 
-            feedback={terminalFeedback}
-            on:repeat-clicked={reset}
-            on:continue-clicked={() => dispatch('continue-clicked')}
-            on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
-        />
-        <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
-    </div>
-    {/if}
     <div 
         class="mirror"
         style:display={state === "feedback" || !hasUserWebcamVisible ? 'none' : 'flex'}
@@ -796,6 +794,30 @@ onMount(() => {
         </div>
         {/if}
     </div>
+
+    {#if state === "feedback"}
+    <div class="feedback">
+        <TerminalFeedbackDialog 
+            feedback={terminalFeedback}
+            showActivityConfiguratorButton={true}
+            on:repeat-clicked={reset}
+            on:continue-clicked={() => dispatch('continue-clicked')}
+            on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
+            on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
+        />
+        <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
+    </div>
+        {#if isShowingNextActivityConfigurator}
+        <div class="activityConfigurator">
+            <CloseButton isVisible={isShowingNextActivityConfigurator} on:click={() => isShowingNextActivityConfigurator = false } />
+            <h3>Pratice Configuration</h3>
+            <PracticeActivityConfigurator 
+                persistInSettings={true}
+                bind:practiceActivityParams={nextPracticeActivityParams}
+            />
+        </div>
+        {/if}
+    {/if}
 
     {#if countdown >= 0}
     <div class="countdown">
@@ -857,11 +879,20 @@ section {
     }
     &.hasFeedback {
         grid-template: "feedback feedback" 1fr / 1fr 1fr;
+        &.hasActivityConfigurator {
+            grid-template: "feedback activityConfigurator" 1fr / auto 1fr;
+        }
     }
     &.hasDanceTree.hasFeedback {
         grid-template:
             "treevis treevis" auto
             "feedback feedback" 1fr / 1fr 1fr;
+
+        &.hasActivityConfigurator {
+            grid-template:
+                "treevis treevis" auto
+                "feedback activityConfigurator" 1fr / 1fr auto;
+        }
     }
     
     align-items: center;
@@ -886,6 +917,10 @@ section {
         justify-content: stretch;
         flex-direction: column;
     }
+}
+
+.activityConfigurator {
+    grid-area: "activityConfigurator";
 }
 
 .startCountdown {

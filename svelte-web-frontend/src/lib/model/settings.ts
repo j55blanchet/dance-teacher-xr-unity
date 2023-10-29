@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { PracticeInterfaceModeOptions, type PracticeInterfaceModeKey } from './PracticeActivity';
 
 const DEFAULT_SETTINGS = {
    debugMode: false,
@@ -6,8 +7,7 @@ const DEFAULT_SETTINGS = {
    debugMode__viewDanceMenuAsList: false,
    debugMode__addPlaceholderAchievement: false,
    pauseInPracticePage : false,
-   practiceFallbackPlaybackSpeed: 0.5,
-   practicePage__enablePerformanceRecording: true,
+   practiceActivities__enablePerformanceRecording: true,
    debugPauseDurationSecs : 1.0,
    evaluation_GoodBadTrialThreshold : 4.0,
    livefeedback_qijia2d_YellowThreshold : 3.0,
@@ -19,6 +19,11 @@ const DEFAULT_SETTINGS = {
    evaluation_summarizeSubsections: 'allnodes' as const,
    metric__3dskeletonsimilarity__badJointStdDeviationThreshold: 1.5,
    danceVideoVolume: 0.5,
+
+   practiceActivities__playbackSpeed: 0.5,
+   practiceActivities__interfaceMode: 'bothVideos' as PracticeInterfaceModeKey,
+   practiceActivities__terminalFeedbackEnabled: true,
+   practiceActivities__userSkeletonColorCodingEnabled: true,
 }
 
 export const pauseDurationMin = 0.1;
@@ -56,8 +61,6 @@ export const debugMode__viewDanceMenuAsList = createBoolSettingsStore("debugMode
 export const debugMode__addPlaceholderAchievement = createBoolSettingsStore("debugMode__addPlaceholderAchievement", DEFAULT_SETTINGS.debugMode__addPlaceholderAchievement);
 export const pauseInPracticePage = createBoolSettingsStore("pauseInPracticePage", DEFAULT_SETTINGS.pauseInPracticePage);
 export const debugPauseDurationSecs = createNumberSettingsStore("debugPauseDurationSecs", DEFAULT_SETTINGS.debugPauseDurationSecs);
-export const practiceFallbackPlaybackSpeed = createNumberSettingsStore("practiceFallbackPlaybackSpeed", DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
-export const practicePage__enablePerformanceRecording = createBoolSettingsStore("practicePage__enablePerformanceRecording", DEFAULT_SETTINGS.practicePage__enablePerformanceRecording);
 export const evaluation_GoodBadTrialThreshold = createNumberSettingsStore("evaluation_GoodBadTrialThreshold", DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
 export const feedback_YellowThreshold = createNumberSettingsStore("feedback_YellowThreshold", DEFAULT_SETTINGS.livefeedback_qijia2d_YellowThreshold);
 export const feedback_GreenThreshold = createNumberSettingsStore("feedback_GreenThreshold", DEFAULT_SETTINGS.livefeedback_qijia2d_GreenThreshold);
@@ -77,6 +80,13 @@ export const summaryFeedback_skeleton3d_mediumPerformanceThreshold = createNumbe
 export const summaryFeedback_skeleton3d_goodPerformanceThreshold = createNumberSettingsStore("summaryFeedback_skeleton3d_goodPerformanceThreshold", DEFAULT_SETTINGS.summaryFeedback_skeleton3d_goodPerformanceThreshold);
 export const danceVideoVolume = createNumberSettingsStore("danceVideoVolume", DEFAULT_SETTINGS.danceVideoVolume);    
 
+export const practiceActivities__playbackSpeed = createNumberSettingsStore("practiceActivities__playbackSpeed", DEFAULT_SETTINGS.practiceActivities__playbackSpeed);
+export const practiceActivities__interfaceMode = createOptionsSettingsStore("practiceActivities__interfaceMode", DEFAULT_SETTINGS.practiceActivities__interfaceMode, PracticeInterfaceModeOptions);
+export const practiceActivities__enablePerformanceRecording = createBoolSettingsStore("practiceActivities__enablePerformanceRecording", DEFAULT_SETTINGS.practiceActivities__enablePerformanceRecording);
+
+export const practiceActivities__terminalFeedbackEnabled = createBoolSettingsStore("practiceActivities__terminalFeedbackEnabled", DEFAULT_SETTINGS.practiceActivities__terminalFeedbackEnabled);
+export const practiceActivities__userSkeletonColorCodingEnabled = createBoolSettingsStore("practiceActivities__userSkeletonColorCodingEnabled", DEFAULT_SETTINGS.practiceActivities__userSkeletonColorCodingEnabled);
+
 // Reset all variables to their default values
 export function resetSettingsToDefault() {
     debugMode.set(DEFAULT_SETTINGS.debugMode);
@@ -85,8 +95,6 @@ export function resetSettingsToDefault() {
     debugMode__addPlaceholderAchievement.set(DEFAULT_SETTINGS.debugMode__addPlaceholderAchievement);
     pauseInPracticePage.set(DEFAULT_SETTINGS.pauseInPracticePage);
     debugPauseDurationSecs.set(DEFAULT_SETTINGS.debugPauseDurationSecs);
-    practiceFallbackPlaybackSpeed.set(DEFAULT_SETTINGS.practiceFallbackPlaybackSpeed);
-    practicePage__enablePerformanceRecording.set(DEFAULT_SETTINGS.practicePage__enablePerformanceRecording);
     evaluation_GoodBadTrialThreshold.set(DEFAULT_SETTINGS.evaluation_GoodBadTrialThreshold);
     feedback_YellowThreshold.set(DEFAULT_SETTINGS.livefeedback_qijia2d_YellowThreshold);
     feedback_GreenThreshold.set(DEFAULT_SETTINGS.livefeedback_qijia2d_GreenThreshold);
@@ -97,4 +105,10 @@ export function resetSettingsToDefault() {
     evaluation_summarizeSubsections.set(DEFAULT_SETTINGS.evaluation_summarizeSubsections)
     metric__3dskeletonsimilarity__badJointStdDeviationThreshold.set(DEFAULT_SETTINGS.metric__3dskeletonsimilarity__badJointStdDeviationThreshold);
     danceVideoVolume.set(DEFAULT_SETTINGS.danceVideoVolume)
+
+    practiceActivities__playbackSpeed.set(DEFAULT_SETTINGS.practiceActivities__playbackSpeed);
+    practiceActivities__interfaceMode.set(DEFAULT_SETTINGS.practiceActivities__interfaceMode);
+    practiceActivities__enablePerformanceRecording.set(DEFAULT_SETTINGS.practiceActivities__enablePerformanceRecording);
+    practiceActivities__terminalFeedbackEnabled.set(DEFAULT_SETTINGS.practiceActivities__terminalFeedbackEnabled);
+    practiceActivities__userSkeletonColorCodingEnabled.set(DEFAULT_SETTINGS.practiceActivities__userSkeletonColorCodingEnabled);
 }

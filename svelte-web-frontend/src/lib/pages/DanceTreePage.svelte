@@ -10,9 +10,9 @@ import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { createEventDispatcher, onMount, tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
-import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage, practiceFallbackPlaybackSpeed } from '$lib/model/settings';
+import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage, practiceActivities__playbackSpeed } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-import { GeneratePracticeActivity, type GeneratePracticeActivityParams } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '$lib/ai/TeachingAgent';
 import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 import InfoIcon from 'virtual:icons/icon-park-outline/info';
@@ -51,22 +51,19 @@ $: currentSegmentAttemptCount = currentPlayingNode ? $lastNAttemptsOfDance.filte
 
 let videoDuration: number;
 
-let practiceActivityParams: GeneratePracticeActivityParams = {
-    dance: dance,
-    danceTree: danceTree,
-    danceTreeNode: currentPlayingNode as DanceTreeNode,
-    playbackSpeed: $practiceFallbackPlaybackSpeed,
+let practiceActivityParams: GeneratePracticeActivityOptions = {
+    playbackSpeed: $practiceActivities__playbackSpeed,
     interfaceMode: PracticeActivityDefaultInterfaceSetting,
     terminalFeedbackEnabled: true,
     userSkeletonColorCodingEnabled: true,
 }
 $: {
-    $practiceFallbackPlaybackSpeed = practiceActivityParams.playbackSpeed;
+    $practiceActivities__playbackSpeed = practiceActivityParams.playbackSpeed;
 }
 
 const interfaceModeOptions: {
     title: string,
-    value: PracticeInterfaceModeKey,
+value: PracticeInterfaceModeKey,
     iconUrl?: string,
 }[] = [
     {
@@ -122,7 +119,12 @@ async function practiceClicked() {
     try {
         if (!currentPlayingNode) throw new Error('No node selected');
         
-        const { activity, url} = GeneratePracticeActivity(practiceActivityParams);
+        const { activity, url} = GeneratePracticeActivity(
+            dance,
+            danceTree,
+            currentPlayingNode as DanceTreeNode,
+            practiceActivityParams
+        );
         
         await goto(url);
     } 

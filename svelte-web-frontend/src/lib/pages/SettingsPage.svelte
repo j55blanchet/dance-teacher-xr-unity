@@ -20,8 +20,7 @@ import {
     evaluation_summarizeSubsectionsOptions,
     metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
 	useTextToSpeech,
-	practiceFallbackPlaybackSpeed,
-    practicePage__enablePerformanceRecording,
+    practiceActivities__enablePerformanceRecording,
 	summaryFeedback_skeleton3d_mediumPerformanceThreshold,
     summaryFeedback_skeleton3d_goodPerformanceThreshold,
 	danceVideoVolume,
@@ -83,10 +82,6 @@ function clearPerformanceHistory() {
         <h3>Practice Page</h3>
         {#if $debugMode}
         <div>
-            <label for="practiceFallbackPlaybackSpeed">Fallback Speed</label>
-            <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
-        </div>
-        <div>
             <label for="pauseInPracticePage">Add midway Pause</label>
             <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>
         </div>
@@ -96,8 +91,8 @@ function clearPerformanceHistory() {
         </div>
         {/if}
         <div>
-            <label for="practicePage__enablePerformanceRecording">Record Performances</label>
-            <input type="checkbox" name="practicePage__enablePerformanceRecording" bind:checked={$practicePage__enablePerformanceRecording}>
+            <label for="practiceActivities__enablePerformanceRecording">Record Performances</label>
+            <input type="checkbox" name="practiceActivities__enablePerformanceRecording" bind:checked={$practiceActivities__enablePerformanceRecording}>
         </div>
         <div>
             <label for="danceVideoVolume">Dance Video Volume</label>

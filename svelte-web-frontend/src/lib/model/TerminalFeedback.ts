@@ -21,7 +21,7 @@ export type TerminalFeedback = {
     segmentName?: string;
     suggestedAction: TerminalFeedbackAction;
     navigateOptions?: { label: string, url: string, nodeId?: string}[];
-    
+
     score?: {
         achieved: number;
         maximumPossible: number;

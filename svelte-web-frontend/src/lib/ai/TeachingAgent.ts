@@ -7,33 +7,36 @@ import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 //     // similarityByNode: Map<DanceTreeNode["id"], number>;
 // }
 
-export type GeneratePracticeActivityParams = {
-    dance: Dance,
-    danceTree: DanceTree,
-    danceTreeNode: DanceTreeNode,
+
+export type GeneratePracticeActivityOptions = {
     playbackSpeed: number,
     interfaceMode: PracticeInterfaceModeKey,
     terminalFeedbackEnabled: boolean,
     userSkeletonColorCodingEnabled: boolean,
 };
 
-export function GeneratePracticeActivity(opts: GeneratePracticeActivityParams) {
+export function GeneratePracticeActivity(
+    dance: Dance,
+    danceTree: DanceTree,
+    danceTreeNode: DanceTreeNode,
+    opts: GeneratePracticeActivityOptions
+) {
     
-    const danceTreeSlug =  makeDanceTreeSlug(opts.danceTree);
+    const danceTreeSlug =  makeDanceTreeSlug(danceTree);
     return {
         activity: {
-            segmentDescription: opts.danceTreeNode.id,
-            startTime: opts.danceTreeNode.start_time,
-            endTime: opts.danceTreeNode.end_time,
+            segmentDescription: danceTreeNode.id,
+            startTime: danceTreeNode.start_time,
+            endTime: danceTreeNode.end_time,
             interfaceMode: opts.interfaceMode,
             terminalFeedbackEnabled: opts.terminalFeedbackEnabled,
             userSkeletonColorCodingEnabled: opts.userSkeletonColorCodingEnabled,
             playbackSpeed: opts.playbackSpeed,
-            dance: opts.dance,
-            danceTree: opts.danceTree,
-            danceTreeNode: opts.danceTreeNode,
+            dance: dance,
+            danceTree: danceTree,
+            danceTreeNode: danceTreeNode,
         },
-        url: `/teachlesson/${danceTreeSlug}/practicenode/${opts.danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&userSkeletonColorCodingEnabled=${opts.userSkeletonColorCodingEnabled}`,
+        url: `/teachlesson/${danceTreeSlug}/practicenode/${danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&userSkeletonColorCodingEnabled=${opts.userSkeletonColorCodingEnabled}`,
     }
 }
 
