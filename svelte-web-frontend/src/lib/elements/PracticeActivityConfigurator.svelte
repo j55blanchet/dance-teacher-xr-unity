@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { GeneratePracticeActivityOptions } from "$lib/ai/TeachingAgent";
-import { PracticeInterfaceModeOptions } from "$lib/model/PracticeActivity";
+import { PracticeInterfaceModeOptions, type PracticeInterfaceModeKey } from "$lib/model/PracticeActivity";
 import { practiceActivities__playbackSpeed, practiceActivities__showUserSkeleton, practiceActivities__terminalFeedbackEnabled, practiceActivities__interfaceMode } from "$lib/model/settings";
 
 export let persistInSettings = false;
@@ -18,6 +18,10 @@ $: {
         $practiceActivities__showUserSkeleton = practiceActivityParams.showUserSkeleton;
     }
 }
+
+let isShowSkeletonSettingVisible: boolean;
+const showSkeletonSettingVisibleConditions: PracticeInterfaceModeKey[] = ['bothVideos', 'userVideoOnly'];
+$: showSkeletonSettingVisible = showSkeletonSettingVisibleConditions.indexOf(practiceActivityParams.interfaceMode) >= 0;
 </script>
 
 <div class="practiceActivityConfigurator">
@@ -34,10 +38,12 @@ $: {
         </label>
         {/each}
     </div>
+    {#if showSkeletonSettingVisible}
     <div class="control">
         <label for="enableUserSkeletonColorCoding">Show Skeleton:</label>
         <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.showUserSkeleton} />
     </div>
+    {/if}
     <div class="control">
         <label for="terminalFeedbackEnabled">Provide Feedback:</label>
         <input type="checkbox" name="terminalFeedbackEnabled" bind:checked={practiceActivityParams.terminalFeedbackEnabled} />
