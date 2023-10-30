@@ -810,7 +810,7 @@ onMount(() => {
     </div>
     <Dialog open={isShowingNextActivityConfigurator}
         on:dialog-closed={() => isShowingNextActivityConfigurator = false}>
-        <span slot="title">Pratice Configuration</span>
+        <span slot="title">Practice Setup</span>
         <PracticeActivityConfigurator 
                 persistInSettings={true}
                 bind:practiceActivityParams={nextPracticeActivityParams}
