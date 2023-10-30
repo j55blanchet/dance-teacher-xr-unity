@@ -61,8 +61,8 @@ export const PracticeInterfaceModes = {
 export type PracticeInterfaceModeKey = keyof typeof PracticeInterfaceModes;
 export const PracticeInterfaceModeOptions: Record<PracticeInterfaceModeKey, string> = {
     watchDemo: 'Demo Video',
-    userVideoOnly: 'Demo + Mirror',
-    bothVideos: 'Mirror',
+    bothVideos: 'Demo + Mirror',
+    userVideoOnly: 'Mirror',
 } as const;
 export const PracticeActivityDefaultInterfaceSetting: PracticeInterfaceModeKey = 'bothVideos';
 export default interface PracticeActivity {
