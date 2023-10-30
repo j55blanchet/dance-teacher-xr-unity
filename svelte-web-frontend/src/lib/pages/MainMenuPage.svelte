@@ -11,6 +11,7 @@ import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
 import ConfoundedFaceIcon from 'virtual:icons/icon-park-outline/confounded-face';
 import DanceIcon from 'virtual:icons/mdi/human-female-dance';
+import { onMount } from 'svelte';
 
 let menuData: FolderContents<Dance> = [];
 
@@ -103,12 +104,15 @@ function getDisplayData(visibleDances: [Dance, DanceTree][]) {
     })
 }
 
-const perfHistoryStores = userVisibleDances.map(([dance, danceTree]) => frontendPerformanceHistory.lastNAttemptsAllSegments(
-        dance.clipRelativeStem,
-        'skeleton3DAngleSimilarity',
-    
+let perfHistoryStores = [] as ReturnType<typeof frontendPerformanceHistory.lastNAttemptsAllSegments<"skeleton3DAngleSimilarity">>[];
+
+onMount(() => {
+    perfHistoryStores = userVisibleDances.map(([dance, danceTree]) => frontendPerformanceHistory.lastNAttemptsAllSegments(
+            dance.clipRelativeStem,
+            'skeleton3DAngleSimilarity',
+        )
     )
-)
+});
 const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     return stores;
 });
@@ -160,14 +164,14 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
                 <div class="detail">
                     <span class="label" title="Dance Attempts"><DanceIcon /></span>
                     <div class="performance-history">
-                        {$perfHistoryAggregatedStore[i].length}
+                        {($perfHistoryAggregatedStore[i] ?? []).length}
                     </div>
                 </div>
             </div>
         </a>
         {/each}
     </div>
-    {/if}
+    {/if} 
     <div>
         <a href="/account">Account Page</a>
     </div>
