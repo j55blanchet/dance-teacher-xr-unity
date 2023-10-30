@@ -267,7 +267,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
 
     let feedback: TerminalFeedback | undefined = undefined;
 
-    if (!terminalFeedbackEnabled) {
+    if (!terminalFeedbackEnabled || !performanceSummary) {
         feedback = generateFeedbackNoPerformance(
             dance.clipRelativeStem,
             $frontendPerformanceHistory,
