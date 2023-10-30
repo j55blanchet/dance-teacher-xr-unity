@@ -33,9 +33,14 @@ export function distillFrontendPerformanceSummaryToTextualRepresentation(summary
 
     const overallPerformanceScore = wholePerformance.skeleton3DAngleSimilarity.overallScore;
     const overallPerformanceSD = wholePerformance.skeleton3DAngleSimilarity.overallScoreSD;
-    const overallPerformanceScoreString = overallPerformanceScore?.toFixed(2);
+    const overallPerformanceScoreString = overallPerformanceScore.toFixed(2);
     let distillation = `The user just performed "${segmentDescription}", at timestamp: ${new Date().toISOString()}. Overall, the user had a ${overallPerformanceScoreString} match with the reference dance.`;
-    distillation += `A match of above ${mediumScoreThreshold.toFixed(2)} is considered a "fair" performance, and a match of above ${goodScoreThreshold.toFixed(2)} is considered a "good" performance.`
+    const performanceCharacterization = 
+        overallPerformanceScore < mediumScoreThreshold ? "poor" :
+        overallPerformanceScore < goodScoreThreshold ? "fair" :
+        "good";
+
+    distillation += ` This is considered a ${performanceCharacterization} performance.`;
 
     const badJoints = GetInaccurateJoints(wholePerformance.skeleton3DAngleSimilarity, badJointSDThreshold)
 
