@@ -1,11 +1,13 @@
 <script context="module" lang="ts">
-// 
+
 // Code in the script-level module is shared among all instances of NavBar 
 // (which there should only be one of). It also gives child pages a way to 
 // alter properties of the NavBar (such as the page title). They can do that
 // by importing these writable stores (which are singletons, at the module level),
 // and writing to them as needed (likely during `onMount`).
 import { writable } from "svelte/store";
+import { navigating } from '$app/stores'
+import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 
 export type NavBarProps = {
     collapsed: boolean;
@@ -36,7 +38,13 @@ export let settingsActive: boolean;
 <nav class:collapsed={$navbarProps.collapsed}>
     <!-- Container for left-aligned content -->
     {#if $navbarProps.back}
-        <a class="button back" href={$navbarProps.back.url}>&lt;&nbsp;{$navbarProps.back.title}</a>
+        <a class="button back" href={$navbarProps.back.url}>
+            {#if !$navigating}
+            &lt;&nbsp;{$navbarProps.back.title}
+            {:else}
+                <ProgressEllipses />
+            {/if}
+        </a>
     {:else}
         <div></div>
     {/if}

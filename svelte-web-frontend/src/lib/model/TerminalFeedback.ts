@@ -18,20 +18,26 @@ export type TerminalFeedback = {
     headline: string;
     paragraphs: string[]; 
     achievements?: string[];
+    segmentName?: string;
     suggestedAction: TerminalFeedbackAction;
     navigateOptions?: { label: string, url: string, nodeId?: string}[];
-    
+
     score?: {
         achieved: number;
         maximumPossible: number;
     };
     incorrectBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
     correctBodyPartsToHighlight?: TerminalFeedbackBodyPart[];
+    videoRecording?: {
+        url: string;
+        mimeType: string;
+        referenceVideoUrl: string;
+        recordingSpeed: number;
+        recordingStartOffset: number;
+    };
     debug?: {
         performanceSummary?: object;
         recordedTrack?: FrontendEvaluationTrack;
-        recordedVideoUrl?: string;
-        recordedVideoMimeType?: string;
         llmInput?: any;
         llmOutput?: any;
     }

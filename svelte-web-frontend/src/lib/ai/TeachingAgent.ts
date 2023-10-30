@@ -1,26 +1,58 @@
-import type { Dance, DanceTree, DanceTreeNode } from '../data/dances-store'
+import { makeDanceTreeSlug, type Dance, type DanceTree, type DanceTreeNode } from '../data/dances-store'
 import type PracticeActivity from '$lib/model/PracticeActivity';
+import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 // export interface UserDancePerformanceLog {
 //     // markingByNode: Map<DanceTreeNode["id"], number>;
 //     // similarityByNode: Map<DanceTreeNode["id"], number>;
 // }
 
+
+export type GeneratePracticeActivityOptions = {
+    playbackSpeed: number,
+    interfaceMode: PracticeInterfaceModeKey,
+    terminalFeedbackEnabled: boolean,
+    showUserSkeleton: boolean,
+};
+
 export function GeneratePracticeActivity(
     dance: Dance,
     danceTree: DanceTree,
     danceTreeNode: DanceTreeNode,
-    playbackSpeed: number | 'default',
-    // userDancePerformanceLog: UserDancePerformanceLog
-): PracticeActivity {
+    opts: GeneratePracticeActivityOptions
+) {
+    
+    const danceTreeSlug =  makeDanceTreeSlug(danceTree);
     return {
-        segmentDescription: danceTreeNode.id,
-        startTime: danceTreeNode.start_time,
-        endTime: danceTreeNode.end_time,
-        activityTypes: ['drill'], // 'watch', 'mark', 'drill', 'fullout']
-        playbackSpeed,
-        dance,
-        danceTree,
-        danceTreeNode,
+        activity: {
+            segmentDescription: danceTreeNode.id,
+            startTime: danceTreeNode.start_time,
+            endTime: danceTreeNode.end_time,
+            interfaceMode: opts.interfaceMode,
+            terminalFeedbackEnabled: opts.terminalFeedbackEnabled,
+            showUserSkeleton: opts.showUserSkeleton,
+            playbackSpeed: opts.playbackSpeed,
+            dance: dance,
+            danceTree: danceTree,
+            danceTreeNode: danceTreeNode,
+        },
+        url: `/teachlesson/${danceTreeSlug}/practicenode/${danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&showUserSkeleton=${opts.showUserSkeleton}`,
     }
 }
+
+
+// {
+//     referenceVideo: {
+//         visibility: 'visible',
+//         skeleton: 'none',
+//         userCanToggleOnOff: false,
+//         skeletonColorCoding: false,
+//     },
+//     userVideo: {
+//         visibility: 'visible',
+//         skeleton: 'user',
+//         userCanToggleOnOff: false,
+//         skeletonColorCoding: true,
+//     },
+//     terminalFeedback: 'enabled',
+// },

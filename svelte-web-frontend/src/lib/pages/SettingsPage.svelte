@@ -2,6 +2,9 @@
 import frontendPerformanceHistory from "$lib/ai/frontendPerformanceHistory";
 import { 
     debugMode, 
+    debugMode__viewBeatsOnDanceTreepage,
+    debugMode__viewDanceMenuAsList,
+    debugMode__addPlaceholderAchievement,
     pauseInPracticePage, 
     debugPauseDurationSecs,
     evaluation_GoodBadTrialThreshold,
@@ -15,11 +18,12 @@ import {
     useAIFeedback,
     evaluation_summarizeSubsections,
     evaluation_summarizeSubsectionsOptions,
+    metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
 	useTextToSpeech,
-	practiceFallbackPlaybackSpeed,
+    practiceActivities__enablePerformanceRecording,
 	summaryFeedback_skeleton3d_mediumPerformanceThreshold,
     summaryFeedback_skeleton3d_goodPerformanceThreshold,
-	danceVideoVolume
+	danceVideoVolume,
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 
@@ -56,28 +60,39 @@ function clearPerformanceHistory() {
             <label for="debugMode">Debug Mode</label>
             <input type="checkbox" name="debugMode" bind:checked={$debugMode}>
         </div>
+    </div>
+    {#if $debugMode}
+    <div class="group">
+        <h3>Debug Settings</h3>
         <div>
-            <label for="pauseInPracticePage">Pause in Practice Page</label>
+            <label for="debugMode__viewBeatsOnDanceTreepage">View Beats on Dance Tree Page</label>
+            <input type="checkbox" name="debugMode__viewBeatsOnDanceTreepage" bind:checked={$debugMode__viewBeatsOnDanceTreepage}>
+        </div>
+        <div>
+            <label for="debugMode__viewDanceMenuAsList">View Dance Menu as List</label>
+            <input type="checkbox" name="debugMode__viewDanceMenuAsList" bind:checked={$debugMode__viewDanceMenuAsList}>
+        </div>
+        <div>
+            <label for="debugMode__addPlaceholderAchievement">Add placeholder achievement</label>
+            <input type="checkbox" name="debugMode__addPlaceholderAchievement" bind:checked={$debugMode__addPlaceholderAchievement}>
+        </div>
+    </div>
+    {/if}
+    <div class="group">
+        <h3>Practice Page</h3>
+        {#if $debugMode}
+        <div>
+            <label for="pauseInPracticePage">Add midway Pause</label>
             <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>
         </div>
         <div>
             <label for="debugPauseDuration">Debug Pause Duration</label>
             <input class="outlined thin" type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
         </div>
-    </div>
-    <div class="group">
-        <h3>Practice Page</h3>
+        {/if}
         <div>
-            <label for="practiceFallbackPlaybackSpeed">Practice Page Default Speed</label>
-            <input class="outlined thin" type="number" name="practiceFallbackPlaybackSpeed" bind:value={$practiceFallbackPlaybackSpeed} min={0.1} max={1.5} step={0.05}>
-        </div>
-        <div>
-            <label for="feedback_YellowThreshold">Live Feedback - Yellow Threshold</label>
-            <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-        </div>
-        <div>
-            <label for="feedback_GreenThreshold">Live Feedback - Green Threshold</label>
-            <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+            <label for="practiceActivities__enablePerformanceRecording">Record Performances</label>
+            <input type="checkbox" name="practiceActivities__enablePerformanceRecording" bind:checked={$practiceActivities__enablePerformanceRecording}>
         </div>
         <div>
             <label for="danceVideoVolume">Dance Video Volume</label>
@@ -85,6 +100,7 @@ function clearPerformanceHistory() {
             <input class="outlined thin" type="number" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>
         </div>
     </div>
+    {#if $debugMode}
     <div class="group">
         <h3>Summary Feedback</h3>
         <div>
@@ -100,14 +116,6 @@ function clearPerformanceHistory() {
             <input class="outlined thin" type="number" name="evaluation_GoodBadTrialThreshold" disabled={$useAIFeedback} bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
         </div>
         <div>
-            <label for="summaryFeedback_skeleton3d_mediumPerformanceThreshold">3D Angle - Yellow Threshold</label>
-            <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_mediumPerformanceThreshold} min={0} max={1} step={0.01}>
-        </div>
-        <div>
-            <label for="summaryFeedback_skeleton3d_goodPerformanceThreshold">3D Angle - Green Threshold</label>
-            <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_goodPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_goodPerformanceThreshold} min={0} max={1} step={0.01}>
-        </div>
-        <div>
             <label for="evaluation_summarizeSubsections">Evaluate Subsections</label>
             <select class="outlined thin" name="evaluation_summarizeSubsections" bind:value={$evaluation_summarizeSubsections}>
                 {#each Object.entries(evaluation_summarizeSubsectionsOptions) as [optionValue, optionTitle]}
@@ -116,9 +124,46 @@ function clearPerformanceHistory() {
             </select>
         </div>
     </div>
+    <div class="group">
+        <h3>Metrics Parameters</h3>
+        <details>
+            <summary>3D Skeleton Joint Angle Similarity</summary>
+            <div class="controlGrid">
+                <label for="metric__3dskeletonsimilarity__badJointStdDeviationThreshold">'Troublsome Joint' Threshold</label>
+                <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$metric__3dskeletonsimilarity__badJointStdDeviationThreshold} min={0} max={3.0} step={0.05}>
+                <span class="note">
+                    Used to determine which joints get 
+                    reported to the LLM as "troublesome joints"
+                </span>
+
+                <label for="summaryFeedback_skeleton3d_mediumPerformanceThreshold">3D Angle - Yellow Threshold</label>
+                <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_mediumPerformanceThreshold} min={0} max={1} step={0.01}>
+                <span class="note">This is used for bar coloring</span>
+
+                <label for="summaryFeedback_skeleton3d_goodPerformanceThreshold">3D Angle - Green Threshold</label>
+                <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_goodPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_goodPerformanceThreshold} min={0} max={1} step={0.01}>
+                <span class="note">This is used for bar coloring</span>
+            </div>
+        </details>
+        <details>
+            <summary>2D Skeleton Vector Similarity (Qijia's Method)</summary>
+            <div class="controlGrid">
+                
+                
+                <label for="feedback_YellowThreshold">Yellow Threshold</label>
+                <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+                <span class="note">This is used for live feedback color coding</span>
+
+                <label for="feedback_GreenThreshold">Green Threshold</label>
+                <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+                <span class="note">This is used for live feedback color coding</span>
+            </div>
+        </details>
+    </div>
     <div>
         <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
     </div>
+    {/if}
     <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
@@ -155,11 +200,53 @@ div.group {
 }
 
 
-div.group > div {
+div.group > div, details > div {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
+}
+
+details {
+    margin: 0.5em auto;
+    text-align: center;
+}
+
+details summary {
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.note {
+    font-size: 0.8em;
+    color: gray;
+    margin-top: -0.6em;
+    margin-bottom: 0.25em;
+    white-space: pre-line;
+}  
+
+.controlGrid {
+    font-size: 0.8em;
+    margin: 0.5em auto;
+    display: inline-grid;
+    grid-template-columns: auto 1fr;
+}
+
+.controlGrid label {
+    grid-column: 1;
+    justify-self: flex-end;
+    align-self: center;
+}
+.controlGrid input {
+    grid-column: 2;
+    justify-self: flex-start;
+    align-self: center;
+}
+.controlGrid .note {
+    grid-column: 1 / span 2;
 }
 
 input[type=number] {

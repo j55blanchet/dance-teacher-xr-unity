@@ -8,9 +8,10 @@ import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 import { ComparisonVectorToTerminalFeedbackBodyPartMap, QijiaMethodComparisionVectorNamesToIndexMap } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
 import { distillDanceTreeStructureToTextualRepresentation, distillFrontendPerformanceSummaryToTextualRepresentation, distillPerformanceHistoryToTextualRepresentation } from "./textual-distillation";
-import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline } from "./precomputed-feedback-msgs";
+import { getRandomBadTrialHeadline, getRandomGoodTrialHeadline, getRandomNoFeedbackHeadline } from "./precomputed-feedback-msgs";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
 import detectAchievements from "./detectAchievements";
+import { get } from "svelte/store";
 
 // Variable to store the value of the evaluation threshold, initialized to 1.0
 let evaluation_GoodBadTrialThresholdValue = 1.0;
@@ -18,6 +19,29 @@ let evaluation_GoodBadTrialThresholdValue = 1.0;
 evaluation_GoodBadTrialThreshold.subscribe((value) => {
     evaluation_GoodBadTrialThresholdValue = value;
 });
+
+export function generateFeedbackNoPerformance(
+    danceRelativeStem: string,
+    dancePerformanceHistory: FrontendDancePeformanceHistory | undefined,
+    currentSectionName: string,
+ ): TerminalFeedback {
+
+    let achievements = [] as string[];
+    if (currentSectionName && dancePerformanceHistory) {
+        achievements = detectAchievements({
+            attemptedNodeId: currentSectionName,
+            performanceHistory: dancePerformanceHistory,
+            outputTarget: 'user',
+        });
+    }
+
+    return {
+        headline: getRandomNoFeedbackHeadline(),
+        paragraphs: ['Would you like to do that again or try something else?'],
+        achievements: achievements,
+        suggestedAction: 'repeat',
+    }
+}
 
 /**
  * Generates feedback for the user using simple rule-based approach. This can be computed locally,
@@ -108,12 +132,13 @@ export async function generateFeedbackWithClaudeLLM(
     dancePerformanceHistory: FrontendDancePeformanceHistory | undefined,
     mediumScoreThreshold: number,
     goodScoreThreshold: number,
+    badJointSDThreshold: number,
     attemptHistory: { date: Date, score: number, segmentId: string }[],
 ): Promise<TerminalFeedback> {
 
     const danceStructureDistillation = danceTree ? distillDanceTreeStructureToTextualRepresentation(danceTree): undefined;
     const danceStructureDistillationIsMissing = danceStructureDistillation === undefined;
-    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance, mediumScoreThreshold, goodScoreThreshold) : undefined;
+    const performanceDistillation = performance ? distillFrontendPerformanceSummaryToTextualRepresentation(performance, mediumScoreThreshold, goodScoreThreshold, badJointSDThreshold) : undefined;
     const performanceDistillationIsMissing = performanceDistillation === undefined;
     const performanceHistoryDistillation = dancePerformanceHistory ? distillPerformanceHistoryToTextualRepresentation(dancePerformanceHistory) : undefined;
     const performanceHistoryDistillationIsMissing = performanceHistoryDistillation === undefined;
@@ -203,7 +228,7 @@ export async function generateFeedbackWithClaudeLLM(
         // note the double equals here, we want to compare the string values
         suggestedAction: suggestedSection == currentSectionName ? "repeat" : "navigate", 
         navigateOptions: suggestedURL ? [{ 
-            label: `Try section ${suggestedSection}`, 
+            label: `Try '${suggestedSection}'`, 
             url: suggestedURL,
             nodeId: suggestedSection,
         }] : undefined,

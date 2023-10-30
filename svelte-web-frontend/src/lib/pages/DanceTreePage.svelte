@@ -4,18 +4,33 @@ import { page, navigating } from '$app/stores'
 import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 import SketchButton from '$lib/elements/SketchButton.svelte';
-import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode } from '$lib/data/dances-store';
+import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
+import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode, findDanceTreeNode } from '$lib/data/dances-store';
+import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
-import { tick } from 'svelte';
+import { createEventDispatcher, onMount, tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
-import { debugMode } from '$lib/model/settings';
+import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage, practiceActivities__playbackSpeed } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
+import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '$lib/ai/TeachingAgent';
+import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
+
+import InfoIcon from 'virtual:icons/icon-park-outline/info';
+import NameIcon from 'virtual:icons/icon-park-outline/info';
+import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
+import DanceIcon from 'virtual:icons/mdi/human-female-dance';
+
+import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 
 export let dance: Dance;
 export let danceTree: DanceTree;
+export let preselectedNodeId: string | null = null;
+
+const dispatch = createEventDispatcher();
 
 // Pin the video small, so the flexbox system can auto-size the height
+let videoElement: VideoWithSkeleton | undefined;
 let fitVideoToFlexbox = true;
 
 let danceSrc: string = '';
@@ -28,10 +43,43 @@ $: danceBeatTimes = dance?.all_beat_times ?? [];
 let videoPaused: boolean = true;
 let stopTime: number = Infinity;
 let videoCurrentTime: number = 0;
-let videoPlaybackSpeed: number = 1;
-let currentPlayingNode: DanceTreeNode | null = null;
+let currentPlayingNode: DanceTreeNode | null = preselectedNodeId === null ? null : findDanceTreeNode(danceTree, preselectedNodeId);
+$: dispatch('selected-node', currentPlayingNode?.id);
+
+let lastNAttemptsOfDance = frontendPerformanceHistory.lastNAttemptsAllSegments(dance.clipRelativeStem, 'basicInfo');
+let currentSegmentAttemptCount: number;
+$: currentSegmentAttemptCount = currentPlayingNode ? $lastNAttemptsOfDance.filter(x => x.segmentId === currentPlayingNode?.id).length : 0;
 
 let videoDuration: number;
+
+let practiceActivityParams: GeneratePracticeActivityOptions = {
+    playbackSpeed: $practiceActivities__playbackSpeed,
+    interfaceMode: PracticeActivityDefaultInterfaceSetting,
+    terminalFeedbackEnabled: true,
+    showUserSkeleton: true,
+}
+$: {
+    $practiceActivities__playbackSpeed = practiceActivityParams.playbackSpeed;
+}
+
+const interfaceModeOptions: {
+    title: string,
+value: PracticeInterfaceModeKey,
+    iconUrl?: string,
+}[] = [
+    {
+        title: 'Demo Video',
+        value: 'watchDemo'
+    },
+    {
+        title: 'Demo + Mirror',
+        value: 'bothVideos',
+    },
+    {
+        title: 'Mirror',
+        value: 'userVideoOnly',
+    },
+]
 
 $: if (videoCurrentTime > stopTime) {
     videoPaused = true;
@@ -46,18 +94,37 @@ $: {
     }));
 }
 
+async function playSelectedNode() {
+    if (!currentPlayingNode || !videoElement) return;
+
+    videoCurrentTime = currentPlayingNode.start_time;
+    stopTime = currentPlayingNode.end_time;
+    await tick();
+    await videoElement.play();
+}
+
+let practiceButtonAnimationEnabled = true;
+async function triggerPracticeButtonAnimation() {
+    
+    return new Promise<void>((res) => {
+        requestAnimationFrame(() => {
+            practiceButtonAnimationEnabled = false;
+            requestAnimationFrame(() => {
+                practiceButtonAnimationEnabled = true;
+                res();
+            })
+        })
+    });
+}
+
 async function onNodeClicked(e: any) {
     console.log('node clicked', e.detail);
 
     const selectedTreeNode = e.detail as DanceTreeNode;
     videoPaused = true;
-    stopTime = selectedTreeNode.end_time;
     currentPlayingNode = selectedTreeNode;
-    await tick();
-    videoCurrentTime = selectedTreeNode.start_time;
-    await tick();
-    videoPaused = false;
-    // videoElement.play();
+    triggerPracticeButtonAnimation();
+    await playSelectedNode();
 }
 
 function showProgress(node: DanceTreeNode) {
@@ -67,16 +134,66 @@ function showProgress(node: DanceTreeNode) {
 async function practiceClicked() {
     try {
         if (!currentPlayingNode) throw new Error('No node selected');
-
-        // @ts-ignore
-        const curPath: string = $page?.path ?? "";
-        const url = curPath + "practicenode/" + currentPlayingNode.id;
+        
+        const { activity, url} = GeneratePracticeActivity(
+            dance,
+            danceTree,
+            currentPlayingNode as DanceTreeNode,
+            practiceActivityParams
+        );
+        
         await goto(url);
     } 
     catch(e) {
         console.error("Error navigating to practice page", e);
     }
 }
+
+let nodeHighlights: Record<string, NodeHighlight> = {};
+$: {
+    if (currentPlayingNode) {
+        nodeHighlights = {
+            [currentPlayingNode.id]: {
+                color: 'var(--color-theme-1)',
+                label: currentPlayingNode.id,
+                pulse: false,
+                borderColor: 'black'
+            }
+        };
+    }
+    else {
+
+        // Find the node corresponding to the first segment (but choose one that isn't too short)
+        let node = danceTree.root as DanceTreeNode;
+        const minFirstSegmentLength = 4;
+        while (node.children.length > 0 && (node.end_time - node.start_time > minFirstSegmentLength)) {
+            node = node.children[0] as DanceTreeNode;
+        }
+
+        nodeHighlights = {
+            [node.id]: {
+                color: 'yellow',
+                label: 'Click a node',
+                pulse: true,
+            }
+        };
+    }
+}
+
+onMount(() => {
+
+    if (videoElement && currentPlayingNode) {  
+        
+        // Option 1: Just have it set to the end of the preselected
+        videoCurrentTime = currentPlayingNode.end_time   
+
+        // Option 2: Play the node that was preselected
+        // const nodeId = currentPlayingNode.id;
+        // playSelectedNode().catch((e) => {
+        //     console.warn(`DanceTreePage: unable to autoplay preselected node ${nodeId}`, e);
+        // });
+    }
+});
 
 </script>
 
@@ -90,49 +207,58 @@ async function practiceClicked() {
                 danceTree={danceTree}
                 showProgressNode={currentPlayingNode ?? undefined}
                 currentTime={videoCurrentTime}
-                beatTimes={danceBeatTimes}
+                beatTimes={$debugMode && $debugMode__viewBeatsOnDanceTreepage ? danceBeatTimes : []}
+                enableColorCoding={true}
+                nodeHighlights={nodeHighlights}
             /> 
         </div>
     </div>
-    
-    
-    <div class="ta-center">
-        {#if currentPlayingNode}
-            {#if $debugMode}
-            <span>{currentPlayingNode.id}</span>
-            {/if}
-            <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
-                {#if $navigating}
-                    Navigating<ProgressEllipses />
-                {:else}
-                    Practice
-                {/if}
-            </SketchButton>
-        {:else}
-            <span>Select a node to practice</span>
-        {/if}
-    </div>
-    
-    
-    <div class="preview">
-       
-        <VideoWithSkeleton bind:currentTime={videoCurrentTime}
-            bind:playbackRate={videoPlaybackSpeed}
-            bind:duration={videoDuration}
-            bind:paused={videoPaused}
-            bind:fitToFlexbox={fitVideoToFlexbox}
-            drawSkeleton={false}
-            >
-            <source src={danceSrc} type="video/mp4" />
-        </VideoWithSkeleton>
-        {#if $debugMode}
-        <div class="controls">
-            <div class="control">
-                <span><label for="playbackSpeed">Playback Speed</label>:&nbsp;{videoPlaybackSpeed.toFixed(1)}x</span>
-                <input type="range" name="playbackSpeed" bind:value={videoPlaybackSpeed} min="0.5" max="2" step="0.1" />
-            </div>
+     
+    <div class="preview-container cols">
+        <div class="col ml-4 pb-4 vfill flex flex-col flex-crossaxis-end flex-mainaxis-stretch">
+        
+            <VideoWithSkeleton 
+                bind:this={videoElement}
+                bind:currentTime={videoCurrentTime}
+                bind:playbackRate={practiceActivityParams.playbackSpeed}
+                bind:duration={videoDuration}
+                bind:paused={videoPaused}
+                fitToFlexbox={false}
+                drawSkeleton={false}
+                volume={$danceVideoVolume}
+                >
+                <source src={danceSrc} type="video/mp4" />
+            </VideoWithSkeleton>
         </div>
-        {/if}
+        <div class="col flex flex-col flex-center vfill controls">
+            <!-- {#if currentPlayingNode}
+            <h3>Information</h3>
+            <div class="infoList">
+                <span class="label" title="Section Name"><NameIcon /></span><span class="data">{currentPlayingNode.id}</span>
+                <span class="label" title="Duration"><ClockIcon /></span><span class="data">{(currentPlayingNode.end_time - currentPlayingNode.start_time).toFixed(2)}s</span>
+                <span class="label" title="Attempts"><DanceIcon /></span><span class="data">{currentSegmentAttemptCount}</span>
+            </div>
+            {/if} -->
+            <h3>Practice Setup</h3>
+            {#if currentPlayingNode}
+                <PracticeActivityConfigurator 
+                    persistInSettings={true}
+                    bind:practiceActivityParams={practiceActivityParams}
+                />
+                <div class="control mt-4" class:animate={practiceButtonAnimationEnabled} class:pop={practiceButtonAnimationEnabled}>
+                    <span></span>
+                    <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
+                        {#if $navigating}
+                            Navigating<ProgressEllipses />
+                        {:else}
+                            Practice {currentPlayingNode.id} ➡️
+                        {/if}
+                    </SketchButton>
+                </div>
+            {:else}
+                <p class="text-label" style="max-width: 25ch"><span><InfoIcon /></span> Click above to select a part of the song to practice</p>
+            {/if}
+        </div>
     </div>
 </section>
 
@@ -144,18 +270,14 @@ section {
     height: var(--content_height);
     box-sizing: border-box;
     display: grid;
-    overflow: hidden;
-    grid-template-rows: auto auto minmax(0, 1fr); 
+    grid-template-rows: auto minmax(0, 1fr); 
     gap: 1rem;
+
+    --height-transition-duration: 0.25s;
 }
 
-.preview {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch;
-    overflow: hidden;
-    padding-bottom: 1rem;
+.preview-container {
+    position: relative;
 }
 
 .visual-tree {
@@ -172,10 +294,36 @@ section {
     // margin-bottom: 1rem;
 // }
 
-.control {
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
-    justify-content: center;
+.controls {
+    gap: 0.5rem;
+    // flex-basis: auto;
+    // flex-grow: 0;
+    margin-right: 1rem;
 }
+h3 {
+    margin-bottom: 0.25rem;;
+}
+.infoList {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.25rem;
+    margin: 0rem 0 1rem 0;
+
+    & .label {
+        color: var(--color-text-label);
+        font-weight: 500;
+        justify-self: end;
+        align-self: center;
+        margin-right: 0.25rem;
+    }
+
+    & .data {
+        // font-family: monospace;
+        // font-size: 0.9em;
+        justify-self: start;
+        align-self: center;
+        // color: var(--color-text-label);
+    }
+}
+
 </style>

@@ -149,7 +149,10 @@ export default class PoseEstimationWorker {
         if (!msgData.image || !msgData.timestampMs) {
             this.respondWithError(
                frameId,
-        "Missing image or timestampMs property",
+               "Missing properties: " + [["image", msgData.image], ["timestampMs", msgData.timestampMs]]
+                                                .filter(([_, v]) => !v)
+                                                .map(([k, _]) => k)
+                                                .join(", ")
             );
             return;
         }

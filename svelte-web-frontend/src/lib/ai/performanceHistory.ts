@@ -38,6 +38,8 @@ function loadPerformanceHistoryFromLocalstorage<MetricTypes extends Record<strin
     }
 }
 
+let a =  writable(0);
+
 export function createPerformanceHistoryStore<MetricTypes extends Record<string, BaseMetric<any, any>>>() {
 	const { subscribe, update } = writable(loadPerformanceHistoryFromLocalstorage() as CompletePerformanceHistory<MetricTypes>);
 
@@ -76,7 +78,37 @@ export function createPerformanceHistoryStore<MetricTypes extends Record<string,
                 return $history?.[danceRelativeStem]?.[segment]?.[metricName] ?? [];
             });
         },
-        lastNAttempts<T extends keyof MetricTypes>(danceRelativeStem: string, metricName: T, n: number) {
+        lastNAttemptsAllSegments<T extends keyof MetricTypes>(danceRelativeStem: string, metricName: T, n?: number) {
+            return derived(this, ($history) => {
+                if (!$history?.[danceRelativeStem]) return [];
+                const danceHistory = $history[danceRelativeStem] ?? {};
+                const allSegments = Object.keys(danceHistory) as string[];
+                let attempts: Array<{
+                    date: Date,
+                    partOfLargerPerformance?: boolean,
+                    summary: Partial<ReturnType<MetricTypes[T]["formatSummary"]>>,
+                    segmentId: string,
+                }> = [];
+
+                for (const segment of allSegments) {
+                    const segmentAttempts = danceHistory?.[segment]?.[metricName] ?? [];
+                    const attemptsNotPartOfLargerPerformance = segmentAttempts.filter((attempt) => !(attempt.partOfLargerPerformance ?? true));
+                    const attemptsNotPartOfLargerPerformanceWithSegment = attemptsNotPartOfLargerPerformance.map((attempt) => ({
+                        ...attempt,
+                        segmentId: segment,
+                    }));
+                    attempts = attempts.concat(attemptsNotPartOfLargerPerformanceWithSegment);
+                }
+
+                // Sort attempts - most recent first
+                attempts.sort((a, b) => b.date.getTime() - a.date.getTime());
+                if (n !== undefined) {
+                    return attempts.slice(0, n);
+                }
+                return attempts;
+            });
+        },
+        lastNAttempts<T extends keyof MetricTypes>(danceRelativeStem: string, metricName: T, n?: number) {
             return derived(this, ($history) => {
                 if (!$history) return [];
                 const danceHistory = $history[danceRelativeStem] ?? {};
@@ -100,7 +132,11 @@ export function createPerformanceHistoryStore<MetricTypes extends Record<string,
 
                 // Sort attempts - most recent first
                 attempts.sort((a, b) => b.date.getTime() - a.date.getTime());
-                return attempts.slice(-n);
+
+                if (n !== undefined) {
+                    return attempts.slice(-n);    
+                }
+                return attempts;
             });
         },
 

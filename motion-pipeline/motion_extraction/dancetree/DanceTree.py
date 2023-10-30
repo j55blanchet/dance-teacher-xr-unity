@@ -24,6 +24,10 @@ class DanceTreeNode(dcj.DataClassJsonMixin):
         print(f"{'   ' * depth + ' ↳ '}{name_str}  {duration_str} long  {time_str}{complexity_str}")
         for child in self.children:
             child.print_subtree(depth + 1)
+    
+    @property
+    def duration(self) -> float:
+        return self.end_time - self.start_time
 
 @dc.dataclass
 class DanceTree(dcj.DataClassJsonMixin):

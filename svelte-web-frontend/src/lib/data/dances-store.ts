@@ -6,11 +6,11 @@ import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks, type Pose3D
 import dancesData from '$lib/data/bundle/dances.json';
 import danceTreeData from '$lib/data/bundle/dancetrees.json';
 
-export type Dance = typeof dancesData[0];
+export type Dance = typeof dancesData[number];
 export type DanceTreeDict = typeof danceTreeData;
 export type ValueOf<T> = T[keyof T];
 export type DanceTrees = ValueOf<DanceTreeDict>;
-export type DanceTree = DanceTrees[0];
+export type DanceTree = DanceTrees[number];
 export type DanceTreeNode = DanceTree["root"];
 
 export const dances = dancesData.sort((a: Dance, b: Dance) => a.clipRelativeStem.localeCompare(b.clipRelativeStem));
@@ -30,6 +30,17 @@ export const danceTrees = danceTreeData;
 //         }
 //     }
 // );
+
+const USER_VISIBLE_DANCES: string[] = [
+    'other/colddance',
+    'other/renegade',
+    'study2/last-christmas-tutorial',
+    'study2/mad-at-disney-tutorial',
+];
+
+export const userVisibleDances: [Dance, DanceTree][] = dances
+    .filter((dance) => USER_VISIBLE_DANCES.includes(dance.clipRelativeStem))
+    .map((dance) => [dance, danceTrees[dance.clipRelativeStem as keyof typeof danceTrees][0]] as [Dance, DanceTree]);
 
 const URI_COMPONENT_SEPARATOR = '___';
 
@@ -103,6 +114,10 @@ export function getHolisticDataSrc(dance: Dance): string {
 }
 export function get2DPoseDataSrc(dance: Dance): string {
     return `/bundle/pose2d_data/${dance.clipRelativeStem}.pose2d.csv`
+}
+
+export function getThumbnailUrl(dance: Dance): string {
+    return `/bundle/thumbnails/${dance.thumbnailSrc}`;
 }
 
 /**

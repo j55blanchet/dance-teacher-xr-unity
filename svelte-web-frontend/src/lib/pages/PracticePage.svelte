@@ -3,16 +3,17 @@ export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInter
 export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
+import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
-import { evaluation_summarizeSubsections, practiceFallbackPlaybackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
+import { evaluation_summarizeSubsections, practiceActivities__playbackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
-import { getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
+import { findDanceTreeNode, getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type PracticeActivity from "$lib/model/PracticeActivity";
 import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation, type DanceTreeNode } from "$lib/data/dances-store";
-import { generateFeedbackRuleBased, generateFeedbackWithClaudeLLM} from '$lib/ai/feedback';
-import { DrawColorCodedSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
+import { generateFeedbackNoPerformance, generateFeedbackRuleBased, generateFeedbackWithClaudeLLM } from '$lib/ai/feedback';
+import { Draw2dSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
@@ -27,9 +28,14 @@ import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
-import { GeneratePracticeActivity } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
-	import Dialog from '$lib/elements/Dialog.svelte';
+import Dialog from '$lib/elements/Dialog.svelte';
+import { browser } from '$app/environment';
+import { waitSecs } from '$lib/utils/async';
+import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeActivityInterfaceSettings } from '$lib/model/PracticeActivity';
+import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
+import CloseButton from '$lib/elements/CloseButton.svelte';
 
 export let mirrorForEvaluation: boolean = true;
 
@@ -39,6 +45,28 @@ export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
 
+let interfaceSettings: PracticeActivityInterfaceSettings = PracticeInterfaceModes[PracticeActivityDefaultInterfaceSetting];
+$: interfaceSettings = PracticeInterfaceModes[practiceActivity?.interfaceMode ?? PracticeActivityDefaultInterfaceSetting];
+let skeletonDrawingEnabled: boolean;
+$: skeletonDrawingEnabled = practiceActivity?.showUserSkeleton ?? true;
+let terminalFeedbackEnabled: boolean;
+$: terminalFeedbackEnabled = practiceActivity?.terminalFeedbackEnabled ?? true;
+
+let isDoingSomeSortOfFeedback = false;
+$: {
+    isDoingSomeSortOfFeedback = (practiceActivity?.terminalFeedbackEnabled ?? false)
+        || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
+        || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
+}
+
+
+let hasVisibleReferenceVideo: boolean;
+$: hasVisibleReferenceVideo = interfaceSettings.referenceVideo.visibility === 'visible';
+
+let hasUserWebcamVisible: boolean;
+$: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible' ||
+    isDoingSomeSortOfFeedback && state === 'waitWebcam';
+
 const dispatch = createEventDispatcher();
 
 let fitVideoToFlexbox = true;
@@ -47,18 +75,14 @@ let state: PracticePageState = INITIAL_STATE;
 $: console.log("PracticePage state", state);
 $: dispatch('stateChanged', state); 
 
-let isPlayingOrCountdown = INITIAL_STATE === "playing" || INITIAL_STATE === "countdown";
+let isPlayingOrCountdown: boolean;
 $: isPlayingOrCountdown = state === "playing" || state === "countdown";
-let isShowingFeedback = state === 'feedback';
+let isShowingFeedback: boolean;
 $: isShowingFeedback = state === 'feedback';
+let isMounted = false;
+let isShowingNextActivityConfigurator = false;
 
 let currentActivityStepIndex: number = 0;
-let currentActivityType: PracticeActivity["activityTypes"]["0"] = 'watch';
-$: {
-    if (practiceActivity) {
-        currentActivityType = practiceActivity.activityTypes[currentActivityStepIndex];
-    }
-}
 
 let containingDanceTreeLeafNodes = [] as DanceTreeNode[];
 $: {
@@ -107,7 +131,7 @@ $: {
     const navOptionsSuggestingANode = terminalFeedbackNavOptions.filter(opt => opt.nodeId);
    
     const defaultHighlight: NodeHighlight = {
-        color: 'yellow',
+        color: 'var(--color-theme-1, yellow)',
         pulse: true,
     };
     nodeHighlights = Object.fromEntries(
@@ -120,7 +144,7 @@ $: {
             }
             return [navOpts.nodeId, {
                 ...defaultHighlight,
-                label: navOpts.nodeId
+                label: `${navOpts.nodeId} ➡️`
             }]
         })
     );
@@ -129,12 +153,32 @@ $: {
     // we will highlight the segment we just performed.
     if (isShowingFeedback && currentNodeId && nodeHighlights[currentNodeId] === undefined) {
         nodeHighlights[currentNodeId] = {
-            color: 'green',
+            color: 'var(--color-text, green)',
             pulse: false,
-            label: terminalFeedback?.suggestedAction === "repeat" ? "🔁" : "✔️"
+            label: terminalFeedback?.suggestedAction === "repeat" ? `${currentNodeId} 🔁` : `✔️ ${currentNodeId}`,
         }
     }
 }
+
+async function onNodeClickedById(id: string) {
+    // find node;
+    if (!practiceActivity) return;
+    const node = findDanceTreeNode(practiceActivity.danceTree as any, id);
+
+    if (!node) {
+        console.warn("Ignoring onNodeClickedById: can't find node with id: " + id);
+    }
+    return onNodeClicked(node as DanceTreeNode);
+}
+
+// Base the settings for the next practice activity based on the current one
+let nextPracticeActivityParams: GeneratePracticeActivityOptions = {
+    playbackSpeed: practiceActivity?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+    interfaceMode: practiceActivity?.interfaceMode ?? $practiceActivities__interfaceMode,
+    terminalFeedbackEnabled: practiceActivity?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
+    showUserSkeleton: practiceActivity?.showUserSkeleton ?? $practiceActivities__showUserSkeleton,
+}
+
 async function onNodeClicked(clickedNode: DanceTreeNode) {
     if (isPlayingOrCountdown) return;
 
@@ -143,10 +187,15 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
     const danceTree = practiceActivity.danceTree;
     const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
     const nodeSlug = clickedNode.id;
-    const url = `/teachlesson/${danceTreeSlug}/practicenode/${nodeSlug}`;
+        
+    let { activity: newActivity, url} = await GeneratePracticeActivity(
+        dance, 
+        danceTree, 
+        clickedNode, 
+        nextPracticeActivityParams,
+    );
     await goto(url);
-    
-    let newActivity = await GeneratePracticeActivity(dance, danceTree, clickedNode, 'default');
+
     practiceActivity = newActivity;
     await reset();
 }
@@ -170,17 +219,18 @@ $: {
 }
 
 $: {
-    poseEstimationEnabled = pageActive && (countdownActive || !isVideoPausedBinding || state==="paused") && currentActivityType === 'drill';
+    poseEstimationEnabled = pageActive 
+        && isDoingSomeSortOfFeedback 
+        &&  (countdownActive || !isVideoPausedBinding || state==="paused");
 }
 
-let lastNAttempts = frontendPerformanceHistory.lastNAttempts(
+let lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
     practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
     'skeleton3DAngleSimilarity',
     20,
-)
-
+);
 $: {
-    lastNAttempts = frontendPerformanceHistory.lastNAttempts(
+    lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
         practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
         'skeleton3DAngleSimilarity',
         20,
@@ -200,18 +250,14 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     if (gettingFeedback) return;
 
     gettingFeedback = true;
-
-    const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
-    const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
-    const qijiaBestPossibleScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.maxPossibleScore ?? 0;
-
+    
     webcamRecorder?.stop();
     let videoURL: undefined | string = undefined;
     if (webcamRecordedObjectURL) {
         videoURL = await webcamRecordedObjectURL;
     }
 
-    const attemptHistory = $lastNAttempts.map((a) => {
+    const attemptHistory = $lastNAttemptsAngleSimilarity.map((a) => {
         return {
             score: a.summary?.overall ?? NaN, 
             date: a.date,
@@ -219,8 +265,18 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         }
     });
 
+
     let feedback: TerminalFeedback | undefined = undefined;
-    if ($useAIFeedback) {
+
+    if (!terminalFeedbackEnabled || !performanceSummary) {
+        feedback = generateFeedbackNoPerformance(
+            dance.clipRelativeStem,
+            $frontendPerformanceHistory,
+            practiceActivity?.danceTreeNode?.id ?? '',
+        );
+    }
+
+    if ($useAIFeedback && !feedback) {
         try {
             const perfHistory = $frontendPerformanceHistory;
             const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
@@ -231,6 +287,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
                 dancePerfHistory ?? undefined,
                 $summaryFeedback_skeleton3d_mediumPerformanceThreshold,
                 $summaryFeedback_skeleton3d_goodPerformanceThreshold,
+                $metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
                 attemptHistory,
             )
         } catch(e) {
@@ -239,6 +296,9 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     }
 
     if (!feedback) {
+        const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
+        const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
+
         const perfHistory = $frontendPerformanceHistory;
         const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
         feedback = generateFeedbackRuleBased(
@@ -253,11 +313,29 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         ...feedback.debug,
         performanceSummary: performanceSummary ?? undefined,
         recordedTrack: recordedTrack ?? undefined,
-        recordedVideoUrl: videoURL,
-        recordedVideoMimeType: webcamRecorderMimeType,
     }
 
+    if (videoURL) {
+        let playbackSpeed = practiceActivity?.playbackSpeed;
+        if (playbackSpeed === undefined) {
+            playbackSpeed = $practiceActivities__playbackSpeed;
+        }
+        feedback.videoRecording = {
+            url: videoURL,
+            mimeType: webcamRecorderMimeType,
+            referenceVideoUrl: danceSrc,
+            recordingStartOffset: practiceActivity?.startTime ?? 0,
+            recordingSpeed: playbackSpeed,
+        };
+    }
+
+    feedback.segmentName = practiceActivity?.danceTreeNode?.id;
+
     gettingFeedback = false;
+
+    if ($debugMode && $debugMode__addPlaceholderAchievement) {
+        feedback.achievements?.push("placeholder achievement");
+    }
 
     return feedback;
 }
@@ -282,11 +360,14 @@ $: {
             );
 
             if (trialId) {
-                recordedTrack = evaluator?.trackRecorder.tracks.get(trialId) ?? null;
                 performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+                recordedTrack = performanceSummary?.adjustedTrack ?? null;
             }
             trialId = null;
             state = "feedback";
+            if (metronomeTimer) {
+                clearTimeout(metronomeTimer)
+            }
             getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
@@ -301,16 +382,30 @@ $: {
     }
 }
 
-async function waitSecs(secs: number): Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(resolve, secs * 1000);
-    })
-}
-
 async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
     clickAudioElement.volume = silent ? 0 : 1;
     return clickAudioElement.play();
+}
+
+let metronomePlaying = false;
+let metronomeTimer: number | null = null;
+async function launchMetronome() {
+    if (!browser) return;
+    if (metronomePlaying) return;
+    metronomePlaying = true;
+    let beatCount = 0;
+    while (state !== "feedback" && isMounted) {
+        playClickSound();
+        
+        await new Promise<void>((res) => {
+            metronomeTimer = window.setTimeout(() => {
+                res();
+            }, 1000 * beatDuration);
+        })
+    }
+    metronomePlaying = false;
+    metronomeTimer = null;
 }
 
 async function startCountdown() {
@@ -338,10 +433,9 @@ async function startCountdown() {
 
     isVideoPausedBinding = true;
     videoCurrentTime = practiceActivity?.startTime ?? 0;
-    videoVolume = 0.5;
-    videoPlaybackSpeed = $practiceFallbackPlaybackSpeed;
-    if (practiceActivity?.playbackSpeed !== 'default' && 
-        practiceActivity?.playbackSpeed !== undefined &&
+    videoVolume = $danceVideoVolume;
+    videoPlaybackSpeed = $practiceActivities__playbackSpeed;
+    if (practiceActivity?.playbackSpeed !== undefined &&
         !isNaN(practiceActivity.playbackSpeed)) {
         videoPlaybackSpeed = practiceActivity.playbackSpeed;
     }
@@ -353,26 +447,37 @@ async function startCountdown() {
         return;
     }
 
+    clickAudioElement.volume = 1;
     await tick();
+    await waitSecs(beatDuration);
+
+    state = "countdown";
+    countdownActive = true;
+    await waitSecs(beatDuration);
 
     countdown = 5;
     playClickSound();
     await waitSecs(beatDuration);
-
+    if (!isMounted) return
+    
     countdown = 6;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     countdown = 7;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     countdown = 8;
     playClickSound();
     await waitSecs(beatDuration);
+    if (!isMounted) return
 
     trialId = generateUUIDv4();
-    state = "playing"
+    state = "playing";
+    
     countdown = -1;
 
     resolveWebcamRecordedObjectUrl = null;
@@ -382,7 +487,7 @@ async function startCountdown() {
     webcamRecorder = null;
     webcamRecordedChunks = [];
 
-    if ($debugMode) {
+    if ($practiceActivities__enablePerformanceRecording && $webcamStream) {
         webcamRecordedObjectURL = new Promise((resolve, reject) => {
             resolveWebcamRecordedObjectUrl = resolve;
             rejectWebcamRecordedObjectUrl = reject;
@@ -393,13 +498,13 @@ async function startCountdown() {
         } else if (MediaRecorder.isTypeSupported('video/mp4')) {
             webcamRecorderMimeType = 'video/mp4';
         }
-        webcamRecorder = new MediaRecorder($webcamStream!, { mimeType: webcamRecorderMimeType });
+        webcamRecorder = new MediaRecorder($webcamStream, { mimeType: webcamRecorderMimeType });
         webcamRecordedChunks = [];
         webcamRecorder.addEventListener('dataavailable', (e) => {
             webcamRecordedChunks.push(e.data);
         });
         webcamRecorder.addEventListener('stop', () => {
-            let recordedVideoURL = URL.createObjectURL(new Blob(webcamRecordedChunks));
+            let recordedVideoURL = URL.createObjectURL(new Blob(webcamRecordedChunks, {type: webcamRecorderMimeType}));
             resolveWebcamRecordedObjectUrl?.(recordedVideoURL);
         });
         webcamRecorder.start();
@@ -421,6 +526,9 @@ export async function reset() {
     if(!virtualMirrorElement) {
         await tick();
     }
+    if (metronomeTimer) {
+        clearTimeout(metronomeTimer)
+    }
 
     terminalFeedback = null;
     trialId = null;
@@ -431,12 +539,13 @@ export async function reset() {
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
-    gettingFeedback = false;
     
+
+
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
     const promises = [] as Promise<any>[];
-    if (virtualMirrorElement) {
+    if (virtualMirrorElement && hasUserWebcamVisible) {
         promises.push(virtualMirrorElement.webcamStartedPromise);
     }
     let ref2dPosesPromise: ReturnType<typeof load2DPoseInformation> | null = null;
@@ -472,6 +581,8 @@ export async function reset() {
 
     await waitSecs(beatDuration);
 
+    // state = 'waitStartUserInteraction';
+    // showStartCountdownDialog = true;
     startCountdown();
 }
 
@@ -589,8 +700,12 @@ onMount(() => {
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
+    isMounted = true;
 
     return () => {
+        if (metronomeTimer) {
+            clearTimeout(metronomeTimer);
+        }
         if (unpauseVideoTimeout) {
             clearTimeout(unpauseVideoTimeout);
         }
@@ -601,6 +716,7 @@ onMount(() => {
             webcamRecorder.stop();
             webcamRecorder = null;
         }
+        isMounted = false;
     }
 })
 
@@ -609,6 +725,9 @@ onMount(() => {
 <section class="practicePage" 
     class:hasDanceTree={practiceActivity?.danceTree}
     class:hasFeedback={isShowingFeedback}
+    class:isPracticing={!isShowingFeedback}
+    class:hasOnlyDemoVideo={hasVisibleReferenceVideo && !hasUserWebcamVisible}
+    class:hasOnlyUserMirror={hasUserWebcamVisible && !hasVisibleReferenceVideo}
     >
     {#if practiceActivity?.danceTree}
     <div class="treevis">
@@ -628,8 +747,8 @@ onMount(() => {
     </div>
     {/if}
 
-    
-    <div class="demovid" style:display={state === "feedback" ? 'none' : 'flex'}>
+
+    <div class="demovid" style:display={state === "feedback" || !hasVisibleReferenceVideo ? 'none' : 'flex'}>
         <VideoWithSkeleton
             bind:this={videoWithSkeleton}
             bind:currentTime={videoCurrentTime}
@@ -644,13 +763,6 @@ onMount(() => {
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-        {#if countdown >= 0}
-            <div class="countdown">
-                <span class="count">
-                    {countdown}
-                </span>
-            </div>
-        {/if}
         {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
         <div class="startCountdown">
             <button class="button thick" on:click={() => startCountdown()}>
@@ -659,19 +771,9 @@ onMount(() => {
         </div>
         {/if}
     </div>
-    {#if state === "feedback"}
-    <div class="feedback">
-        <TerminalFeedbackDialog 
-            feedback={terminalFeedback}
-            on:repeat-clicked={reset}
-            on:continue-clicked={() => dispatch('continue-clicked')}
-
-        />
-        <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
-    </div>
-    {/if}
     <div 
         class="mirror"
+        class:hidden={!hasUserWebcamVisible} 
         style:display={state === "feedback" ? 'none' : 'flex'}
         >
         <VirtualMirror
@@ -679,7 +781,12 @@ onMount(() => {
             {poseEstimationEnabled}
             drawSkeleton={false}
             poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
-            customDrawFn={(ctx, pose) => DrawColorCodedSkeleton(ctx, pose, lastEvaluationResult, mirrorForEvaluation)}
+            customDrawFn={(ctx, pose) => {
+                if (!skeletonDrawingEnabled) return;
+                
+                const evalResToPass = skeletonDrawingEnabled ? lastEvaluationResult : null;
+                Draw2dSkeleton(ctx, pose, evalResToPass, mirrorForEvaluation);
+            }}
             on:poseEstimationFrameSent={poseEstimationFrameSent}
             on:poseEstimationResult={poseEstimationFrameReceived}
         />
@@ -690,6 +797,36 @@ onMount(() => {
         </div>
         {/if}
     </div>
+
+    {#if state === "feedback"}
+    <div class="feedback">
+        <TerminalFeedbackDialog 
+            feedback={terminalFeedback}
+            showActivityConfiguratorButton={true}
+            on:repeat-clicked={() => onNodeClickedById(practiceActivity?.danceTreeNode?.id ?? '')}
+            on:continue-clicked={() => dispatch('continue-clicked')}
+            on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
+            on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
+        />
+        <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
+    </div>
+    <Dialog open={isShowingNextActivityConfigurator}
+        on:dialog-closed={() => isShowingNextActivityConfigurator = false}>
+        <span slot="title">Practice Setup</span>
+        <PracticeActivityConfigurator 
+                persistInSettings={true}
+                bind:practiceActivityParams={nextPracticeActivityParams}
+            />
+    </Dialog>
+    {/if}
+
+    {#if countdown >= 0}
+    <div class="countdown">
+        <span class="count">
+            {countdown}
+        </span>
+    </div>
+    {/if}
 
     <Dialog open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
         on:dialog-closed={() => showStartCountdownDialog = false}>
@@ -713,6 +850,12 @@ section {
     overflow: hidden;
     display: grid;
     grid-template: "demovid mirror" 1fr / 1fr 1fr;
+    &.hasOnlyDemoVideo {
+        grid-template: "demovid" 1fr / 1fr;
+    }
+    &.hasOnlyUserMirror {
+        grid-template: "mirror" 1fr / 1fr;
+    }
 
     &.hasDanceTree {
         grid-template-areas:
@@ -723,6 +866,17 @@ section {
         // grid-template:
         //     "treevis treevis" auto
         //     "demovid mirror" 1fr / 1fr 1fr;
+
+        &.hasOnlyDemoVideo {
+            grid-template-areas:
+                "treevis treevis"
+                "demovid  demovid";
+        }
+        &.hasOnlyUserMirror {
+            grid-template-areas:
+                "treevis treevis"
+                "mirror  mirror";
+        }
     }
     &.hasFeedback {
         grid-template: "feedback feedback" 1fr / 1fr 1fr;
@@ -784,6 +938,7 @@ section {
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
 }
 
 .count {
@@ -796,6 +951,7 @@ section {
     background-color: rgba(0, 0, 0, 0.2);
     //  add background blur
     backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 
     padding: 3rem;
     border-radius: 50%;
@@ -813,6 +969,11 @@ section {
     & .label {
         margin-top: 1em;
     }
+}
+
+.hidden {
+    position: absolute;
+    left: 9999vw;
 }
 
 </style>

@@ -42,7 +42,7 @@ function getVectorColor(lmData: LandmarkData, evaluationResult: FrontendLiveEval
     return 'red';
 }
 
-export function DrawColorCodedSkeleton(
+export function Draw2dSkeleton(
     ctx: CanvasRenderingContext2D, 
     pose: null | NormalizedLandmark[], 
     evaluationResult: FrontendLiveEvaluationResult | null,

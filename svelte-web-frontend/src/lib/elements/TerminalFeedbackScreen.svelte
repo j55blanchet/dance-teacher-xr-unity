@@ -3,7 +3,6 @@
 //
 // A component for offering feedback after a user has completed a
 // practice attempt of a dance. 
-import Icon, { Icons } from '$lib/elements/Icon.svelte';
 import { reset } from 'microlight';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
@@ -14,57 +13,111 @@ import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import Dialog from './Dialog.svelte';
 import ProgressEllipses from './ProgressEllipses.svelte';
 import SpeechInterface from './SpeechInterface.svelte';
+import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
+
+import InfoIcon from 'virtual:icons/mdi/information';
+import StarIcon from 'virtual:icons/mdi/star';
 
 const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
+export let showActivityConfiguratorButton = false;
 
-let suggestingRepeat = false;
-$: {
-    suggestingRepeat = feedback?.suggestedAction === "repeat";
-}
+let showingPerformanceReviewPage = false;
 
-type ButtonData = {
+type ActionData = {
     title: string,
-    action: () => Promise<void>,
-    debug?: string;
+    onClick?: () => Promise<void>,
+    type: 'button' | 'info';
+    suggested?: boolean;
 }
 
-const repeatButton: ButtonData = {
+const repeatAction: ActionData = {
     title: "Do Again 🔁",
-    action: async () => { dispatch("repeat-clicked"); },
+    onClick: async () => { dispatch("repeat-clicked"); },
+    type: 'button',
 }
-const continueButton: ButtonData = {
-    title: "Continue ➡️",
-    action: async () => { dispatch("continue-clicked"); },
-}
-
-let buttons = [] as ButtonData[];
-// $: {
-//     const navigationButtons = (feedback?.navigateOptions ?? [])
-//         .map((option, i) => {
-//             return {
-//                 title: `${option.label}`,
-//                 action: async () => {
-//                     await goto(option.url)
-//                 },
-//                 debug: option.url
-//             } as ButtonData
-//         })
-
-//     if (feedback?.suggestedAction === 'navigate') {
-//         buttons = [navigationButtons[0], repeatButton, continueButton, ...navigationButtons.slice(1)];
-//     } else if (feedback?.suggestedAction === 'next') {
-//         buttons = [continueButton, repeatButton, ...navigationButtons];
-//     } else {
-//         buttons = [repeatButton, continueButton, ...navigationButtons];
-//     }
+// const continueButton: ButtonData = {
+//     title: "Continue ➡️",
+//     action: async () => { dispatch("continue-clicked"); },
 // }
+
+
+function generateActions(
+    feedback: TerminalFeedback | null,
+) : ActionData[] {
+    if (!feedback) return []
+
+    const actions: ActionData[] = [];
+    
+    let isSuggestingRepeat = feedback?.suggestedAction === "repeat"
+
+    actions.push({
+        ...repeatAction,
+        suggested: isSuggestingRepeat,
+    });
+
+    if (showActivityConfiguratorButton) {
+        actions.push({
+            title: "Setup ⚙️",
+            onClick: async () => { dispatch("configure-activity-clicked"); },
+            type: 'button',
+        })
+    }
+
+    if (feedback?.videoRecording) {
+        const videoRecording = feedback.videoRecording;
+        actions.push({
+            title: "Review 📹",
+            onClick: async () => {
+                showingPerformanceReviewPage = true;
+                dispatch("view-recording-clicked", videoRecording);
+            },
+            type: 'button',
+        })
+    }
+
+    const terminalFeedbackNavOptions = feedback?.navigateOptions ?? [];
+    const navOptionsSuggestingOtherNodes = terminalFeedbackNavOptions.filter(
+        opt => opt.nodeId && opt.nodeId !== feedback?.segmentName
+    );
+    const navigateActions: ActionData[] = navOptionsSuggestingOtherNodes.map(navOpt => {
+        return {
+            title: `${navOpt.label}`,
+            onClick: async () => {
+                dispatch("practice-action-clicked", navOpt.nodeId);
+            },
+            type: 'button',
+            suggested: true,
+        }
+    });
+    actions.push(...navigateActions);
+
+    actions.push({
+        title: 'ℹ️ Or, click on a part of the dance above',
+        type: 'info',
+    });
+    
+    return actions;
+}
+
+let actions = [] as ActionData[];
+$: actions = generateActions(feedback);
 
 let showingPerformanceSummary = false;
 let showingLLMOutput = false;
 let showingTerminalFeedbackJson = false;
 
+let performanceSummaryWithoutTrack: any | undefined;
+$: {
+    performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
+    if (performanceSummaryWithoutTrack) {
+        performanceSummaryWithoutTrack = {
+            ...performanceSummaryWithoutTrack,
+            adjustedTrack: undefined,
+        }
+    }
+}
 let skeletonHighlights: BodyPartHighlight[] = [];
 
 $: {
@@ -97,6 +150,17 @@ function promptDownload(objUrl: string, filename: string) {
     link.click();
 }
 
+function getTrackDataUrl(track: any, description: string) {
+    let trackDictionary = track.asDictWithoutTimeSeriesResults();
+    trackDictionary = {
+        ...trackDictionary,
+        trackDescription: description,
+    }
+    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
+    const blob = new Blob([trackJson], {type: "application/json"});
+    return URL.createObjectURL(blob);
+}
+
 function exportRecordings() {
 
     const track = feedback?.debug?.recordedTrack;
@@ -111,20 +175,19 @@ function exportRecordings() {
     }
 
     const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-    let trackDictionary = track.asDictWithoutTimeSeriesResults()
-    trackDictionary = {
-        ...trackDictionary,
-        trackDescription,
-    }
-    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
-    const blob = new Blob([trackJson], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
+    const url = getTrackDataUrl(track, trackDescription);
     promptDownload(url, `${filenameRoot}.track.json`)
 
-    const webcamRecording = feedback?.debug?.recordedVideoUrl;
+    const adjustedTrack = (feedback?.debug?.performanceSummary as any)?.adjustedTrack;
+    if (adjustedTrack) {
+        const url = getTrackDataUrl(adjustedTrack, trackDescription + "-adjusted");
+        promptDownload(url, `${filenameRoot}.adjustedtrack.json`);
+    }
+
+    const webcamRecording = feedback?.videoRecording?.url;
     if (webcamRecording) {
         let extension = 'webm';
-        if (feedback?.debug?.recordedVideoMimeType == 'video/mp4' || webcamRecording.endsWith('.mp4')) {
+        if (feedback?.videoRecording?.mimeType == 'video/mp4' || webcamRecording.endsWith('.mp4')) {
             extension = 'mp4';
         }
         promptDownload(webcamRecording, `${filenameRoot}.userrecording.${extension}`);
@@ -136,6 +199,10 @@ function exportRecordings() {
 <div class="feedbackForm">
     <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
     
+    {#each feedback?.achievements ?? [] as achivement, i}
+        <p class="achievement animate pop"><StarIcon /><span>{achivement}</span></p>
+    {/each}
+
     {#if feedback?.paragraphs}
     <div class="paragraphs">
         <SpeechInterface textToSpeak={[
@@ -144,10 +211,6 @@ function exportRecordings() {
         ].join("\n\n")}/>
     </div>
     {/if}
-
-    {#each feedback?.achievements ?? [] as achivement}
-        <p class="achivement"><Icon type="star"/> {achivement}</p>
-    {/each}
     
     {#if feedback?.score}
         <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
@@ -160,34 +223,36 @@ function exportRecordings() {
         />
     </div>
     {/if}
-    <div class="info ta-center outlined thin dashed p-1 mt-1">
-        <span class="icon"><Icon type={Icons.info} /></span>
-        <span class="message">Click any part of the dance above to practice that segment.</span>
-    </div>
-    {#if buttons.length > 0}
-    <div class="buttons">
-    {#each buttons as button, i}
+    
+    <div class="actions">
+    {#each actions as action, i}
+        {#if action.type === 'button'}
         <button class="button outlined thick" 
             class:primary={i===0} 
             class:secondary={i>0}
-            on:click={button.action}
-            title={ $debugMode ? button.debug : ''}
+            class:suggested={action.suggested ?? false}
+            on:click={action.onClick}
             >
-            {button.title}
+            {action.title}
         </button>
+        {:else}
+        <span class="actionInfo">
+            {action.title}
+        </span>
+        {/if}
     {/each}
     </div>
-    {/if}
+    
     {#if $debugMode}
-        <div class="debug buttons">
-            {#if feedback?.debug?.performanceSummary}
+        <div class="debug actions">
+            {#if performanceSummaryWithoutTrack}
             <button class="button" on:click={() => showingPerformanceSummary = true }>
                 View Performance Summary
             </button>
             <Dialog open={showingPerformanceSummary}
               on:dialog-closed={() => showingPerformanceSummary = false}>
                 <span slot="title">Performance Summary</span>
-                <pre class="microlight">{JSON.stringify(feedback.debug.performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre>
+                <pre class="microlight">{JSON.stringify(performanceSummaryWithoutTrack, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
             {/if}
             {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
@@ -213,13 +278,30 @@ function exportRecordings() {
                 <pre style="microlight">{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
-            {#if feedback?.debug?.recordedTrack}
+            {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
             <button class="button" on:click={exportRecordings}>
                 Export Recorded Track
             </button>
             {/if}
         </div>
     {/if}
+    
+    <Dialog 
+        open={showingPerformanceReviewPage} 
+        on:dialog-closed={() => showingPerformanceReviewPage = false }>
+        <span slot="title">Performance Review</span>
+        <div class="reviewPageWrapper">
+            {#if feedback?.videoRecording !== undefined}
+            <PerformanceReviewPage 
+                recordingUrl={feedback.videoRecording.url}
+                recordingMimeType={feedback.videoRecording.mimeType}
+                referenceVideoUrl={feedback.videoRecording.referenceVideoUrl}
+                recordingStartOffset={feedback.videoRecording.recordingStartOffset}
+                recordingSpeed={feedback.videoRecording.recordingSpeed}
+            />
+            {/if}
+        </div>
+    </Dialog>
 </div>
 
 
@@ -268,24 +350,6 @@ h2, p {
     margin : 0;
 }
 
-.info {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 1rem;
-    padding: 1rem;
-    & .icon {
-        font-size: 1rem;
-    }
-
-    & .message {
-        color: var(--color-text);
-        flex-grow: 1;
-        flex-shrink: 1;
-        flex-basis: auto;
-    }
-}
 h2 {
     margin-top: 1rem;
     font-weight: 600;
@@ -295,11 +359,17 @@ p {
     margin-top: 1rem;
 }
 
-.achivement {
-    color: var(--color-theme-1);
+.achievement {
+    // color: var(--color-theme-1);
     background-color: #EEF;
     padding: 0.5em 1em;
     border-radius: 1em;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: start;
+    gap: 1em;
 }
 
 pre {
@@ -314,18 +384,42 @@ pre {
     white-space: pre-wrap;
 }
 
-button.primary {
-    font-weight: 800;
-    background: white;
+// button.primary {
+//     font-weight: 800;
+//     background: white;
+//     border-color: var(--color-theme-1);
+//     color: var(--color-theme-1); 
+// }
+// button.secondary {
+    // margin-top: 0.25rem;
+    // font-size: 0.8em;
+// }
+
+.actions .suggested {
+    color: var(--color-theme-1);
     border-color: var(--color-theme-1);
-    color: var(--color-theme-1); 
-}
-button.secondary {
-    margin-top: 0.25rem;
-    font-size: 0.8em;
+    animation: pulse_color 1s infinite;
 }
 
-.buttons {
+
+@keyframes pulse_color {
+  0% {
+    border-color: var(--color-text);
+    color: var(--color-text);
+  }
+  50% {
+    border-color: var(--color-theme-1);
+    color: var(--color-theme-1);
+  }
+  100% {
+    border-color: var(--color-text);
+    color: var(--color-text);
+  }
+}
+
+.actions {
+    margin-top: 1rem;
+    font-size: 0.8em;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -334,5 +428,14 @@ button.secondary {
     flex-wrap: wrap;
     width: 100%;
     // margin-top: 1rem;
+}
+.actionInfo {
+    padding: 0.5em;
+    font-size: 0.8em;
+}
+
+.reviewPageWrapper {
+    width: 80vw;
+    height: calc(80vh - 2rem);
 }
 </style>

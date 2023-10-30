@@ -117,9 +117,19 @@ export default class UserDanceEvaluator<
         if (!track) {
             return null;
         }
+        const {
+            track: adjustedTrack,
+            discardedEndFrames,
+            discardedStartFrames,
+            interpolatedFrameCount,
+        } = track.withRecomputedFrameTimes(
+            this.reference2DData,
+            this.reference3DData
+        )
+
         const perfTrackWholePerformance = this.generateMetricSummariesForTrackSection(
-            track.segmentDescription,
-            track,
+            adjustedTrack.segmentDescription,
+            adjustedTrack,
             false,
         );
 
@@ -128,12 +138,16 @@ export default class UserDanceEvaluator<
             segmentDescription: track.segmentDescription,
             wholePerformance: perfTrackWholePerformance,
             subsections: Object.fromEntries(Object.entries(subsections).map(([subsectionName, {startTime, endTime}]) => {
-                const subsectionTrack = track.getSubTrack(startTime, endTime)
+                const subsectionTrack = adjustedTrack.getSubTrack(startTime, endTime)
                 if (!subsectionTrack) {
                     return [subsectionName, null];
                 }
                 return [subsectionName, this.generateMetricSummariesForTrackSection(subsectionName, subsectionTrack, true)];
             })) as {[K in keyof T]: ReturnType<typeof this.generateMetricSummariesForTrackSection>},
+            discardedStartFrames,
+            discardedEndFrames,
+            interpolatedFrameCount,
+            adjustedTrack,
         }
     }
 
@@ -154,10 +168,25 @@ export default class UserDanceEvaluator<
         };
 
         const liveMetricSummaryResults = Object.fromEntries(liveMetricKeys.map((liveMetricKey) => {
+
             const metric = this.liveMetrics[liveMetricKey];
+            const recomputedMetricHistory = trackHistory.videoFrameTimesInSecs.reduce((metricHistorySoFar, frameTime, i) => {
+                const partialHistory = {
+                    videoFrameTimesInSecs: trackHistory.videoFrameTimesInSecs.slice(0, i+1),
+                    actualTimesInMs: trackHistory.actualTimesInMs.slice(0, i+1),
+                    ref3DFrameHistory: trackHistory.ref3DFrameHistory.slice(0, i+1),
+                    ref2DFrameHistory: trackHistory.ref2DFrameHistory.slice(0, i+1),
+                    user3DFrameHistory: trackHistory.user3DFrameHistory.slice(0, i+1),
+                    user2DFrameHistory: trackHistory.user2DFrameHistory.slice(0, i+1),
+                }
+                const metricEntry = metric.computeMetric(partialHistory, metricHistorySoFar, frameTime, track.actualTimesInMs[i], track.user2dPoses[i], track.user3dPoses[i], track.ref2dPoses[i], track.ref3dPoses[i]);
+                metricHistorySoFar.push(metricEntry);
+                return metricHistorySoFar
+            }, [] as T[keyof T]["computeMetric"][]);
+
             const metricSummary = (metric).summarizeMetric(
                 trackHistory,
-                (track.timeSeriesResults?.[liveMetricKey] ?? []) as any,
+                recomputedMetricHistory,
             )
             if (this.performanceHistoryStore) {
                 const formattedSummary = metric.formatSummary(metricSummary as any);
@@ -175,21 +204,28 @@ export default class UserDanceEvaluator<
         const summaryMetricKeys = Object.keys(this.summaryMetrics) as (keyof U)[];
         const summaryMetricResults = Object.fromEntries(summaryMetricKeys.map((summaryMetricKey) => {
             const metric = this.summaryMetrics[summaryMetricKey];
-            const metricSummary = (metric).summarizeMetric(
-                trackHistory,
-            )
-            if (this.performanceHistoryStore) {
-                const formattedSummary = metric.formatSummary(metricSummary as any);
-                this.performanceHistoryStore.recordPerformance(
-                    track.danceRelativeStem,
-                    sectionName,
-                    summaryMetricKey,
-                    formattedSummary as any,
-                    partOfLargerPerformance
+            let metricSummaryResult = undefined;
+            try {
+                const metricSummary = (metric).summarizeMetric(
+                    trackHistory,
                 )
+                metricSummaryResult = metricSummary;
+                if (this.performanceHistoryStore) {
+                    const formattedSummary = metric.formatSummary(metricSummary as any);
+                    this.performanceHistoryStore.recordPerformance(
+                        track.danceRelativeStem,
+                        sectionName,
+                        summaryMetricKey,
+                        formattedSummary as any,
+                        partOfLargerPerformance
+                    )
+                }
+            } catch(e) {
+                console.error(`Unable to summarize metric ${String(summaryMetricKey)} for section ${sectionName}${partOfLargerPerformance ? ' as part of a larger performance.': ''}`, e);
             }
-            return [summaryMetricKey, metricSummary]
-        })) as {[K in keyof U]: ReturnType<U[K]["summarizeMetric"]>};
+            
+            return [summaryMetricKey, metricSummaryResult]
+        })) as {[K in keyof U]: ReturnType<U[K]["summarizeMetric"]> | undefined};
 
         return {
             ...liveMetricSummaryResults,
