@@ -66,6 +66,10 @@ $: {
         max-width: 10ch;
     }
 
+    &.interfaceMode {
+        margin: 0.5rem 0;
+    }
+
     &.interfaceMode label {
         box-sizing: border-box;
         padding: 0.25em;
