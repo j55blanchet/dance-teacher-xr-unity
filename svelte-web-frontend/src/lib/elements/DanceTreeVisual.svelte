@@ -257,15 +257,6 @@ function barClicked () {
     //     // color: var(--highlight-color);
     // }
 
-    @keyframes highlightPulse {
-        from {
-            box-shadow: 0 0 0.05em 0.05em var(--highlight-color), inset 0 0 0.05em 0.05em var(--highlight-color);
-        }
-        to {
-            box-shadow: 0 0 0.2em 0.2em var(--highlight-color), inset 0 0 0.1em 0.1em var(--highlight-color);
-        }
-    }
-
     .bar.hasScore {
         background: gray;
     }

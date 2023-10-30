@@ -28,7 +28,7 @@ function updateQueryParams(selectedNodeId: string) {
 </script>
 
 <svelte:head>
-	<title>{dance.title} (Preview) ({preselectedNodeId})</title>
+	<title>{dance.title} (Preview)</title>
 	<meta name="description" content="App for learning the dance: {dance.title}" />
 </svelte:head>
 

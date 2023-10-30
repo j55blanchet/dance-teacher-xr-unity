@@ -103,12 +103,27 @@ async function playSelectedNode() {
     await videoElement.play();
 }
 
+let practiceButtonAnimationEnabled = true;
+async function triggerPracticeButtonAnimation() {
+    
+    return new Promise<void>((res) => {
+        requestAnimationFrame(() => {
+            practiceButtonAnimationEnabled = false;
+            requestAnimationFrame(() => {
+                practiceButtonAnimationEnabled = true;
+                res();
+            })
+        })
+    });
+}
+
 async function onNodeClicked(e: any) {
     console.log('node clicked', e.detail);
 
     const selectedTreeNode = e.detail as DanceTreeNode;
     videoPaused = true;
     currentPlayingNode = selectedTreeNode;
+    triggerPracticeButtonAnimation();
     await playSelectedNode();
 }
 
@@ -215,22 +230,23 @@ onMount(() => {
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>
         </div>
-        <div class="col flex flex-col flex-center controls">
-            {#if currentPlayingNode}
+        <div class="col flex flex-col flex-center vfill controls">
+            <!-- {#if currentPlayingNode}
             <h3>Information</h3>
             <div class="infoList">
                 <span class="label" title="Section Name"><NameIcon /></span><span class="data">{currentPlayingNode.id}</span>
                 <span class="label" title="Duration"><ClockIcon /></span><span class="data">{(currentPlayingNode.end_time - currentPlayingNode.start_time).toFixed(2)}s</span>
                 <span class="label" title="Attempts"><DanceIcon /></span><span class="data">{currentSegmentAttemptCount}</span>
             </div>
-            {/if}
-            <h3>Pratice Configuration</h3>
+            {/if} -->
+            <h3>Practice Setup</h3>
             {#if currentPlayingNode}
                 <PracticeActivityConfigurator 
                     persistInSettings={true}
                     bind:practiceActivityParams={practiceActivityParams}
                 />
-                <div class="control mt-4">
+                <div class="control mt-4" class:animate={practiceButtonAnimationEnabled} class:pop={practiceButtonAnimationEnabled}>
+                    <span></span>
                     <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
                         {#if $navigating}
                             Navigating<ProgressEllipses />

@@ -47,12 +47,25 @@ export let flipVideo: boolean = false;
 
 let interfaceSettings: PracticeActivityInterfaceSettings = PracticeInterfaceModes[PracticeActivityDefaultInterfaceSetting];
 $: interfaceSettings = PracticeInterfaceModes[practiceActivity?.interfaceMode ?? PracticeActivityDefaultInterfaceSetting];
+let skeletonDrawingEnabled: boolean;
+$: skeletonDrawingEnabled = practiceActivity?.showUserSkeleton ?? true;
+let terminalFeedbackEnabled: boolean;
+$: terminalFeedbackEnabled = practiceActivity?.terminalFeedbackEnabled ?? true;
+
+let isDoingSomeSortOfFeedback = false;
+$: {
+    isDoingSomeSortOfFeedback = (practiceActivity?.terminalFeedbackEnabled ?? false)
+        || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
+        || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
+}
+
 
 let hasVisibleReferenceVideo: boolean;
 $: hasVisibleReferenceVideo = interfaceSettings.referenceVideo.visibility === 'visible';
 
 let hasUserWebcamVisible: boolean;
-$: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible'
+$: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible' ||
+    isDoingSomeSortOfFeedback && state === 'waitWebcam';
 
 const dispatch = createEventDispatcher();
 
@@ -201,18 +214,6 @@ let resolveWebcamRecordedObjectUrl: ((url: string) => void) | null = null;
 let rejectWebcamRecordedObjectUrl: ((reason?: any) => void) | null = null;
 let webcamRecordedObjectURL: Promise<string> | null = null;
 
-
-let isDoingSomeSortOfFeedback = false;
-$: {
-    isDoingSomeSortOfFeedback = (practiceActivity?.terminalFeedbackEnabled ?? false)
-        || (interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
-        || (interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
-}
-let skeletonDrawingEnabled: boolean;
-$: skeletonDrawingEnabled = practiceActivity?.showUserSkeleton ?? true;
-let terminalFeedbackEnabled: boolean;
-$: terminalFeedbackEnabled = practiceActivity?.terminalFeedbackEnabled ?? true;
-
 $: {
     danceSrc = getDanceVideoSrc(dance);
 }
@@ -267,7 +268,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
 
     let feedback: TerminalFeedback | undefined = undefined;
 
-    if (!terminalFeedbackEnabled) {
+    if (!terminalFeedbackEnabled || !performanceSummary) {
         feedback = generateFeedbackNoPerformance(
             dance.clipRelativeStem,
             $frontendPerformanceHistory,
@@ -772,7 +773,8 @@ onMount(() => {
     </div>
     <div 
         class="mirror"
-        style:display={state === "feedback" || !hasUserWebcamVisible ? 'none' : 'flex'}
+        class:hidden={!hasUserWebcamVisible} 
+        style:display={state === "feedback" ? 'none' : 'flex'}
         >
         <VirtualMirror
             bind:this={virtualMirrorElement}
@@ -801,7 +803,7 @@ onMount(() => {
         <TerminalFeedbackDialog 
             feedback={terminalFeedback}
             showActivityConfiguratorButton={true}
-            on:repeat-clicked={reset}
+            on:repeat-clicked={() => onNodeClickedById(practiceActivity?.danceTreeNode?.id ?? '')}
             on:continue-clicked={() => dispatch('continue-clicked')}
             on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
             on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
@@ -810,7 +812,7 @@ onMount(() => {
     </div>
     <Dialog open={isShowingNextActivityConfigurator}
         on:dialog-closed={() => isShowingNextActivityConfigurator = false}>
-        <span slot="title">Pratice Configuration</span>
+        <span slot="title">Practice Setup</span>
         <PracticeActivityConfigurator 
                 persistInSettings={true}
                 bind:practiceActivityParams={nextPracticeActivityParams}
@@ -909,10 +911,6 @@ section {
     }
 }
 
-.activityConfigurator {
-    grid-area: "activityConfigurator";
-}
-
 .startCountdown {
     position: absolute;
     top: 0;
@@ -971,6 +969,11 @@ section {
     & .label {
         margin-top: 1em;
     }
+}
+
+.hidden {
+    position: absolute;
+    left: 9999vw;
 }
 
 </style>

@@ -59,7 +59,7 @@ function generateActions(
 
     if (showActivityConfiguratorButton) {
         actions.push({
-            title: "Practice Settings ⚙️",
+            title: "Setup ⚙️",
             onClick: async () => { dispatch("configure-activity-clicked"); },
             type: 'button',
         })
