@@ -909,10 +909,6 @@ section {
     }
 }
 
-.activityConfigurator {
-    grid-area: "activityConfigurator";
-}
-
 .startCountdown {
     position: absolute;
     top: 0;

@@ -215,16 +215,16 @@ onMount(() => {
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>
         </div>
-        <div class="col flex flex-col flex-center controls">
-            {#if currentPlayingNode}
+        <div class="col flex flex-col flex-center vfill controls">
+            <!-- {#if currentPlayingNode}
             <h3>Information</h3>
             <div class="infoList">
                 <span class="label" title="Section Name"><NameIcon /></span><span class="data">{currentPlayingNode.id}</span>
                 <span class="label" title="Duration"><ClockIcon /></span><span class="data">{(currentPlayingNode.end_time - currentPlayingNode.start_time).toFixed(2)}s</span>
                 <span class="label" title="Attempts"><DanceIcon /></span><span class="data">{currentSegmentAttemptCount}</span>
             </div>
-            {/if}
-            <h3>Pratice Configuration</h3>
+            {/if} -->
+            <h3>Practice Configuration</h3>
             {#if currentPlayingNode}
                 <PracticeActivityConfigurator 
                     persistInSettings={true}
