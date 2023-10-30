@@ -35,11 +35,11 @@ $: {
         {/each}
     </div>
     <div class="control">
-        <label for="enableUserSkeletonColorCoding">Show Skeleton</label>
+        <label for="enableUserSkeletonColorCoding">Show Skeleton:</label>
         <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.showUserSkeleton} />
     </div>
     <div class="control">
-        <label for="terminalFeedbackEnabled">Provide Feedback</label>
+        <label for="terminalFeedbackEnabled">Provide Feedback:</label>
         <input type="checkbox" name="terminalFeedbackEnabled" bind:checked={practiceActivityParams.terminalFeedbackEnabled} />
     </div>
 </div>
@@ -60,7 +60,7 @@ $: {
     flex-direction: row; 
     align-items: center;
     justify-content: center;
-    gap: 1ch;
+    gap: 0.5ch;
 
     input[type="range"] {
         max-width: 10ch;
