@@ -64,7 +64,7 @@ export function calculate3DKinematicErrorDescriptors(
     }
 
     if (matchingUserPoses.length !== referencePoses.length || matchingUserPoses.length !== frameTimes.length) {
-        throw new Error("Mismatched array lengths between matchingUserPoses, referencePoses, and frameTimes.");
+        throw new Error(`Mismatched array lengths between matchingUserPoses (${matchingUserPoses.length}), referencePoses (${referencePoses.length}), and frameTimes (${frameTimes.length}).`);
     }
 
     const frameCount = matchingUserPoses.length;
