@@ -46,9 +46,9 @@ const qijiaScoreMin = 0;
 const qijiaScoreMax = 5;
 
 function clearPerformanceHistory() {
-    if (!confirm('Are you sure you want to erase all performance history?')) {
-        return;
-    }
+    // if (!confirm('Are you sure you want to erase all performance history?')) {
+    //     return;
+    // }
     frontendPerformanceHistory.clearAllHistory();
 }
 </script>
@@ -160,10 +160,10 @@ function clearPerformanceHistory() {
             </div>
         </details>
     </div>
+    {/if}
     <div>
         <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
     </div>
-    {/if}
     <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
