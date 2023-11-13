@@ -13,7 +13,8 @@ const config = {
 		// See https://kit.svelte.dev/docs/adapters for more information about adapters.
 		adapter: adapter(),	 
 		env: {
-			dir: 'src/env'
+			dir: 'src/env',
+			publicPrefix: 'NEXT_PUBLIC_', // using this to be compatible with Supabase Vercel integration, which names the anon key and url with NEXT_PUBLIC_
 		}
 	},
 };

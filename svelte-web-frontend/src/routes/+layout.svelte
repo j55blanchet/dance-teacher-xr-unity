@@ -70,7 +70,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
-		align-items: start;
+		align-items: center;
 		justify-content: center;
 		--navbar_height: 3rem;
 		--content_height: calc(100vh - var(--navbar_height));

@@ -87,3 +87,21 @@ Then use it like so:
 ```html
 <ClockIcon />
 ```
+
+
+### Supabase
+
+We use [supabase](https://supabase.io/) for our database. For local development, we use the [supabase CLI](https://supabase.io/docs/reference/cli/installation) to interact with the database. This will be installed with `pnpm install`.
+
+1. Ensure you have docker installed and running.
+1. Run `pnpm supabase login` to login to supabase. You'll need to provide an access token, which you can get from the supabase dashboard.
+1. Run `pnpm supabase link --project-ref ngjnwvcgmfxwbwbidtcy` to link the CLI to the supabase project. This will allow you to run commands like `pnpm supabase init` to initialize the database.
+1. To get started with a local supabase instance, you can run `pnpm supabase start`. This will start a local supabase instance, and will also start a local postgres instance. You can then use the supabase CLI to interact with the local instance. For example, you can run `pnpm supabase init` to initialize the local instance with the necessary tables and data.
+
+
+
+Other commands:
+* `pnpm supabase db pull` to pull the latest database schema from supabase. Will create a SQL migration script in `migrations/` that you can run with `pnpm supabase db push`.
+* `pnpm supabase db reset` to reset the local db to default state, applying migrations in `migrations/` and then running `pnpm supabase init`.
+* Connect to local db with `psql -h localhost -p 54322 -U postgres -d postgres` (default pw: `postgres`).
+    * To run a file, add `-f <filename>` to the command.
