@@ -22,12 +22,13 @@ onMount(() => {
 
 <div class="row flex-center flex">
 	<div class="col-6 form-widget">
+		<h3>Login</h3>
 		<Auth
 			supabaseClient={data.supabase}
 			view="magic_link"
 			redirectTo={`${data.url}/auth/callback`}
 			showLinks={false}
-			appearance={{ theme: ThemeSupa, style: { input: 'color: #fff' } }}
+			appearance={{ theme: ThemeSupa }}
 		/>
 	</div>
 </div>
