@@ -27,8 +27,8 @@ devDependencies:
     specifier: ^0.5.3
     version: 0.5.3
   '@types/microlight':
-    specifier: ^0.0.0
-    version: 0.0.0
+    specifier: ^0.0.2
+    version: 0.0.2
   '@types/papaparse':
     specifier: ^5.3.9
     version: 5.3.9
@@ -634,8 +634,8 @@ packages:
     resolution: {integrity: sha512-Hr5Jfhc9eYOQNPYO5WLDq/n4jqijdHNlDXjuAQkkt+mWdQR+XJToOHrsD4cPaMXpn6KO7y2+wM8AZEs8VpBLVA==}
     dev: true
 
-  /@types/microlight@0.0.0:
-    resolution: {integrity: sha512-PhPnbZkunal+hvIwXKct4KimoQIwiYvBx9yQRBR+kC302420pGRYGZEnLtY1seR/bjlV7bUUs7na4Z5tu3060w==}
+  /@types/microlight@0.0.2:
+    resolution: {integrity: sha512-u04egGt0YkW2LARdjRr74dQNWyk5kLDod/BEU50IEBoS9rk7RY88bJfHUl0Zygnxlz7HiXHYqnBEXqLPuVWSEg==}
     dev: true
 
   /@types/node-fetch@2.6.5:
