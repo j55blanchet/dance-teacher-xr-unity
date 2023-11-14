@@ -2,8 +2,8 @@
 import DanceTreePage from "$lib/pages/DanceTreePage.svelte";
 import type { DanceTree, Dance } from '$lib/data/dances-store';
 import { navbarProps } from "$lib/elements/NavBar.svelte";
-	import { browser } from "$app/environment";
-	import { navigating } from "$app/stores";
+import { browser } from "$app/environment";
+import { navigating } from "$app/stores";
 
 /** @type {import('./$types').PageData} */    
 export let data;
