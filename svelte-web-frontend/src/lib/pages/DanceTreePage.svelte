@@ -17,9 +17,9 @@ import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '
 import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 import InfoIcon from 'virtual:icons/icon-park-outline/info';
-import NameIcon from 'virtual:icons/icon-park-outline/info';
-import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
-import DanceIcon from 'virtual:icons/mdi/human-female-dance';
+// import NameIcon from 'virtual:icons/icon-park-outline/info';
+// import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
+// import DanceIcon from 'virtual:icons/mdi/human-female-dance';
 
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 
@@ -234,7 +234,7 @@ onMount(() => {
             <!-- {#if currentPlayingNode}
             <h3>Information</h3>
             <div class="infoList">
-                <span class="label" title="Section Name"><NameIcon /></span><span class="data">{currentPlayingNode.id}</span>
+                <span class="label" title="Section Name"><InfoIcon /></span><span class="data">{currentPlayingNode.id}</span>
                 <span class="label" title="Duration"><ClockIcon /></span><span class="data">{(currentPlayingNode.end_time - currentPlayingNode.start_time).toFixed(2)}s</span>
                 <span class="label" title="Attempts"><DanceIcon /></span><span class="data">{currentSegmentAttemptCount}</span>
             </div>
