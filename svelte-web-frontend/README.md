@@ -104,3 +104,15 @@ Other commands:
 * `pnpm supabase db reset` to reset the local db to default state, applying migrations in `migrations/` and then running `pnpm supabase init`.
 * Connect to local db with `psql -h localhost -p 54322 -U postgres -d postgres` (default pw: `postgres`).
   * To run a file, add `-f <filename>` to the command.
+* `pnpm supabase status` to get the status of running services, including the local postgres instance (and their URLs).
+* `pnpm supabase projects api-keys` to get the api keys for the local supabase instance.
+
+Other useful links:
+
+* Local supabase dashboard: <http://localhost:54323>
+* Testing mock email server <http://localhost:54324> (view emails that would have been sent.)
+
+#### Supabase Issues
+
+* If you get a network error / CORS error when trying to login, ensure the supabase services are running with `pnpm supabase start`.
+* If you get an error when starting supabase like `Local hosting manifest for public.ecr.aws/supabase/postgrest:v11.2.1 not found`, [try changing the rest-version file in /supabase/.temp/rest-version](https://github.com/supabase/supabase/issues/18207)

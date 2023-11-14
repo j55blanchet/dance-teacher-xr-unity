@@ -129,6 +129,19 @@ button:focus:not(:focus-visible) {
 	white-space: nowrap;
 }
 
+.link {
+	color: var(--color-theme-1);
+	text-decoration: none;
+	padding: 0;
+	margin: 0;
+	border: none;
+	cursor: pointer;	
+	background-color: transparent;
+}
+.link:hover {
+	text-decoration: underline;
+}
+
 .button, .outlined {
 	border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
 	border-width: 3.5px;
