@@ -7,7 +7,7 @@ import { INITIAL_STATE, type PracticePageState } from '$lib/pages/PracticePage.s
 import { navbarProps } from '$lib/elements/NavBar.svelte';
 import type PracticeActivity from '$lib/model/PracticeActivity';
 import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
-	import { practiceActivities__playbackSpeed } from '$lib/model/settings';
+import { practiceActivities__playbackSpeed } from '$lib/model/settings';
 
 /** @type {import('./$types').PageData} */    
 export let data;
