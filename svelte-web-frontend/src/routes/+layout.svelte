@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { writable } from 'svelte/store';
-	import { setContext, tick, onMount } from 'svelte';
+	import { tick, onMount } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
