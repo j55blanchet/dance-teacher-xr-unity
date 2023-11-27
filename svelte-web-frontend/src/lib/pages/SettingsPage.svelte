@@ -175,6 +175,7 @@ function clearPerformanceHistory() {
     <div class="group">
         <h3>Account</h3>
         <code>{user.email}</code>
+        <a href="/account" class="button" aria-label="Account Page">Edit Account</a>
         <form method="post" action="/account?/signout">
             <div>
                 <button class="button block">Sign Out</button>

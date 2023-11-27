@@ -85,6 +85,8 @@
                 <button class="button block" disabled={loading}>Sign Out</button>
             </div>
         </form>
+
+        <a href="/updatepassword">Update Password</a>
     </div>
 </div>
 
