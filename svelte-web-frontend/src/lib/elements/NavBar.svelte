@@ -25,7 +25,6 @@ export let navbarProps = writable<NavBarProps>({
 });
 </script>
 
-
 <script lang="ts">
 import { createEventDispatcher } from "svelte";
 

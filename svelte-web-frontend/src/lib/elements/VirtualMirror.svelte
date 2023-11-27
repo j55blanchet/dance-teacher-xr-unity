@@ -2,11 +2,12 @@
 	import { PoseLandmarkKeys, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/pose-estimation.worker';
-    import { DrawingUtils, PoseLandmarker, type NormalizedLandmark, type PoseLandmarkerResult } from "@mediapipe/tasks-vision";
+    import type { DrawingUtils, PoseLandmarker, NormalizedLandmark, PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from '../webcam/streams';
     import WebcamSelector from "../webcam/WebcamSelector.svelte";
     import { getContentSize } from '$lib/utils/resizing';
+	import { browser } from '$app/environment';
 
     const INITIALIZING_FRAME_ID = -1000;
 
@@ -36,6 +37,12 @@
     // let webcamVideoStream: MediaStream | undefined = undefined;
     let canvasContext: CanvasRenderingContext2D | undefined = undefined;
     let drawingUtils: DrawingUtils | undefined = undefined;
+
+    let tasksVisionModule: typeof import('@mediapipe/tasks-vision') | undefined = undefined;
+    if (browser) {
+        import('@mediapipe/tasks-vision').then(m => tasksVisionModule = m);
+    }
+
 
     let resolveWebcamStartedPromise: (() => void) | undefined;
     export const webcamStartedPromise = new Promise<void>((res) => resolveWebcamStartedPromise = res);
@@ -228,6 +235,9 @@
             return;
         }
 
+        if (!browser) return;
+        if (!tasksVisionModule) return;
+
         // canvasElement.width = videoElement.videoWidth;
         // canvasElement.height = videoElement.videoHeight;
 
@@ -311,11 +321,11 @@
         if(lastEstimated2DPose && lastEstimated2DPose.length === PoseLandmarkKeys.length) {
             drawingUtils?.drawConnectors(
                 lastEstimated2DPose,
-                PoseLandmarker.POSE_CONNECTIONS
+                tasksVisionModule.PoseLandmarker.POSE_CONNECTIONS
             )
             drawingUtils?.drawLandmarks(
                 lastEstimated2DPose, {
-                    radius: (data) => DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1)
+                    radius: (data) => tasksVisionModule?.DrawingUtils.lerp(data.from!.z, -0.15, 0.1, 5, 1) ?? 1.0,
                 }
             );
         }
@@ -329,7 +339,10 @@
             willReadFrequently: true,
         })!;
 
-        drawingUtils = new DrawingUtils(canvasContext);
+        if (tasksVisionModule) {
+            drawingUtils = new tasksVisionModule.DrawingUtils(canvasContext);
+        }
+        
         renderCanvas();
     }
 

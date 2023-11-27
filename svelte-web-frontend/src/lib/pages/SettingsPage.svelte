@@ -26,7 +26,9 @@ import {
 	danceVideoVolume,
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
+import type { User } from "@supabase/supabase-js";
 
+export let user: User | null = null;
 
 // A little mechanism for making the step sizes for the debug pause duration slider
 // increase as the value increases. This is to make it easier to select a value
@@ -167,6 +169,19 @@ function clearPerformanceHistory() {
     <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
+    <div class="group">
+    </div>
+    {#if user}
+    <div class="group">
+        <h3>Account</h3>
+        <code>{user.email}</code>
+        <form method="post" action="/account?/signout">
+            <div>
+                <button class="button block">Sign Out</button>
+            </div>
+        </form>
+    </div>
+    {/if}
 </section>
 
 <style lang="scss">

@@ -2,13 +2,14 @@
 import type { Dance, PoseReferenceData } from "$lib/data/dances-store";
 import { onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
-import { DrawingUtils, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
+import type { DrawingUtils, PoseLandmarker, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
 
 let videoElement: HTMLVideoElement;
 let canvasElement: HTMLCanvasElement;
 let canvasCtx: CanvasRenderingContext2D | null = null;
 let drawingUtils: DrawingUtils | null = null;
+let tasksVisionModule: typeof import("@mediapipe/tasks-vision") | null = null;
 export let fitToFlexbox: boolean = false;
 
 export let currentTime: number = 0;
@@ -68,8 +69,9 @@ function drawCanvas() {
         canvasCtx = canvasElement.getContext('2d');
     }
     if (!canvasCtx) { return; }
+    if (!tasksVisionModule) { return; }
     if (!drawingUtils) {
-        drawingUtils = new DrawingUtils(canvasCtx);
+        drawingUtils = new tasksVisionModule.DrawingUtils(canvasCtx);
     }
 
     // Clear the canvas from the previous frame
@@ -80,7 +82,7 @@ function drawCanvas() {
     // console.log("redrawing pose", poseToDraw)
     drawingUtils.drawConnectors(
         poseToDraw, 
-        PoseLandmarker.POSE_CONNECTIONS, 
+        tasksVisionModule.PoseLandmarker.POSE_CONNECTIONS, 
         {
             color: 'white',
             lineWidth: 4,
@@ -88,7 +90,7 @@ function drawCanvas() {
     );
     drawingUtils.drawConnectors(
         poseToDraw, 
-        PoseLandmarker.POSE_CONNECTIONS, 
+        tasksVisionModule.PoseLandmarker.POSE_CONNECTIONS, 
         {
             color: 'black',
             lineWidth: 2,
@@ -113,6 +115,10 @@ onMount(() => {
         videoElementHeight = height;
     })
     resizeObserver.observe(videoElement);
+
+    import("@mediapipe/tasks-vision").then(x => {
+        tasksVisionModule = x;
+    });
     return () => {
         // resizeObserver.unobserve(videoElement);
         // if (requestedAnimationFrameId !== null) {

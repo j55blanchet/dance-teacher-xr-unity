@@ -1,8 +1,7 @@
 // import { * } from "@mediapipe/pose";
+import { browser } from "$app/environment";
 import { simd } from "wasm-feature-detect";
-
-import { PoseLandmarker } from "@mediapipe/tasks-vision";
-
+import type { PoseLandmarker } from "@mediapipe/tasks-vision";
 // const wasm_loader = import('@mediapipe/tasks-vision/wasm/vision_wasm_internal');
 // const wasm_nosimd_ploader = import('@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal')
 
@@ -37,8 +36,13 @@ async function loadPoseLandmarkerModel() {
     }
     
     const runningMode = "VIDEO";
+
+    if (!browser) {
+        return null;
+    }
     
-    const poseLandmarker = await PoseLandmarker.createFromOptions(wasmVisionFileset, {
+    const TasksVisionModule = await import("@mediapipe/tasks-vision");
+    const poseLandmarker = await TasksVisionModule.PoseLandmarker.createFromOptions(wasmVisionFileset, {
         baseOptions: {
           modelAssetPath: `/mediapipe/pose_landmarker_lite.task`,
           delegate: "GPU"
