@@ -102,7 +102,7 @@ $: {
     beatDuration = danceSecsPerBeat / videoPlaybackSpeed;
 }
 
-let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
+let clickAudioElement: HTMLAudioElement;
 let virtualMirrorElement: VirtualMirror;
 let videoWithSkeleton: VideoWithSkeleton;
 let videoCurrentTime: number = 0;
@@ -697,6 +697,7 @@ onMount(() => {
     // Prepare pose estimation, so that it'll be ready 
     // when we need it, as opposed to creating the model
     // after the video starts playing.
+    clickAudioElement = new Audio(metronomeClickSoundSrc);
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();

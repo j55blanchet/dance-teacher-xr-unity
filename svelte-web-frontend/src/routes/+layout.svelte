@@ -46,7 +46,6 @@
 
 <div class="app" class:noNavBar={$navbarProps.collapsed}>
 	<NavBar on:settingsButtonClicked={toggleSettings} settingsActive={showingSettings}/>
-
 	<slot />
 
 	<div class="debug">
@@ -59,7 +58,7 @@
 			<CloseButton isVisible={showingSettingsCloseButton} on:click={toggleSettings} />
 		</div>
 		<div class="settingsContainer outlined">
-			<SettingsPage />
+			<SettingsPage user={session?.user ?? null} />
 		</div>
 	</dialog>
 </div>

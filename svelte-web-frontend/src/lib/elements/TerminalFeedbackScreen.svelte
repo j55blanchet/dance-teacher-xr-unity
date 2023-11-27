@@ -3,7 +3,6 @@
 //
 // A component for offering feedback after a user has completed a
 // practice attempt of a dance. 
-import { reset } from 'microlight';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
@@ -130,19 +129,6 @@ $: {
     skeletonHighlights = [...incorrectHighlights, ...correctHighlights];
 }
 
-const performSyntaxHighlighting = async () => {
-    await tick();
-    reset('microlight');
-};
-$: if ($debugMode || feedback?.debug) {
-    performSyntaxHighlighting();
-}
-
-
-onMount(() => {
-    reset('microlight');
-});
-
 function promptDownload(objUrl: string, filename: string) {
     const link = document.createElement('a');
     link.href = objUrl;
@@ -252,7 +238,7 @@ function exportRecordings() {
             <Dialog open={showingPerformanceSummary}
               on:dialog-closed={() => showingPerformanceSummary = false}>
                 <span slot="title">Performance Summary</span>
-                <pre class="microlight">{JSON.stringify(performanceSummaryWithoutTrack, replaceJSONForStringifyDisplay, 2)}</pre>
+                <pre>{JSON.stringify(performanceSummaryWithoutTrack, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
             {/if}
             {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
@@ -262,11 +248,11 @@ function exportRecordings() {
                 <span slot="title">LLM Data</span>
                 {#if feedback?.debug?.llmInput}
                     <h3>Input</h3>
-                    <pre class="microlight">{JSON.stringify(feedback?.debug?.llmInput, undefined, 2)}</pre>
+                    <pre>{JSON.stringify(feedback?.debug?.llmInput, undefined, 2)}</pre>
                 {/if}
                 {#if feedback?.debug?.llmOutput}
                     <h3>Output</h3>
-                    <pre class="microlight">{JSON.stringify(feedback?.debug?.llmOutput, undefined, 2)}</pre>
+                    <pre>{JSON.stringify(feedback?.debug?.llmOutput, undefined, 2)}</pre>
                 {/if}
             </Dialog>
             {/if}
@@ -275,7 +261,7 @@ function exportRecordings() {
             <Dialog open={showingTerminalFeedbackJson}
                 on:dialog-closed={() => showingTerminalFeedbackJson = false}>
                 <span slot="title">TerminalFeedback JSON</span>
-                <pre style="microlight">{JSON.stringify(feedback, undefined, 2)}</pre>
+                <pre>{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
             {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
