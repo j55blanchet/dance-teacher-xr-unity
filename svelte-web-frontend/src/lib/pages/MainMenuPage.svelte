@@ -11,9 +11,11 @@ import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
 import ConfoundedFaceIcon from 'virtual:icons/icon-park-outline/confounded-face';
 import DanceIcon from 'virtual:icons/mdi/human-female-dance';
-import { onMount } from 'svelte';
+import { getContext, onMount } from 'svelte';
+	import type { SupabaseClient } from '@supabase/supabase-js';
 
 let menuData: FolderContents<Dance> = [];
+const supabase = getContext('supabase') as SupabaseClient;
 
 for(const dance of dances) {
     const path: string = dance.clipRelativeStem;
@@ -163,7 +165,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
     <div class="tiles">
         {#each danceTiles as tileData, i (tileData.dance.clipRelativeStem)}
         <a class="tile" href={tileData.pageUrl}>
-            <img class="thumbnail" src={getThumbnailUrl(tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
+            <img class="thumbnail" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
             <div class="tile-details">
                 <h3>{tileData.dance.title}</h3>
                 <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->

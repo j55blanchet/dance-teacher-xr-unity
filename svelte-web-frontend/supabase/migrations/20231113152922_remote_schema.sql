@@ -11,17 +11,11 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
-
 CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
-
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
-
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
-
 CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
-
 CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
@@ -48,7 +42,6 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "avatar_url" "text",
     CONSTRAINT "username_length" CHECK (("char_length"("username") >= 3))
 );
-
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
 
 ALTER TABLE ONLY "public"."profiles"
@@ -61,11 +54,8 @@ ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 CREATE POLICY "Public profiles are viewable by everyone." ON "public"."profiles" FOR SELECT USING (true);
-
 CREATE POLICY "Users can insert their own profile." ON "public"."profiles" FOR INSERT WITH CHECK (("auth"."uid"() = "id"));
-
 CREATE POLICY "Users can update own profile." ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id"));
-
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 
 REVOKE USAGE ON SCHEMA "public" FROM PUBLIC;

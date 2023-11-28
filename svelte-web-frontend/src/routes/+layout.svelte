@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick, onMount } from 'svelte';
+	import { tick, onMount, setContext } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
@@ -32,6 +32,8 @@
 
 	let { supabase, session } = data
 	$: ({ supabase, session } = data)
+
+	setContext('supabase', supabase);
 
 	onMount(() => {
 		const { data } = supabase.auth.onAuthStateChange((event, _session) => {
