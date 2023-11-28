@@ -1,10 +1,11 @@
 import Papa, { type ParseResult } from 'papaparse';
 
-import { PoseLandmarkKeysUpperSnakeCase , type Pose2DPixelLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
+import { PoseLandmarkKeysUpperSnakeCase, type Pose2DPixelLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 
 // import json data
 import dancesData from '$lib/data/bundle/dances.json';
 import danceTreeData from '$lib/data/bundle/dancetrees.json';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type Dance = typeof dancesData[number];
 export type DanceTreeDict = typeof danceTreeData;
@@ -105,19 +106,31 @@ export function getAllNodes(node: DanceTreeNode): DanceTreeNode[] {
     ];   
 }
 
-export function getDanceVideoSrc(dance: Dance): string {
-    return `/bundle/source_videos/${dance.clipPath}`;
+export function getDanceVideoSrc(supabase: SupabaseClient, dance: Dance): string {
+    const { data } = supabase.storage
+        .from('sourcevideos')
+        .getPublicUrl(dance.clipPath);
+    return data.publicUrl;
 }
 
-export function getHolisticDataSrc(dance: Dance): string {
-    return `/bundle/holistic_data/${dance.clipRelativeStem}.holisticdata.csv`;
+export function getHolisticDataSrc(supabase: SupabaseClient, dance: Dance): string {
+    const { data } = supabase.storage
+        .from('holisticdata')
+        .getPublicUrl(`${dance.clipRelativeStem}.holisticdata.csv`);
+    return data.publicUrl;
 }
-export function get2DPoseDataSrc(dance: Dance): string {
-    return `/bundle/pose2d_data/${dance.clipRelativeStem}.pose2d.csv`
+export function get2DPoseDataSrc(supabase: SupabaseClient, dance: Dance): string {
+    const { data } = supabase.storage
+        .from('pose2ddata')
+        .getPublicUrl(`${dance.clipRelativeStem}.pose2d.csv`);
+    return data.publicUrl;
 }
 
-export function getThumbnailUrl(dance: Dance): string {
-    return `/bundle/thumbnails/${dance.thumbnailSrc}`;
+export function getThumbnailUrl(supabase: SupabaseClient, dance: Dance): string {
+    const { data } = supabase.storage
+        .from('thumbnails')
+        .getPublicUrl(dance.thumbnailSrc);
+    return data.publicUrl;
 }
 
 /**
@@ -218,11 +231,12 @@ async function loadPoseInformation<T extends Pose2DPixelLandmarks | Pose3DLandma
 /**
  * Get the 2d pose information for a dance. It downloads a CSV file with the pose2d data, then converts
  * the data into a 2d pixel landmark format
+ * @param supabase Supabase client
  * @param dance The dance to load the pose information for
  * @returns The pose information for the dance
  */
-export async function load2DPoseInformation(dance: Dance): Promise<PoseReferenceData<Pose2DPixelLandmarks>> {
-    const pose2dCsvPath = get2DPoseDataSrc(dance);
+export async function load2DPoseInformation(supabase: SupabaseClient, dance: Dance): Promise<PoseReferenceData<Pose2DPixelLandmarks>> {
+    const pose2dCsvPath = get2DPoseDataSrc(supabase, dance);
     return await loadPoseInformation(pose2dCsvPath, dance.fps, GetPixelLandmarksFromPose2DRow);
 }
 
@@ -230,11 +244,12 @@ export async function load2DPoseInformation(dance: Dance): Promise<PoseReference
  * Get the 3d pose information for a dance. It downloads a CSV file with the holistic data, then converts
  * the data into the 3d landmark format that mediapipe uses (but with the added visiblity component that as
  * of 2023-09-18 is only present in the python solution).
+ * @param supabase Supabase client
  * @param dance The dance to load the pose information for
  * @returns The pose information for the dance.
  */
-export async function load3DPoseInformation(dance: Dance): Promise<PoseReferenceData<Pose3DLandmarkFrame>> {
-    const pose3dCsvPath = getHolisticDataSrc(dance);
+export async function load3DPoseInformation(supabase: SupabaseClient, dance: Dance): Promise<PoseReferenceData<Pose3DLandmarkFrame>> {
+    const pose3dCsvPath = getHolisticDataSrc(supabase, dance);
     return await loadPoseInformation(pose3dCsvPath, dance.fps, GetPixelLandmarksFromPose3DRow);
 }
 

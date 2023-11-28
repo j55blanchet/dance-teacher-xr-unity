@@ -97,9 +97,9 @@ $: showSkeletonSettingVisible = showSkeletonSettingVisibleConditions.indexOf(pra
 
         }
 
-        &:has( > input:checked) {
-            color: red;
-        }
+        //&:has( > input:checked) {
+        //    color: red;
+        //}
 
         &.selected {
             color: var(--color-theme-1);
