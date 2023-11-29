@@ -197,3 +197,29 @@ SELECT pg_catalog.setval('"pgsodium"."key_key_id_seq"', 1, false);
 --
 
 RESET ALL;
+
+INSERT INTO storage.buckets (id, name, public)
+    SELECT 'holisticdata', 'holisticdata', true
+    WHERE NOT EXISTS (
+        SELECT 1 FROM storage.buckets WHERE name = 'holisticdata'
+    );
+
+INSERT INTO storage.buckets (id, name, public)
+    SELECT 'pose2ddata', 'pose2ddata', true
+    WHERE NOT EXISTS (
+        SELECT 1 FROM storage.buckets WHERE name = 'pose2ddata'
+    );
+
+INSERT INTO storage.buckets (id, name, public)
+    SELECT 'sourcevideos', 'sourcevideos', true
+    WHERE NOT EXISTS (
+        SELECT 1 FROM storage.buckets WHERE name = 'sourcevideos'
+    );
+
+INSERT INTO storage.buckets (id, name, public)
+    SELECT 'thumbnails', 'thumbnails', true
+    WHERE NOT EXISTS (
+        SELECT 1 FROM storage.buckets WHERE name = 'thumbnails'
+    );
+
+
