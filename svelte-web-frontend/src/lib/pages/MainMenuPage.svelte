@@ -12,7 +12,7 @@ import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
 import ConfoundedFaceIcon from 'virtual:icons/icon-park-outline/confounded-face';
 import DanceIcon from 'virtual:icons/mdi/human-female-dance';
 import { getContext, onMount } from 'svelte';
-	import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let menuData: FolderContents<Dance> = [];
 const supabase = getContext('supabase') as SupabaseClient;
@@ -68,7 +68,7 @@ for(const dance of dances) {
 
 let selectedDance: Dance | null = null;
 
-let matchingDanceTrees = [] as Array<DanceTree>;
+let matchingDanceTrees: DanceTree[] = [];
 let danceTreeMenuItems: FolderContents<DanceTree> = [];
 
 let menuOptions = [];
@@ -93,18 +93,10 @@ function toggleSelectDance(dance: Dance) {
     }
 }
 
-function getDisplayData(visibleDances: [Dance, DanceTree][]) {
-    return visibleDances.map(([dance, danceTree]) => {
-        return [
-            dance,
-            danceTree,
-            frontendPerformanceHistory.lastNAttemptsAllSegments(
-                dance.clipRelativeStem,
-                'skeleton3DAngleSimilarity',
-            ),
-        ] as const;
-    })
-}
+let danceTiles = [] as typeof userVisibleDances;
+danceTiles = userVisibleDances.toSorted((a, b) => {
+    return a[1].root.complexity - b[1].root.complexity;
+});
 
 let perfHistoryStores = [] as ReturnType<typeof frontendPerformanceHistory.lastNAttemptsAllSegments<"skeleton3DAngleSimilarity">>[];
 
@@ -131,7 +123,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 
 <section>
 	<h1>
-		Pick a dance
+		Pick a dance to learn
 	</h1>
 
     {#if $debugMode && $debugMode__viewDanceMenuAsList}
@@ -174,7 +166,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
                 <div class="detail">
                     <span class="label" title="Dance Attempts"><DanceIcon /></span>
                     <div class="performance-history">
-                        {($perfHistoryAggregatedStore[i] ?? []).length}
+                        {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
                     </div>
                 </div>
             </div>
