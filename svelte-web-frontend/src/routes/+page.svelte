@@ -14,6 +14,10 @@ onMount(() => {
 });
 
 let state = "sign_in" as ViewType;
+
+let redirectPath: string;
+$: redirectPath = `${data.url}/auth/callback`;
+$: console.log('Redirect path: ', redirectPath);
 </script>
 
 <svelte:head>
@@ -37,7 +41,7 @@ let state = "sign_in" as ViewType;
 		<Auth
 			supabaseClient={data.supabase}
 			view={state}
-			redirectTo={`${data.url}/auth/callback`}
+			redirectTo={}
 			showLinks={false}
 			appearance={{ theme: ThemeSupa }}
 		/>
@@ -52,6 +56,7 @@ let state = "sign_in" as ViewType;
 			<button class="link" on:click={() => state = "forgotten_password"}>Forgot Password</button>
 			{/if}
 		</div>
+		
 	</div>
 </div>
 
