@@ -41,7 +41,7 @@ $: console.log('Redirect path: ', redirectPath);
 		<Auth
 			supabaseClient={data.supabase}
 			view={state}
-			redirectTo={}
+			redirectTo={redirectPath}
 			showLinks={false}
 			appearance={{ theme: ThemeSupa }}
 		/>
