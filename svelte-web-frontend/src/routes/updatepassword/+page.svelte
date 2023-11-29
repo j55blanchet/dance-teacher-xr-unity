@@ -63,6 +63,8 @@
 
 <main>
   <form on:submit|preventDefault={handleSubmit}>
+    <label for="email">Email:</label>
+    <input class="outlined thin text-disabled" type="email" value={data.session?.user.email} disabled />
     <label for="password">New Password:</label>
     <input class="outlined thin" type="password" bind:value={newPassword} />
     <label for="confirmpassword">Confirm New Password:</label>

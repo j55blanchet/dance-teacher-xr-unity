@@ -57,17 +57,17 @@
         >
             <div>
                 <label for="email">Email</label>
-                <input id="email" type="text" value={session?.user?.email} disabled />
+                <input class="outlined thin text-disabled" id="email" type="text" value={session?.user?.email} disabled />
             </div>
 
             <div>
                 <label for="fullName">Full Name</label>
-                <input id="fullName" name="fullName" type="text" value={form?.fullName ?? fullName} />
+                <input class="outlined thin" id="fullName" name="fullName" type="text" value={form?.fullName ?? fullName} />
             </div>
 
             <div>
                 <label for="username">Username</label>
-                <input id="username" name="username" type="text" value={form?.username ?? username} />
+                <input class="outlined thin" id="username" name="username" type="text" value={form?.username ?? username} />
             </div>
 
             <div>

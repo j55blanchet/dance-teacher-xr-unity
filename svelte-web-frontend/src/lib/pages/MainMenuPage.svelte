@@ -174,10 +174,6 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
         {/each}
     </div>
     {/if} 
-    <div>
-        <a href="/account">Account Page</a>
-    </div>
-	
 	<!-- <Counter /> -->
 </section>
 

@@ -27,8 +27,11 @@ import {
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 import type { User } from "@supabase/supabase-js";
+	import { createEventDispatcher } from "svelte";
 
 export let user: User | null = null;
+
+let dispatch = createEventDispatcher();
 
 // A little mechanism for making the step sizes for the debug pause duration slider
 // increase as the value increases. This is to make it easier to select a value
@@ -175,7 +178,7 @@ function clearPerformanceHistory() {
     <div class="group">
         <h3>Account</h3>
         <code>{user.email}</code>
-        <a href="/account" class="button" aria-label="Account Page">Edit Account</a>
+        <a on:click={() => dispatch('navigate', '/account')} href="/account" class="button" aria-label="Account Page">Edit Account</a>
         <form method="post" action="/account?/signout">
             <div>
                 <button class="button block">Sign Out</button>
