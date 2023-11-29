@@ -34,7 +34,8 @@ $: console.log('Redirect path: ', forgotPasswordRedirectPath);
 			view={state}
 			forgotPasswordRedirectPath={forgotPasswordRedirectPath}
 			on:signedup={() => {
-				goto("/account")
+				goto("/menu")
+				// goto("/account")
 			}}
 			on:signedin={() => {
 				goto("/menu")
