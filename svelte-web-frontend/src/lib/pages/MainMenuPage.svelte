@@ -12,7 +12,7 @@ import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
 import ConfoundedFaceIcon from 'virtual:icons/icon-park-outline/confounded-face';
 import DanceIcon from 'virtual:icons/mdi/human-female-dance';
 import { getContext, onMount } from 'svelte';
-	import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let menuData: FolderContents<Dance> = [];
 const supabase = getContext('supabase') as SupabaseClient;
@@ -68,7 +68,7 @@ for(const dance of dances) {
 
 let selectedDance: Dance | null = null;
 
-let matchingDanceTrees = [] as Array<DanceTree>;
+let matchingDanceTrees: DanceTree[] = [];
 let danceTreeMenuItems: FolderContents<DanceTree> = [];
 
 let menuOptions = [];
@@ -93,18 +93,10 @@ function toggleSelectDance(dance: Dance) {
     }
 }
 
-function getDisplayData(visibleDances: [Dance, DanceTree][]) {
-    return visibleDances.map(([dance, danceTree]) => {
-        return [
-            dance,
-            danceTree,
-            frontendPerformanceHistory.lastNAttemptsAllSegments(
-                dance.clipRelativeStem,
-                'skeleton3DAngleSimilarity',
-            ),
-        ] as const;
-    })
-}
+let danceTiles = [] as typeof userVisibleDances;
+danceTiles = userVisibleDances.toSorted((a, b) => {
+    return a[1].root.complexity - b[1].root.complexity;
+});
 
 let perfHistoryStores = [] as ReturnType<typeof frontendPerformanceHistory.lastNAttemptsAllSegments<"skeleton3DAngleSimilarity">>[];
 
@@ -123,7 +115,7 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 
 <section>
 	<h1>
-		Pick a dance
+		Pick a dance to learn
 	</h1>
 
     {#if $debugMode && $debugMode__viewDanceMenuAsList}
@@ -155,18 +147,19 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 	</div>
     {:else}
     <div class="tiles">
-        {#each userVisibleDances as [dance, danceTree], i (dance.clipRelativeStem)}
+        {#each danceTiles as [dance, danceTree], i (dance.clipRelativeStem)}
         <a class="tile" href={"/teachlesson/" + makeDanceTreeSlug(danceTree)}>
             <img class="thumbnail" src={getThumbnailUrl(supabase, dance)} alt={dance.title + " thumbnail"}>
             <div class="tile-details">
                 <h3>{dance.title}</h3>
                 <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span>
-                <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span>
+                <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt; Difficulty</span> -->
+                <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {danceTree.root.complexity.toFixed(1)}  Difficulty</span>
 
                 <div class="detail">
                     <span class="label" title="Dance Attempts"><DanceIcon /></span>
                     <div class="performance-history">
-                        {($perfHistoryAggregatedStore[i] ?? []).length}
+                        {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
                     </div>
                 </div>
             </div>
