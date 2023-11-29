@@ -11,5 +11,5 @@ export const load: PageServerLoad = async ({ url, locals: { getSession }, depend
     throw redirect(303, '/menu')
   }
 
-  return { url: url.origin, session }
+  return { server_url: url.origin, session }
 }
