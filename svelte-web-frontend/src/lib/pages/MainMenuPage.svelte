@@ -182,7 +182,6 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
         {/each}
     </div>
     {/if} 
-    <div>
 	<!-- <Counter /> -->
 </section>
 

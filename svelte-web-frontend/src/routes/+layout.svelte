@@ -12,8 +12,9 @@
 
 	let showingSettings = false;
 	let showingSettingsCloseButton = false;
-	async function toggleSettings() {
+	async function toggleSettings(setValue?: boolean) {
 		showingSettings = !showingSettings;
+		showingSettings = setValue ?? showingSettings;
 		if (showingSettings) {
 			settingsDialog.showModal();
 			
@@ -47,7 +48,7 @@
 </script>
 
 <div class="app" class:noNavBar={$navbarProps.collapsed}>
-	<NavBar on:settingsButtonClicked={toggleSettings} settingsActive={showingSettings}/>
+	<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
 	<slot />
 
 	<div class="debug">
@@ -57,10 +58,12 @@
 
 	<dialog class="settingsDialog" bind:this={settingsDialog}>
 		<div class="closeButtonContainer">
-			<CloseButton isVisible={showingSettingsCloseButton} on:click={toggleSettings} />
+			<CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} />
 		</div>
 		<div class="settingsContainer outlined">
-			<SettingsPage user={session?.user ?? null} />
+			<SettingsPage 
+				user={session?.user ?? null} 
+				on:navigate={() => toggleSettings(false)}/>
 		</div>
 	</dialog>
 </div>

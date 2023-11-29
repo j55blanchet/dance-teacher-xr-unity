@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 
-    
     import type { SupabaseClient } from '@supabase/supabase-js';
+	import { createEventDispatcher } from 'svelte';
+
+    let dispatch = createEventDispatcher();
   
     export let supabaseClient: SupabaseClient
     export let view: 'sign_in' | 'sign_up' | 'forgot_password'
-    export let redirectTo = '';
+    export let forgotPasswordRedirectPath = '';
   
     let error = '';
     let message = ''; 
@@ -28,12 +30,19 @@
           return
         }
 
-        const { error: signUpError } = await supabaseClient.auth.signUp({
+        const signupResult = await supabaseClient.auth.signUp({
           email, password
         })
   
-        if (signUpError) error = signUpError.message
-        await invalidateAll();
+        if (signupResult.error) {
+            error = signupResult.error.message
+        } else {
+            dispatch('signedup', {
+                session: signupResult.data.session,
+                user: signupResult.data.user,
+            });
+            message = 'Sign up successful!'
+        }
       } else if (view == 'sign_in') {
         const signinResult = await supabaseClient.auth.signInWithPassword({
             email, password
@@ -42,19 +51,29 @@
         if (signinResult.error) {
             error = signinResult.error.message
         } else {
-            await invalidateAll();
+            dispatch('signedin', {
+                session: signinResult.data.session,
+                user: signinResult.data.user,
+            });
+            message = 'Sign in successful!'
         }
+
       } else if (view == 'forgot_password') {
 
-        const { error: forgotPasswordError } = await supabaseClient.auth.resetPasswordForEmail(
+        const resetPasswordEmailResult = await supabaseClient.auth.resetPasswordForEmail(
             email,
             {
-                redirectTo: redirectTo,
+                redirectTo: forgotPasswordRedirectPath,
             },
         )
   
-        if (forgotPasswordError) error = forgotPasswordError.message
-        else message = 'Check your email for the password reset link'
+        if (resetPasswordEmailResult.error) {
+            error = resetPasswordEmailResult.error.message
+        }
+        else {
+            resetPasswordEmailResult.data
+            message = 'Check your email for the password reset link'
+        }
       }
   
       loading = false
@@ -96,7 +115,6 @@
         <button class="button" type="submit" disabled={loading}>Sign in</button>
     {:else}
         <button class="button" type="submit" disabled={loading}>Reset Password</button>
-        <p>Redirect path: {redirectTo}</p>
     {/if}
   
     <div class="flex flex-col buttons">
