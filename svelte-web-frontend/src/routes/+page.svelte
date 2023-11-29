@@ -3,6 +3,7 @@ import { navbarProps } from "$lib/elements/NavBar.svelte";
 import { onMount } from "svelte";
 import { Auth } from '@supabase/auth-ui-svelte'
 import { ThemeSupa, type ViewType } from '@supabase/auth-ui-shared'
+import EmailAuthView from "$lib/elements/auth/EmailAuthView.svelte";
 
 export let data
 
@@ -13,10 +14,14 @@ onMount(() => {
 	});
 });
 
-let state = "sign_in" as ViewType;
+let state = "sign_in" as "sign_in" | "sign_up" | "forgot_password";
 
 let redirectPath: string;
 $: redirectPath = `${data.url}/auth/callback`;
+onMount(() => {
+	redirectPath = `${data.url}/auth/callback`;
+	return {}
+})
 $: console.log('Redirect path: ', redirectPath);
 </script>
 
@@ -27,35 +32,12 @@ $: console.log('Redirect path: ', redirectPath);
 
 <div class="row flex-center flex">
 	<div class="col-6 form-widget">
-		<h3>
-			{#if state === "sign_in"}
-				Sign In
-			{:else if state === "sign_up"}
-				Create Account
-			{:else if state === "forgotten_password"}
-				Password Reset
-			{:else}
-				{state}
-			{/if}
-		</h3>
-		<Auth
+
+		<EmailAuthView
 			supabaseClient={data.supabase}
 			view={state}
 			redirectTo={redirectPath}
-			showLinks={false}
-			appearance={{ theme: ThemeSupa }}
-		/>
-		<div class="flex flex-col buttons">
-			{#if state !== "sign_in"}
-			<button class="link" on:click={() => state = "sign_in"}>Sign In</button>
-			{/if}
-			{#if state !== "sign_up"}
-			<button class="link" on:click={() => state = "sign_up"}>Create Account</button>
-			{/if}
-			{#if state !== "forgotten_password"}
-			<button class="link" on:click={() => state = "forgotten_password"}>Forgot Password</button>
-			{/if}
-		</div>
+			/>
 		
 	</div>
 </div>

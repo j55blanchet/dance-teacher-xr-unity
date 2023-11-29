@@ -1,10 +1,3 @@
-
-INSERT INTO storage.buckets (id, name)
-    SELECT 'dancevideos', 'dancevideos'
-    WHERE NOT EXISTS (
-        SELECT 1 FROM storage.buckets WHERE name = 'dancevideos'
-    );
-
 CREATE TABLE IF NOT EXISTS DanceDemoVideo (
     id SERIAL PRIMARY KEY,
     url TEXT NOT NULL,
