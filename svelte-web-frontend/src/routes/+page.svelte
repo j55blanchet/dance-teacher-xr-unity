@@ -1,25 +1,20 @@
 <script lang="ts">
 import { navbarProps } from "$lib/elements/NavBar.svelte";
 import { onMount } from "svelte";
-import { Auth } from '@supabase/auth-ui-svelte'
-import { ThemeSupa, type ViewType } from '@supabase/auth-ui-shared'
 import EmailAuthView from "$lib/elements/auth/EmailAuthView.svelte";
 
 export let data
 
+let state = "sign_in" as "sign_in" | "sign_up" | "forgot_password";
+
+let redirectPath: string;
+$: redirectPath = `${data.origin}/auth/callback`;
 onMount(() => {
 	navbarProps.set({
 		collapsed: true,
 		pageTitle: "Login",
 	});
-});
-
-let state = "sign_in" as "sign_in" | "sign_up" | "forgot_password";
-
-let redirectPath: string;
-$: redirectPath = `${data.url}/auth/callback`;
-onMount(() => {
-	redirectPath = `${data.url}/auth/callback`;
+	redirectPath = `${data.origin}/auth/callback`;
 	return {}
 })
 $: console.log('Redirect path: ', redirectPath);
@@ -39,6 +34,8 @@ $: console.log('Redirect path: ', redirectPath);
 			redirectTo={redirectPath}
 			/>
 		
+			<div>Origin: {data.origin}</div>
+			<div>Server URL: {data.server_url}</div>
 	</div>
 </div>
 
