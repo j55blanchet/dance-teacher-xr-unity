@@ -13,6 +13,11 @@ onMount(() => {
 
 </script>
 
+<svelte:head>
+	<title>Dance Menu | DanceTeacher</title>
+	<meta name="description" content="Dance sleection menu for the dance teacher app." />
+</svelte:head>	
+
 <div class="mainMenuPage">
     <MainMenuPage />
 </div>

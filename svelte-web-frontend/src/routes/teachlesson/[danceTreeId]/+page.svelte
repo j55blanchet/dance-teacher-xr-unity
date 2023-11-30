@@ -30,8 +30,8 @@ function updateQueryParams(selectedNodeId: string) {
 </script>
 
 <svelte:head>
-	<title>{dance.title} (Preview)</title>
-	<meta name="description" content="App for learning the dance: {dance.title}" />
+	<title>{dance.title} | Dance Teacher</title>
+	<meta name="description" content="Dance Teahcer App - Learn '{dance.title}'" />
 </svelte:head>
 
 <DanceTreePage 

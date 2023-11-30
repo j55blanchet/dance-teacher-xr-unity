@@ -46,6 +46,11 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Account | DanceTeacher</title>
+	<meta name="description" content="Dance Teacher Account Page" />
+</svelte:head>	
+
 <div class="accountPage">
     <div class="form-widget">
         <form

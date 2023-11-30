@@ -59,7 +59,7 @@ $: {
 </script>
 
 <svelte:head>
-	<title>{dance.title} '{danceTreeNode.id}' Practice</title>
+	<title>Practice '{danceTreeNode.id}' | {dance.title} | Dance Teacher</title>
 	<meta name="description" content="Practice page for section {danceTreeNode.id} of dance: {dance.title}" />
 </svelte:head>
 
