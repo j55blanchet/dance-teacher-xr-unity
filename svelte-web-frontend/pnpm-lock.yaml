@@ -38,9 +38,6 @@ devDependencies:
   '@types/cookie':
     specifier: ^0.5.3
     version: 0.5.3
-  '@types/microlight':
-    specifier: ^0.0.0
-    version: 0.0.0
   '@types/papaparse':
     specifier: ^5.3.9
     version: 5.3.9
@@ -742,10 +739,6 @@ packages:
 
   /@types/json-schema@7.0.12:
     resolution: {integrity: sha512-Hr5Jfhc9eYOQNPYO5WLDq/n4jqijdHNlDXjuAQkkt+mWdQR+XJToOHrsD4cPaMXpn6KO7y2+wM8AZEs8VpBLVA==}
-    dev: true
-
-  /@types/microlight@0.0.0:
-    resolution: {integrity: sha512-PhPnbZkunal+hvIwXKct4KimoQIwiYvBx9yQRBR+kC302420pGRYGZEnLtY1seR/bjlV7bUUs7na4Z5tu3060w==}
     dev: true
 
   /@types/node-fetch@2.6.5:
