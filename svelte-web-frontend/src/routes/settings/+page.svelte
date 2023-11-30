@@ -18,4 +18,9 @@ onMount(() => {
 
 </script>
 
+<svelte:head>
+	<title>Settings | DanceTeacher</title>
+	<meta name="description" content="Dance Teacher Settings Page" />
+</svelte:head>	
+
 <SettingsPage />
