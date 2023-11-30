@@ -10,9 +10,6 @@
 
   let errorMessage = null as null | string;
   let successMessage = null as null | string;
-  
-  let code = null as null | string;
-
   let submitInProgress = false;
 
   async function handleSubmit() {
@@ -46,9 +43,6 @@
 
   onMount(() => {
     // Get the code from the query parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    code = urlParams.get('code');
-
     navbarProps.set({
       collapsed: false,
       pageTitle: `Edit Password`,
