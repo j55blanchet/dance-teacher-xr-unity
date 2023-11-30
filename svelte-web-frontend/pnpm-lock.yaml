@@ -14,9 +14,6 @@ devDependencies:
   '@mediapipe/tasks-vision':
     specifier: ^0.10.6
     version: 0.10.6
-  '@neoconfetti/svelte':
-    specifier: ^1.0.0
-    version: 1.0.0
   '@supabase/auth-helpers-sveltekit':
     specifier: ^0.10.3
     version: 0.10.3(@supabase/supabase-js@2.38.1)(@sveltejs/kit@1.25.2)
@@ -497,10 +494,6 @@ packages:
 
   /@mediapipe/tasks-vision@0.10.6:
     resolution: {integrity: sha512-DzWMTI0FIeIPsVqnFKRKFQ3yng9qrtT3YuYkGNVeoob12br4+MVoLFlfkKP36mIAYM9/Vj2SarXCvTA14rdQsQ==}
-    dev: true
-
-  /@neoconfetti/svelte@1.0.0:
-    resolution: {integrity: sha512-SmksyaJAdSlMa9cTidVSIqYo1qti+WTsviNDwgjNVm+KQ3DRP2Df9umDIzC4vCcpEYY+chQe0i2IKnLw03AT8Q==}
     dev: true
 
   /@nodelib/fs.scandir@2.1.5:
