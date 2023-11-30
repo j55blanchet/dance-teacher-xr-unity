@@ -17,7 +17,6 @@
 		"@anthropic-ai/sdk": "^0.7.0",
 		"@iconify/json": "^2.2.147",
 		"@mediapipe/tasks-vision": "^0.10.6",
-		"@neoconfetti/svelte": "^1.0.0",
 		"@supabase/auth-helpers-sveltekit": "^0.10.3",
 		"@supabase/auth-ui-shared": "^0.1.8",
 		"@supabase/auth-ui-svelte": "^0.2.7",
