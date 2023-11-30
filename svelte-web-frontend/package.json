@@ -25,7 +25,6 @@
 		"@sveltejs/adapter-vercel": "^3.0.3",
 		"@sveltejs/kit": "^1.25.2",
 		"@types/cookie": "^0.5.3",
-		"@types/microlight": "^0.0.0",
 		"@types/papaparse": "^5.3.9",
 		"@types/uuid": "^9.0.5",
 		"@typescript-eslint/eslint-plugin": "^5.62.0",
