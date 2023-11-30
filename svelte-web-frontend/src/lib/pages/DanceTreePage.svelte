@@ -8,7 +8,7 @@ import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigur
 import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode, findDanceTreeNode } from '$lib/data/dances-store';
 import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
-import { createEventDispatcher, onMount, tick } from 'svelte';
+import { createEventDispatcher, getContext, onMount, tick } from 'svelte';
 
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
 import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage, practiceActivities__playbackSpeed } from '$lib/model/settings';
@@ -17,11 +17,12 @@ import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '
 import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
 
 import InfoIcon from 'virtual:icons/icon-park-outline/info';
-import NameIcon from 'virtual:icons/icon-park-outline/info';
-import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
-import DanceIcon from 'virtual:icons/mdi/human-female-dance';
+// import NameIcon from 'virtual:icons/icon-park-outline/info';
+// import ClockIcon from 'virtual:icons/icon-park-outline/alarm-clock';
+// import DanceIcon from 'virtual:icons/mdi/human-female-dance';
 
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
+	import type { SupabaseClient } from '@supabase/supabase-js';
 
 export let dance: Dance;
 export let danceTree: DanceTree;
@@ -29,13 +30,15 @@ export let preselectedNodeId: string | null = null;
 
 const dispatch = createEventDispatcher();
 
+let supabase: SupabaseClient = getContext('supabase');
+
 // Pin the video small, so the flexbox system can auto-size the height
 let videoElement: VideoWithSkeleton | undefined;
 let fitVideoToFlexbox = true;
 
 let danceSrc: string = '';
 $: {
-    danceSrc = getDanceVideoSrc(dance);
+    danceSrc = getDanceVideoSrc(supabase, dance);
 }
 let danceBeatTimes: number[] = [];
 
@@ -234,7 +237,7 @@ onMount(() => {
             <!-- {#if currentPlayingNode}
             <h3>Information</h3>
             <div class="infoList">
-                <span class="label" title="Section Name"><NameIcon /></span><span class="data">{currentPlayingNode.id}</span>
+                <span class="label" title="Section Name"><InfoIcon /></span><span class="data">{currentPlayingNode.id}</span>
                 <span class="label" title="Duration"><ClockIcon /></span><span class="data">{(currentPlayingNode.end_time - currentPlayingNode.start_time).toFixed(2)}s</span>
                 <span class="label" title="Attempts"><DanceIcon /></span><span class="data">{currentSegmentAttemptCount}</span>
             </div>

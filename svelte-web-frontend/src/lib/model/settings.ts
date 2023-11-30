@@ -32,9 +32,10 @@ export const stepMin = 0.1;
 export const stepMax = 5;
 
 function createSettingsStore<T>(key: string, defaultValue: T, stringParser: (input: string) => T) {
-    const initialValue = localStorage[key] === undefined ? defaultValue : stringParser(localStorage[key]);
+    const initialValue = defaultValue;
+    // const initialValue = localStorage[key] === undefined ? defaultValue : stringParser(localStorage[key]);
     const settingsStore = writable(initialValue);
-    settingsStore.subscribe((value) => localStorage[key] = String(value));
+    // settingsStore.subscribe((value) => localStorage[key] = String(value));
     return settingsStore;
 }
 

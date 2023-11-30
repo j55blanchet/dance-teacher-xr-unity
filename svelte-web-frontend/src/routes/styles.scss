@@ -18,7 +18,7 @@
 	--color-theme-1: var(--color-blue);
 	--color-theme-2: #var(--color-red);
 	--color-text: rgba(0, 0, 0, 0.7);
-	--coxlor-text-disabled: rgba(100, 100, 100, 0.5);
+	--color-text-disabled: rgba(100, 100, 100, 0.5);
 	--color-text-label: rgba(50, 50, 50, 0.6);
 	
 	--max-line-width: 50ch;
@@ -47,6 +47,10 @@ body {
 }
 .text-label {
 	color: var(--color-text-label);
+}
+
+.text-red {
+	color: var(--color-red)
 }
 
 h1,
@@ -129,6 +133,19 @@ button:focus:not(:focus-visible) {
 	white-space: nowrap;
 }
 
+.link {
+	color: var(--color-theme-1);
+	text-decoration: none;
+	padding: 0;
+	margin: 0;
+	border: none;
+	cursor: pointer;	
+	background-color: transparent;
+}
+.link:hover {
+	text-decoration: underline;
+}
+
 .button, .outlined {
 	border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
 	border-width: 3.5px;
@@ -136,6 +153,12 @@ button:focus:not(:focus-visible) {
 	border-style: solid;
 	color: var(--color-text);
 }
+.button.text-disabled, .outlined.text-disabled {
+	border-color: var(--color-text-disabled);
+	color: var(--color-text-disabled);
+	cursor: not-allowed;
+}
+
 .button {
 	padding: 0.5em;
 	// margin: 0.25em;

@@ -1,9 +1,16 @@
-import { DrawingUtils, type NormalizedLandmark, type LandmarkData } from "@mediapipe/tasks-vision";
+import type { DrawingUtils, NormalizedLandmark, LandmarkData } from "@mediapipe/tasks-vision";
 import { SwapLeftRightLandmarks } from "$lib/webcam/mediapipe-utils";
 
 import {feedback_YellowThreshold, feedback_GreenThreshold} from '$lib/model/settings';
 import { QijiaMethodComparisonVectors } from "./EvaluationCommonUtils";
 import type { FrontendLiveEvaluationResult } from "./FrontendDanceEvaluator";
+import { browser } from "$app/environment";
+
+let ResolvedDrawingUtils: typeof import ('@mediapipe/tasks-vision').DrawingUtils | undefined;
+
+if (browser) {
+    import("@mediapipe/tasks-vision").then(m => ResolvedDrawingUtils = m.DrawingUtils);
+}
 
 const QijiaMethodVectorConnections = QijiaMethodComparisonVectors.map(([lm1, lm2]) => {
     return {
@@ -53,9 +60,11 @@ export function Draw2dSkeleton(
     if (flipLeftRight) {
         pose = SwapLeftRightLandmarks(pose);
     }
+
+    if (!ResolvedDrawingUtils) return;
     
     // We'll color code only the vectors with the lowest score
-    const drawUtils = new DrawingUtils(ctx);
+    const drawUtils = new ResolvedDrawingUtils(ctx);
     drawUtils.drawConnectors(
         pose, 
         QijiaMethodVectorConnections,

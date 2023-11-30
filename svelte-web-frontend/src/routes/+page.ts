@@ -1,3 +1,11 @@
-// since there's no dynamic data here, we can prerender
-// it so that it gets served as a static asset in production
+import type { PageLoad } from "./$types";
+
+export const load: PageLoad = async ({ url, data }) => {
+    
+    return {
+        server_url: data.server_url,
+        origin: url.origin,
+    }
+};
+
 export const prerender = true;

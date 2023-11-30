@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import type { BaseMetric } from "./motionmetrics/MotionMetric";
 
 import { writable, derived } from 'svelte/store';
@@ -19,6 +20,10 @@ export type CompletePerformanceHistory<MetricTypes extends Record<string, BaseMe
 }
 
 function loadPerformanceHistoryFromLocalstorage<MetricTypes extends Record<string, BaseMetric<any, any>>>() {
+    if (!browser) {
+        return {} as CompletePerformanceHistory<MetricTypes>;
+    }
+
     const history = localStorage.getItem("performanceHistory");
     if (history) {
         const data = JSON.parse(history) as CompletePerformanceHistory<MetricTypes>;

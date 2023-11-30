@@ -1,19 +1,51 @@
 <script lang="ts">
 import { navbarProps } from "$lib/elements/NavBar.svelte";
-import MainMenuPage from "$lib/pages/MainMenuPage.svelte";
 import { onMount } from "svelte";
+import EmailAuthView from "$lib/elements/auth/EmailAuthView.svelte";
+	import { goto } from "$app/navigation";
 
+export let data
+
+let state = "sign_in" as "sign_in" | "sign_up" | "forgot_password";
+
+let forgotPasswordRedirectPath: string;
+$: forgotPasswordRedirectPath = `${data.origin}/auth/callback`;
 onMount(() => {
 	navbarProps.set({
 		collapsed: true,
-		pageTitle: "Home",
+		pageTitle: "Login",
 	});
-});
+	forgotPasswordRedirectPath = `${data.origin}/auth/callback`;
+	return {}
+})
+$: console.log('Redirect path: ', forgotPasswordRedirectPath);
 </script>
 
 <svelte:head>
-	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
-</svelte:head>
+	<title>Login | DanceTeacher</title>
+	<meta name="description" content="Dance Teacher Login Page" />
+</svelte:head>	
 
-<MainMenuPage />
+<div class="row flex-center flex">
+	<div class="col-6 form-widget">
+
+		<EmailAuthView
+			supabaseClient={data.supabase}
+			view={state}
+			forgotPasswordRedirectPath={forgotPasswordRedirectPath}
+			on:signedup={() => {
+				goto("/menu")
+				// goto("/account")
+			}}
+			on:signedin={() => {
+				goto("/menu")
+			}}
+			/>
+	</div>
+</div>
+
+<style>
+	.buttons {
+		gap:0.25rem;
+	}
+</style>

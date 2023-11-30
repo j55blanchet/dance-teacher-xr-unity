@@ -1,19 +1,20 @@
 <script lang="ts">
-	import { writable } from 'svelte/store';
-	import { setContext, tick } from 'svelte';
+	import { tick, onMount, setContext } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
 	import SettingsPage from '$lib/pages/SettingsPage.svelte';
 	import CloseButton from '$lib/elements/CloseButton.svelte';
+	import { invalidate } from '$app/navigation'
 	import { waitSecs } from '$lib/utils/async';
 
 	let settingsDialog: HTMLDialogElement;
 
 	let showingSettings = false;
 	let showingSettingsCloseButton = false;
-	async function toggleSettings() {
+	async function toggleSettings(setValue?: boolean) {
 		showingSettings = !showingSettings;
+		showingSettings = setValue ?? showingSettings;
 		if (showingSettings) {
 			settingsDialog.showModal();
 			
@@ -27,11 +28,27 @@
 			settingsDialog.close();
 		}
 	}
+
+	export let data
+
+	let { supabase, session } = data
+	$: ({ supabase, session } = data)
+
+	setContext('supabase', supabase);
+
+	onMount(() => {
+		const { data } = supabase.auth.onAuthStateChange((event, _session) => {
+			if (_session?.expires_at !== session?.expires_at) {
+				invalidate('supabase:auth')
+			}
+		})
+
+		return () => data.subscription.unsubscribe()
+	})
 </script>
 
 <div class="app" class:noNavBar={$navbarProps.collapsed}>
-	<NavBar on:settingsButtonClicked={toggleSettings} settingsActive={showingSettings}/>
-
+	<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
 	<slot />
 
 	<div class="debug">
@@ -41,10 +58,12 @@
 
 	<dialog class="settingsDialog" bind:this={settingsDialog}>
 		<div class="closeButtonContainer">
-			<CloseButton isVisible={showingSettingsCloseButton} on:click={toggleSettings} />
+			<CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} />
 		</div>
 		<div class="settingsContainer outlined">
-			<SettingsPage />
+			<SettingsPage 
+				user={session?.user ?? null} 
+				on:navigate={() => toggleSettings(false)}/>
 		</div>
 	</dialog>
 </div>
@@ -54,7 +73,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
-		align-items: start;
+		align-items: center;
 		justify-content: center;
 		--navbar_height: 3rem;
 		--content_height: calc(100vh - var(--navbar_height));

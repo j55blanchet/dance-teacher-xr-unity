@@ -17,7 +17,7 @@ import { Draw2dSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
 import VideoWithSkeleton from "$lib/elements/VideoWithSkeleton.svelte";
 import VirtualMirror from "$lib/elements/VirtualMirror.svelte";
 import metronomeClickSoundSrc from '$lib/media/audio/metronome.mp3';
-import { onMount, createEventDispatcher, tick } from "svelte";
+import { onMount, createEventDispatcher, tick, getContext } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
@@ -35,12 +35,12 @@ import { browser } from '$app/environment';
 import { waitSecs } from '$lib/utils/async';
 import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeActivityInterfaceSettings } from '$lib/model/PracticeActivity';
 import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
-import CloseButton from '$lib/elements/CloseButton.svelte';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+const supabase = getContext('supabase') as SupabaseClient;
 
 export let mirrorForEvaluation: boolean = true;
-
 export let dance: Dance;
-
 export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
@@ -58,7 +58,6 @@ $: {
         || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
         || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
 }
-
 
 let hasVisibleReferenceVideo: boolean;
 $: hasVisibleReferenceVideo = interfaceSettings.referenceVideo.visibility === 'visible';
@@ -102,7 +101,7 @@ $: {
     beatDuration = danceSecsPerBeat / videoPlaybackSpeed;
 }
 
-let clickAudioElement: HTMLAudioElement = new Audio(metronomeClickSoundSrc);;
+let clickAudioElement: HTMLAudioElement;
 let virtualMirrorElement: VirtualMirror;
 let videoWithSkeleton: VideoWithSkeleton;
 let videoCurrentTime: number = 0;
@@ -215,7 +214,7 @@ let rejectWebcamRecordedObjectUrl: ((reason?: any) => void) | null = null;
 let webcamRecordedObjectURL: Promise<string> | null = null;
 
 $: {
-    danceSrc = getDanceVideoSrc(dance);
+    danceSrc = getDanceVideoSrc(supabase, dance);
 }
 
 $: {
@@ -551,11 +550,11 @@ export async function reset() {
     let ref2dPosesPromise: ReturnType<typeof load2DPoseInformation> | null = null;
     let ref3dPosesPromise: ReturnType<typeof load3DPoseInformation> | null = null;
     if (!referenceDancePoses2D) {
-        ref2dPosesPromise = load2DPoseInformation(dance);
+        ref2dPosesPromise = load2DPoseInformation(supabase, dance);
         promises.push(ref2dPosesPromise);
     }  
     if (!referenceDancePoses3D) {
-        ref3dPosesPromise = load3DPoseInformation(dance);
+        ref3dPosesPromise = load3DPoseInformation(supabase, dance);
         promises.push(ref3dPosesPromise);
     }
     if (ref2dPosesPromise) { referenceDancePoses2D = await ref2dPosesPromise; }
@@ -697,6 +696,7 @@ onMount(() => {
     // Prepare pose estimation, so that it'll be ready 
     // when we need it, as opposed to creating the model
     // after the video starts playing.
+    clickAudioElement = new Audio(metronomeClickSoundSrc);
     videoCurrentTime = practiceActivity?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
