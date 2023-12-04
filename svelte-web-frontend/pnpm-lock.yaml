@@ -21,8 +21,8 @@ devDependencies:
     specifier: ^0.1.8
     version: 0.1.8(@supabase/supabase-js@2.38.1)
   '@supabase/auth-ui-svelte':
-    specifier: ^0.2.7
-    version: 0.2.7(@supabase/supabase-js@2.38.1)
+    specifier: ^0.2.8
+    version: 0.2.8(@supabase/supabase-js@2.38.1)
   '@supabase/supabase-js':
     specifier: ^2.38.1
     version: 2.38.1
@@ -565,8 +565,8 @@ packages:
       '@supabase/supabase-js': 2.38.1
     dev: true
 
-  /@supabase/auth-ui-svelte@0.2.7(@supabase/supabase-js@2.38.1):
-    resolution: {integrity: sha512-zK+FTBTNETMWDFZ1iRYAdd8ZgNzJxbNnIEVkbe1Q1ApqLtTPQxzxvRJHAa/TZQq3tZVFpUJYhQjXFC3gFsAGwg==}
+  /@supabase/auth-ui-svelte@0.2.8(@supabase/supabase-js@2.38.1):
+    resolution: {integrity: sha512-yzxo1fljuwx66JUysOYdiBhhjdU2ubVDBLbsbLGiIcRhZXyzSSqaDvmboZGOddQazHHRN5tr/zBXnSGv+1gC0A==}
     peerDependencies:
       '@supabase/supabase-js': ^2.21.0
     dependencies:
