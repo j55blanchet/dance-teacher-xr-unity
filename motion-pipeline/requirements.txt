@@ -8,5 +8,5 @@ librosa ~=0.10.1
 moviepy ~=1.0.3
 pydub ~=0.25.1
 psutil~=5.9
-dataclasses-json~=0.6.2
+dataclasses-json~=0.6.3
 tqdm >= 4.65.0
