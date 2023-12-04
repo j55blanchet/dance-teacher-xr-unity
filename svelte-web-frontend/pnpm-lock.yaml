@@ -9,8 +9,8 @@ devDependencies:
     specifier: ^0.7.0
     version: 0.7.0
   '@iconify/json':
-    specifier: ^2.2.150
-    version: 2.2.150
+    specifier: ^2.2.151
+    version: 2.2.151
   '@mediapipe/tasks-vision':
     specifier: ^0.10.6
     version: 0.10.6
@@ -408,8 +408,8 @@ packages:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
     dev: true
 
-  /@iconify/json@2.2.150:
-    resolution: {integrity: sha512-SltvXzHpr919VfTXlxYaO9hWIOZnDl3DMnqdB+BVsh2nHs7QkKHEdimx3XhDmX5wJAKg7gup7sGDwwh9P3aTqQ==}
+  /@iconify/json@2.2.151:
+    resolution: {integrity: sha512-Un9kUOTob8Q6yIYykWR6LlyR3gA65q+OZYi/h2mcg0lOwJnE4M8fvmUdherdQ74Jrhtspj1B6UyjskugRkjoXw==}
     dependencies:
       '@iconify/types': 2.0.0
       pathe: 1.1.1
