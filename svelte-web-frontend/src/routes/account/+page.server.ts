@@ -34,10 +34,9 @@ export const actions = {
     })
 
     if (error) {
+      
       return fail(500, {
-        fullName,
-        username,
-        avatarUrl,
+        error,  
       })
     }
 
@@ -45,6 +44,7 @@ export const actions = {
       fullName,
       username,
       avatarUrl,
+      success: true,
     }
   },
   signout: async ({ locals: { supabase, getSession } }) => {

@@ -31,7 +31,8 @@
     /** @type {import('./$types').SubmitFunction} */    
 	const handleSubmit = () => {
 		loading = true
-		return async () => {
+		return async ({ update }) => {
+            update();
 			loading = false
 		}
 	}
@@ -40,8 +41,8 @@
 	const handleSignOut = () => {
 		loading = true
 		return async ({ update }) => {
-			loading = false
 			update()
+            loading = false
 		}
 	}
 </script>
@@ -76,13 +77,15 @@
             </div>
 
             <div>
-                <input
+                <button
                     type="submit"
                     class="button block primary"
-                    value={loading ? 'Loading...' : 'Update'}
                     disabled={loading}
-                />
+                >{loading ? 'Loading...' : 'Update'}</button>
+                <span>{#if form?.success}Update Successful{/if}</span>
             </div>
+
+            
         </form>
 
         <form method="post" action="?/signout" use:enhance={handleSignOut}>
