@@ -43,7 +43,7 @@
 		"typescript": "^5.2.2",
 		"unplugin-icons": "^0.17.1",
 		"uuid": "^9.0.1",
-		"vite": "^4.4.11",
+		"vite": "^4.4.12",
 		"vitest": "^0.34.6",
 		"wasm-feature-detect": "^1.5.1"
 	},
