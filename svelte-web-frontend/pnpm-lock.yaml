@@ -12,8 +12,8 @@ devDependencies:
     specifier: ^2.2.151
     version: 2.2.151
   '@mediapipe/tasks-vision':
-    specifier: ^0.10.6
-    version: 0.10.6
+    specifier: ^0.10.8
+    version: 0.10.8
   '@supabase/auth-helpers-sveltekit':
     specifier: ^0.10.3
     version: 0.10.3(@supabase/supabase-js@2.38.1)(@sveltejs/kit@1.27.6)
@@ -492,8 +492,8 @@ packages:
       - supports-color
     dev: true
 
-  /@mediapipe/tasks-vision@0.10.6:
-    resolution: {integrity: sha512-DzWMTI0FIeIPsVqnFKRKFQ3yng9qrtT3YuYkGNVeoob12br4+MVoLFlfkKP36mIAYM9/Vj2SarXCvTA14rdQsQ==}
+  /@mediapipe/tasks-vision@0.10.8:
+    resolution: {integrity: sha512-Rp7ll8BHrKB3wXaRFKhrltwZl1CiXGdibPxuWXvqGnKTnv8fqa/nvftYNuSbf+pbJWKYCXdBtYTITdAUTGGh0Q==}
     dev: true
 
   /@nodelib/fs.scandir@2.1.5:
