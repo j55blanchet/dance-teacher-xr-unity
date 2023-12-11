@@ -14,7 +14,7 @@
 		"coverage": "vitest run --coverage"
 	},
 	"devDependencies": {
-		"@anthropic-ai/sdk": "^0.7.0",
+		"@anthropic-ai/sdk": "^0.10.2",
 		"@iconify/json": "^2.2.151",
 		"@mediapipe/tasks-vision": "^0.10.6",
 		"@supabase/auth-helpers-sveltekit": "^0.10.3",

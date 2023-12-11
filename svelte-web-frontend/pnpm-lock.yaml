@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@anthropic-ai/sdk':
-    specifier: ^0.7.0
-    version: 0.7.0
+    specifier: ^0.10.2
+    version: 0.10.2
   '@iconify/json':
     specifier: ^2.2.151
     version: 2.2.151
@@ -128,8 +128,8 @@ packages:
     resolution: {integrity: sha512-pvFiLP2BeOKA/ZOS6jxx4XhKzdVLHDhGlFEaZ2flWWYf2xOqVniqpk38I04DFRyz+L0ASggl7SkItTc+ZLju4w==}
     dev: true
 
-  /@anthropic-ai/sdk@0.7.0:
-    resolution: {integrity: sha512-qEXJ+R9LcNhSYM8Av/9dUALtNnvo2ub3IaF4WXipHLOoawFF6zJprCjzYDrnE8M4WNmEGvD11BSt0REUlv8MMQ==}
+  /@anthropic-ai/sdk@0.10.2:
+    resolution: {integrity: sha512-ranlsLhft0njz4s0YdKxUtbouoPPTIlnmpBxUNZfmKplF6GCNIomC9YjHf4GJNJyrUHrsikl10GnvPVU6LK+WA==}
     dependencies:
       '@types/node': 18.17.17
       '@types/node-fetch': 2.6.5
