@@ -106,13 +106,20 @@ function getDisplayData(visibleDances: [Dance, DanceTree][]) {
 const perfHistoryStores = userVisibleDances.map(([dance, danceTree]) => frontendPerformanceHistory.lastNAttemptsAllSegments(
         dance.clipRelativeStem,
         'skeleton3DAngleSimilarity',
-    
     )
 )
 const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     return stores;
 });
 
+let danceTiles = [] as {dance: Dance, pageUrl: string}[];
+$: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
+    return {
+        dance,
+        pageUrl: "/dance/" + encodeURIComponent(dance.clipRelativeStem) + "/",
+        // pageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
+    }
+})
 </script>
 
 <section>
@@ -149,13 +156,13 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 	</div>
     {:else}
     <div class="tiles">
-        {#each userVisibleDances as [dance, danceTree], i (dance.clipRelativeStem)}
-        <a class="tile" href={"/teachlesson/" + makeDanceTreeSlug(danceTree)}>
-            <img class="thumbnail" src={getThumbnailUrl(dance)} alt={dance.title + " thumbnail"}>
+        {#each danceTiles as tileData, i (tileData.dance.clipRelativeStem)}
+        <a class="tile" href={tileData.pageUrl}>
+            <img class="thumbnail" src={getThumbnailUrl(tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
             <div class="tile-details">
-                <h3>{dance.title}</h3>
-                <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span>
-                <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span>
+                <h3>{tileData.dance.title}</h3>
+                <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->
+                <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span> -->
 
                 <div class="detail">
                     <span class="label" title="Dance Attempts"><DanceIcon /></span>

@@ -27,8 +27,8 @@
         "a11y-click-events-have-key-events": "ignore",
     },
 
-    "typescript.inlayHints.parameterNames.enabled": "all",
-    "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
-    "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
-    "typescript.inlayHints.variableTypes.enabled": true
+    "typescript.inlayHints.parameterNames.enabled": "literals",
+    "typescript.inlayHints.functionLikeReturnTypes.enabled": false,
+    "typescript.inlayHints.propertyDeclarationTypes.enabled": false,
+    "typescript.inlayHints.variableTypes.enabled": false
 }

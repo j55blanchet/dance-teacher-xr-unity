@@ -48,6 +48,11 @@ export function makeDanceTreeSlug(danceTree: DanceTree): string {
     return encodeURIComponent(`${danceTree.clip_relativepath}${URI_COMPONENT_SEPARATOR}${danceTree.tree_name}`)
 }
 
+export function getDanceFromDanceId(danceIdSlug: string): Dance | null {
+    const danceId = decodeURIComponent(danceIdSlug);
+    return dances.find((dance) => dance.clipRelativeStem === danceId) ?? null;
+}
+
 export function getDanceAndDanceTreeFromDanceTreeId(slug: string): [Dance | null, DanceTree | null] {
     const [clipRelativeStem, tree_name] = decodeURIComponent(slug).split(URI_COMPONENT_SEPARATOR);
     

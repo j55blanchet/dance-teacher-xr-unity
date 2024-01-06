@@ -7,9 +7,13 @@ import { navbarProps } from "$lib/elements/NavBar.svelte";
 
 /** @type {import('./$types').PageData} */    
 export let data;
-const dance: Dance = data.dance;
-const danceTree: DanceTree = data.danceTree;
-const preselectedNodeId = data.preselectedNodeId;
+let dance: Dance;
+let danceTree: DanceTree;
+let preselectedNodeId: string;
+
+$: dance = data.dance;
+$: danceTree = data.danceTree;
+$: preselectedNodeId = data.preselectedNodeId;
 $: {
 	navbarProps.set({
 		collapsed: false,
