@@ -1,20 +1,21 @@
 <script lang="ts">
+	import type { Dance } from "$lib/data/dances-store.js";
 	import { navbarProps } from "$lib/elements/NavBar.svelte";
 
 
-    /** @type {import('./$types').PageData} */ 
     export let data;
     let dance: Dance;
     $: dance = data.dance;
-
 
     $: {
         navbarProps.update(props => ({
             ...props,
             collapsed: false,
             pageTitle: `Dashboard: ${dance?.title}`,
-            backPageUrl: '/',
-            backPageTitle: 'Home',
+            back: {
+                url: '/',
+                title: 'Home',
+            },
         }));
     }
 </script>
