@@ -287,6 +287,8 @@ function barClicked () {
         left: 0;
         top: 0;
         bottom: 0;
+        height: 100%;
+        border-radius: 0;
         display: block;
         background-color: rgba(0, 0, 0, 0.3);
         border-width: 0.12em;

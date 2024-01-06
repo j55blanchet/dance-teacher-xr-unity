@@ -117,13 +117,13 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 </script>
 
 <section>
-	<h1>
+	<h1 class="has-text-centered is-size-2 block">
 		Pick a dance to learn
 	</h1>
 
     {#if $debugMode && $debugMode__viewDanceMenuAsList}
-	<div class="cols">
-		<div class="col dance-picking ta-center" style="max-width: 60ch;">
+	<div class="columns">
+		<div class="column dance-picking ta-center" style="max-width: 60ch;">
 			<FolderMenu menuContents={menuData} 
 				on:fileSelected={e => toggleSelectDance(e.detail)}
 				selectedFile={selectedDance}
@@ -137,7 +137,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 			</ul> -->
 		</div>
 		{#if selectedDance}
-		<div class="col" style="max-width: 40ch;">
+		<div class="column" style="max-width: 40ch;">
 			<p>{selectedDance.title}</p>
 			<FolderMenu menuContents={danceTreeMenuItems} />
 			<!-- <ul>
