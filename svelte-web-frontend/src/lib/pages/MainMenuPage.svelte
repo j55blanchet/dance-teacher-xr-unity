@@ -149,22 +149,29 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 		{/if}
 	</div>
     {:else}
-    <div class="tiles">
+    <div class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-center">
         {#each danceTiles as tileData, i (tileData.dance.clipRelativeStem)}
-        <a class="tile" href={tileData.pageUrl}>
-            <img class="thumbnail" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
-            <div class="tile-details">
-                <h3>{tileData.dance.title}</h3>
-                <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->
-                <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span> -->
-
-                <div class="detail">
-                    <span class="label" title="Dance Attempts"><DanceIcon /></span>
-                    <div class="performance-history">
+        <a class="card card-button card-with-left-image m-2" href={tileData.pageUrl}>
+            <figure class="card-image">
+                <p class="image">
+                    <img class="thumbnail is-9by16" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
+                </p>
+            </figure>
+            <div class="card-content">
+                <div class="content">
+                    <h3>{tileData.dance.title}</h3>
+                    <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->
+                    <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span> -->
+                    
+                    <div class="performance-history is-flex is-align-items-center">
+                        <span class="label" title="Dance Attempts"><DanceIcon /></span>
                         {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
                     </div>
                 </div>
             </div>
+            
+            
+            
         </a>
         {/each}
     </div>
@@ -173,89 +180,9 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 </section>
 
 <style lang="scss">
-    section {
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 0.6;
-		// margin: 0 1rem;
-	}
-    .tiles {
-        margin-bottom: 2rem;
-        max-width: 100%;
-        display: flex;
-        flex-flow: row wrap;
-        margin: 1rem;
-        gap: 1rem;
-        justify-content: center;
+
+    .thumbnail {
+        height: 12rem;
     }
 
-    .tile {
-        
-        flex-grow: 1;
-        max-width: calc(400px);
-        position: relative;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        overflow: hidden;
-        color: var(--color-text);
-        display: flex;
-        flex-direction: row;
-        justify-content: left;
-
-        background-color: rgba(255, 255, 255, 0.25);
-        box-shadow: 0.2rem 0.2rem 0.5rem rgba(0, 0, 0, 0.25);
-        
-        transition: all 0.05s ease-out;
-
-        & .thumbnail {
-            align-self: center;
-            height: 12rem;
-            // min-height: 100%;
-            // flex-grow: 1;
-            object-fit: contain;
-            // border-radius: 0.5rem;
-        }
-
-        & h3 {
-            margin-top: 1rem;
-        }
-    }
-
-    .tile:hover {
-        background-color: rgba(245, 255, 245, 0.4);
-        box-shadow: 0.15rem 0.15rem 0.6rem rgba(0, 0, 0, 0.4);
-        color: var(--color-theme-1);
-    }
-
-    .tile-details {
-        padding: 0 1.5rem 0rem 1.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: start;
-        align-items: start;
-        text-align: center;
-        
-        & .detail {
-            display: flex;
-            flex-direction: row;
-            justify-content: start;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        // transition: all 0.1s ease-in-out;
-    }
-	p {
-		font-size: 1.1rem;
-		margin-bottom: 0;
-		padding: 0.25em 0.5em;
-		
-	}
-
-    .links {
-        flex-flow: row wrap;
-        gap: 1em;
-    }
 </style>
