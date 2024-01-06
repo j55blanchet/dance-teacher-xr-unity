@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 
 import { getDanceAndDanceTreeFromDanceTreeId, findDanceTreeNode } from '$lib/data/dances-store.js';
-import { PracticeInterfaceModes } from '$lib/model/PracticeActivity';
+import { PracticeInterfaceModes } from '$lib/model/PracticeStep';
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ url, params })  {

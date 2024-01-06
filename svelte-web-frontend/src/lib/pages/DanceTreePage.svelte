@@ -13,8 +13,8 @@ import { createEventDispatcher, getContext, onMount, tick } from 'svelte';
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
 import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage, practiceActivities__playbackSpeed } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '$lib/ai/TeachingAgent';
-import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
+import { GeneratePracticeStep, type GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent';
+import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepModeKey } from '$lib/model/PracticeStep';
 
 import InfoIcon from 'virtual:icons/icon-park-outline/info';
 // import NameIcon from 'virtual:icons/icon-park-outline/info';
@@ -55,9 +55,9 @@ $: currentSegmentAttemptCount = currentPlayingNode ? $lastNAttemptsOfDance.filte
 
 let videoDuration: number;
 
-let practiceActivityParams: GeneratePracticeActivityOptions = {
+let practiceActivityParams: GeneratePracticeStepOptions = {
     playbackSpeed: $practiceActivities__playbackSpeed,
-    interfaceMode: PracticeActivityDefaultInterfaceSetting,
+    interfaceMode: PracticeStepDefaultInterfaceSetting,
     terminalFeedbackEnabled: true,
     showUserSkeleton: true,
 }
@@ -138,7 +138,7 @@ async function practiceClicked() {
     try {
         if (!currentPlayingNode) throw new Error('No node selected');
         
-        const { activity, url} = GeneratePracticeActivity(
+        const { step: activity, url} = GeneratePracticeStep(
             dance,
             danceTree,
             currentPlayingNode as DanceTreeNode,
@@ -218,7 +218,7 @@ onMount(() => {
     </div>
      
     <div class="preview-container cols">
-        <div class="col ml-4 pb-4 vfill flex flex-col flex-crossaxis-end flex-mainaxis-stretch">
+        <div class="col ml-4 pb-4 vfill is-flex flex-col flex-crossaxis-end flex-mainaxis-stretch">
         
             <VideoWithSkeleton 
                 bind:this={videoElement}

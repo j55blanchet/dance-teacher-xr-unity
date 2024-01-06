@@ -1,10 +1,10 @@
 <script lang="ts">
-import type { GeneratePracticeActivityOptions } from "$lib/ai/TeachingAgent";
-import { PracticeInterfaceModeOptions, type PracticeInterfaceModeKey } from "$lib/model/PracticeActivity";
+import type { GeneratePracticeStepOptions } from "$lib/ai/TeachingAgent";
+import { PracticeInterfaceModeOptions, type PracticeInterfaceModeKey } from "$lib/model/PracticeStep";
 import { practiceActivities__playbackSpeed, practiceActivities__showUserSkeleton, practiceActivities__terminalFeedbackEnabled, practiceActivities__interfaceMode } from "$lib/model/settings";
 
 export let persistInSettings = false;
-export let practiceActivityParams: GeneratePracticeActivityOptions = {
+export let practiceActivityParams: GeneratePracticeStepOptions = {
     playbackSpeed: $practiceActivities__playbackSpeed,
     interfaceMode: $practiceActivities__interfaceMode,
     terminalFeedbackEnabled: $practiceActivities__terminalFeedbackEnabled,

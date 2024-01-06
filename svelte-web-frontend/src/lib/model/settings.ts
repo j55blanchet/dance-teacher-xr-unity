@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { PracticeInterfaceModeOptions, type PracticeInterfaceModeKey } from './PracticeActivity';
+import { PracticeInterfaceModeOptions, type PracticeStepModeKey } from './PracticeStep';
 
 const DEFAULT_SETTINGS = {
    debugMode: false,
@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS = {
    danceVideoVolume: 0.5,
 
    practiceActivities__playbackSpeed: 0.5,
-   practiceActivities__interfaceMode: 'bothVideos' as PracticeInterfaceModeKey,
+   practiceActivities__interfaceMode: 'bothVideos' as PracticeStepModeKey,
    practiceActivities__terminalFeedbackEnabled: true,
    practiceActivities__showUserSkeleton: true,
 }

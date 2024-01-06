@@ -106,12 +106,12 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     return stores;
 });
 
-let danceTiles = [] as {dance: Dance, pageUrl: string}[];
+let danceTiles = [] as {dance: Dance, pageUrl: string, oldPageUrl: string}[];
 $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
     return {
         dance,
         pageUrl: "/dance/" + encodeURIComponent(dance.clipRelativeStem) + "/",
-        // pageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
+        oldPageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
     }
 })
 </script>
@@ -151,7 +151,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
     {:else}
     <div class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-center">
         {#each danceTiles as tileData, i (tileData.dance.clipRelativeStem)}
-        <a class="card card-button card-with-left-image m-2" href={tileData.pageUrl}>
+        <div class="card card-with-left-image m-2" >
             <figure class="card-image">
                 <p class="image">
                     <img class="thumbnail is-9by16" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
@@ -168,11 +168,15 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
                         {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
                     </div>
                 </div>
+                <div class="buttons">
+                    <a href={tileData.oldPageUrl} class="button">Learn (Legacy)</a>
+                    <a href={tileData.pageUrl} class="button is-primary">Learn</a>
+                </div>
             </div>
             
             
             
-        </a>
+        </div>
         {/each}
     </div>
     {/if} 
