@@ -33,8 +33,8 @@ $: showSkeletonSettingVisible = showSkeletonSettingVisibleConditions.indexOf(pra
     <div class="control interfaceMode" >
         {#each Object.entries(PracticeInterfaceModeOptions) as [modeOptionValue, modeOptionTitle]}
         <label class="button outlined thin" class:selected={modeOptionValue === practiceActivityParams.interfaceMode }>
-            {modeOptionTitle}
             <input type="radio" name="practiceActivityInterfaceMode" value={modeOptionValue} bind:group={practiceActivityParams.interfaceMode}/>
+            {modeOptionTitle}
         </label>
         {/each}
     </div>
@@ -61,54 +61,58 @@ $: showSkeletonSettingVisible = showSkeletonSettingVisibleConditions.indexOf(pra
     display: flex;
 }
 
-.control {
-    display: flex;
-    flex-direction: row; 
-    align-items: center;
-    justify-content: center;
-    gap: 0.5ch;
-
-    input[type="range"] {
-        max-width: 10ch;
-    }
-
-    &.interfaceMode {
-        margin: 0.5rem 0;
-    }
-
-    &.interfaceMode label {
-        box-sizing: border-box;
-        padding: 0.25em;
-        width: 5em;
-        height: 5em;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        // border-radius: var(--std-border-radius);
-        box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.3);
-
-        & input {
-            position:absolute;
-            left: -50%;
-            opacity: 0;
-            width: 0;
-            height: 0;
-
-        }
-
-        //&:has( > input:checked) {
-        //    color: red;
-        //}
-
-        &.selected {
-            color: var(--color-theme-1);
-            border-color: var(--color-theme-1);
-            border-width: 3px;
-            background: white;
-        }
-    }
-
-    // &.interfaceMode label:has(input[selected=true])
+.control > label > input {
+    margin-right: 0.5rem;
 }
+
+// .control {
+//     display: flex;
+//     flex-direction: row; 
+//     align-items: center;
+//     justify-content: center;
+//     gap: 0.5ch;
+
+//     input[type="range"] {
+//         max-width: 10ch;
+//     }
+
+//     &.interfaceMode {
+//         margin: 0.5rem 0;
+//     }
+
+//     &.interfaceMode label {
+//         box-sizing: border-box;
+//         padding: 0.25em;
+//         width: 5em;
+//         height: 5em;
+//         display: flex;
+//         align-items: center;
+//         justify-content: center;
+//         text-align: center;
+//         // border-radius: var(--std-border-radius);
+//         box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.3);
+
+//         & input {
+//             position:absolute;
+//             left: -50%;
+//             opacity: 0;
+//             width: 0;
+//             height: 0;
+
+//         }
+
+//         //&:has( > input:checked) {
+//         //    color: red;
+//         //}
+
+//         &.selected {
+//             color: var(--color-theme-1);
+//             border-color: var(--color-theme-1);
+//             border-width: 3px;
+//             background: white;
+//         }
+//     }
+
+//     // &.interfaceMode label:has(input[selected=true])
+// }
 </style>
