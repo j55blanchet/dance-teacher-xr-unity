@@ -67,7 +67,7 @@ $: {
 
 const interfaceModeOptions: {
     title: string,
-value: PracticeInterfaceModeKey,
+value: PracticeStepModeKey,
     iconUrl?: string,
 }[] = [
     {
@@ -217,8 +217,8 @@ onMount(() => {
         </div>
     </div>
      
-    <div class="preview-container cols">
-        <div class="col ml-4 pb-4 vfill is-flex flex-col flex-crossaxis-end flex-mainaxis-stretch">
+    <div class="preview-container columns">
+        <div class="column ml-4 pb-4 vfill is-flex is-flex-direction-column flex-crossaxis-end is-align-content-stretch">
         
             <VideoWithSkeleton 
                 bind:this={videoElement}
@@ -233,7 +233,7 @@ onMount(() => {
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>
         </div>
-        <div class="col flex flex-col flex-center vfill controls">
+        <div class="column flex flex-col flex-center vfill controls">
             <!-- {#if currentPlayingNode}
             <h3>Information</h3>
             <div class="infoList">

@@ -31,13 +31,15 @@ I recommend using Visual Studio Code as your editor, with the [svelte extension]
     pnpm supabase start
     ```
 
-6. Run the app:
+6. Load your local supabase with media files (see later in README for more information)
+
+7. Run the app:
 
     ```bash
     pnpm run dev
     ```
 
-7. Navigate to [localhost:5173](http://localhost:5173)
+8. Navigate to [localhost:5173](http://localhost:5173)
 
 ## Building
 
@@ -98,6 +100,11 @@ We use [supabase](https://supabase.io/) for our database. For local development,
 1. Run `pnpm supabase link --project-ref ngjnwvcgmfxwbwbidtcy` to link the CLI to the supabase project. This will allow you to run commands like `pnpm supabase init` to initialize the database.
 1. To get started with a local supabase instance, you can run `pnpm supabase start`. This will start a local supabase instance, and will also start a local postgres instance. You can then use the supabase CLI to interact with the local instance. For example, you can run `pnpm supabase init` to initialize the local instance with the necessary tables and data.
 
+To get the app running locally, you'll need to upload the necessary data to supabase.
+1. Go to the supabase local dashboard at <http://localhost:54323>, the go to the storage tab.
+1. Create buckets for `holisticdata`, `pose2ddata`, `sourcevideos`, and `thumbnails` (ensure they're all public buckets).
+1. Upload the files in the folders of `static/bundle` to their corresponding buckets.
+
 Other commands:
 
 * `pnpm supabase db pull` to pull the latest database schema from supabase. Will create a SQL migration script in `migrations/` that you can run with `pnpm supabase db push`.
@@ -116,3 +123,4 @@ Other useful links:
 
 * If you get a network error / CORS error when trying to login, ensure the supabase services are running with `pnpm supabase start`.
 * If you get an error when starting supabase like `Local hosting manifest for public.ecr.aws/supabase/postgrest:v11.2.1 not found`, [try changing the rest-version file in /supabase/.temp/rest-version](https://github.com/supabase/supabase/issues/18207)
+

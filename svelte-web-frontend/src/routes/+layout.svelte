@@ -57,18 +57,24 @@
 	</div>
 
 	<dialog class="settingsDialog" bind:this={settingsDialog}>
-		<div class="closeButtonContainer">
-			<CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} />
-		</div>
-		<div class="settingsContainer outlined">
-			<SettingsPage 
-				user={session?.user ?? null} 
-				on:navigate={() => toggleSettings(false)}/>
+		<div class="card">
+			<div class="card-header">
+				<h3 class="card-header-title">Settings</h3>
+				<div class="card-header-icon"><CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} /></div>
+			</div>
+			<div class="closeButtonContainer">
+				
+			</div>
+			<div class="settingsContainer ">
+				<SettingsPage 
+					user={session?.user ?? null} 
+					on:navigate={() => toggleSettings(false)}/>
+			</div>
 		</div>
 	</dialog>
 </div>
 
-<style>
+<style lang="scss">
 	.app {
 		display: flex;
 		flex-direction: column;
@@ -95,10 +101,10 @@
 		/* left: 1rem; */
 		/* right: 1rem; */
 		--content_height: auto;
-		margin-top: 0;
-		margin-right: 0;
+		margin-top: 1rem;
+		margin-right: 1rem;
 		max-width: calc(100vw - 2rem);
-		padding: 0.5em;
+		padding: 0;
 		background: none;
 		border: none;
 		/* background: rgba(0, 0, 0, 0.5); */
@@ -106,18 +112,12 @@
 
 	.closeButtonContainer {
 		display: flex;
-		justify-content: flex-end;
-		
+		justify-content: flex-end;	
 	}
 
 	.settingsDialog::backdrop {
 		background: rgba(0, 0, 0, 0.2);
 		backdrop-filter: blur(5px);
 		--webkit-backdrop-filter: blur(5px);
-	}
-
-	.settingsContainer {
-		background: white;
-		margin-top: 0.5rem;
 	}
 </style>

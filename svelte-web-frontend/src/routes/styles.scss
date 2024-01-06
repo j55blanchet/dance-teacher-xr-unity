@@ -23,7 +23,7 @@ $link: $blue;
 // $fullhd-enabled: false;
 
 // Update some of Bulma's component variables
-// $body-background-color: $beige-lighter;
+$body-background-color: $beige-lighter;
 // $control-border-width: 2px;
 // $input-border-color: transparent;
 // $input-shadow: none;
@@ -50,6 +50,25 @@ $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($sch
 	}
 }
 
+.navbar {
+	@each $name, $pair in $navbar-colors {
+		$color: nth($list: $pair, $n: 1);
+		$color-invert: nth($pair, 2);
+		&.is-#{$name} {
+			background-color: $color;
+			color: $color-invert;
+			> .navbar-item {
+				color: $color-invert;
+				// &:hover {
+					// background-color: $color-invert;
+					// color: $color;
+				// }
+			}
+		}		
+	}
+}
+
+
 :root {
 	/* --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
 		Cantarell, , sans-serif; */
@@ -73,6 +92,8 @@ $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($sch
 	font-family: var(--font-body);
 	color: var(--color-text);
 }
+
+
 
 body {
 	min-height: 100vh;
