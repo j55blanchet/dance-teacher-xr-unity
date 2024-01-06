@@ -93,12 +93,6 @@ function toggleSelectDance(dance: Dance) {
     }
 }
 
-let danceTiles = [] as typeof userVisibleDances;
-danceTiles = [...userVisibleDances];
-danceTiles.sort((a, b) => {
-    return a[1].root.complexity - b[1].root.complexity;
-});
-
 let perfHistoryStores = [] as ReturnType<typeof frontendPerformanceHistory.lastNAttemptsAllSegments<"skeleton3DAngleSimilarity">>[];
 
 onMount(() => {
