@@ -54,13 +54,18 @@ export function getDanceFromDanceId(danceIdSlug: string): Dance | null {
     return dances.find((dance) => dance.clipRelativeStem === danceId) ?? null;
 }
 
+export function getDanceTreeFromDanceAndTreeName(dance: Dance, danceTreeName: string): DanceTree | null {
+    const matchingDanceTrees: DanceTrees = danceTrees[dance.clipRelativeStem as keyof typeof danceTrees] ?? []
+    const matchingDanceTree = matchingDanceTrees.find(danceTree => danceTree.tree_name === danceTreeName) ?? null;    
+    return matchingDanceTree;
+}
+
 export function getDanceAndDanceTreeFromDanceTreeId(slug: string): [Dance | null, DanceTree | null] {
     const [clipRelativeStem, tree_name] = decodeURIComponent(slug).split(URI_COMPONENT_SEPARATOR);
     
     const matchingDance: Dance | null = dances.find((dance) => dance.clipRelativeStem === clipRelativeStem) ?? null;
 
-    const matchingDanceTrees: DanceTrees = danceTrees[clipRelativeStem as keyof typeof danceTrees] ?? []
-    const matchingDanceTree = matchingDanceTrees.find(danceTree => danceTree.tree_name === tree_name) ?? null;    
+    const matchingDanceTree = matchingDance ? getDanceTreeFromDanceAndTreeName(matchingDance, tree_name) : null;
     return [matchingDance, matchingDanceTree];
     
 }

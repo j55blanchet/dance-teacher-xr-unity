@@ -110,7 +110,7 @@ let danceTiles = [] as {dance: Dance, pageUrl: string, oldPageUrl: string}[];
 $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
     return {
         dance,
-        pageUrl: "/dance/" + encodeURIComponent(dance.clipRelativeStem) + "/",
+        pageUrl: `/dance/${encodeURIComponent(dance.clipRelativeStem)}/${encodeURIComponent(danceTree.tree_name)}/`,
         oldPageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
     }
 })

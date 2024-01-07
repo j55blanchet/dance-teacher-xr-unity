@@ -66,8 +66,6 @@ export type LearningJourneyUIData = {
 
 <style lang="scss">
 
-    @import '../../routes/styles.scss';
-
     .activity-button {
         width: 128px;
         height: 128px;
@@ -80,6 +78,6 @@ export type LearningJourneyUIData = {
         width: calc(100% - 2rem - 128px);
         height: 1rem;
         top: calc(50% - 0.5rem);
-        background: #{$brown};
+        background: gray;
     }
 </style>
