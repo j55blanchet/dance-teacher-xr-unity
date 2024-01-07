@@ -5,7 +5,7 @@ import { navbarProps } from '$lib/elements/NavBar.svelte';
 
 import SketchButton from '$lib/elements/SketchButton.svelte';
 import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
-import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode, findDanceTreeNode } from '$lib/data/dances-store';
+import { getDanceVideoSrc, type Dance, type DanceTree, type DanceTreeNode, findDanceTreeNode, getAllLeafNodes, findDanceTreeSubNode } from '$lib/data/dances-store';
 import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { createEventDispatcher, getContext, onMount, tick } from 'svelte';
@@ -23,6 +23,7 @@ import InfoIcon from 'virtual:icons/icon-park-outline/info';
 
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 	import type { SupabaseClient } from '@supabase/supabase-js';
+	import type { SegmentedProgressBarProps } from '$lib/elements/SegmentedProgressBar.svelte';
 
 export let dance: Dance;
 export let danceTree: DanceTree;
@@ -198,6 +199,29 @@ onMount(() => {
     }
 });
 
+let progressBarProps = {} as Partial<SegmentedProgressBarProps>;
+$: {
+    const isPhraseNode = (node: DanceTreeNode) =>
+        node.id.includes('phrase') && !node.id.includes('group');    
+    const phraseNodes = getAllLeafNodes(danceTree.root, isPhraseNode);
+    function isCurrentNodeRelatedToPhraseNode(phraseNode: DanceTreeNode) {
+        if (!currentPlayingNode) return false;
+
+        // If the current node is the phrase node, or is a child of the phrase node, or the phrase 
+        // node is a child of the current node, then the current node is related to the phrase node.
+        if (currentPlayingNode.id === phraseNode.id) return true;
+        if (findDanceTreeSubNode(currentPlayingNode, phraseNode.id)) return true;
+        if (findDanceTreeSubNode(phraseNode, currentPlayingNode.id)) return true;
+        return false;
+    }
+
+    progressBarProps = {
+        breakpoints: phraseNodes.slice(1).map(x => x.start_time),
+        labels: phraseNodes.map(x => x.id),
+        classes: phraseNodes.map(x => isCurrentNodeRelatedToPhraseNode(x) ? ['is-primary'] : []),
+    }
+}
+
 </script>
 
 <section class:nodeSelected={currentPlayingNode ?? false }>
@@ -229,6 +253,8 @@ onMount(() => {
                 fitToFlexbox={false}
                 drawSkeleton={false}
                 volume={$danceVideoVolume}
+                showProgressBar={true}
+                progressBarProps={progressBarProps}
                 >
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>

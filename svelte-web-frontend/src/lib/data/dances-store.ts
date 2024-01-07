@@ -94,13 +94,15 @@ export function getAllNodesInSubtree(node: DanceTreeNode): DanceTreeNode[] {
     ];   
 }
 
-export function getAllLeafNodes(node: DanceTreeNode): DanceTreeNode[] {
-    if (node.children.length === 0) {
+export type NodeBooleanFunction = (node: DanceTreeNode) => boolean;
+
+export function getAllLeafNodes(node: DanceTreeNode, considerLeafCallback?: NodeBooleanFunction): DanceTreeNode[] {
+    if (node.children.length === 0 || (considerLeafCallback && considerLeafCallback(node))) {
         return [node];
     }
 
     return [
-        ...node.children.flatMap((child) => getAllLeafNodes(child as unknown as DanceTreeNode))
+        ...node.children.flatMap((child) => getAllLeafNodes(child as unknown as DanceTreeNode, considerLeafCallback))
     ];   
 }
 

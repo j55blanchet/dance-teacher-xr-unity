@@ -4,6 +4,7 @@ import { onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import type { DrawingUtils, PoseLandmarker, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
+import SegmentedProgressBar, { type SegmentedProgressBarProps } from "./SegmentedProgressBar.svelte";
 
 let videoElement: HTMLVideoElement;
 let canvasElement: HTMLCanvasElement;
@@ -32,6 +33,21 @@ export let ended: boolean = false;
 export let dance: Dance | null = null;
 export let poseData: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
 export let drawSkeleton: boolean = true;
+
+export let showProgressBar: boolean = false;
+export let progressBarProps: Partial<Omit<SegmentedProgressBarProps, "currentTime">> = {};
+let progressBarEffectiveProps = {} as SegmentedProgressBarProps;
+$: {
+    progressBarEffectiveProps = {
+        startTime: 0,
+        endTime: duration,
+        currentTime: currentTime,
+        breakpoints: [],
+        labels: [],
+        classes: [["is-primary"]],
+        ...progressBarProps,
+    }
+}
 
 let videoElementWidth: number = 0;
 let videoElementHeight: number = 0;
@@ -149,9 +165,16 @@ export async function play() {
     >
         <slot />
     </video>
-    <div class="overlay">
+    <div class="is-overlay canvas">
         <canvas bind:this={canvasElement}></canvas>
     </div>
+    {#if showProgressBar}
+        <div class="is-overlay controls">
+            <SegmentedProgressBar 
+                {...progressBarEffectiveProps}
+            />
+        </div>
+    {/if}
     <!-- <div class="overlay debug">
         <div><strong>Pose Data:</strong>&nbsp;{poseData ? "Exists" : "Null"}</div>
         <div><strong>Pose To Draw:</strong>&nbsp;{poseToDraw ? "Exists" : "Null"}</div>
@@ -181,17 +204,20 @@ video {
     border-radius: var(--std-border-radius);
 }
 
-.overlay {
+.canvas {
     pointer-events: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    // position: absolute;
+    // top: 0;
+    // left: 0;
+    // right: 0;
+    // bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
+}
+.controls {
+    top: auto;
 }
 
 .debug {
