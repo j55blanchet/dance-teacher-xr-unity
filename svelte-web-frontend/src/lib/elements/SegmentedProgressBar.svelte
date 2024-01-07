@@ -45,7 +45,7 @@
             max={segment.duration} 
             style="--segment_time: {segment.duration}">
             {#if segment.label}
-                <div class="label">{segment.label}</div>
+                <span class="label">{segment.label}</span>
             {/if}
         </progress>
     {/each}
@@ -59,8 +59,9 @@
         width: 100%;
         position: relative;
         
-        .segment {
-            flex-basis:var(--segment_time); 
+        > .progress {
+            flex-basis: 0; 
+            flex-grow: var(--segment_time);
         }
     }
 </style>

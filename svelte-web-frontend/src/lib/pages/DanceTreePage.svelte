@@ -216,6 +216,8 @@ $: {
     }
 
     progressBarProps = {
+        startTime: danceTree.root.start_time,
+        endTime: danceTree.root.end_time,
         breakpoints: phraseNodes.slice(1).map(x => x.start_time),
         labels: phraseNodes.map(x => x.id),
         classes: phraseNodes.map(x => isCurrentNodeRelatedToPhraseNode(x) ? ['is-primary'] : []),
