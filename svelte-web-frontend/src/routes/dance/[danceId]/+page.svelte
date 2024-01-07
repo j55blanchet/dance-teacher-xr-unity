@@ -1,13 +1,23 @@
 <script lang="ts">
+	import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
 	import LearningJourneyTrail from '../../../lib/elements/LearningJourneyTrailUI.svelte';
-	import type { Dance } from "$lib/data/dances-store.js";
+	import { getDanceVideoSrc, type Dance } from "$lib/data/dances-store.js";
 	import type { LearningJourneyUIData, LearningActivityGroupUIData, SegmentActivityButtonData } from "$lib/elements/LearningJourneyTrailUI.svelte";
 	import { navbarProps } from "$lib/elements/NavBar.svelte";
-
+	import type { SupabaseClient } from '@supabase/supabase-js';
+	import { getContext } from 'svelte';
+    
 
     export let data;
+
+    let supabase: SupabaseClient = getContext('supabase');
+    
     let dance: Dance;
     $: dance = data.dance;
+    let danceSrc: string = '';
+    $: {
+        danceSrc = getDanceVideoSrc(supabase, dance);
+    }
 
     $: {
         navbarProps.update(props => ({
@@ -92,8 +102,12 @@
 <section class="section">
     <div class="columns is-centered">
         <div class="column is-narrow">
-            <div class="box">
-                <h3 class="is-size-4">Preview</h3>
+            <div class="box p-0">
+                <VideoWithSkeleton 
+                    dance={dance}
+                    showProgressBar={true}>
+                    <source src={danceSrc} type="video/mp4" />
+                </VideoWithSkeleton>
             </div>
         </div>
         <div class="column is-narrow">
