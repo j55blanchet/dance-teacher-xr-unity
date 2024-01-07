@@ -189,6 +189,10 @@ function barClicked () {
         
         {#if highlight?.label !== undefined}
         <span class="label">{highlight?.label}</span>
+        {:else if $debugMode && node_title !== undefined}
+        <span class="label">
+            {node_title}
+        </span>
         {/if}
     </a>
 

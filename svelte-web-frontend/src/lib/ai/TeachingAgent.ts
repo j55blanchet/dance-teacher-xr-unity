@@ -7,7 +7,6 @@ import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
 //     // similarityByNode: Map<DanceTreeNode["id"], number>;
 // }
 
-
 export type GeneratePracticeStepOptions = {
     playbackSpeed: number,
     interfaceMode: PracticeStepModeKey,
@@ -35,7 +34,7 @@ export function GeneratePracticeStep(
             dance: dance,
             danceTree: danceTree,
             danceTreeNode: danceTreeNode,
-        },
+        } as PracticeStep,
         url: `/teachlesson/${danceTreeSlug}/practicenode/${danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&showUserSkeleton=${opts.showUserSkeleton}`,
     }
 }

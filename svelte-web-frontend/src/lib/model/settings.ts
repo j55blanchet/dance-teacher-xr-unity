@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { PracticeInterfaceModeOptions, type PracticeStepModeKey } from './PracticeStep';
+import { browser } from '$app/environment';
 
 const DEFAULT_SETTINGS = {
    debugMode: false,
@@ -32,10 +33,18 @@ export const stepMin = 0.1;
 export const stepMax = 5;
 
 function createSettingsStore<T>(key: string, defaultValue: T, stringParser: (input: string) => T) {
-    const initialValue = defaultValue;
-    // const initialValue = localStorage[key] === undefined ? defaultValue : stringParser(localStorage[key]);
+    let initialValue = defaultValue;
+    if (browser) {
+        const storedValue = localStorage[key];
+        if (storedValue !== undefined) {
+            initialValue = stringParser(storedValue);
+        }
+    }
+    
     const settingsStore = writable(initialValue);
-    // settingsStore.subscribe((value) => localStorage[key] = String(value));
+    if (browser) {
+        settingsStore.subscribe((value) => localStorage[key] = String(value));
+    }
     return settingsStore;
 }
 

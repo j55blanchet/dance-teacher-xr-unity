@@ -47,9 +47,10 @@
 	})
 </script>
 
-
 <NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
-<slot />
+<div class="app-content" class:noNavBar={$navbarProps.collapsed} >
+	<slot />
+</div>
 <dialog class="settingsDialog" bind:this={settingsDialog}>
 	<div class="card">
 		<div class="card-header">
@@ -69,7 +70,7 @@
 
 
 <style lang="scss">
-	:root {
+	.app-content {
 		// display: flex;
 		// flex-direction: column;
 		--content_height: calc(100vh - var(--navbar_height));
@@ -79,14 +80,9 @@
 		--navbar_height: 3rem;
 	}
 
-	.app.noNavBar {
+	.app-content.noNavBar {
 		--content_height: 100vh;
 		--navbar_height: 0;
-	}
-
-	.debug {
-		position: absolute;
-		visibility: hidden;
 	}
 
 	.settingsDialog {

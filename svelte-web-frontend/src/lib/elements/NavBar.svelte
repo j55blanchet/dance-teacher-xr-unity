@@ -106,12 +106,6 @@ nav.collapsed {
     height: 0;
 }
 
-nav h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.5rem;
-}
-
 @media (max-width: 600px) {
     nav h1 {
         font-size: 1rem;

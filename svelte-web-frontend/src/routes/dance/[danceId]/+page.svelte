@@ -1,7 +1,7 @@
 <script lang="ts">
-	import LearningJourneyTrail from './../../../lib/elements/LearningJourneyTrail.svelte';
+	import LearningJourneyTrail from '../../../lib/elements/LearningJourneyTrailUI.svelte';
 	import type { Dance } from "$lib/data/dances-store.js";
-	import type { LearingJourney, LearningActivityGroup, SegmentActivityButtonData } from "$lib/elements/LearningJourneyTrail.svelte";
+	import type { LearningJourneyUIData, LearningActivityGroupUIData, SegmentActivityButtonData } from "$lib/elements/LearningJourneyTrailUI.svelte";
 	import { navbarProps } from "$lib/elements/NavBar.svelte";
 
 
@@ -22,7 +22,7 @@
         }));
     }
 
-    const learningJourney: LearingJourney = {
+    const learningJourney: LearningJourneyUIData = {
         learningGroups: [
             {
                 id: 'group1',
@@ -99,7 +99,7 @@
         <div class="column is-narrow">
             <div class="box">
                 <h3 class="is-size-4">Practice</h3>
-                <LearningJourneyTrail learningJourneyData={learningJourney}/>
+                <LearningJourneyTrail uiData={learningJourney}/>
             </div>
         </div>
         <div class="column is-narrow">

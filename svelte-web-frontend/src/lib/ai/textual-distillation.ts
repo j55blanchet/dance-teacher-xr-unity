@@ -1,5 +1,5 @@
 import type { DanceTree, DanceTreeNode } from "$lib/data/dances-store";
-import { GetArithmeticMean, type BodyInnerAnglesComparisons, GetHarmonicMean } from "./EvaluationCommonUtils";
+import { GetArithmeticMean } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
 import type { Angle3DMetricSummaryOutput } from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
@@ -14,7 +14,7 @@ function GetInaccurateJoints(skeleton3DSimilarity: Angle3DMetricSummaryOutput, b
     // get all the joints that are 1 standard deviation below the mean.
     const badJoints = jointScoreEntries
         .filter(
-            ([joint, score]) => 
+            ([_joint, score]) => 
             score < comparisonMean - (badJointSDThreshold * comparisonSD)
         );
 

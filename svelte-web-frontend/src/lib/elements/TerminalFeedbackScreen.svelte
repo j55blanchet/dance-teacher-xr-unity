@@ -373,11 +373,6 @@ pre {
     white-space: pre-wrap;
 }
 
-.actionInfo {
-    padding: 0.5em;
-    font-size: 0.8em;
-}
-
 .reviewPageWrapper {
     width: 80vw;
     height: calc(80vh - 2rem);

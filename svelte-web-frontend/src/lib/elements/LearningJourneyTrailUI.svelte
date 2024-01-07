@@ -5,45 +5,44 @@ export type SegmentActivityButtonData = {
     segmentId: string;
     // segmentTitle: string;
 }
-export type SegmentActivityCheckpointData = {
+export type CheckpointActivityButtonData = {
     id: string;
     type: 'checkpoint';
 }
-export type SegmentActivityDrillData = {
+export type DrillActivityButtonData = {
     id: string;
     type: 'drill';
 }
-export type SegmentActivityFinaleData = {
+export type FinaleActivityButtonData = {
     id: string;
     type: 'finale';
 }
 
-export type LearningActivityData = SegmentActivityButtonData | 
-    SegmentActivityCheckpointData | 
-    SegmentActivityDrillData | 
-    SegmentActivityFinaleData;
+export type ActivityButtonData = SegmentActivityButtonData | 
+    CheckpointActivityButtonData | 
+    DrillActivityButtonData | 
+    FinaleActivityButtonData;
 
-export type LearningActivityGroup = {
+export type LearningActivityGroupUIData = {
     id: string;
     // title?: string;
-    activities: LearningActivityData[];
+    activities: ActivityButtonData[];
 }
-export type LearingJourney = {
-    learningGroups: LearningActivityGroup[];
+export type LearningJourneyUIData = {
+    learningGroups: LearningActivityGroupUIData[];
 }
 </script>
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
 
-    export let learningJourneyData: LearingJourney;
+    export let uiData: LearningJourneyUIData;
 
     const dispatch = createEventDispatcher();
-
 
 </script>
 
 <div class="is-flex is-flex-direction-column learning-journey is-align-items-center is-relative">
-    {#each learningJourneyData.learningGroups as learningGroup(learningGroup.id)}
+    {#each uiData.learningGroups as learningGroup(learningGroup.id)}
     <div class="is-flex is-flex-direction-row learning-group m-5 is-justify-content-center is-relative">
         <div class="is-overlay hline">bb</div>
         {#each learningGroup.activities as activity(activity.id)}
