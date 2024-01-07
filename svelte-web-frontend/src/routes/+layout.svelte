@@ -47,8 +47,9 @@
 	})
 </script>
 
+
+<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
 <div class="app" class:noNavBar={$navbarProps.collapsed}>
-	<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
 	<slot />
 
 	<div class="debug">
@@ -78,11 +79,11 @@
 	.app {
 		display: flex;
 		flex-direction: column;
-		min-height: 100vh;
+		--content_height: calc(100vh - var(--navbar_height));
+		min-height: var(--content_height);
 		align-items: center;
 		justify-content: center;
 		--navbar_height: 3rem;
-		--content_height: calc(100vh - var(--navbar_height));
 	}
 
 	.app.noNavBar {

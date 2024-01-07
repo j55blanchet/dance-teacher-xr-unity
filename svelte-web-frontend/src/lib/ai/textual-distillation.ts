@@ -123,7 +123,7 @@ export function distillPerformanceHistoryToTextualRepresentation(dancePerformanc
         const attemptCount = nonnullOverallScoreAttempts.length;
         const secondMostRecentAttempt = nonnullOverallScoreAttempts[attemptCount - 2];
         const secondMostRecentAttemptDate = secondMostRecentAttempt?.date?.toISOString() ?? "never";
-        const secondMostReceentAttemptString = secondMostRecentAttempt ? ` The next most recent attempt, performed ${secondMostRecentAttemptDate}, got a score of ${secondMostRecentAttempt?.score.toFixed(2)}` : '';
+        const secondMostReceentAttemptString = secondMostRecentAttempt ? ` The next most recent attempt, performed ${secondMostRecentAttemptDate}, got a score of ${secondMostRecentAttempt?.score?.toFixed(2)}` : '';
         const attemptsAsPartOfLargerPerformance = nonnullOverallScoreAttempts.filter(x => x.partOfLargerPerformance).length;
         const attemptsNotAsPartOfLargerPerformance = attemptCount - attemptsAsPartOfLargerPerformance;
         const meanScore = GetArithmeticMean(nonnullOverallScoreAttempts.map(x => x.score));
