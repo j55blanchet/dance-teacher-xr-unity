@@ -71,7 +71,7 @@ async function selectDevices()  {
 <div class="webcamSelector">
     {#if state === "start"}
     <div class="ta-center">
-        <button id="startWebcam" class="button outlined thin" on:click={startWebcam}>
+        <button id="startWebcam" class="button is-primary" on:click={startWebcam}>
             Start Webcam
         </button>
             {#if lastError}
@@ -87,20 +87,20 @@ async function selectDevices()  {
     </div>
     {:else if state === "devicelist"}
         <label for="videoDevices">Video Devices</label>
-        <select name="videoDevices" class="outlined thin" bind:value={selectedVideoDeviceId}>
+        <select name="videoDevices" class="" bind:value={selectedVideoDeviceId}>
             {#each videoDeviceList as device}
             <option value={device.deviceId}>{device.label}</option>
             {/each}
         </select>
         <div class="spacer"></div>
         <label for="audioDevices">Audio Devices</label>
-        <select name="audioDevices" class="outlined thin" bind:value={selectedAudioDeviceId}>
+        <select name="audioDevices" class="" bind:value={selectedAudioDeviceId}>
             {#each audioDeviceList as device}
             <option value={device.deviceId}>{device.label}</option>
             {/each}
         </select>
         <div class="spacer"></div>
-        <button class="button outlined thin" on:click={selectDevices}>Start Webcam</button>
+        <button class="button is-primary" on:click={selectDevices}>Start Webcam</button>
     {:else if state === "success"}
         <div>Webcam Started</div>
     {/if}

@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { GeneratePracticeStepOptions } from "$lib/ai/TeachingAgent";
-import { PracticeInterfaceModeOptions, type PracticeInterfaceModeKey } from "$lib/model/PracticeStep";
+import { PracticeInterfaceModeOptions, type PracticeStepModeKey } from "$lib/model/PracticeStep";
 import { practiceActivities__playbackSpeed, practiceActivities__showUserSkeleton, practiceActivities__terminalFeedbackEnabled, practiceActivities__interfaceMode } from "$lib/model/settings";
 
 export let persistInSettings = false;
@@ -20,14 +20,14 @@ $: {
 }
 
 let isShowSkeletonSettingVisible: boolean;
-const showSkeletonSettingVisibleConditions: PracticeInterfaceModeKey[] = ['bothVideos', 'userVideoOnly'];
+const showSkeletonSettingVisibleConditions: PracticeStepModeKey[] = ['bothVideos', 'userVideoOnly'];
 $: showSkeletonSettingVisible = showSkeletonSettingVisibleConditions.indexOf(practiceActivityParams.interfaceMode) >= 0;
 </script>
 
 <div class="practiceActivityConfigurator">
     <div class="control">
         <label for="playbackSpeed">Speed:</label>
-        <input type="range" name="playbackSpeed" bind:value={practiceActivityParams.playbackSpeed} min="0.4" max="1.3" step="0.1" />
+        <input class="" type="range" name="playbackSpeed" bind:value={practiceActivityParams.playbackSpeed} min="0.4" max="1.3" step="0.1" />
         {practiceActivityParams.playbackSpeed.toFixed(1)}x
     </div>
     <div class="control interfaceMode" >
@@ -41,12 +41,12 @@ $: showSkeletonSettingVisible = showSkeletonSettingVisibleConditions.indexOf(pra
     {#if showSkeletonSettingVisible}
     <div class="control">
         <label for="enableUserSkeletonColorCoding">Show Skeleton:</label>
-        <input type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.showUserSkeleton} />
+        <input  class="" type="checkbox" name="enableUserSkeletonColorCoding" bind:checked={practiceActivityParams.showUserSkeleton} />
     </div>
     {/if}
     <div class="control">
         <label for="terminalFeedbackEnabled">Provide Feedback:</label>
-        <input type="checkbox" name="terminalFeedbackEnabled" bind:checked={practiceActivityParams.terminalFeedbackEnabled} />
+        <input  class="" type="checkbox" name="terminalFeedbackEnabled" bind:checked={practiceActivityParams.terminalFeedbackEnabled} />
     </div>
 </div>
 

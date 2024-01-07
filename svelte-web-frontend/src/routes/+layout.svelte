@@ -49,40 +49,33 @@
 
 
 <NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
-<div class="app" class:noNavBar={$navbarProps.collapsed}>
-	<slot />
-
-	<div class="debug">
-		{$webcamStream}
-		<slot name="debug" />
-	</div>
-
-	<dialog class="settingsDialog" bind:this={settingsDialog}>
-		<div class="card">
-			<div class="card-header">
-				<h3 class="card-header-title">Settings</h3>
-				<div class="card-header-icon"><CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} /></div>
-			</div>
-			<div class="closeButtonContainer">
-				
-			</div>
-			<div class="settingsContainer ">
-				<SettingsPage 
-					user={session?.user ?? null} 
-					on:navigate={() => toggleSettings(false)}/>
-			</div>
+<slot />
+<dialog class="settingsDialog" bind:this={settingsDialog}>
+	<div class="card">
+		<div class="card-header">
+			<h3 class="card-header-title is-centered">Settings</h3>
+			<div class="card-header-icon"><CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} /></div>
 		</div>
-	</dialog>
-</div>
+		<div class="closeButtonContainer">
+			
+		</div>
+		<div class="settingsContainer ">
+			<SettingsPage 
+				user={session?.user ?? null} 
+				on:navigate={() => toggleSettings(false)}/>
+		</div>
+	</div>
+</dialog>
+
 
 <style lang="scss">
-	.app {
-		display: flex;
-		flex-direction: column;
+	:root {
+		// display: flex;
+		// flex-direction: column;
 		--content_height: calc(100vh - var(--navbar_height));
 		min-height: var(--content_height);
-		align-items: center;
-		justify-content: center;
+		// align-items: center;
+		// justify-content: center;
 		--navbar_height: 3rem;
 	}
 

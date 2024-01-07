@@ -26,7 +26,7 @@
     <meta name="description" content="App for learning the dance: {dance.title}" />
 </svelte:head>
 
-<div>
+<section class="section">
     <h1>{dance.title} Learning Dashboard</h1>
     <p>TODO: Add a dashboard for learning the dance: {dance.title}</p>
-</div>
+</section>

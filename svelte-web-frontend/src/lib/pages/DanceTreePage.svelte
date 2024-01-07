@@ -249,14 +249,15 @@ onMount(() => {
                     bind:practiceActivityParams={practiceActivityParams}
                 />
                 <div class="control mt-4" class:animate={practiceButtonAnimationEnabled} class:pop={practiceButtonAnimationEnabled}>
-                    <span></span>
-                    <SketchButton on:click={practiceClicked} disabled={$navigating !== null}>
+                    <button class="is-primary button"
+                        on:click={practiceClicked}
+                        disabled={$navigating!==null}>
                         {#if $navigating}
                             Navigating<ProgressEllipses />
                         {:else}
-                            Practice {currentPlayingNode.id} ➡️
+                            Practice "{currentPlayingNode.id}" ➡️
                         {/if}
-                    </SketchButton>
+                    </button>
                 </div>
             {:else}
                 <p class="text-label" style="max-width: 25ch"><span><InfoIcon /></span> Click above to select a part of the song to practice</p>
@@ -271,6 +272,7 @@ section {
     position: relative;
     width: 100vw;
     height: var(--content_height);
+    padding-bottom: 1rem;
     box-sizing: border-box;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr); 
