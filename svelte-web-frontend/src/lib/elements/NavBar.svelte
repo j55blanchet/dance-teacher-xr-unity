@@ -46,7 +46,7 @@ export let settingsActive: boolean;
                 {#if !$navigating}
                     <span class="icon"><Icon icon="icon-park-outline:down" rotate={1} /></span>&nbsp;{$navbarProps.back.title}
                 {:else}
-                    <ProgressEllipses />
+                    Navigating<ProgressEllipses />
                 {/if}
             </a>
             
