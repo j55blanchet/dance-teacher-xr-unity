@@ -23,7 +23,7 @@
 		"@supabase/supabase-js": "^2.38.1",
 		"@sveltejs/adapter-vercel": "^3.0.3",
 		"@sveltejs/kit": "^1.27.6",
-		"@types/cookie": "^0.5.3",
+		"@types/cookie": "^0.6.0",
 		"@types/papaparse": "^5.3.14",
 		"@types/uuid": "^9.0.5",
 		"@typescript-eslint/eslint-plugin": "^5.62.0",
