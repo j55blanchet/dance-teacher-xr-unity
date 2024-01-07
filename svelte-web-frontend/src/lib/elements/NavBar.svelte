@@ -7,11 +7,13 @@
 // and writing to them as needed (likely during `onMount`).
 import { writable } from "svelte/store";
 import { navigating } from '$app/stores'
+import Icon from '@iconify/svelte';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 
 export type NavBarProps = {
     collapsed: boolean;
     pageTitle: string;
+    subtitle?: string;
     back?: {
         url: string;
         title: string;
@@ -34,7 +36,7 @@ export let settingsActive: boolean;
 
 </script>
 
-<nav class="navbar is-dark has-shadow" role="navigation" aria-label="main navigation" class:collapsed={$navbarProps.collapsed}>
+<nav class="navbar is-primary has-shadow" role="navigation" aria-label="main navigation" class:collapsed={$navbarProps.collapsed}>
     
     <div class="navbar-start">
         <!-- Container for left-aligned content -->
@@ -42,7 +44,7 @@ export let settingsActive: boolean;
             
             <a class="navbar-item" href={$navbarProps.back.url}>
                 {#if !$navigating}
-                &lt;&nbsp;{$navbarProps.back.title}
+                    <span class="icon"><Icon icon="icon-park-outline:down" rotate={1} /></span>&nbsp;{$navbarProps.back.title}
                 {:else}
                     <ProgressEllipses />
                 {/if}
@@ -54,7 +56,16 @@ export let settingsActive: boolean;
     </div>
 
     <!-- Container for centered content-->
-    <div class="navbar-item">{$navbarProps.pageTitle}</div>
+    <div class="navbar-item">
+        <span class="navbar-title">
+            {$navbarProps.pageTitle}
+            {#if $navbarProps.subtitle}
+                <span class="navbar-subtitle">
+                    &nbsp;{$navbarProps.subtitle}
+                </span>
+            {/if}
+        </span>
+    </div>
 
     <!-- Container for right-aligned content-->
     <div class="navbar-end">

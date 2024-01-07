@@ -48,5 +48,8 @@
 		"vitest": "^0.34.6",
 		"wasm-feature-detect": "^1.5.1"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"@iconify/svelte": "^3.1.6"
+	}
 }

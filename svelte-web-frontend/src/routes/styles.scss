@@ -63,6 +63,15 @@ $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($sch
 					// background-color: $color-invert;
 					// color: $color;
 				// }
+				.navbar-title {
+					color: $color-invert;
+					font-weight: 600;
+				}
+				.navbar-subtitle {
+					color: $color-invert;
+					font-weight: 400;
+					font-size: 0.75rem;
+				}
 			}
 		}		
 	}

@@ -11,7 +11,8 @@
         navbarProps.update(props => ({
             ...props,
             collapsed: false,
-            pageTitle: `Dashboard: ${dance?.title}`,
+            pageTitle: dance?.title,
+            subtitle: `Dashboard`,
             back: {
                 url: '/',
                 title: 'Home',
