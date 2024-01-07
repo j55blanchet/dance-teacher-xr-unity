@@ -11,8 +11,8 @@ dependencies:
 
 devDependencies:
   '@anthropic-ai/sdk':
-    specifier: ^0.7.0
-    version: 0.7.0
+    specifier: ^0.12.0
+    version: 0.12.0
   '@iconify/json':
     specifier: ^2.2.151
     version: 2.2.165
@@ -135,8 +135,8 @@ packages:
     resolution: {integrity: sha512-gFPqTG7otEJ8uP6wrhDv6mqwGWYZKNvAcCq6u9hOj0c+IKCEsY4L1oC9trPq2SaWIzAfHvqfBDxF591JkMf+kg==}
     dev: true
 
-  /@anthropic-ai/sdk@0.7.0:
-    resolution: {integrity: sha512-qEXJ+R9LcNhSYM8Av/9dUALtNnvo2ub3IaF4WXipHLOoawFF6zJprCjzYDrnE8M4WNmEGvD11BSt0REUlv8MMQ==}
+  /@anthropic-ai/sdk@0.12.0:
+    resolution: {integrity: sha512-yL4/NdbdjuqRW5SMLngbO7PWQMcFIBK5lT725TmZ+8bJ9BMvR2e0+ChtAEWUid/N19MWpYg/mbcxUaTQDdMj1A==}
     dependencies:
       '@types/node': 18.19.4
       '@types/node-fetch': 2.6.10
@@ -751,7 +751,7 @@ packages:
   /@types/node-fetch@2.6.10:
     resolution: {integrity: sha512-PPpPK6F9ALFTn59Ka3BaL+qGuipRfxNE8qVgkp0bVixeiR2c2/L+IVOiBdu9JhhT22sWnQEp6YyHGI2b2+CMcA==}
     dependencies:
-      '@types/node': 18.19.4
+      '@types/node': 20.10.6
       form-data: 4.0.0
     dev: true
 
