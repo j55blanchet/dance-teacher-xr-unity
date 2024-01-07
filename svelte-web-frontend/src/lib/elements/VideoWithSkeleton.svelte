@@ -22,6 +22,7 @@ export let videoWidth: number = 0;
 export let videoHeight: number = 0;
 export let flipHorizontal: boolean = false;
 export let volume: number = 1.0;
+export let readyState: number = 0;
 
 let videoAspectRatio = 1;
 $: if (videoWidth > 0 && videoHeight > 0) {
@@ -39,6 +40,8 @@ type ControlOptions = {
     showPlayPause: boolean,
     enablePlayPause: boolean,
     showProgressBar: boolean,
+    overrideStartTime? : number,
+    overrideEndTime? : number,
     progressBarProps: Partial<Omit<SegmentedProgressBarProps, "currentTime">>
 }
 export let controls: ControlOptions | boolean = false;
@@ -59,8 +62,8 @@ $: {
 let progressBarEffectiveProps = {} as SegmentedProgressBarProps;
 $: {
     progressBarEffectiveProps = {
-        startTime: 0,
-        endTime: duration,
+        startTime: effectiveControls.overrideStartTime ?? 0,
+        endTime: effectiveControls.overrideEndTime ?? duration,
         currentTime: currentTime,
         breakpoints: [],
         labels: [],
@@ -68,6 +71,13 @@ $: {
         segmentClickStart: false,
         ...effectiveControls.progressBarProps,
     }
+}
+
+// Wait for metadata to be loaded before seeking to the overridden start time.
+//   See: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/readyState
+//   0 = HAVE_NOTHING, 1+ has metadata and is seekable
+$: if (readyState > 0 && effectiveControls?.overrideStartTime !==  undefined) {
+    currentTime = effectiveControls.overrideStartTime;
 }
 
 let videoElementWidth: number = 0;
@@ -182,6 +192,7 @@ export async function play() {
         bind:videoHeight
         bind:duration
         bind:ended
+        bind:readyState
         class:flipped={flipHorizontal}
     >
         <slot />
