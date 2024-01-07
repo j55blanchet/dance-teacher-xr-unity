@@ -1,5 +1,7 @@
 <script lang="ts">
+	import LearningJourneyTrail from './../../../lib/elements/LearningJourneyTrail.svelte';
 	import type { Dance } from "$lib/data/dances-store.js";
+	import type { LearingJourney, LearningActivityGroup, SegmentActivityButtonData } from "$lib/elements/LearningJourneyTrail.svelte";
 	import { navbarProps } from "$lib/elements/NavBar.svelte";
 
 
@@ -19,6 +21,67 @@
             },
         }));
     }
+
+    const learningJourney: LearingJourney = {
+        learningGroups: [
+            {
+                id: 'group1',
+                activities: [
+                    {
+                        id: 'activity1',
+                        type: 'segment',
+                        segmentId: 'A',
+                    },
+                    {
+                        id: 'activity2',
+                        type: 'segment',
+                        segmentId: 'B',
+                    },
+                    {
+                        id: 'activity3',
+                        type: 'segment',
+                        segmentId: 'C',
+                    },
+                    {
+                        id: 'activity4',
+                        type: 'checkpoint',
+                    }
+                ]
+            },
+            {
+                id: 'group2',
+                activities: [
+                    {
+                        id: 'activity5',
+                        type: 'segment',
+                        segmentId: 'D',
+                    },
+                    {
+                        id: 'activity6',
+                        type: 'segment',
+                        segmentId: 'E',
+                    },
+                    {
+                        id: 'activity7',
+                        type: 'checkpoint',
+                    }
+                ]
+            },
+            {
+                id: 'group3',
+                activities: [
+                    {
+                        id: 'activity8',
+                        type: 'drill',
+                    },
+                    {
+                        id: 'activity2',
+                        type: 'finale'
+                    },
+                ]
+            }
+        ]
+    };
 </script>
 
 <svelte:head>
@@ -27,6 +90,27 @@
 </svelte:head>
 
 <section class="section">
-    <h1>{dance.title} Learning Dashboard</h1>
-    <p>TODO: Add a dashboard for learning the dance: {dance.title}</p>
+    <div class="columns is-centered">
+        <div class="column is-narrow">
+            <div class="box">
+                <h3 class="is-size-4">Preview</h3>
+            </div>
+        </div>
+        <div class="column is-narrow">
+            <div class="box">
+                <h3 class="is-size-4">Practice</h3>
+                <LearningJourneyTrail learningJourneyData={learningJourney}/>
+            </div>
+        </div>
+        <div class="column is-narrow">
+            <div class="box">
+                <h3 class="is-size-5">Stats</h3>
+                Stats
+            </div>
+            <div class="box">
+                <h3 class="is-size-5">Achievements</h3>
+                Achievements
+            </div>
+        </div>
+    </div>
 </section>

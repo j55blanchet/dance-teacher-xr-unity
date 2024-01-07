@@ -177,7 +177,7 @@ function clearPerformanceHistory() {
     {#if user}
     <div class="group">
         <h3>Account</h3>
-        <code>{user.email}</code>
+        <p>{user.email}</p>
         <form method="post" action="/account?/signout">
             <div class="buttons">
                 <a on:click={() => dispatch('navigate', '/account')} href="/account" class="button" aria-label="Account Page">Edit Account</a>
