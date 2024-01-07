@@ -51,9 +51,9 @@ const qijiaScoreMin = 0;
 const qijiaScoreMax = 5;
 
 function clearPerformanceHistory() {
-    if (!confirm('Are you sure you want to erase all performance history?')) {
-        return;
-    }
+    // if (!confirm('Are you sure you want to erase all performance history?')) {
+    //     return;
+    // }
     frontendPerformanceHistory.clearAllHistory();
 }
 </script>
@@ -165,10 +165,10 @@ function clearPerformanceHistory() {
             </div>
         </details>
     </div>
+    {/if}
     <div>
         <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
     </div>
-    {/if}
     <div>
         <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
     </div>    
@@ -177,10 +177,10 @@ function clearPerformanceHistory() {
     {#if user}
     <div class="group">
         <h3>Account</h3>
-        <code>{user.email}</code>
-        <a on:click={() => dispatch('navigate', '/account')} href="/account" class="button" aria-label="Account Page">Edit Account</a>
+        <p>{user.email}</p>
         <form method="post" action="/account?/signout">
-            <div>
+            <div class="buttons">
+                <a on:click={() => dispatch('navigate', '/account')} href="/account" class="button" aria-label="Account Page">Edit Account</a>
                 <button class="button block">Sign Out</button>
             </div>
         </form>

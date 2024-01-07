@@ -93,12 +93,6 @@ function toggleSelectDance(dance: Dance) {
     }
 }
 
-let danceTiles = [] as typeof userVisibleDances;
-danceTiles = [...userVisibleDances];
-danceTiles.sort((a, b) => {
-    return a[1].root.complexity - b[1].root.complexity;
-});
-
 let perfHistoryStores = [] as ReturnType<typeof frontendPerformanceHistory.lastNAttemptsAllSegments<"skeleton3DAngleSimilarity">>[];
 
 onMount(() => {
@@ -112,16 +106,24 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     return stores;
 });
 
+let danceTiles = [] as {dance: Dance, pageUrl: string, oldPageUrl: string}[];
+$: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
+    return {
+        dance,
+        pageUrl: "/dance/" + encodeURIComponent(dance.clipRelativeStem) + "/",
+        oldPageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
+    }
+})
 </script>
 
 <section>
-	<h1>
+	<h1 class="has-text-centered is-size-2 block">
 		Pick a dance to learn
 	</h1>
 
     {#if $debugMode && $debugMode__viewDanceMenuAsList}
-	<div class="cols">
-		<div class="col dance-picking ta-center" style="max-width: 60ch;">
+	<div class="columns">
+		<div class="column dance-picking ta-center" style="max-width: 60ch;">
 			<FolderMenu menuContents={menuData} 
 				on:fileSelected={e => toggleSelectDance(e.detail)}
 				selectedFile={selectedDance}
@@ -135,7 +137,7 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 			</ul> -->
 		</div>
 		{#if selectedDance}
-		<div class="col" style="max-width: 40ch;">
+		<div class="column" style="max-width: 40ch;">
 			<p>{selectedDance.title}</p>
 			<FolderMenu menuContents={danceTreeMenuItems} />
 			<!-- <ul>
@@ -147,24 +149,34 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 		{/if}
 	</div>
     {:else}
-    <div class="tiles">
-        {#each danceTiles as [dance, danceTree], i (dance.clipRelativeStem)}
-        <a class="tile" href={"/teachlesson/" + makeDanceTreeSlug(danceTree)}>
-            <img class="thumbnail" src={getThumbnailUrl(supabase, dance)} alt={dance.title + " thumbnail"}>
-            <div class="tile-details">
-                <h3>{dance.title}</h3>
-                <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span>
-                <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt; Difficulty</span> -->
-                <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {danceTree.root.complexity.toFixed(1)}  Difficulty</span>
-
-                <div class="detail">
-                    <span class="label" title="Dance Attempts"><DanceIcon /></span>
-                    <div class="performance-history">
+    <div class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-center">
+        {#each danceTiles as tileData, i (tileData.dance.clipRelativeStem)}
+        <div class="card card-with-left-image m-2" >
+            <figure class="card-image">
+                <p class="image">
+                    <img class="thumbnail is-9by16" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
+                </p>
+            </figure>
+            <div class="card-content">
+                <div class="content">
+                    <h3>{tileData.dance.title}</h3>
+                    <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->
+                    <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span> -->
+                    
+                    <div class="performance-history is-flex is-align-items-center">
+                        <span class="label" title="Dance Attempts"><DanceIcon /></span>
                         {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
                     </div>
                 </div>
+                <div class="buttons">
+                    <a href={tileData.oldPageUrl} class="button">Learn (Legacy)</a>
+                    <a href={tileData.pageUrl} class="button is-primary">Learn</a>
+                </div>
             </div>
-        </a>
+            
+            
+            
+        </div>
         {/each}
     </div>
     {/if} 
@@ -172,89 +184,9 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
 </section>
 
 <style lang="scss">
-    section {
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 0.6;
-		// margin: 0 1rem;
-	}
-    .tiles {
-        margin-bottom: 2rem;
-        max-width: 100%;
-        display: flex;
-        flex-flow: row wrap;
-        margin: 1rem;
-        gap: 1rem;
-        justify-content: center;
+
+    .thumbnail {
+        height: 12rem;
     }
 
-    .tile {
-        
-        flex-grow: 1;
-        max-width: calc(400px);
-        position: relative;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        overflow: hidden;
-        color: var(--color-text);
-        display: flex;
-        flex-direction: row;
-        justify-content: left;
-
-        background-color: rgba(255, 255, 255, 0.25);
-        box-shadow: 0.2rem 0.2rem 0.5rem rgba(0, 0, 0, 0.25);
-        
-        transition: all 0.05s ease-out;
-
-        & .thumbnail {
-            align-self: center;
-            height: 12rem;
-            // min-height: 100%;
-            // flex-grow: 1;
-            object-fit: contain;
-            // border-radius: 0.5rem;
-        }
-
-        & h3 {
-            margin-top: 1rem;
-        }
-    }
-
-    .tile:hover {
-        background-color: rgba(245, 255, 245, 0.4);
-        box-shadow: 0.15rem 0.15rem 0.6rem rgba(0, 0, 0, 0.4);
-        color: var(--color-theme-1);
-    }
-
-    .tile-details {
-        padding: 0 1.5rem 0rem 1.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: start;
-        align-items: start;
-        text-align: center;
-        
-        & .detail {
-            display: flex;
-            flex-direction: row;
-            justify-content: start;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        // transition: all 0.1s ease-in-out;
-    }
-	p {
-		font-size: 1.1rem;
-		margin-bottom: 0;
-		padding: 0.25em 0.5em;
-		
-	}
-
-    .links {
-        flex-flow: row wrap;
-        gap: 1em;
-    }
 </style>

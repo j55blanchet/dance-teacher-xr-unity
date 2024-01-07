@@ -10,7 +10,7 @@ import { evaluation_summarizeSubsections, practiceActivities__playbackSpeed, sum
 import { findDanceTreeNode, getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
-import type PracticeActivity from "$lib/model/PracticeActivity";
+import type PracticeActivity from "$lib/model/PracticeStep";
 import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation, type DanceTreeNode } from "$lib/data/dances-store";
 import { generateFeedbackNoPerformance, generateFeedbackRuleBased, generateFeedbackWithClaudeLLM } from '$lib/ai/feedback';
 import { Draw2dSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
@@ -28,12 +28,12 @@ import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
 import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
 import { goto, invalidateAll } from '$app/navigation';
-import { GeneratePracticeActivity, type GeneratePracticeActivityOptions } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeStep, type GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
 import { waitSecs } from '$lib/utils/async';
-import { PracticeActivityDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeActivityInterfaceSettings } from '$lib/model/PracticeActivity';
+import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepInterfaceSettings } from '$lib/model/PracticeStep';
 import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -45,8 +45,8 @@ export let practiceActivity: PracticeActivity | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
 
-let interfaceSettings: PracticeActivityInterfaceSettings = PracticeInterfaceModes[PracticeActivityDefaultInterfaceSetting];
-$: interfaceSettings = PracticeInterfaceModes[practiceActivity?.interfaceMode ?? PracticeActivityDefaultInterfaceSetting];
+let interfaceSettings: PracticeStepInterfaceSettings = PracticeInterfaceModes[PracticeStepDefaultInterfaceSetting];
+$: interfaceSettings = PracticeInterfaceModes[practiceActivity?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
 let skeletonDrawingEnabled: boolean;
 $: skeletonDrawingEnabled = practiceActivity?.showUserSkeleton ?? true;
 let terminalFeedbackEnabled: boolean;
@@ -171,7 +171,7 @@ async function onNodeClickedById(id: string) {
 }
 
 // Base the settings for the next practice activity based on the current one
-let nextPracticeActivityParams: GeneratePracticeActivityOptions = {
+let nextPracticeActivityParams: GeneratePracticeStepOptions = {
     playbackSpeed: practiceActivity?.playbackSpeed ?? $practiceActivities__playbackSpeed,
     interfaceMode: practiceActivity?.interfaceMode ?? $practiceActivities__interfaceMode,
     terminalFeedbackEnabled: practiceActivity?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
@@ -187,7 +187,7 @@ async function onNodeClicked(clickedNode: DanceTreeNode) {
     const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
     const nodeSlug = clickedNode.id;
         
-    let { activity: newActivity, url} = await GeneratePracticeActivity(
+    let { step: newActivity, url} = await GeneratePracticeStep(
         dance, 
         danceTree, 
         clickedNode, 

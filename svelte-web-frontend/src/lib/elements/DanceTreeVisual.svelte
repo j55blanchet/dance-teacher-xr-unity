@@ -157,7 +157,7 @@ function barClicked () {
 
     <a class="bar outlined" 
        class:hidden={isBarHidden}
-       class:button={enableClick} 
+       
        class:active={showProgress}
        class:hasScore={enableThisNodeColorCoding && $bestScore !== undefined}
        class:hasGoodScore={enableThisNodeColorCoding && $bestScore !== undefined && $bestScore.score > $summaryFeedback_skeleton3d_goodPerformanceThreshold}
@@ -174,7 +174,7 @@ function barClicked () {
        tabindex="0"
        title={nodeTitleString}
     >   
-        {#if showProgress}<span class="progress" style="width:{progressPercent*100}%">
+        {#if showProgress}<span class="progress" style="width:{Math.min(progressPercent, 1.0)*100}%">
             <!-- {currentTime.toFixed(1)} -->
         </span>{/if}
 
@@ -189,6 +189,10 @@ function barClicked () {
         
         {#if highlight?.label !== undefined}
         <span class="label">{highlight?.label}</span>
+        {:else if $debugMode && node_title !== undefined}
+        <span class="label">
+            {node_title}
+        </span>
         {/if}
     </a>
 
@@ -217,6 +221,7 @@ function barClicked () {
 .node {
     --hide-transition-duration: 0.75s;
     --highlight-color: #eaff00;    
+    box-sizing: border-box;
 }
     
     .bar {
@@ -229,10 +234,11 @@ function barClicked () {
         transition: height var(--height-transition-duration, --hide-transition-duration) ease-in-out, width var(--hide-transition-duration) ease-in-out, padding var(--hide-transition-duration) ease-in-out, opacity var(--hide-transition-duration) ease-in-out, background-color var(--hide-transition-duration) ease-in-out;
         border-width: 0.12em;
         padding: 0;
-        overflow: hidden;
+        // overflow: hidden;    
         display: flex;
         align-items: center;
         justify-content: center;
+        border-radius: var(--std-border-radius);
     }
 
     .bar.highlighted {
@@ -287,6 +293,8 @@ function barClicked () {
         left: 0;
         top: 0;
         bottom: 0;
+        height: 100%;
+        border-radius: 0;
         display: block;
         background-color: rgba(0, 0, 0, 0.3);
         border-width: 0.12em;

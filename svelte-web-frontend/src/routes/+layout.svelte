@@ -47,46 +47,42 @@
 	})
 </script>
 
-<div class="app" class:noNavBar={$navbarProps.collapsed}>
-	<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
+<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
+<div class="app-content" class:noNavBar={$navbarProps.collapsed} >
 	<slot />
-
-	<div class="debug">
-		{$webcamStream}
-		<slot name="debug" />
-	</div>
-
-	<dialog class="settingsDialog" bind:this={settingsDialog}>
-		<div class="closeButtonContainer">
-			<CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} />
+</div>
+<dialog class="settingsDialog" bind:this={settingsDialog}>
+	<div class="card">
+		<div class="card-header">
+			<h3 class="card-header-title is-centered">Settings</h3>
+			<div class="card-header-icon"><CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} /></div>
 		</div>
-		<div class="settingsContainer outlined">
+		<div class="closeButtonContainer">
+			
+		</div>
+		<div class="settingsContainer ">
 			<SettingsPage 
 				user={session?.user ?? null} 
 				on:navigate={() => toggleSettings(false)}/>
 		</div>
-	</dialog>
-</div>
+	</div>
+</dialog>
 
-<style>
-	.app {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-		align-items: center;
-		justify-content: center;
-		--navbar_height: 3rem;
+
+<style lang="scss">
+	.app-content {
+		// display: flex;
+		// flex-direction: column;
 		--content_height: calc(100vh - var(--navbar_height));
+		min-height: var(--content_height);
+		// align-items: center;
+		// justify-content: center;
+		--navbar_height: 3rem;
 	}
 
-	.app.noNavBar {
+	.app-content.noNavBar {
 		--content_height: 100vh;
 		--navbar_height: 0;
-	}
-
-	.debug {
-		position: absolute;
-		visibility: hidden;
 	}
 
 	.settingsDialog {
@@ -95,10 +91,10 @@
 		/* left: 1rem; */
 		/* right: 1rem; */
 		--content_height: auto;
-		margin-top: 0;
-		margin-right: 0;
+		margin-top: 1rem;
+		margin-right: 1rem;
 		max-width: calc(100vw - 2rem);
-		padding: 0.5em;
+		padding: 0;
 		background: none;
 		border: none;
 		/* background: rgba(0, 0, 0, 0.5); */
@@ -106,18 +102,12 @@
 
 	.closeButtonContainer {
 		display: flex;
-		justify-content: flex-end;
-		
+		justify-content: flex-end;	
 	}
 
 	.settingsDialog::backdrop {
 		background: rgba(0, 0, 0, 0.2);
 		backdrop-filter: blur(5px);
 		--webkit-backdrop-filter: blur(5px);
-	}
-
-	.settingsContainer {
-		background: white;
-		margin-top: 0.5rem;
 	}
 </style>

@@ -1,7 +1,7 @@
 import type { Dance, DanceTree, DanceTreeNode } from "$lib/data/dances-store";
 
 
-export type PracticeActivityInterfaceSettings = {
+export type PracticeStepInterfaceSettings = {
     referenceVideo: {
         visibility: 'visible' | 'hidden',
         skeleton: 'user' | 'reference' | 'none',
@@ -33,7 +33,7 @@ export const PracticeInterfaceModes = {
             visibility: 'hidden',
         skeleton: 'none',
         },
-    } as PracticeActivityInterfaceSettings,
+    } as PracticeStepInterfaceSettings,
 
     userVideoOnly : {
         referenceVideo: {
@@ -44,7 +44,7 @@ export const PracticeInterfaceModes = {
             visibility: 'visible',
             skeleton: 'user',
         },
-    } as PracticeActivityInterfaceSettings,
+    } as PracticeStepInterfaceSettings,
 
     bothVideos : {
         referenceVideo: {
@@ -55,20 +55,20 @@ export const PracticeInterfaceModes = {
             visibility: 'visible',
             skeleton: 'user',
         },
-    } as PracticeActivityInterfaceSettings,
+    } as PracticeStepInterfaceSettings,
 } as const;
 
-export type PracticeInterfaceModeKey = keyof typeof PracticeInterfaceModes;
-export const PracticeInterfaceModeOptions: Record<PracticeInterfaceModeKey, string> = {
+export type PracticeStepModeKey = keyof typeof PracticeInterfaceModes;
+export const PracticeInterfaceModeOptions: Record<PracticeStepModeKey, string> = {
     watchDemo: 'Demo Video',
     bothVideos: 'Demo + Mirror',
     userVideoOnly: 'Mirror',
 } as const;
-export const PracticeActivityDefaultInterfaceSetting: PracticeInterfaceModeKey = 'bothVideos';
-export default interface PracticeActivity {
+export const PracticeStepDefaultInterfaceSetting: PracticeStepModeKey = 'bothVideos';
+export default interface PracticeStep {
     startTime: number;
     endTime: number;
-    interfaceMode: PracticeInterfaceModeKey;
+    interfaceMode: PracticeStepModeKey;
     terminalFeedbackEnabled: boolean;
     showUserSkeleton: boolean;
     playbackSpeed: number;

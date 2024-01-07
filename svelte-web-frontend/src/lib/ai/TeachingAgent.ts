@@ -1,30 +1,29 @@
 import { makeDanceTreeSlug, type Dance, type DanceTree, type DanceTreeNode } from '../data/dances-store'
-import type PracticeActivity from '$lib/model/PracticeActivity';
-import type { PracticeInterfaceModeKey } from '$lib/model/PracticeActivity';
+import type PracticeStep from '$lib/model/PracticeStep';
+import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
 
 // export interface UserDancePerformanceLog {
 //     // markingByNode: Map<DanceTreeNode["id"], number>;
 //     // similarityByNode: Map<DanceTreeNode["id"], number>;
 // }
 
-
-export type GeneratePracticeActivityOptions = {
+export type GeneratePracticeStepOptions = {
     playbackSpeed: number,
-    interfaceMode: PracticeInterfaceModeKey,
+    interfaceMode: PracticeStepModeKey,
     terminalFeedbackEnabled: boolean,
     showUserSkeleton: boolean,
 };
 
-export function GeneratePracticeActivity(
+export function GeneratePracticeStep(
     dance: Dance,
     danceTree: DanceTree,
     danceTreeNode: DanceTreeNode,
-    opts: GeneratePracticeActivityOptions
+    opts: GeneratePracticeStepOptions
 ) {
     
     const danceTreeSlug =  makeDanceTreeSlug(danceTree);
     return {
-        activity: {
+        step: {
             segmentDescription: danceTreeNode.id,
             startTime: danceTreeNode.start_time,
             endTime: danceTreeNode.end_time,
@@ -35,7 +34,7 @@ export function GeneratePracticeActivity(
             dance: dance,
             danceTree: danceTree,
             danceTreeNode: danceTreeNode,
-        },
+        } as PracticeStep,
         url: `/teachlesson/${danceTreeSlug}/practicenode/${danceTreeNode.id}?playbackSpeed=${opts.playbackSpeed}&interfaceMode=${opts.interfaceMode}&terminalFeedbackEnabled=${opts.terminalFeedbackEnabled}&showUserSkeleton=${opts.showUserSkeleton}`,
     }
 }

@@ -1,8 +1,84 @@
-// @import url('https://fonts.googleapis.com/css2?family=Grandstander:wght@100;200;400;600&display=swap');
-// @import url(https://fonts.googleapis.com/css?family=Patrick+Hand+SC);
-// @import url('https://fonts.googleapis.com/css2?family=Recursive:wght,CASL,CRSV,MONO@450,1,1,1&display=swap'); 
-// @import '@fontsource/fira-mono';
-// @import 'simple-grid.scss';
+@charset "utf-8";
+
+// Set your brand colors
+$blue: #3C64B1;
+$green: #0fb40b;
+$purple: #8A4D76;
+$pink: #FA7C91;
+$brown: #757763;
+$beige-light: #D0D1CD;
+$beige-lighter: #EFF0EB;
+
+$radius-small: 2px;
+$radius: 4px;
+$radius-large: 6px;
+
+$code: darkgray;
+
+// Update Bulma's global variables
+$family-sans-serif: -apple-system, BlinkMacSystemFont, Roboto, Ubuntu, 'Segoe UI', 'Open Sans', 'Helvetica Neue', 'Arial', sans-serif;
+// $grey-dark: $brown;
+// $grey-light: $beige-light;
+$primary: $blue;
+$link: $blue;
+// $widescreen-enabled: false;
+// $fullhd-enabled: false;
+
+// Update some of Bulma's component variables
+$body-background-color: $beige-lighter;
+// $control-border-width: 2px;
+// $input-border-color: transparent;
+// $input-shadow: none;
+
+@import "../../node_modules/bulma/bulma.sass";
+
+$shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($scheme-invert, 0.04);
+
+.card.card-with-left-image {
+	display: flex;
+	flex-direction: row;
+	align-items: start;
+
+	& .card-image .image img {
+		border-radius: $radius 0 0 $radius;
+	}
+}
+
+.card.card-button{
+	transition: box-shadow 0.2s $easing;
+
+	&:hover {
+		box-shadow: $shadow-deep;
+	}
+}
+
+.navbar {
+	@each $name, $pair in $navbar-colors {
+		$color: nth($list: $pair, $n: 1);
+		$color-invert: nth($pair, 2);
+		&.is-#{$name} {
+			background-color: $color;
+			color: $color-invert;
+			> .navbar-item {
+				color: $color-invert;
+				// &:hover {
+					// background-color: $color-invert;
+					// color: $color;
+				// }
+				.navbar-title {
+					color: $color-invert;
+					font-weight: 600;
+				}
+				.navbar-subtitle {
+					color: $color-invert;
+					font-weight: 400;
+					font-size: 0.75rem;
+				}
+			}
+		}		
+	}
+}
+
 
 :root {
 	/* --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
@@ -14,107 +90,27 @@
 	--color-bg-1: hsl(209, 14%, 64%);
 	--color-bg-2: hsl(223, 35%, 84%);
 	--color-red: #ff3e00;
-	--color-blue: #4075a6;
-	--color-theme-1: var(--color-blue);
-	--color-theme-2: #var(--color-red);
+	--color-green: $green;
+	--color-blue: $blue|;
+	--color-theme-1: #{$primary};
+	--color-theme-2: var(--color-red);
 	--color-text: rgba(0, 0, 0, 0.7);
 	--color-text-disabled: rgba(100, 100, 100, 0.5);
 	--color-text-label: rgba(50, 50, 50, 0.6);
 	
 	--max-line-width: 50ch;
 	// --std-border-radius: 1rem;
-	--std-border-radius: 5% 1% 5% 1%/1% 5% 1% 5%;
+	--std-border-radius: #{$radius};
 	font-family: var(--font-body);
 	color: var(--color-text);
 }
 
+
+
 body {
 	min-height: 100vh;
 	margin: 0;
-	background-attachment: fixed;
-	background-color: var(--color-bg-1);
-	background-size: 100vw 100vh;
-	--radial-focusing-gradient: radial-gradient(
-		50% 50% at 50% 50%,
-		rgba(255, 255, 255, 0.75) 0%,
-		rgba(255, 255, 255, 0) 100%
-	);
-	background-image: var(--radial-focusing-gradient), linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
 }
-
-.text-disabled {
-	color: var(--color-text-disabled)
-}
-.text-label {
-	color: var(--color-text-label);
-}
-
-.text-red {
-	color: var(--color-red)
-}
-
-h1,
-h2,
-p {
-	font-weight: 400;
-}
-
-p {
-	line-height: 1.5;
-}
-
-.limit-line-width {
-	max-width: var(--max-line-width);
-}
-
-a {
-	color: var(--color-theme-1);
-	text-decoration: none;
-}
-
-a:hover {
-	text-decoration: underline;
-}
-
-h1 {
-	font-size: 2rem;
-	text-align: center;
-}
-
-h2 {
-	font-size: 1rem;
-}
-
-pre {
-	font-size: 16px;
-	font-family: var(--font-mono);
-	background-color: rgba(255, 255, 255, 0.45);
-	border-radius: 3px;
-	box-shadow: 2px 2px 6px rgb(255 255 255 / 25%);
-	padding: 0.5em;
-	overflow-x: auto;
-	color: var(--color-text);
-}
-
-.text-column {
-	display: flex;
-	max-width: 48rem;
-	flex: 0.6;
-	flex-direction: column;
-	justify-content: center;
-	margin: 0 auto;
-}
-
-input,
-button {
-	font-size: inherit;
-	font-family: inherit;
-}
-
-button:focus:not(:focus-visible) {
-	outline: none;
-}
-
 @media (min-width: 720px) {
 	h1 {
 		font-size: 2.4rem;
@@ -131,130 +127,6 @@ button:focus:not(:focus-visible) {
 	position: absolute;
 	width: 1px;
 	white-space: nowrap;
-}
-
-.link {
-	color: var(--color-theme-1);
-	text-decoration: none;
-	padding: 0;
-	margin: 0;
-	border: none;
-	cursor: pointer;	
-	background-color: transparent;
-}
-.link:hover {
-	text-decoration: underline;
-}
-
-.button, .outlined {
-	border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-	border-width: 3.5px;
-	border-color: var(--color-text);
-	border-style: solid;
-	color: var(--color-text);
-}
-.button.text-disabled, .outlined.text-disabled {
-	border-color: var(--color-text-disabled);
-	color: var(--color-text-disabled);
-	cursor: not-allowed;
-}
-
-.button {
-	padding: 0.5em;
-	// margin: 0.25em;
-	display: inline-block;
-	text-decoration: none;
-	border-width: 2px;
-	background-color: rgb(239, 239, 239);
-	cursor: pointer;
-	// transition: color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-a.button {
-	text-decoration: none;
-}
-
-.button:hover {
-	// display: inline-block;
-	background-color: rgba(247, 247, 247);
-	color: var(--color-theme-2);
-	box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.5);
-}
-
-.outlined.dotted {
-	border-style: dotted;
-}
-.outlined.dashed {
-	border-style: dashed;
-}
-.outlined.lined {
-	border-style: solid;
-}
-.outlined.thin {
-	border-width: 2px;
-}
-.outlined.thick {
-	border-width: 5px;
-}
-.outlined.lined.thick {
-	border-width: 7px;
-}
-
-.cols {
-	display: flex;
-	flex-direction: row;
-	align-items: flex-start;
-	align-content: flex-start;
-	justify-content: center;
-	flex-wrap: wrap;
-	gap: 0.65em;
-	width: 100%;
-}
-
-.cols .col {
-	flex: 1;
-	flex-basis: 0;
-}
-.col.vcenter {
-	align-self: center;
-}
-.col.vfill {
-	height: 100%;
-}
-
-.ta-center {
-	text-align: center;
-}
-.ta-right {
-	text-align: right;
-}
-.p-1 {
-	padding: 0.25rem;
-}
-.p-4 {
-	padding: 1rem;
-}
-.pb-4 {
-	padding-bottom: 1rem;
-}
-.mt-1 {
-	margin-top: 0.25rem;
-}
-.m-4 {
-	margin: 1rem;
-}
-.ml-4 {
-	margin-left: 1rem;
-}
-.mb-4 {
-	margin-bottom: 1rem;
-}
-.mt-4 {
-	margin-top: 1rem;
-}
-
-.margin-auto {
-	margin: auto;
 }
 
 .spinner {

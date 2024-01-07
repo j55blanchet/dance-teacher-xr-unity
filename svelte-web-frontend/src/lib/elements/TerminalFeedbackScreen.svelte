@@ -210,27 +210,30 @@ function exportRecordings() {
     </div>
     {/if}
     
-    <div class="actions">
+    <div class="buttons">
     {#each actions as action, i}
         {#if action.type === 'button'}
-        <button class="button outlined thick" 
-            class:primary={i===0} 
-            class:secondary={i>0}
-            class:suggested={action.suggested ?? false}
+        <button class="button" 
+            class:is-primary={action.suggested ?? false}
             on:click={action.onClick}
             >
             {action.title}
         </button>
         {:else}
-        <span class="actionInfo">
+        <article class="message is-light">
+            <div class="message-body">
+                {action.title}
+            </div>
+        </article>
+        <!-- <span class="actionInfo">
             {action.title}
-        </span>
+        </span> -->
         {/if}
     {/each}
     </div>
     
     {#if $debugMode}
-        <div class="debug actions">
+        <div class="debug buttons">
             {#if performanceSummaryWithoutTrack}
             <button class="button" on:click={() => showingPerformanceSummary = true }>
                 View Performance Summary
@@ -368,56 +371,6 @@ pre {
 
 pre {
     white-space: pre-wrap;
-}
-
-// button.primary {
-//     font-weight: 800;
-//     background: white;
-//     border-color: var(--color-theme-1);
-//     color: var(--color-theme-1); 
-// }
-// button.secondary {
-    // margin-top: 0.25rem;
-    // font-size: 0.8em;
-// }
-
-.actions .suggested {
-    color: var(--color-theme-1);
-    border-color: var(--color-theme-1);
-    animation: pulse_color 1s infinite;
-}
-
-
-@keyframes pulse_color {
-  0% {
-    border-color: var(--color-text);
-    color: var(--color-text);
-  }
-  50% {
-    border-color: var(--color-theme-1);
-    color: var(--color-theme-1);
-  }
-  100% {
-    border-color: var(--color-text);
-    color: var(--color-text);
-  }
-}
-
-.actions {
-    margin-top: 1rem;
-    font-size: 0.8em;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    width: 100%;
-    // margin-top: 1rem;
-}
-.actionInfo {
-    padding: 0.5em;
-    font-size: 0.8em;
 }
 
 .reviewPageWrapper {

@@ -1,5 +1,5 @@
 import type { DanceTree, DanceTreeNode } from "$lib/data/dances-store";
-import { GetArithmeticMean, type BodyInnerAnglesComparisons, GetHarmonicMean } from "./EvaluationCommonUtils";
+import { GetArithmeticMean } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
 import type { Angle3DMetricSummaryOutput } from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
@@ -14,7 +14,7 @@ function GetInaccurateJoints(skeleton3DSimilarity: Angle3DMetricSummaryOutput, b
     // get all the joints that are 1 standard deviation below the mean.
     const badJoints = jointScoreEntries
         .filter(
-            ([joint, score]) => 
+            ([_joint, score]) => 
             score < comparisonMean - (badJointSDThreshold * comparisonSD)
         );
 
@@ -123,7 +123,7 @@ export function distillPerformanceHistoryToTextualRepresentation(dancePerformanc
         const attemptCount = nonnullOverallScoreAttempts.length;
         const secondMostRecentAttempt = nonnullOverallScoreAttempts[attemptCount - 2];
         const secondMostRecentAttemptDate = secondMostRecentAttempt?.date?.toISOString() ?? "never";
-        const secondMostReceentAttemptString = secondMostRecentAttempt ? ` The next most recent attempt, performed ${secondMostRecentAttemptDate}, got a score of ${secondMostRecentAttempt?.score.toFixed(2)}` : '';
+        const secondMostReceentAttemptString = secondMostRecentAttempt ? ` The next most recent attempt, performed ${secondMostRecentAttemptDate}, got a score of ${secondMostRecentAttempt?.score?.toFixed(2)}` : '';
         const attemptsAsPartOfLargerPerformance = nonnullOverallScoreAttempts.filter(x => x.partOfLargerPerformance).length;
         const attemptsNotAsPartOfLargerPerformance = attemptCount - attemptsAsPartOfLargerPerformance;
         const meanScore = GetArithmeticMean(nonnullOverallScoreAttempts.map(x => x.score));
