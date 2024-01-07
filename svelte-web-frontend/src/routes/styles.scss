@@ -101,8 +101,13 @@ $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($sch
 	--max-line-width: 50ch;
 	// --std-border-radius: 1rem;
 	--std-border-radius: #{$radius};
+	--std-block-spacing: #{$block-spacing};
 	font-family: var(--font-body);
 	color: var(--color-text);
+
+	@each $key, $value in $spacing-values {
+		--spacing-#{$key}: #{$value};
+	}
 }
 
 

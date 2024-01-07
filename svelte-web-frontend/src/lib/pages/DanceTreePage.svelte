@@ -255,8 +255,12 @@ $: {
                 fitToFlexbox={false}
                 drawSkeleton={false}
                 volume={$danceVideoVolume}
-                showProgressBar={true}
-                progressBarProps={progressBarProps}
+                controls={{
+                    showPlayPause: true,
+                    enablePlayPause: true,
+                    showProgressBar: true,
+                    progressBarProps: progressBarProps,
+                }}
                 >
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>

@@ -5,6 +5,7 @@ import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } f
 import type { DrawingUtils, PoseLandmarker, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
 import SegmentedProgressBar, { type SegmentedProgressBarProps } from "./SegmentedProgressBar.svelte";
+import Icon from '@iconify/svelte';
 
 let videoElement: HTMLVideoElement;
 let canvasElement: HTMLCanvasElement;
@@ -34,8 +35,27 @@ export let dance: Dance | null = null;
 export let poseData: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
 export let drawSkeleton: boolean = true;
 
-export let showProgressBar: boolean = false;
-export let progressBarProps: Partial<Omit<SegmentedProgressBarProps, "currentTime">> = {};
+type ControlOptions = {
+    showPlayPause: boolean,
+    enablePlayPause: boolean,
+    showProgressBar: boolean,
+    progressBarProps: Partial<Omit<SegmentedProgressBarProps, "currentTime">>
+}
+export let controls: ControlOptions | boolean = false;
+let effectiveControls: ControlOptions;
+$: {
+    if (typeof controls === "boolean") {
+        effectiveControls = {
+            showPlayPause: controls,
+            enablePlayPause: controls,
+            showProgressBar: controls,
+            progressBarProps: {},
+        }
+    } else {
+        effectiveControls = controls;
+    }
+}
+
 let progressBarEffectiveProps = {} as SegmentedProgressBarProps;
 $: {
     progressBarEffectiveProps = {
@@ -45,7 +65,8 @@ $: {
         breakpoints: [],
         labels: [],
         classes: [["is-primary"]],
-        ...progressBarProps,
+        segmentClickStart: false,
+        ...effectiveControls.progressBarProps,
     }
 }
 
@@ -168,13 +189,30 @@ export async function play() {
     <div class="is-overlay canvas">
         <canvas bind:this={canvasElement}></canvas>
     </div>
-    {#if showProgressBar}
-        <div class="is-overlay controls">
-            <SegmentedProgressBar 
-                {...progressBarEffectiveProps}
-            />
+    <div class="is-overlay control-container p-2">
+        
+        {#if effectiveControls.showProgressBar}
+        <SegmentedProgressBar 
+            {...progressBarEffectiveProps}
+        />
+        {/if}
+        {#if effectiveControls.showPlayPause}
+        <div class="buttons is-centered">
+            <button class="button" disabled={!effectiveControls.enablePlayPause} on:click={() => paused = !paused}>
+                {#if paused}
+                <span class="icon">
+                    <Icon icon="icon-park-outline:play-one" />
+                </span>
+                {:else if !paused}
+                <span class="icon">
+                    <Icon icon="icon-park-outline:pause" />
+                </span>
+                {/if}
+
+            </button>
         </div>
-    {/if}
+        {/if}
+    </div>
     <!-- <div class="overlay debug">
         <div><strong>Pose Data:</strong>&nbsp;{poseData ? "Exists" : "Null"}</div>
         <div><strong>Pose To Draw:</strong>&nbsp;{poseToDraw ? "Exists" : "Null"}</div>
@@ -216,8 +254,13 @@ video {
     justify-content: center;
     flex-direction: column;
 }
-.controls {
-    top: auto;
+.control-container {
+    display: flex;
+    align-items: stretch;
+    justify-content: end;
+    flex-direction: column;
+
+    gap: var(--std-block-spacing);
 }
 
 .debug {

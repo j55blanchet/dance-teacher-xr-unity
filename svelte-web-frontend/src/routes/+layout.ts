@@ -1,5 +1,5 @@
 // src/routes/+layout.ts
-import { invalidate } from '$app/navigation'
+// import { invalidate } from '$app/navigation'
 import { NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_URL } from '$env/static/public'
 import { createSupabaseLoadClient } from '@supabase/auth-helpers-sveltekit'
 

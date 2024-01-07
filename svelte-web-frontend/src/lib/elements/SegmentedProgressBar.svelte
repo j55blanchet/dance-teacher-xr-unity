@@ -7,6 +7,7 @@
         breakpoints: number[],
         labels: string[],
         classes: string[][],
+        segmentClickStart: boolean[] | boolean,
     }
 </script>
 <script lang="ts">

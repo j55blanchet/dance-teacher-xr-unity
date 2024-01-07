@@ -99,32 +99,71 @@
     <meta name="description" content="App for learning the dance: {dance.title}" />
 </svelte:head>
 
-<section class="section">
-    <div class="columns is-centered">
-        <div class="column is-narrow">
-            <div class="box p-0">
-                <VideoWithSkeleton 
-                    dance={dance}
-                    showProgressBar={true}>
-                    <source src={danceSrc} type="video/mp4" />
-                </VideoWithSkeleton>
-            </div>
-        </div>
-        <div class="column is-narrow">
-            <div class="box">
-                <h3 class="is-size-4">Practice</h3>
-                <LearningJourneyTrail uiData={learningJourney}/>
-            </div>
-        </div>
-        <div class="column is-narrow">
-            <div class="box">
-                <h3 class="is-size-5">Stats</h3>
-                Stats
-            </div>
-            <div class="box">
-                <h3 class="is-size-5">Achievements</h3>
-                Achievements
-            </div>
+<section class="learning-dashboard p-5">
+    
+    <div class="preview-video-container">
+        <div class="box p-0 video-wrapper">
+            <VideoWithSkeleton 
+                dance={dance}
+                controls={{
+                    showPlayPause: true,
+                    showProgressBar: true,
+                    enablePlayPause: true,
+                    progressBarProps: {}
+                }}
+                >
+                <source src={danceSrc} type="video/mp4" />
+            </VideoWithSkeleton>
         </div>
     </div>
+
+    <div class="box learning-journey">
+        <h3 class="is-size-4">Practice</h3>
+        <LearningJourneyTrail uiData={learningJourney}/>
+    </div>
+
+    <!-- <div class="column is-narrow">
+        <div class="box">
+            <h3 class="is-size-5">Stats</h3>
+            Stats
+        </div>
+        <div class="box">
+            <h3 class="is-size-5">Achievements</h3>
+            Achievements
+        </div>
+    </div> -->
+    
 </section>
+
+
+<style lang="scss">
+.learning-dashboard {
+    height: var(--content_height);
+    box-sizing: border-box;
+    overflow: hidden;
+    display: grid;
+    grid-template: 
+        'preview journey' 1fr / 
+        minmax(320px, auto) 1fr
+        ;
+    gap: var(--std-block-spacing);
+}
+
+.preview-video-container {
+    grid-area: 'preview';
+    overflow: hidden;
+    max-height: calc(100%);
+    align-self: center;
+    justify-self: right;
+}
+
+.video-wrapper {
+    display: flex;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.learning-journey {
+    grid-area: 'journey';
+}
+</style>
