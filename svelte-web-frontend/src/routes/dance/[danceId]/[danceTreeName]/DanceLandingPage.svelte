@@ -153,15 +153,15 @@
                     <button class="daisy-btn daisy-btn-square max-md:daisy-btn-sm" on:click={toggleRepeatMode}>
                         <!-- <Icon icon="ic:round-repeat-one" /> -->
                         {#if !repeatEnabled}
-                            <span class="iconify-[lucide--repeat] size-6 md:size-8"></span>
-                            <span class="absolute iconify-[lucide--slash] size-6 md:size-8 -scale-x-100"></span>
+                            <span class="iconify-[lucide--repeat] size-6 md:size-7"></span>
+                            <span class="absolute iconify-[lucide--slash] size-6 md:size-7 -scale-x-100"></span>
                             <!-- <span class="iconify-[pepicons-pop--repeat-off] size-6 md:size-8"></span> -->
                             <!-- <Icon icon="pepicons-pop:repeat-off" /> -->
                         {:else if focusedSegmentIndex !== undefined}
-                            <span class="iconify-[lucide--repeat-1] size-6 md:size-8"></span>
+                            <span class="iconify-[lucide--repeat-1] size-6 md:size-7"></span>
                             <!-- <Icon icon="f7:repeat-1" /> -->
                         {:else}
-                            <span class="iconify-[lucide--repeat] size-6 md:size-8"></span>
+                            <span class="iconify-[lucide--repeat] size-6 md:size-7"></span>
                             <!-- <Icon icon="f7:repeat" /> -->
                         {/if}
                     </button>

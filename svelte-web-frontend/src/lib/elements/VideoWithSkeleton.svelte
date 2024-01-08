@@ -228,11 +228,11 @@ function onSkipBackClicked() {
         />
         {/if}
         {#if effectiveControls.showPlayPause}
-        <div class="flex flex-row flex-wrap is-centered justify-center gap-2">
+        <div class="flex flex-row flex-wrap justify-center gap-2">
             <button class="daisy-btn daisy-btn-square max-md:daisy-btn-sm"
                 on:click={onSkipBackClicked}>
                 
-                <span class="iconify-[lucide--skip-back] size-6 md:size-8"></span>
+                <span class="iconify-[lucide--skip-back] size-6 md:size-7"></span>
                 <!-- <Icon icon="uil:previous" /> -->
                 
             </button>
@@ -240,12 +240,12 @@ function onSkipBackClicked() {
                  on:click={onPlayPauseClick}>
                 {#if paused}
 
-                <span class="iconify-[lucide--play] size-6 md:size-8"></span>
+                <span class="iconify-[lucide--play] size-6 md:size-7"></span>
                 <!-- <span class="icon">
                     <Icon icon="icon-park-outline:play-one" />
                 </span> -->
                 {:else if !paused}                
-                    <span class="iconify-[lucide--pause] size-6 md:size-8"></span>
+                    <span class="iconify-[lucide--pause] size-6 md:size-7"></span>
                     <!-- <Icon icon="icon-park-outline:pause" /> -->
                 {/if}
             </button>
