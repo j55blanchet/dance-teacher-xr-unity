@@ -15,6 +15,9 @@ $radius-large: 6px;
 
 $code: darkgray;
 
+// Disable Bulma's navbar responsiveness
+$navbar-breakpoint: 0px;
+
 // Update Bulma's global variables
 $family-sans-serif: -apple-system, BlinkMacSystemFont, Roboto, Ubuntu, 'Segoe UI', 'Open Sans', 'Helvetica Neue', 'Arial', sans-serif;
 // $grey-dark: $brown;

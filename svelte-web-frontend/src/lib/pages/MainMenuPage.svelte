@@ -154,7 +154,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
         <div class="card card-with-left-image m-2" >
             <figure class="card-image">
                 <p class="image">
-                    <img class="thumbnail is-9by16" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
+                    <img class="thumbnail" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
                 </p>
             </figure>
             <div class="card-content">
@@ -186,7 +186,9 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 <style lang="scss">
 
     .thumbnail {
-        height: 12rem;
+        --height: 11.5rem;
+        height: var(--height);
+        width: calc(var(--height) * 9 / 16);
     }
 
 </style>

@@ -271,7 +271,7 @@ video {
     justify-content: end;
     flex-direction: column;
 
-    gap: var(--std-block-spacing);
+    gap: var(--spacing-2);
 }
 
 .debug {

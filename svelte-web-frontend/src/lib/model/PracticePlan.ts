@@ -1,14 +1,37 @@
 import type PracticeStep from "./PracticeStep";
 
+export type PracticePlanActivityType = 
+    'segment' | 'checkpoint' | 'drill' | 'finale';
 
-export type PracticePlanActivity = {
+export type PracticePlanActivityBase = {
     id: string;
-    type: '';
     steps: PracticeStep[],
+
+    state?: {
+        completed?: boolean;
+        locked?: boolean;
+    }
 }
 
+export interface SegmentActivity extends PracticePlanActivityBase {
+    type: 'segment';
+    segmentTitle: string;
+    // segmentTitle: string;
+}
+export interface CheckpointActivity extends PracticePlanActivityBase {
+    type: 'checkpoint';
+}
+export interface DrillActivity extends PracticePlanActivityBase {
+    type: 'drill';
+}
+export interface FinaleActivity extends PracticePlanActivityBase {
+    type: 'finale';
+}
+
+export type PracticePlanActivity = SegmentActivity | CheckpointActivity | DrillActivity | FinaleActivity;
+
 export type PracticePlanStage = {
-    type: '';
+    // type: '';
     activities: PracticePlanActivity[],
 }
 
@@ -16,4 +39,8 @@ export type PracticePlan = {
     startTime: number;
     endTime: number;
     stages: PracticePlanStage[];
+    demoSegmentation?: {
+        segmentBreaks: number[];
+        segmentLabels: string[];
+    }
 }

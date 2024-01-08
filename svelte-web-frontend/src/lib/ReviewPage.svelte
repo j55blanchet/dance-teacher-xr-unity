@@ -1,5 +1,4 @@
 <script lang="ts">
-import ReviewPage from './ReviewPage.svelte';
 
 import type { UserEvaluationRecorder, PerformanceEvaluationTrack } from '$lib/ai/Evaluation';
 

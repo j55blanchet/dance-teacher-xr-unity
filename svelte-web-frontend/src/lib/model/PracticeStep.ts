@@ -76,4 +76,8 @@ export default interface PracticeStep {
     dance?: Dance;
     danceTree?: DanceTree;
     danceTreeNode?: DanceTreeNode;
+
+    state?: {
+        completed?: boolean;
+    }
 };

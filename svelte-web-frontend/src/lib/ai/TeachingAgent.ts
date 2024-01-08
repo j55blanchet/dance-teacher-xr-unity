@@ -1,12 +1,94 @@
 import { makeDanceTreeSlug, type Dance, type DanceTree, type DanceTreeNode, getAllLeafNodes } from '../data/dances-store'
 import type PracticeStep from '$lib/model/PracticeStep';
 import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
-import type { PracticePlan, PracticePlanActivity } from '$lib/model/PracticePlan';
+import type { CheckpointActivity, PracticePlan, PracticePlanActivityBase, SegmentActivity } from '$lib/model/PracticePlan';
 
 // export interface UserDancePerformanceLog {
 //     // markingByNode: Map<DanceTreeNode["id"], number>;
 //     // similarityByNode: Map<DanceTreeNode["id"], number>;
 // }
+
+function GenerateMarkDrillFulloutSteps(
+    segmentDescription: string,
+    startTime: number,
+    endTime: number,
+) {
+    const stepBase = {
+        segmentDescription: segmentDescription,
+        startTime: startTime,
+        endTime: endTime,
+    } satisfies Partial<PracticeStep>;
+
+    const mark: PracticeStep = {
+        ...stepBase,
+        interfaceMode: 'watchDemo',
+        terminalFeedbackEnabled: false,
+        showUserSkeleton: false,
+        playbackSpeed: 0.5,
+    };
+
+    const drill: PracticeStep = {
+        ...stepBase,
+        interfaceMode: 'bothVideos',
+        terminalFeedbackEnabled: true,
+        showUserSkeleton: true,
+        playbackSpeed: 0.75,
+    };
+    
+    const fullOut: PracticeStep = {
+        ...stepBase,
+        interfaceMode: 'userVideoOnly',
+        terminalFeedbackEnabled: true,
+        showUserSkeleton: false,
+        playbackSpeed: 1,
+    };
+    return [mark, drill, fullOut];
+}
+
+function GenerateStepsForSegment(
+    node: DanceTreeNode,
+) {
+    const steps = GenerateMarkDrillFulloutSteps(
+        `node:${node.id}`,
+        node.start_time,
+        node.end_time,
+    );
+
+    steps.forEach((step) => {
+        step.danceTreeNode = node;
+        step.segmentDescription = node.id;
+    });
+
+    return steps;
+}
+
+function getSegementLabel(segmentIndex: number, segmentCountTotal: number) {
+
+    // If there are enough letters in the alphabet to label each segment, use letters
+    if (segmentCountTotal < 26) {
+        const segmentLabel = String.fromCharCode(65 + segmentIndex); // Uppercase letter at the index of the alphabet
+        return segmentLabel;
+    }
+
+    // Otherwise, use numbers
+    return `${segmentIndex + 1}`;
+}
+
+function makeCheckpointActivity(segmentActivities: SegmentActivity[]): CheckpointActivity {
+    const checkpointLabel = segmentActivities
+        .map((segmentActivity) => segmentActivity.segmentTitle)
+        .join('-');
+
+    return {
+        id: checkpointLabel,
+        type: 'checkpoint',
+        steps: GenerateMarkDrillFulloutSteps(
+            checkpointLabel,
+            segmentActivities[0].steps[0].startTime,
+            segmentActivities[segmentActivities.length - 1].steps[0].endTime,
+        ),
+    }
+}
 
 export function GeneratePracticePlan(
     dance: Dance,
@@ -21,24 +103,27 @@ export function GeneratePracticePlan(
 
     const stages: PracticePlan['stages'] = [];
     let currentStage: PracticePlan['stages'][0] = {
-        type: '',
+        // type: '',
         activities: [],
     };
+    let currentSegmentIndex = 0;
     phraseNodes.forEach((phraseNode) => {
         if (currentStage.activities.length >= CHECKPOINT_SEGMENT_COUNT) {
             stages.push(currentStage);
             currentStage = {
-                type: '',
+                // type: '',
                 activities: [],
             };
         }
 
-        const phraseNodeActivity: PracticePlanActivity = {
-            id: phraseNode.id,
-            type: '',
-            steps: [], // todo: mark > drill > full-out
+        const segmentActivity: SegmentActivity = {
+            id: `segment-${phraseNode.id}`,
+            type: 'segment',
+            steps: GenerateStepsForSegment(phraseNode), // todo: mark > drill > full-out
+            segmentTitle: getSegementLabel(currentSegmentIndex, phraseNodes.length),
         };
-        currentStage.activities.push(phraseNodeActivity);
+        currentStage.activities.push(segmentActivity);
+        currentSegmentIndex += 1;
     })
     stages.push(currentStage);
 
@@ -46,6 +131,10 @@ export function GeneratePracticePlan(
         startTime: danceTree.root.start_time,
         endTime: danceTree.root.end_time,
         stages: stages,
+        demoSegmentation: {
+            segmentBreaks: phraseNodes.slice(1).map((node) => node.start_time),
+            segmentLabels: phraseNodes.map((node, index) => getSegementLabel(index, phraseNodes.length)),
+        },
     }
 }
 
