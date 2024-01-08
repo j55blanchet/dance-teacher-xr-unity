@@ -169,7 +169,9 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
                     </div>
                 </div>
                 <div class="buttons">
+                    {#if $debugMode}
                     <a href={tileData.oldPageUrl} class="button">Learn (Legacy)</a>
+                    {/if}
                     <a href={tileData.pageUrl} class="button is-primary">Learn</a>
                 </div>
             </div>
