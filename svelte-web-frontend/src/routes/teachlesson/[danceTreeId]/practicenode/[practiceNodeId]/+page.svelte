@@ -66,7 +66,7 @@ $: {
 <section>
     <PracticePage 
         {dance} 
-        bind:practiceActivity={practiceActivity}
+        bind:practiceStep={practiceActivity}
         pageActive={true}
         on:continue-clicked={() => goto(parentURL)}
         on:stateChanged={(e) => pageState = e.detail}

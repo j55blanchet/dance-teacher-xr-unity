@@ -169,8 +169,9 @@
         </div>
     </div>
 
-    <div class="box learning-journey">
-        <h3 class="is-size-4">Practice</h3>
+    <div class="box learning-journey is-flex is-flex-direction-column">
+        <h3 class="is-size-4 mb-4">Practice</h3>
+        
         <LearningJourneyTrail 
             {practicePlan}
             on:activityClicked={(e) => onLearningActivityClicked(e.detail)}/>
@@ -198,7 +199,7 @@
     display: grid;
     grid-template: 
         'preview journey' 1fr / 
-        minmax(320px, auto) 1fr
+        minmax(320px, auto) minmax(200px, 1fr)
         ;
     gap: var(--std-block-spacing);
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { navbarProps } from "$lib/elements/NavBar.svelte";
+	import PracticePage from "$lib/pages/PracticePage.svelte";
 
     export let data;
 
@@ -18,7 +19,17 @@
 
 </script>
 
-<div>
-    <h1>Practice Step</h1>
-    
+<div class="p-4">
+    <PracticePage 
+        dance={data.dance}    
+        practiceStep={data.practiceStep}
+        pageActive={true}
+    />
 </div>
+
+<style>
+    div {
+        height: var(--content_height);
+        width: 100%;
+    }
+</style>

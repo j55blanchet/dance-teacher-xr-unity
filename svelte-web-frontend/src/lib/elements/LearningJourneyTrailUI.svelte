@@ -13,9 +13,9 @@
 
 <div class="is-flex is-flex-direction-column learning-journey is-align-items-center is-relative">
     {#each practicePlan.stages as stage}
-    <div class="is-flex is-flex-direction-row learning-group m-5 is-justify-content-center is-relative">
+    <div class="is-flex is-flex-direction-row learning-group is-justify-content-center is-relative is-flex-wrap-wrap">
         {#each stage.activities as activity(activity.id)}
-            <button class="button is-rounded activity-button m-4" 
+            <button class="button is-rounded activity-button" 
                 on:click={() => dispatch('activityClicked', activity)}
                 class:is-primary={activity.id === suggestedActivityId}
                 class:is-success={suggestedActivityId !== activity.id && activity.state?.completed}
@@ -42,6 +42,12 @@
 
 <style lang="scss">
 
+    .learning-journey {
+        gap: 5rem;
+    }
+    .learning-group {
+        gap: 1rem;
+    }
     .activity-button {
         width: 96px;
         height: 96px;

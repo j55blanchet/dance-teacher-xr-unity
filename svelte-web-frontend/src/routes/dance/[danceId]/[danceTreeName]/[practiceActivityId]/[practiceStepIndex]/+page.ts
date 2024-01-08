@@ -21,7 +21,8 @@ export async function load({ params, parent })  {
         // danceTree,
         // practicePlan,
         // practiceActivity: matchingActivity,
-        practiceStep: matchingPracticeStep
+        practiceStep: matchingPracticeStep,
+        practiceStepIndex: +params.practiceStepIndex,
         // preselectedNodeId: preselectedNodeId,
     }
 }
