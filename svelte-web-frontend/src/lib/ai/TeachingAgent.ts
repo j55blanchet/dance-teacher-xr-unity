@@ -170,7 +170,6 @@ export function GeneratePracticeStep(
     }
 }
 
-
 // {
 //     referenceVideo: {
 //         visibility: 'visible',

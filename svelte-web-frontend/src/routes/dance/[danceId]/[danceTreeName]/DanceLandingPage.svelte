@@ -17,6 +17,15 @@
 
     let videoWidth: number;
     let videoHeight: number;
+    let videoCurrentTime: number;
+    let videoPaused: boolean;
+
+    function onSegmentClicked(e: any) {
+        if (e?.detail?.start !== undefined) {
+            videoCurrentTime = e.detail.start;
+            videoPaused = false;
+        }
+    }
 </script>
 
 <section class="learning-dashboard p-5">
@@ -30,11 +39,23 @@
                     showPlayPause: true,
                     showProgressBar: true,
                     enablePlayPause: true,
-                    progressBarProps: {}
+                    overrideStartTime: practicePlan.startTime,
+                    overrideEndTime: practicePlan.endTime,
+                    progressBarProps: {
+                        enableSegmentClick: true,
+                        startTime: practicePlan.startTime,
+                        endTime: practicePlan.endTime,
+                        breakpoints: practicePlan.demoSegmentation?.segmentBreaks ?? [],
+                        labels: practicePlan.demoSegmentation?.segmentLabels ?? [],
+                        classes: [],
+                    }
                 }}
                 volume={$danceVideoVolume}
+                bind:currentTime={videoCurrentTime}
+                bind:paused={videoPaused}
                 bind:videoWidth
                 bind:videoHeight
+                on:segmentClicked={onSegmentClicked}
                 >
                 <source src={danceSrc} type="video/mp4" />
             </VideoWithSkeleton>

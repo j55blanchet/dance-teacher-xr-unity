@@ -59,16 +59,15 @@ $: {
     }
 }
 
-let progressBarEffectiveProps = {} as SegmentedProgressBarProps;
+let progressBarEffectiveProps = {} as Omit<SegmentedProgressBarProps, "currentTime">;
 $: {
     progressBarEffectiveProps = {
         startTime: effectiveControls.overrideStartTime ?? 0,
         endTime: effectiveControls.overrideEndTime ?? duration,
-        currentTime: currentTime,
         breakpoints: [],
         labels: [],
-        classes: [["is-primary"]],
-        segmentClickStart: false,
+        classes: [["has-background-primary"]],
+        enableSegmentClick: false,
         ...effectiveControls.progressBarProps,
     }
 }
@@ -76,8 +75,11 @@ $: {
 // Wait for metadata to be loaded before seeking to the overridden start time.
 //   See: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/readyState
 //   0 = HAVE_NOTHING, 1+ has metadata and is seekable
-$: if (readyState > 0 && effectiveControls?.overrideStartTime !==  undefined) {
-    currentTime = effectiveControls.overrideStartTime;
+let lastSetStartTime = undefined as number | undefined;
+$: if (readyState > 0 && effectiveControls?.overrideStartTime !==  lastSetStartTime) {
+    const newCurrentTime = effectiveControls.overrideStartTime ?? 0;
+    currentTime = newCurrentTime;
+    lastSetStartTime = newCurrentTime;
 }
 
 let videoElementWidth: number = 0;
@@ -205,6 +207,8 @@ export async function play() {
         {#if effectiveControls.showProgressBar}
         <SegmentedProgressBar 
             {...progressBarEffectiveProps}
+            on:segmentClicked
+            currentTime={currentTime}
         />
         {/if}
         {#if effectiveControls.showPlayPause}
