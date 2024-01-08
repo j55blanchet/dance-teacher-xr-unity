@@ -23,7 +23,7 @@
 
     const dispatch = createEventDispatcher();
     
-    let segments = [] as { start: number, end: number, duration: number, label?: string, classes: string[] }[];
+    let segments = [] as { index: number, start: number, end: number, duration: number, label?: string, classes: string[] }[];
     $: {
         segments = [];
         let start = startTime;
@@ -31,6 +31,7 @@
         while((breakpoints.length + 1) > i) {
             let end = breakpoints.length > i ? breakpoints[i] : endTime;
             segments.push({
+                index: i,
                 start: start,
                 end: end,
                 duration: end - start,

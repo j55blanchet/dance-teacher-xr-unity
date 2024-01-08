@@ -1,11 +1,13 @@
 <script lang="ts">
 import type { Dance, PoseReferenceData } from "$lib/data/dances-store";
-import { onMount } from "svelte";
+import { createEventDispatcher, onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import type { DrawingUtils, PoseLandmarker, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
 import SegmentedProgressBar, { type SegmentedProgressBarProps } from "./SegmentedProgressBar.svelte";
 import Icon from '@iconify/svelte';
+
+const dispatch = createEventDispatcher();
 
 let videoElement: HTMLVideoElement;
 let canvasElement: HTMLCanvasElement;
@@ -180,6 +182,20 @@ export async function play() {
     await videoElement.play();
 }
 
+function onPlayPauseClick() {
+    const shouldContinue = dispatch("playPauseClicked", undefined, { cancelable: true });
+    if (shouldContinue) {
+        paused = !paused;
+    }
+}
+function onSkipBackClicked() {
+    const shouldContinue = dispatch("skipBackClicked", undefined, { cancelable: true });
+    if (shouldContinue) {
+        const startTime = effectiveControls?.overrideStartTime ?? 0;
+        currentTime = startTime;
+    }
+
+}
 </script>
 
 <div class:fitToFlexbox={fitToFlexbox} class="videoWithSkeleton">
@@ -213,7 +229,14 @@ export async function play() {
         {/if}
         {#if effectiveControls.showPlayPause}
         <div class="buttons is-centered">
-            <button class="button" disabled={!effectiveControls.enablePlayPause} on:click={() => paused = !paused}>
+            <button class="button"
+                on:click={onSkipBackClicked}>
+                <span class="icon">
+                    <Icon icon="uil:previous" />
+                </span>
+            </button>
+            <button class="button" disabled={!effectiveControls.enablePlayPause}
+                 on:click={onPlayPauseClick}>
                 {#if paused}
                 <span class="icon">
                     <Icon icon="icon-park-outline:play-one" />
@@ -223,8 +246,8 @@ export async function play() {
                     <Icon icon="icon-park-outline:pause" />
                 </span>
                 {/if}
-
             </button>
+            <slot name="extra-control-buttons" />
         </div>
         {/if}
     </div>

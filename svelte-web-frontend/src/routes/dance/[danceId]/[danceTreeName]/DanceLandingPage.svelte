@@ -3,9 +3,10 @@
 	import LearningJourneyTrail from '$lib/elements/LearningJourneyTrailUI.svelte';
 	import { getDanceVideoSrc, type Dance } from "$lib/data/dances-store";
     import type { SupabaseClient } from '@supabase/supabase-js';
-	import { getContext } from 'svelte';
+	import { getContext, tick } from 'svelte';
 	import { danceVideoVolume } from '$lib/model/settings';
 	import type { PracticePlan } from '$lib/model/PracticePlan';
+	import Icon from '@iconify/svelte';
     
     let supabase: SupabaseClient = getContext('supabase');
 
@@ -15,17 +16,97 @@
     let danceSrc: string;
     $: danceSrc = getDanceVideoSrc(supabase, dance);
 
+    let videoElement: VideoWithSkeleton;
     let videoWidth: number;
     let videoHeight: number;
     let videoCurrentTime: number;
     let videoPaused: boolean;
+    let segmentBreaks = [] as number[]
+    $:  segmentBreaks = practicePlan.demoSegmentation?.segmentBreaks ?? [];
+    let focusedSegmentIndex: number | undefined;
+    let repeatEnabled = false;
+    let segmentClasses = [] as string[][];
+
+    $: {
+        const segmentIndices = [...Array(segmentBreaks.length + 1).keys()];
+        segmentClasses = segmentIndices.map(x => x === focusedSegmentIndex ? ['is-primary'] : []);
+    }
+    
+
+    function toggleRepeatMode() {
+        repeatEnabled = !repeatEnabled;
+    }
+
+    let lastClickedSegmentStartTime: number = -1;
+    let lastClickedSegmentEndTime: number = 999999;
 
     function onSegmentClicked(e: any) {
         if (e?.detail?.start !== undefined) {
-            videoCurrentTime = e.detail.start;
+            focusedSegmentIndex = e.detail.index;
+            lastClickedSegmentStartTime = e.detail.start;
+            videoCurrentTime = lastClickedSegmentStartTime
+            lastClickedSegmentEndTime = e.detail.end;
             videoPaused = false;
         }
     }
+
+
+    async function startVideo(startTime?: number) {
+        videoPaused = true;
+        if (startTime !== undefined) {
+            videoCurrentTime = startTime;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        await videoElement.play();
+    }
+
+    $: {
+        if (focusedSegmentIndex !== undefined && videoCurrentTime >= lastClickedSegmentEndTime) {
+            videoCurrentTime = lastClickedSegmentEndTime;
+            videoPaused = true;
+        } else if (!repeatEnabled && focusedSegmentIndex === undefined && videoCurrentTime >= practicePlan.endTime) {
+            videoCurrentTime = practicePlan.endTime;
+            videoPaused = true;
+        }
+    }
+
+    $: {
+        if (repeatEnabled && focusedSegmentIndex !== undefined && videoCurrentTime >= lastClickedSegmentEndTime) {
+            startVideo(lastClickedSegmentStartTime);
+        }  
+        else if (repeatEnabled && focusedSegmentIndex === undefined && videoCurrentTime >= practicePlan.endTime) {
+            startVideo(practicePlan.startTime);
+        } 
+    }
+
+    function clearFocusedSegment() {
+        focusedSegmentIndex = undefined;
+        lastClickedSegmentEndTime = 999999;
+        lastClickedSegmentStartTime = -1;
+    }
+
+    function onSkipBackClicked(e: Event) {
+        clearFocusedSegment();
+    }
+
+    function onPlayPauseClicked(e: Event) {
+        if (videoPaused && focusedSegmentIndex !== undefined && videoCurrentTime >= lastClickedSegmentEndTime) {
+            clearFocusedSegment();
+            if (videoCurrentTime >= practicePlan.endTime) {
+                videoCurrentTime = practicePlan.startTime;
+            }
+            videoPaused = false;
+            e.preventDefault();
+            
+        }  else if (videoPaused && videoCurrentTime >= practicePlan.endTime) {
+            videoCurrentTime = practicePlan.startTime;
+            videoPaused = false;
+            e.preventDefault();
+        }   
+    }
+
+
 </script>
 
 <section class="learning-dashboard p-5">
@@ -34,6 +115,7 @@
         style:--aspect-ratio={videoWidth / videoHeight}>
         <div class="box p-0 video-wrapper">
             <VideoWithSkeleton 
+                bind:this={videoElement}
                 dance={dance}
                 controls={{
                     showPlayPause: true,
@@ -45,9 +127,9 @@
                         enableSegmentClick: true,
                         startTime: practicePlan.startTime,
                         endTime: practicePlan.endTime,
-                        breakpoints: practicePlan.demoSegmentation?.segmentBreaks ?? [],
+                        breakpoints: segmentBreaks,
                         labels: practicePlan.demoSegmentation?.segmentLabels ?? [],
-                        classes: [],
+                        classes: segmentClasses,
                     }
                 }}
                 volume={$danceVideoVolume}
@@ -56,8 +138,27 @@
                 bind:videoWidth
                 bind:videoHeight
                 on:segmentClicked={onSegmentClicked}
+                on:skipBackClicked={onSkipBackClicked}
+                on:playPauseClicked={onPlayPauseClicked}
                 >
                 <source src={danceSrc} type="video/mp4" />
+                <span slot="extra-control-buttons">
+                    <button class="button" on:click={toggleRepeatMode}>
+                        <span class="icon">
+                            <!-- <Icon icon="ic:round-repeat-one" /> -->
+                            {#if !repeatEnabled}
+                                <Icon icon="pepicons-pop:repeat-off" />
+                            {:else if focusedSegmentIndex !== undefined}
+                                <Icon icon="f7:repeat-1" />
+                            {:else}
+                                <Icon icon="f7:repeat" />
+                            {/if}
+                        </span>
+                    </button>
+                    <!-- <span>
+                        {lastClickedSegmentStartTime.toFixed(1)}-{videoCurrentTime.toFixed(1)}
+                    </span> -->
+                </span>
             </VideoWithSkeleton>
         </div>
     </div>
@@ -65,9 +166,6 @@
     <div class="box learning-journey">
         <h3 class="is-size-4">Practice</h3>
         <LearningJourneyTrail {practicePlan} />
-        <div>
-            {practicePlan.stages.length} stages
-        </div>
     </div>
 
     <!-- <div class="column is-narrow">
