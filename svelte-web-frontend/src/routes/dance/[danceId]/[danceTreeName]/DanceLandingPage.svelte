@@ -5,8 +5,9 @@
     import type { SupabaseClient } from '@supabase/supabase-js';
 	import { getContext, tick } from 'svelte';
 	import { danceVideoVolume } from '$lib/model/settings';
-	import type { PracticePlan } from '$lib/model/PracticePlan';
+	import type { PracticePlan, PracticePlanActivity } from '$lib/model/PracticePlan';
 	import Icon from '@iconify/svelte';
+	import { goto } from '$app/navigation';
     
     let supabase: SupabaseClient = getContext('supabase');
 
@@ -106,6 +107,11 @@
         }   
     }
 
+    function onLearningActivityClicked(activity: PracticePlanActivity) {
+        if (activity.type === 'segment') {
+            goto(`${encodeURIComponent(activity.id)}/0/`)
+        }
+    }
 
 </script>
 
@@ -165,7 +171,9 @@
 
     <div class="box learning-journey">
         <h3 class="is-size-4">Practice</h3>
-        <LearningJourneyTrail {practicePlan} />
+        <LearningJourneyTrail 
+            {practicePlan}
+            on:activityClicked={(e) => onLearningActivityClicked(e.detail)}/>
     </div>
 
     <!-- <div class="column is-narrow">
