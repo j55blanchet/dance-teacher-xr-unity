@@ -8,6 +8,7 @@
         labels: string[],
         classes: string[][],
         enableSegmentClick: boolean[] | boolean,
+        isolateSegmentIndex?: number,
     }
 </script>
 <script lang="ts">
@@ -20,6 +21,7 @@
     export let labels: string[] = [];
     export let classes: string[][] = [];
     export let enableSegmentClick: boolean[] | boolean = false;
+    export let isolateSegmentIndex: number | undefined;
 
     const dispatch = createEventDispatcher();
     
@@ -55,14 +57,18 @@
                 }
             }}
             style:--segment-time={segment.duration}
-            style:--percent-progress={(Math.max(0, Math.min(segment.duration, currentTime - segment.start)))
+            style:--percent-progress={
+                isolateSegmentIndex !== undefined && isolateSegmentIndex !== segment.index ? 0 :
+                (Math.max(0, Math.min(segment.duration, currentTime - segment.start)))
                  / segment.duration
             }
             >
-            {#if segment.label}
-                <span class="label tag m-0">{segment.label}</span>
-            {/if}
             <span class="progress is-overlay"></span>
+            {#if segment.label}
+            <div class="is-overlay is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
+                <span class="label tag is-white m-0 is-small">{segment.label}</span>
+            </div>
+            {/if}
         </button>
     {/each}
 </div>
@@ -83,6 +89,7 @@
             flex-basis: 0; 
             flex-grow: var(--segment-time);
             margin: 0;
+            overflow: hidden;
 
             &.clickable {
                 cursor: pointer;
@@ -91,8 +98,9 @@
             & .progress {
                 right: auto;
                 height: 100%;
-                background: rgba(0,0,0,0.1);
+                background: rgba(0,0,0,0.2);
                 width: calc(100% * var(--percent-progress));
+                border-radius: 999px 0 0 999px;
             }
         }
     }
