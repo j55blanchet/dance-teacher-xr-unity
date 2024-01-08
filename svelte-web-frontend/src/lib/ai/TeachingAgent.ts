@@ -1,7 +1,7 @@
 import { makeDanceTreeSlug, type Dance, type DanceTree, type DanceTreeNode, getAllLeafNodes } from '../data/dances-store'
 import type PracticeStep from '$lib/model/PracticeStep';
 import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
-import type { CheckpointActivity, PracticePlan, PracticePlanActivityBase, SegmentActivity } from '$lib/model/PracticePlan';
+import type { CheckpointActivity, DrillActivity, FinaleActivity, PracticePlan, PracticePlanActivityBase, SegmentActivity } from '$lib/model/PracticePlan';
 
 // export interface UserDancePerformanceLog {
 //     // markingByNode: Map<DanceTreeNode["id"], number>;
@@ -90,6 +90,26 @@ function makeCheckpointActivity(segmentActivities: SegmentActivity[]): Checkpoin
     }
 }
 
+function makeDrillActivity(startTime: number, endTime: number): DrillActivity {
+    return {
+        id: `drill-${startTime}-${endTime}`,
+        type: 'drill',
+        steps: GenerateMarkDrillFulloutSteps(
+            `drill-${startTime}-${endTime}`,
+            startTime,
+            endTime,
+        ),
+    }
+}
+
+function makeFinaleActivity(startTime: number, endTime: number): FinaleActivity {
+    return {
+        id: `finale-${startTime}-${endTime}`,
+        type: 'finale',
+        steps: []
+    }
+}
+
 export function GeneratePracticePlan(
     dance: Dance,
     danceTree: DanceTree,
@@ -109,6 +129,7 @@ export function GeneratePracticePlan(
     let currentSegmentIndex = 0;
     phraseNodes.forEach((phraseNode) => {
         if (currentStage.activities.length >= CHECKPOINT_SEGMENT_COUNT) {
+            currentStage.activities.push(makeCheckpointActivity(currentStage.activities as SegmentActivity[]));
             stages.push(currentStage);
             currentStage = {
                 // type: '',
@@ -125,8 +146,16 @@ export function GeneratePracticePlan(
         currentStage.activities.push(segmentActivity);
         currentSegmentIndex += 1;
     })
+    currentStage.activities.push(makeCheckpointActivity(currentStage.activities as SegmentActivity[]));
     stages.push(currentStage);
 
+    stages.push({
+        // type: '',
+        activities: [
+            makeDrillActivity(danceTree.root.start_time, danceTree.root.end_time),
+            makeFinaleActivity(danceTree.root.start_time, danceTree.root.end_time),
+        ],
+    });
     return {
         startTime: danceTree.root.start_time,
         endTime: danceTree.root.end_time,

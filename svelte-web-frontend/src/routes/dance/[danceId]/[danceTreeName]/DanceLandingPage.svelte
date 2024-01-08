@@ -65,6 +65,9 @@
     <div class="box learning-journey">
         <h3 class="is-size-4">Practice</h3>
         <LearningJourneyTrail {practicePlan} />
+        <div>
+            {practicePlan.stages.length} stages
+        </div>
     </div>
 
     <!-- <div class="column is-narrow">

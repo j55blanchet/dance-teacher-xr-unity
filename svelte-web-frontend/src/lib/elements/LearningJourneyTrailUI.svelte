@@ -19,7 +19,9 @@
                 disabled={activity.state?.locked}
                 >
                 {#if activity.type === 'segment'}
-                    Learn '{ activity.segmentTitle }'
+                    <span class="segment-body has-background-light has-text-dark">
+                        { activity.segmentTitle }
+                    </span>
                 {:else if activity.type === 'checkpoint'}
                     Checkpoint
                 {:else if activity.type === 'drill'}
@@ -38,8 +40,14 @@
 <style lang="scss">
 
     .activity-button {
-        width: 128px;
-        height: 128px;
+        width: 96px;
+        height: 96px;
         box-sizing: border-box;
+    }
+
+    .segment-body {
+        padding: 0.25rem 2rem;
+        border-radius: 9999px;
+        background: green;
     }
 </style>
