@@ -37,7 +37,7 @@
                 <div class="dropdown-trigger">
                     <div  
                         data-tip={stage_i === 0 && activity_i === 0 ? "Start here!" : ""}
-                        class="daisy-tooltip-info"
+                        class="daisy-tooltip-primary"
                         class:daisy-tooltip={stage_i === 0 && activity_i === 0}
                         class:daisy-tooltip-open={stage_i === 0 && activity_i === 0}>
                         <button class="button is-rounded activity-button" 

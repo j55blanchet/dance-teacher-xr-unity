@@ -2,9 +2,17 @@
 
 // Set your brand colors
 $blue: #3C64B1;
+$lighterblue: #60a5fa;
+$infoBlue: #3b82f6;
+$pink: #F0ABFC;
+$redpink: #FA7C91;
+
+$yellow: #fdba74;
 $green: #0fb40b;
+$red: #f87171;
+
 $purple: #8A4D76;
-$pink: #FA7C91;
+
 $brown: #757763;
 $beige-light: #D0D1CD;
 $beige-lighter: #EFF0EB;
@@ -23,6 +31,9 @@ $family-sans-serif: -apple-system, BlinkMacSystemFont, Roboto, Ubuntu, 'Segoe UI
 // $grey-dark: $brown;
 // $grey-light: $beige-light;
 $primary: $blue;
+$info: $infoBlue;
+$error: $red;
+$warning: $yellow;
 $link: $blue;
 // $widescreen-enabled: false;
 // $fullhd-enabled: false;
