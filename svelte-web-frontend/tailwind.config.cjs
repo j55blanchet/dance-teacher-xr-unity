@@ -1,12 +1,18 @@
+const { addDynamicIconSelectors } = require('@iconify/tailwind');
+
 /** @type {import('tailwindcss').Config}*/
 const config = {
 	content: ['./src/**/*.{html,js,svelte,ts}', './src/app.html'],
 
 	theme: {
-		extend: {}
 	},
 
-	plugins: [require('daisyui')],
+	plugins: [
+		require('daisyui'),
+		addDynamicIconSelectors({
+			prefix: 'iconify',
+		}),
+	],
 
 	daisyui: {
 		prefix: 'daisy-',

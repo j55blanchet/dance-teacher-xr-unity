@@ -14,6 +14,9 @@ devDependencies:
   '@iconify/svelte':
     specifier: ^3
     version: 3.1.6(svelte@4.2.8)
+  '@iconify/tailwind':
+    specifier: ^0.1.4
+    version: 0.1.4
   '@mediapipe/tasks-vision':
     specifier: ^0.10.6
     version: 0.10.9
@@ -451,6 +454,12 @@ packages:
     dependencies:
       '@iconify/types': 2.0.0
       svelte: 4.2.8
+    dev: true
+
+  /@iconify/tailwind@0.1.4:
+    resolution: {integrity: sha512-U7RzcU2fkwOfMDsGQ3mtpLIaApSnqb+vgcJJknPPbg8/NF5s7tI1o5otEMfcpnLGk4PbYB8bxmKTz7IJVUlU2Q==}
+    dependencies:
+      '@iconify/types': 2.0.0
     dev: true
 
   /@iconify/types@2.0.0:

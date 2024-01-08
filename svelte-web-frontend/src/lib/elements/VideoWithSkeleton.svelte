@@ -228,23 +228,25 @@ function onSkipBackClicked() {
         />
         {/if}
         {#if effectiveControls.showPlayPause}
-        <div class="buttons is-centered">
-            <button class="button"
+        <div class="flex flex-row flex-wrap is-centered justify-center gap-2">
+            <button class="daisy-btn daisy-btn-square max-md:daisy-btn-sm"
                 on:click={onSkipBackClicked}>
-                <span class="icon">
-                    <Icon icon="uil:previous" />
-                </span>
+                
+                <span class="iconify-[lucide--skip-back] size-6 md:size-8"></span>
+                <!-- <Icon icon="uil:previous" /> -->
+                
             </button>
-            <button class="button" disabled={!effectiveControls.enablePlayPause}
+            <button class="daisy-btn daisy-btn-square max-md:daisy-btn-sm" disabled={!effectiveControls.enablePlayPause}
                  on:click={onPlayPauseClick}>
                 {#if paused}
-                <span class="icon">
+
+                <span class="iconify-[lucide--play] size-6 md:size-8"></span>
+                <!-- <span class="icon">
                     <Icon icon="icon-park-outline:play-one" />
-                </span>
-                {:else if !paused}
-                <span class="icon">
-                    <Icon icon="icon-park-outline:pause" />
-                </span>
+                </span> -->
+                {:else if !paused}                
+                    <span class="iconify-[lucide--pause] size-6 md:size-8"></span>
+                    <!-- <Icon icon="icon-park-outline:pause" /> -->
                 {/if}
             </button>
             <slot name="extra-control-buttons" />
@@ -295,7 +297,7 @@ video {
 .control-container {
     display: flex;
     align-items: stretch;
-    justify-content: end;
+    justify-content: flex-end;
     flex-direction: column;
 
     gap: var(--spacing-2);
