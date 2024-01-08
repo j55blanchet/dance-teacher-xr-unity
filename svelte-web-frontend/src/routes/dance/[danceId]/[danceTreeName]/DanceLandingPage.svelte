@@ -171,7 +171,7 @@
     </div>
 
     <div class="box learning-journey is-flex is-flex-direction-column">
-        <h3 class="is-size-4 mb-4">Practice</h3>
+        <h3 class="is-size-4 mb-4">Learning Journey</h3>
         
         <LearningJourneyTrail 
             {practicePlan}
