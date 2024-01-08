@@ -1,4 +1,5 @@
 <script lang="ts">
+	import "../app.pcss";
 	import { tick, onMount, setContext } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';

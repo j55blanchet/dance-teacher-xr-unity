@@ -1,7 +1,7 @@
 import { makeDanceTreeSlug, type Dance, type DanceTree, type DanceTreeNode, getAllLeafNodes } from '../data/dances-store'
 import type PracticeStep from '$lib/model/PracticeStep';
 import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
-import type { CheckpointActivity, DrillActivity, FinaleActivity, PracticePlan, PracticePlanActivityBase, SegmentActivity } from '$lib/model/PracticePlan';
+import type { CheckpointActivity, DrillActivity, FinaleActivity, PracticePlan, SegmentActivity } from '$lib/model/PracticePlan';
 
 // export interface UserDancePerformanceLog {
 //     // markingByNode: Map<DanceTreeNode["id"], number>;

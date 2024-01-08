@@ -30,31 +30,37 @@
 </script>
 
 <div class="is-flex is-flex-direction-column learning-journey is-align-items-center is-relative">
-    {#each practicePlan.stages as stage}
+    {#each practicePlan.stages as stage, stage_i}
     <div class="is-flex is-flex-direction-row learning-group is-justify-content-center is-relative is-flex-wrap-wrap">
-        {#each stage.activities as activity(activity.id)}
+        {#each stage.activities as activity, activity_i}
             <div class="dropdown" class:is-active={activity.id === dropdownActivityId}>
                 <div class="dropdown-trigger">
-                    <button class="button is-rounded activity-button" 
-                        on:click={() => onActivityClicked(activity)}
-                        class:is-primary={activity.id === suggestedActivityId}
-                        class:is-success={suggestedActivityId !== activity.id && activity.state?.completed}
-                        disabled={activity.state?.locked}
-                        >
-                        {#if activity.type === 'segment'}
-                            <span class="segment-body has-background-light has-text-dark">
-                                { activity.segmentTitle }
-                            </span>
-                        {:else if activity.type === 'checkpoint'}
-                            Checkpoint
-                        {:else if activity.type === 'drill'}
-                            Drill
-                        {:else if activity.type === 'finale'}
-                            Finale
-                        {:else}
-                            Unknown
-                        {/if}
-                    </button>
+                    <div  
+                        data-tip={stage_i === 0 && activity_i === 0 ? "Start here!" : ""}
+                        class="daisy-tooltip-info"
+                        class:daisy-tooltip={stage_i === 0 && activity_i === 0}
+                        class:daisy-tooltip-open={stage_i === 0 && activity_i === 0}>
+                        <button class="button is-rounded activity-button" 
+                            on:click={() => onActivityClicked(activity)}
+                            class:is-primary={activity.id === suggestedActivityId}
+                            class:is-success={suggestedActivityId !== activity.id && activity.state?.completed}
+                            disabled={activity.state?.locked}
+                            >
+                            {#if activity.type === 'segment'}
+                                <span class="segment-body has-background-light has-text-dark">
+                                    { activity.segmentTitle }
+                                </span>
+                            {:else if activity.type === 'checkpoint'}
+                                Checkpoint
+                            {:else if activity.type === 'drill'}
+                                Drill
+                            {:else if activity.type === 'finale'}
+                                Finale
+                            {:else}
+                                Unknown
+                            {/if}
+                        </button>
+                    </div>
                 </div>
                 <div class="dropdown-menu">
                     <div class="dropdown-content has-background-primary">
