@@ -1,40 +1,73 @@
 <script lang="ts">
-	import type { PracticePlan, PracticePlanActivity } from '$lib/model/PracticePlan';
+	import type { PracticePlan, PracticePlanActivity, PracticePlanActivityBase } from '$lib/model/PracticePlan';
     import { createEventDispatcher } from 'svelte';
 
     export let practicePlan: PracticePlan;
     export let suggestedActivityId: string | undefined = undefined;
 
+    let dropdownActivityId: string | undefined = undefined;
     const dispatch = createEventDispatcher<{
         activityClicked: PracticePlanActivity;
+        practiceStepClicked: { activity: PracticePlanActivity, stepIndex: number };
     }>();
 
+    function onActivityClicked(activity: PracticePlanActivity) {
+        const shouldContinue = dispatch('activityClicked', activity, { cancelable: true });
+        if (!shouldContinue) {
+            return;
+        }
+
+        if (dropdownActivityId === activity.id) {
+            dropdownActivityId = undefined
+        } else {
+            dropdownActivityId = activity.id;
+        }
+    }
+
+    function onPracticeStepClicked(activity: PracticePlanActivity, stepIndex: number) {
+        dispatch('practiceStepClicked', { activity, stepIndex });
+    }
 </script>
 
 <div class="is-flex is-flex-direction-column learning-journey is-align-items-center is-relative">
     {#each practicePlan.stages as stage}
     <div class="is-flex is-flex-direction-row learning-group is-justify-content-center is-relative is-flex-wrap-wrap">
         {#each stage.activities as activity(activity.id)}
-            <button class="button is-rounded activity-button" 
-                on:click={() => dispatch('activityClicked', activity)}
-                class:is-primary={activity.id === suggestedActivityId}
-                class:is-success={suggestedActivityId !== activity.id && activity.state?.completed}
-                disabled={activity.state?.locked}
-                >
-                {#if activity.type === 'segment'}
-                    <span class="segment-body has-background-light has-text-dark">
-                        { activity.segmentTitle }
-                    </span>
-                {:else if activity.type === 'checkpoint'}
-                    Checkpoint
-                {:else if activity.type === 'drill'}
-                    Drill
-                {:else if activity.type === 'finale'}
-                    Finale
-                {:else}
-                    Unknown
-                {/if}
-            </button>
+            <div class="dropdown" class:is-active={activity.id === dropdownActivityId}>
+                <div class="dropdown-trigger">
+                    <button class="button is-rounded activity-button" 
+                        on:click={() => onActivityClicked(activity)}
+                        class:is-primary={activity.id === suggestedActivityId}
+                        class:is-success={suggestedActivityId !== activity.id && activity.state?.completed}
+                        disabled={activity.state?.locked}
+                        >
+                        {#if activity.type === 'segment'}
+                            <span class="segment-body has-background-light has-text-dark">
+                                { activity.segmentTitle }
+                            </span>
+                        {:else if activity.type === 'checkpoint'}
+                            Checkpoint
+                        {:else if activity.type === 'drill'}
+                            Drill
+                        {:else if activity.type === 'finale'}
+                            Finale
+                        {:else}
+                            Unknown
+                        {/if}
+                    </button>
+                </div>
+                <div class="dropdown-menu">
+                    <div class="dropdown-content has-background-primary">
+                        {#each activity.steps as step, i}
+                        <div class="dropdown-item">    
+                            <button class="button is-fullwidth" on:click={() => onPracticeStepClicked(activity, i)}>
+                                {step.title}
+                            </button>
+                        </div>
+                        {/each}
+                    </div>
+                </div>
+            </div>
         {/each}
     </div>
     {/each}

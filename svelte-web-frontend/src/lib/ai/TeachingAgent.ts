@@ -21,6 +21,7 @@ function GenerateMarkDrillFulloutSteps(
 
     const mark: PracticeStep = {
         ...stepBase,
+        title: 'Mark',
         interfaceMode: 'watchDemo',
         terminalFeedbackEnabled: false,
         showUserSkeleton: false,
@@ -29,6 +30,7 @@ function GenerateMarkDrillFulloutSteps(
 
     const drill: PracticeStep = {
         ...stepBase,
+        title: 'Drill',
         interfaceMode: 'bothVideos',
         terminalFeedbackEnabled: true,
         showUserSkeleton: true,
@@ -37,6 +39,7 @@ function GenerateMarkDrillFulloutSteps(
     
     const fullOut: PracticeStep = {
         ...stepBase,
+        title: 'Full Out',
         interfaceMode: 'userVideoOnly',
         terminalFeedbackEnabled: true,
         showUserSkeleton: false,
@@ -184,6 +187,7 @@ export function GeneratePracticeStep(
     const danceTreeSlug =  makeDanceTreeSlug(danceTree);
     return {
         step: {
+            title: danceTreeNode.id,
             segmentDescription: danceTreeNode.id,
             startTime: danceTreeNode.start_time,
             endTime: danceTreeNode.end_time,

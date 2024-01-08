@@ -107,9 +107,9 @@
         }   
     }
 
-    function onLearningActivityClicked(activity: PracticePlanActivity) {
+    function onLearningActivityStepClicked(activity: PracticePlanActivity, stepIndex: number) {
         if (activity.type === 'segment') {
-            goto(`${encodeURIComponent(activity.id)}/0/`)
+            goto(`${encodeURIComponent(activity.id)}/${stepIndex}/`)
         }
     }
 
@@ -175,7 +175,7 @@
         
         <LearningJourneyTrail 
             {practicePlan}
-            on:activityClicked={(e) => onLearningActivityClicked(e.detail)}/>
+            on:practiceStepClicked={(e) => onLearningActivityStepClicked(e.detail.activity, e.detail.stepIndex)}/>
     </div>
 
     <!-- <div class="column is-narrow">
