@@ -256,9 +256,9 @@ $: {
                 drawSkeleton={false}
                 volume={$danceVideoVolume}
                 controls={{
-                    showPlayPause: true,
-                    enablePlayPause: true,
-                    showProgressBar: true,
+                    showPlayPause: false,
+                    enablePlayPause: false,
+                    showProgressBar: false,
                     progressBarProps: progressBarProps,
                 }}
                 >
