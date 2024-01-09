@@ -19,7 +19,7 @@
 
 </script>
 
-<div class="p-4">
+<div class="p-4 overflow-hidden">
     <PracticePage 
         dance={data.dance}    
         practiceStep={data.practiceStep}

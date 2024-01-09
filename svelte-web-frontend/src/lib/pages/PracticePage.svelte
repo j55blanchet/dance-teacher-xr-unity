@@ -22,7 +22,7 @@ import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
-import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackScreen.svelte';
+import TerminalFeedbackScreen from '$lib/elements/TerminalFeedbackScreen.svelte';
 import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
@@ -66,7 +66,11 @@ let hasUserWebcamVisible: boolean;
 $: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible' ||
     isDoingSomeSortOfFeedback && state === 'waitWebcam';
 
-const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher<{
+    stateChanged: PracticePageState;
+    'continue-clicked': undefined;
+    stepCompleted: undefined;
+}>();
 
 let fitVideoToFlexbox = true;
 
@@ -458,7 +462,7 @@ async function startCountdown() {
     playClickSound();
     await waitSecs(beatDuration);
     if (!isMounted) return
-    
+
     countdown = 6;
     playClickSound();
     await waitSecs(beatDuration);
@@ -730,7 +734,7 @@ onMount(() => {
     class:hasOnlyUserMirror={hasUserWebcamVisible && !hasVisibleReferenceVideo}
     >
     {#if practiceStep?.danceTree}
-    <div class="treevis">
+    <div class="treevis gridItem">
         <DanceTreeVisual 
             node={practiceStep.danceTree.root }
             showProgressNode={isShowingFeedback ? undefined : practiceStep.danceTreeNode} 
@@ -748,7 +752,7 @@ onMount(() => {
     {/if}
 
 
-    <div class="demovid" style:display={state === "feedback" || !hasVisibleReferenceVideo ? 'none' : 'flex'}>
+    <div class="demovid gridItem" style:display={!hasVisibleReferenceVideo ? 'none' : 'flex'}>
         <VideoWithSkeleton
             bind:this={videoWithSkeleton}
             bind:currentTime={videoCurrentTime}
@@ -770,11 +774,14 @@ onMount(() => {
             </button>
         </div>
         {/if}
+        <div class="absolute left-0 right-0 bottom-0">
+            <p>state: {state}</p>
+            <p>showStartCountdownDialog: {showStartCountdownDialog}</p>
+        </div>
     </div>
     <div 
-        class="mirror"
-        class:hidden={!hasUserWebcamVisible} 
-        style:display={state === "feedback" ? 'none' : 'flex'}
+        class="mirror gridItem"
+        class:hidden={!hasUserWebcamVisible}
         >
         <VirtualMirror
             bind:this={virtualMirrorElement}
@@ -798,19 +805,21 @@ onMount(() => {
         {/if}
     </div>
 
-    {#if state === "feedback"}
-    <div class="feedback">
-        <TerminalFeedbackDialog 
-            feedback={terminalFeedback}
-            showActivityConfiguratorButton={true}
-            on:repeat-clicked={() => onNodeClickedById(practiceStep?.danceTreeNode?.id ?? '')}
-            on:continue-clicked={() => dispatch('continue-clicked')}
-            on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
-            on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
-        />
-        <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
-    </div>
-    <Dialog open={isShowingNextActivityConfigurator}
+    <Dialog open={isShowingFeedback} modal={false}>
+        <span slot="title">Feedback</span>
+        <div class="feedback">
+            <TerminalFeedbackScreen 
+                feedback={terminalFeedback}
+                showActivityConfiguratorButton={true}
+                on:repeat-clicked={() => onNodeClickedById(practiceStep?.danceTreeNode?.id ?? '')}
+                on:continue-clicked={() => dispatch('continue-clicked')}
+                on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
+                on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
+            />
+            <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
+        </div>
+    </Dialog>
+    <Dialog open={isShowingFeedback && isShowingNextActivityConfigurator}
         on:dialog-closed={() => isShowingNextActivityConfigurator = false}>
         <span slot="title">Practice Setup</span>
         <PracticeActivityConfigurator 
@@ -818,18 +827,21 @@ onMount(() => {
                 bind:practiceActivityParams={nextPracticeActivityParams}
             />
     </Dialog>
-    {/if}
 
     {#if countdown >= 0}
-    <div class="countdown">
-        <span class="count">
-            {countdown}
-        </span>
+    <div class="absolute inset-0 flex justify-center items-center">
+        <div class="bg-primary rounded-box p-4 text-primary-content">
+            <span class="text-6xl">
+                {countdown}
+            </span>
+        </div>
     </div>
     {/if}
 
-    <Dialog open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
-        on:dialog-closed={() => showStartCountdownDialog = false}>
+    <Dialog 
+        open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
+        on:dialog-closed={() => showStartCountdownDialog = false}
+    >
         <span slot="title">Click to Start</span>
         <p class="limit-line-width">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
         <button class="button" on:click={() => startCountdown()}>
@@ -878,14 +890,14 @@ section {
                 "mirror  mirror";
         }
     }
-    &.hasFeedback {
-        grid-template: "feedback feedback" 1fr / 1fr 1fr;
-    }
-    &.hasDanceTree.hasFeedback {
-        grid-template:
-            "treevis treevis" auto
-            "feedback feedback" 1fr / 1fr 1fr;
-    }
+    // &.hasFeedback {
+    //     grid-template: "feedback feedback" 1fr / 1fr 1fr;
+    // }
+    // &.hasDanceTree.hasFeedback {
+    //     grid-template:
+    //         "treevis treevis" auto
+    //         "feedback feedback" 1fr / 1fr 1fr;
+    // }
     
     align-items: center;
     justify-content: stretch;
@@ -895,7 +907,7 @@ section {
     width: 100%;
     gap: 1rem;
 
-    & > div {
+    & > .gridItem {
         place-self: center;
         position: relative;
         flex-grow: 1;
@@ -972,8 +984,8 @@ section {
 }
 
 .hidden {
-    position: absolute;
-    left: 9999vw;
+    position: absolute !important; 
+    left: 9999vw !important;
 }
 
 </style>

@@ -21,6 +21,7 @@ function GenerateMarkDrillFulloutSteps(
 
     const mark: PracticeStep = {
         ...stepBase,
+        id: 'mark',
         title: 'Mark',
         interfaceMode: 'watchDemo',
         terminalFeedbackEnabled: false,
@@ -30,6 +31,7 @@ function GenerateMarkDrillFulloutSteps(
 
     const drill: PracticeStep = {
         ...stepBase,
+        id: 'drill',
         title: 'Drill',
         interfaceMode: 'bothVideos',
         terminalFeedbackEnabled: true,
@@ -39,6 +41,7 @@ function GenerateMarkDrillFulloutSteps(
     
     const fullOut: PracticeStep = {
         ...stepBase,
+        id: 'fullOut',
         title: 'Full Out',
         interfaceMode: 'userVideoOnly',
         terminalFeedbackEnabled: true,
@@ -107,9 +110,19 @@ function makeDrillActivity(startTime: number, endTime: number): DrillActivity {
 
 function makeFinaleActivity(startTime: number, endTime: number): FinaleActivity {
     return {
-        id: `finale-${startTime}-${endTime}`,
+        id: `finale`,
         type: 'finale',
-        steps: []
+        steps: [{
+            id: `finale`,
+            title: 'Finale',
+            segmentDescription: `finale`,
+            startTime: startTime,
+            endTime: endTime,
+            interfaceMode: 'userVideoOnly',
+            terminalFeedbackEnabled: false,
+            showUserSkeleton: false,
+            playbackSpeed: 1,
+        }]
     }
 }
 
@@ -187,6 +200,7 @@ export function GeneratePracticeStep(
     const danceTreeSlug =  makeDanceTreeSlug(danceTree);
     return {
         step: {
+            id: 'legacystep',
             title: danceTreeNode.id,
             segmentDescription: danceTreeNode.id,
             startTime: danceTreeNode.start_time,

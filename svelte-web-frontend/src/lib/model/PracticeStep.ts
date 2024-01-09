@@ -66,6 +66,7 @@ export const PracticeInterfaceModeOptions: Record<PracticeStepModeKey, string> =
 } as const;
 export const PracticeStepDefaultInterfaceSetting: PracticeStepModeKey = 'bothVideos';
 export default interface PracticeStep {
+    id: string;
     title: string;
     startTime: number;
     endTime: number;
