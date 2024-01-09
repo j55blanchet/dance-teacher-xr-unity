@@ -124,12 +124,11 @@
                         tabindex="0" 
                         class:daisy-btn={isDropdownMode}
                         class:bg-base-300={isActivitySuggested}
-                        class:rounded-full={isDropdownMode}
-                        class:rounded-t-full={!isDropdownMode}
-                        class:rounded-b-lg={!isDropdownMode}
-                        class:border-b-4={!isDropdownMode}
+                        class:rounded-full={true}
+                        class:border-b-base-300={isDropdownMode}
                         class:border-b-primary={!isDropdownMode}
-                        class="size-32 flex justify-center items-center" 
+                        class="size-32 flex justify-center items-center
+                               border-b-4" 
                         on:click={() => { onActivityClicked(activity); }}
                         class:daisy-btn-success={isDropdownMode && isComplete}
                         >
@@ -166,7 +165,7 @@
                     {/if}
                 </details>
                 {#if isActivitySuggested}
-                <div class="p-2 bg-base-200 rounded-box">
+                <div class="p-2 bg-base-200 rounded-box border-b-4">
                     <PracticeStepList 
                         {activity} 
                         {practicePlanProgress}
