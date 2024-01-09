@@ -100,8 +100,8 @@ function getTrackDataUrl(track: any, description: string) {
 
 </script>
 
-<div class="feedbackForm">
-    <!-- <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2> -->
+<div class="feedbackForm text-xl">
+    {#if !feedback}<h2>Thinking<ProgressEllipses /></h2>{/if}
     
     {#each feedback?.achievements ?? [] as achivement, i}
         <p class="achievement animate pop"><StarIcon /><span>{achivement}</span></p>
@@ -185,24 +185,13 @@ function getTrackDataUrl(track: any, description: string) {
     flex-grow: 1;
     gap: 0.5rem;
     overflow: scroll;
-    font-size: 1.5rem;
+    // font-size: 1.5rem;
 
     & p,h2,.paragraphs {
         max-width: 70ch;
     }
 }
 
-@media (max-width: 900px) {
-    .feedbackForm {
-        font-size: 1.25rem;
-    }
-}
-
-@media (max-width: 600px) {
-    .feedbackForm {
-        font-size: 1rem;
-    }
-}
 .skeleton {
     // min-height: 0;
     width: 100%;

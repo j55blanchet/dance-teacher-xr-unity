@@ -73,16 +73,26 @@ const GenerateDrillFeedback: FeedbackFunction = async (args) => {
         
     } else {
         suggestedAction = 'repeat';
-        prompt += "The system was not able to compute a score for their performance. As a fallback, the system suggests that they refresh the page and try again. Can you response a message that will be spoken aloud to the user letting them know this? "
+        prompt += "The system was not able to compute a score for their performance. As a fallback, the system suggests that they refresh the page and try again. Can you response a message that will be spoken aloud to the user letting them know this?  "
     }
 
-    prompt += 'You should take the persona of an AI dance coach, and pretend that YOU, as an young, friendly, positive AI dance coach, have made these observations, thereby mimicing the experience of learning from a human dance coach. ';
+    prompt += "You should take the persona of an AI dance coach, and pretend that YOU, as an young, friendly, positive AI dance coach, have made these observations, thereby mimicing the experience of learning from a human dance coach. Your message should be short - not more than 2 sentances long. Please please please do not make up anything about their dance performance other than what the system has identified. If you do not have specific feedback to give that is firmly grounded in the system's analysis, you should not make something up.";
+
+    prompt += "Please put the feedback message for the using within xml tags in the following format: <feedbackmessage>YOUR MESSAGE HERE</feedbackmessage>"
 
     prompt += AI_PROMPT;
 
     let feedbackText: string;
     try {
-        feedbackText = await getLLMResponse(prompt);
+        const llmText = await getLLMResponse(prompt);
+
+        const msgText = llmText.match(/<feedbackmessage>([\s\S]*?)<\/feedbackmessage>/)?.[1];
+
+        if (!msgText) {
+            throw new Error('No feedback message tags found in LLM response');
+        }
+
+        feedbackText = msgText;
     } catch (e) {
         feedbackText = "There was an error generating the feedback. Please try again."
     }
