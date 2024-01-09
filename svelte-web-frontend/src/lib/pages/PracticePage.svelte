@@ -1,6 +1,7 @@
 <script context="module" lang="ts">
-export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
-export const INITIAL_STATE: PracticePageState = "waitWebcam";
+	import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
+    export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
+    export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
 import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
@@ -21,17 +22,16 @@ import { onMount, createEventDispatcher, tick, getContext } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
-import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackScreen from '$lib/elements/TerminalFeedbackScreen.svelte';
 import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
 import { goto } from '$app/navigation';
-import type { GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent';
+import type { GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
 import { waitSecs } from '$lib/utils/async';
-import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepInterfaceSettings } from '$lib/model/PracticeStep';
+import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepInterfaceSettings, type FeedbackFunction } from '$lib/model/PracticeStep';
 import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
@@ -132,6 +132,15 @@ $: console.log('trialId changed, now is: ', trialId);
 let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
 
+let feedbackPromise: Promise<TerminalFeedback | undefined> | null = null;
+let videoRecording: {
+    url: string;
+    mimeType: string;
+    referenceVideoUrl: string;
+    recordingSpeed: number;
+    recordingStartOffset: number;
+} | undefined = undefined;
+
 // Base the settings for the next practice activity based on the current one
 let nextPracticeActivityParams: GeneratePracticeStepOptions = {
     playbackSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
@@ -185,7 +194,6 @@ function unPauseVideo() {
     state = "playing";
 }
 
-
 async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
     if (gettingFeedback) return;
 
@@ -195,6 +203,15 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     let videoURL: undefined | string = undefined;
     if (webcamRecordedObjectURL) {
         videoURL = await webcamRecordedObjectURL;
+    }
+    if (videoURL) {
+        videoRecording = {
+            url: videoURL,
+            mimeType: webcamRecorderMimeType,
+            referenceVideoUrl: danceSrc,
+            recordingStartOffset: practiceStep?.startTime ?? 0,
+            recordingSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+        };
     }
 
     const attemptHistory = $lastNAttemptsAngleSimilarity.map((a) => {
@@ -208,73 +225,63 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
 
     let feedback: TerminalFeedback | undefined = undefined;
 
-    if (!terminalFeedbackEnabled || !performanceSummary) {
+    if (!practiceStep?.feedbackFunction) {
         feedback = generateFeedbackNoPerformance(
             dance.clipRelativeStem,
             $frontendPerformanceHistory,
             practiceStep?.danceTreeNode?.id ?? '',
         );
+    } else {
+        feedback = await practiceStep.feedbackFunction({
+            attemptSettings: {
+                startTime: practiceStep?.startTime ?? 0,
+                endTime: practiceStep?.endTime ?? videoDuration,
+                playbackSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+                referenceVideoVisible: interfaceSettings.referenceVideo.visibility === 'visible',
+                userVideoVisible: interfaceSettings.userVideo.visibility === 'visible',
+            },
+            performanceSummary, 
+            recordedTrack
+        });
     }
 
-    if ($useAIFeedback && !feedback) {
-        try {
-            const perfHistory = $frontendPerformanceHistory;
-            const dancePerfHistory = practiceStep?.dance?.clipRelativeStem ? perfHistory?.[practiceStep.dance.clipRelativeStem] ?? null : null;
-            feedback = await generateFeedbackWithClaudeLLM(
-                practiceStep?.danceTree,
-                practiceStep?.danceTreeNode?.id ?? 'undefined',
-                performanceSummary ?? undefined,
-                dancePerfHistory ?? undefined,
-                $summaryFeedback_skeleton3d_mediumPerformanceThreshold,
-                $summaryFeedback_skeleton3d_goodPerformanceThreshold,
-                $metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
-                attemptHistory,
-            )
-        } catch(e) {
-            console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
-        }
-    }
+    // if ($useAIFeedback && !feedback) {
+    //     try {
+    //         const perfHistory = $frontendPerformanceHistory;
+    //         const dancePerfHistory = practiceStep?.dance?.clipRelativeStem ? perfHistory?.[practiceStep.dance.clipRelativeStem] ?? null : null;
+    //         feedback = await generateFeedbackWithClaudeLLM(
+    //             practiceStep?.danceTree,
+    //             practiceStep?.danceTreeNode?.id ?? 'undefined',
+    //             performanceSummary ?? undefined,
+    //             dancePerfHistory ?? undefined,
+    //             $summaryFeedback_skeleton3d_mediumPerformanceThreshold,
+    //             $summaryFeedback_skeleton3d_goodPerformanceThreshold,
+    //             $metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
+    //             attemptHistory,
+    //         )
+    //     } catch(e) {
+    //         console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
+    //     }
+    // }
 
-    if (!feedback) {
-        const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
-        const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
+    // if (!feedback) {
+    //     const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
+    //     const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
 
-        const perfHistory = $frontendPerformanceHistory;
-        const dancePerfHistory = practiceStep?.dance?.clipRelativeStem ? perfHistory?.[practiceStep.dance.clipRelativeStem] ?? null : null;
-        feedback = generateFeedbackRuleBased(
-            qijiaOverallScore, 
-            qijiaByVectorScores,
-            dancePerfHistory ?? undefined,
-            practiceStep?.danceTreeNode?.id,
-        );
-    }
-    
-    feedback.debug = {
-        ...feedback.debug,
-        performanceSummary: performanceSummary ?? undefined,
-        recordedTrack: recordedTrack ?? undefined,
-    }
-
-    if (videoURL) {
-        let playbackSpeed = practiceStep?.playbackSpeed;
-        if (playbackSpeed === undefined) {
-            playbackSpeed = $practiceActivities__playbackSpeed;
-        }
-        feedback.videoRecording = {
-            url: videoURL,
-            mimeType: webcamRecorderMimeType,
-            referenceVideoUrl: danceSrc,
-            recordingStartOffset: practiceStep?.startTime ?? 0,
-            recordingSpeed: playbackSpeed,
-        };
-    }
-
-    feedback.segmentName = practiceStep?.danceTreeNode?.id;
+    //     const perfHistory = $frontendPerformanceHistory;
+    //     const dancePerfHistory = practiceStep?.dance?.clipRelativeStem ? perfHistory?.[practiceStep.dance.clipRelativeStem] ?? null : null;
+    //     feedback = generateFeedbackRuleBased(
+    //         qijiaOverallScore, 
+    //         qijiaByVectorScores,
+    //         dancePerfHistory ?? undefined,
+    //         practiceStep?.danceTreeNode?.id,
+    //     );
+    // }
 
     gettingFeedback = false;
 
     if ($debugMode && $debugMode__addPlaceholderAchievement) {
-        feedback.achievements?.push("placeholder achievement");
+        feedback?.achievements?.push("placeholder achievement");
     }
 
     return feedback;
@@ -306,7 +313,8 @@ $: {
             trialId = null;
             state = "feedback";
            
-            getFeedback(performanceSummary, recordedTrack)
+            feedbackPromise = getFeedback(performanceSummary, recordedTrack);
+            feedbackPromise
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
                 });
@@ -327,6 +335,7 @@ async function playClickSound(silent: boolean = false) {
 }
 
 let mediaElementsHaveBeenActivated = false;
+
 async function startCountdown() {
     if (countdownActive) return;
     
@@ -455,6 +464,7 @@ export async function reset() {
     state = "waitWebcam";
     lastEvaluationResult = null;
     isVideoPausedBinding = true;
+    videoRecording = undefined;
     videoCurrentTime = practiceStep?.startTime ?? 0;
     const playDuration = (practiceStep?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceStep?.endTime ?? videoDuration;
@@ -730,17 +740,17 @@ onMount(() => {
         </div>
     </Dialog>
     <Dialog 
-        open={showingPerformanceReviewPage && terminalFeedback?.videoRecording !== undefined} 
+        open={showingPerformanceReviewPage && videoRecording !== undefined} 
         on:dialog-closed={() => showingPerformanceReviewPage = false }>
         <span slot="title">Performance Review</span>
         <div class="reviewPageWrapper">
-            {#if terminalFeedback?.videoRecording !== undefined}
+            {#if videoRecording !== undefined}
             <PerformanceReviewPage 
-                recordingUrl={terminalFeedback.videoRecording.url}
-                recordingMimeType={terminalFeedback.videoRecording.mimeType}
-                referenceVideoUrl={terminalFeedback.videoRecording.referenceVideoUrl}
-                recordingStartOffset={terminalFeedback.videoRecording.recordingStartOffset}
-                recordingSpeed={terminalFeedback.videoRecording.recordingSpeed}
+                recordingUrl={videoRecording.url}
+                recordingMimeType={videoRecording.mimeType}
+                referenceVideoUrl={videoRecording.referenceVideoUrl}
+                recordingStartOffset={videoRecording.recordingStartOffset}
+                recordingSpeed={videoRecording.recordingSpeed}
             />
             {/if}
         </div>

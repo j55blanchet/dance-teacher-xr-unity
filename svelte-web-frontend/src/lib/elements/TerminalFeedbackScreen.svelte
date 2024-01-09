@@ -25,16 +25,16 @@ let showingPerformanceSummary = false;
 let showingLLMOutput = false;
 let showingTerminalFeedbackJson = false;
 
-let performanceSummaryWithoutTrack: any | undefined;
-$: {
-    performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
-    if (performanceSummaryWithoutTrack) {
-        performanceSummaryWithoutTrack = {
-            ...performanceSummaryWithoutTrack,
-            adjustedTrack: undefined,
-        }
-    }
-}
+let performanceSummaryWithoutTrack: any | undefined = undefined;
+// $: {
+//     performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
+//     if (performanceSummaryWithoutTrack) {
+//         performanceSummaryWithoutTrack = {
+//             ...performanceSummaryWithoutTrack,
+//             adjustedTrack: undefined,
+//         }
+//     }
+// }
 let skeletonHighlights: BodyPartHighlight[] = [];
 
 $: {
@@ -65,43 +65,43 @@ function getTrackDataUrl(track: any, description: string) {
     return URL.createObjectURL(blob);
 }
 
-function exportRecordings() {
+// function exportRecordings() {
 
-    const track = feedback?.debug?.recordedTrack;
-    if (!track) {
-        console.error("No track to export");
-        return;
-    }
+//     const track = feedback?.debug?.recordedTrack;
+//     if (!track) {
+//         console.error("No track to export");
+//         return;
+//     }
 
-    const trackDescription = prompt('Please describe this track');
-    if (!trackDescription?.length){
-        return;
-    }
+//     const trackDescription = prompt('Please describe this track');
+//     if (!trackDescription?.length){
+//         return;
+//     }
 
-    const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-    const url = getTrackDataUrl(track, trackDescription);
-    promptDownload(url, `${filenameRoot}.track.json`)
+//     const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+//     const url = getTrackDataUrl(track, trackDescription);
+//     promptDownload(url, `${filenameRoot}.track.json`)
 
-    const adjustedTrack = (feedback?.debug?.performanceSummary as any)?.adjustedTrack;
-    if (adjustedTrack) {
-        const url = getTrackDataUrl(adjustedTrack, trackDescription + "-adjusted");
-        promptDownload(url, `${filenameRoot}.adjustedtrack.json`);
-    }
+//     const adjustedTrack = (feedback?.debug?.performanceSummary as any)?.adjustedTrack;
+//     if (adjustedTrack) {
+//         const url = getTrackDataUrl(adjustedTrack, trackDescription + "-adjusted");
+//         promptDownload(url, `${filenameRoot}.adjustedtrack.json`);
+//     }
 
-    const webcamRecording = feedback?.videoRecording?.url;
-    if (webcamRecording) {
-        let extension = 'webm';
-        if (feedback?.videoRecording?.mimeType == 'video/mp4' || webcamRecording.endsWith('.mp4')) {
-            extension = 'mp4';
-        }
-        promptDownload(webcamRecording, `${filenameRoot}.userrecording.${extension}`);
-    }
-}
+//     const webcamRecording = feedback?.videoRecording?.url;
+//     if (webcamRecording) {
+//         let extension = 'webm';
+//         if (feedback?.videoRecording?.mimeType == 'video/mp4' || webcamRecording.endsWith('.mp4')) {
+//             extension = 'mp4';
+//         }
+//         promptDownload(webcamRecording, `${filenameRoot}.userrecording.${extension}`);
+//     }
+// }
 
 </script>
 
 <div class="feedbackForm">
-    <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
+    <!-- <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2> -->
     
     {#each feedback?.achievements ?? [] as achivement, i}
         <p class="achievement animate pop"><StarIcon /><span>{achivement}</span></p>
@@ -163,11 +163,11 @@ function exportRecordings() {
                 <pre>{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
-            {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
+            <!-- {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
             <button class="button" on:click={exportRecordings}>
                 Export Recorded Track
             </button>
-            {/if}
+            {/if} -->
         </div>
     {/if}
 </div>

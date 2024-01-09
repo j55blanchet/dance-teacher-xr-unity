@@ -1,5 +1,18 @@
+import type { FrontendEvaluationTrack, FrontendPerformanceSummary } from "$lib/ai/FrontendDanceEvaluator";
 import type { Dance, DanceTree, DanceTreeNode } from "$lib/data/dances-store";
+import type { TerminalFeedback } from "./TerminalFeedback";
 
+export type FeedbackFunction = ((opts: {
+    attemptSettings: {
+        startTime: number,
+        endTime: number,
+        playbackSpeed: number,
+        referenceVideoVisible: boolean,
+        userVideoVisible: boolean,
+    },
+    performanceSummary: FrontendPerformanceSummary | null, 
+    recordedTrack:  FrontendEvaluationTrack | null
+}) => TerminalFeedback | undefined);
 
 export type StepEndBehavior = {
     preFeedbackMessage?: string;
@@ -88,6 +101,8 @@ export default interface PracticeStep {
     dance?: Dance;
     danceTree?: DanceTree;
     danceTreeNode?: DanceTreeNode;
+
+    feedbackFunction?: FeedbackFunction;
 
     state?: {
         completed?: boolean;

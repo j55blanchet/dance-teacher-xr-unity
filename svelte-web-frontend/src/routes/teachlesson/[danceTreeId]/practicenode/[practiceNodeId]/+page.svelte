@@ -1,6 +1,6 @@
 <script lang="ts">
 import { goto } from '$app/navigation';
-import { GeneratePracticeStep } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeStep } from '$lib/ai/TeachingAgent/TeachingAgent';
 import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/data/dances-store';
 import PracticePage from '$lib/pages/PracticePage.svelte';
 import { INITIAL_STATE, type PracticePageState } from '$lib/pages/PracticePage.svelte';

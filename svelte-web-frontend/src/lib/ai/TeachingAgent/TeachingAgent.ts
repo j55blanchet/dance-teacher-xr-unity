@@ -1,7 +1,10 @@
-import { makeDanceTreeSlug, type Dance, type DanceTree, type DanceTreeNode, getAllLeafNodes } from '../data/dances-store'
+import { makeDanceTreeSlug, type Dance, type DanceTree, type DanceTreeNode, getAllLeafNodes } from '../../data/dances-store'
 import type PracticeStep from '$lib/model/PracticeStep';
 import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
 import type { CheckpointActivity, DrillActivity, FinaleActivity, PracticePlan, SegmentActivity } from '$lib/model/PracticePlan';
+import { CreateMarkingStep } from './marking-step';
+import { CreateDrillStep } from './drill-step';
+import { CreateFulloutStep } from './fullout-step';
 
 // export interface UserDancePerformanceLog {
 //     // markingByNode: Map<DanceTreeNode["id"], number>;
@@ -19,35 +22,9 @@ function GenerateMarkDrillFulloutSteps(
         endTime: endTime,
     } satisfies Partial<PracticeStep>;
 
-    const mark: PracticeStep = {
-        ...stepBase,
-        id: 'mark',
-        title: 'Marking',
-        interfaceMode: 'watchDemo',
-        terminalFeedbackEnabled: false,
-        showUserSkeleton: false,
-        playbackSpeed: 0.5,
-    };
-
-    const drill: PracticeStep = {
-        ...stepBase,
-        id: 'drill',
-        title: 'Drilling',
-        interfaceMode: 'bothVideos',
-        terminalFeedbackEnabled: true,
-        showUserSkeleton: true,
-        playbackSpeed: 0.75,
-    };
-    
-    const fullOut: PracticeStep = {
-        ...stepBase,
-        id: 'fullOut',
-        title: 'Full Out',
-        interfaceMode: 'userVideoOnly',
-        terminalFeedbackEnabled: true,
-        showUserSkeleton: false,
-        playbackSpeed: 1,
-    };
+    const mark = CreateMarkingStep(segmentDescription, startTime, endTime)
+    const drill = CreateDrillStep(segmentDescription, startTime, endTime)
+    const fullOut = CreateFulloutStep(segmentDescription, startTime, endTime)
     return [mark, drill, fullOut];
 }
 

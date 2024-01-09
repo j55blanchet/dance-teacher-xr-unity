@@ -13,7 +13,7 @@ import { createEventDispatcher, getContext, onMount, tick } from 'svelte';
 import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
 import { danceVideoVolume, debugMode, debugMode__viewBeatsOnDanceTreepage, practiceActivities__playbackSpeed } from '$lib/model/settings';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-import { GeneratePracticeStep, type GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeStep, type GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent/TeachingAgent';
 import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepModeKey } from '$lib/model/PracticeStep';
 
 import InfoIcon from 'virtual:icons/icon-park-outline/info';

@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 
 import { getDanceTreeFromDanceAndTreeName } from '$lib/data/dances-store.js';
-import { GeneratePracticePlan } from '$lib/ai/TeachingAgent.js';
+import { GeneratePracticePlan } from '$lib/ai/TeachingAgent/TeachingAgent.js';
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ params, parent })  {
