@@ -666,29 +666,25 @@ onMount(() => {
         </div>
     </div>
     <div 
-        class="mirror gridItem"
+        class="mirror gridItem flex"
         class:hidden={!hasUserWebcamVisible}
         >
-        <VirtualMirror
-            bind:this={virtualMirrorElement}
-            {poseEstimationEnabled}
-            drawSkeleton={false}
-            poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
-            customDrawFn={(ctx, pose) => {
-                if (!skeletonDrawingEnabled) return;
-                
-                const evalResToPass = skeletonDrawingEnabled ? lastEvaluationResult : null;
-                Draw2dSkeleton(ctx, pose, evalResToPass, mirrorForEvaluation);
-            }}
-            on:poseEstimationFrameSent={poseEstimationFrameSent}
-            on:poseEstimationResult={poseEstimationFrameReceived}
-        />
-        {#if state === "waitStart"}  
-        <div class="loading outlined thick">
-            <!-- <div class="spinner large"></div> -->
-            <div class="label">Loading<ProgressEllipses /></div>
-        </div>
-        {/if}
+        <div class="is-overlay">
+            <VirtualMirror
+                bind:this={virtualMirrorElement}
+                {poseEstimationEnabled}
+                drawSkeleton={false}
+                poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
+                customDrawFn={(ctx, pose) => {
+                    if (!skeletonDrawingEnabled) return;
+                    
+                    const evalResToPass = skeletonDrawingEnabled ? lastEvaluationResult : null;
+                    Draw2dSkeleton(ctx, pose, evalResToPass, mirrorForEvaluation);
+                }}
+                on:poseEstimationFrameSent={poseEstimationFrameSent}
+                on:poseEstimationResult={poseEstimationFrameReceived}
+            />
+    </div>
     </div>
     {#if hasProgressBar && progressBarProps !== undefined}
     <div class="progressBar flex items-center flex-col space-y-4">
@@ -698,7 +694,7 @@ onMount(() => {
             <button 
                 class="daisy-btn" 
                 class:daisy-btn-primary={state === 'waitStartUserInteraction'}
-                disabled={countdownActive} 
+                disabled={countdownActive || state === "waitWebcam"} 
                 on:click={() => startCountdown()}
             >
                 {#if state === 'waitStartUserInteraction'}
@@ -707,6 +703,8 @@ onMount(() => {
                     Do Again
                 {:else if state === "playing"}
                     Restart
+                {:else if state === "waitWebcam"}
+                    Waiting for webcam
                 {:else}
                     <span class="daisy-loading daisy-loading-spinner"></span>
                 {/if}
@@ -761,7 +759,7 @@ onMount(() => {
 
     {#if countdown >= 0}
     <div class="absolute inset-0 flex justify-center items-center">
-        <div class="bg-neutral rounded-full p-4 text-neutral-content">
+        <div class="bg-accent rounded-full p-4 size-24 text-accent-content grid items-center justify-center shadow-xl">
             <span class="text-6xl">
                 {countdown}
             </span>
@@ -772,7 +770,10 @@ onMount(() => {
 
 <style lang="scss">
 
-.demovid { grid-area: demovid; }
+.demovid { 
+    grid-area: demovid; 
+    max-height: calc(100% - 94px - 1rem);
+}
 .mirror {  grid-area: mirror;  }
 .feedback { grid-area: feedback; overflow: hidden;}
 
@@ -838,24 +839,6 @@ onMount(() => {
     }
 }
 
-.startCountdown {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    // background-color: rgba(0, 0, 0, 0.2);
-
-    & .button {
-        padding: 1em;
-    }
-}
-
 .countdown {
     position: absolute;
     top: 0;
@@ -882,20 +865,6 @@ onMount(() => {
 
     padding: 3rem;
     border-radius: 50%;
-}
-
-.loading {
-    // position the spinner in the center of the screen
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    padding: 2rem;
-    background-color: #fff;
-
-    & .label {
-        margin-top: 1em;
-    }
 }
 
 .hidden {

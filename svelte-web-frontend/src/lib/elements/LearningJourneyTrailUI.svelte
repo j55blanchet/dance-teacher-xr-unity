@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PracticePlan, PracticePlanActivity, PracticePlanActivityBase } from '$lib/model/PracticePlan';
+	import type PracticeStep from '$lib/model/PracticeStep';
     import { createEventDispatcher } from 'svelte';
 
     export let practicePlan: PracticePlan;
@@ -8,7 +9,7 @@
     let dropdownActivityId: string | undefined = undefined;
     const dispatch = createEventDispatcher<{
         activityClicked: PracticePlanActivity;
-        practiceStepClicked: { activity: PracticePlanActivity, stepIndex: number };
+        practiceStepClicked: { activity: PracticePlanActivity, step: PracticeStep };
     }>();
 
     function onActivityClicked(activity: PracticePlanActivity) {
@@ -24,8 +25,8 @@
         }
     }
 
-    function onPracticeStepClicked(activity: PracticePlanActivity, stepIndex: number) {
-        dispatch('practiceStepClicked', { activity, stepIndex });
+    function onPracticeStepClicked(activity: PracticePlanActivity, step: PracticeStep) {
+        dispatch('practiceStepClicked', { activity, step });
     }
 </script>
 
@@ -66,7 +67,7 @@
                     <div class="dropdown-content has-background-primary">
                         {#each activity.steps as step, i}
                         <div class="dropdown-item">    
-                            <button class="button is-fullwidth" on:click={() => onPracticeStepClicked(activity, i)}>
+                            <button class="button is-fullwidth" on:click={() => onPracticeStepClicked(activity, step)}>
                                 {step.title}
                             </button>
                         </div>

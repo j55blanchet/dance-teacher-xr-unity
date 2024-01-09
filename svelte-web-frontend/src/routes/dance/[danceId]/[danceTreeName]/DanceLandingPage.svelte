@@ -8,6 +8,7 @@
 	import type { PracticePlan, PracticePlanActivity } from '$lib/model/PracticePlan';
 	import Icon from '@iconify/svelte';
 	import { goto } from '$app/navigation';
+	import type PracticeStep from '$lib/model/PracticeStep';
     
     let supabase: SupabaseClient = getContext('supabase');
 
@@ -105,9 +106,9 @@
         }   
     }
 
-    function onLearningActivityStepClicked(activity: PracticePlanActivity, stepIndex: number) {
+    function onLearningActivityStepClicked(activity: PracticePlanActivity, step: PracticeStep) {
         if (activity.type === 'segment') {
-            goto(`${encodeURIComponent(activity.id)}/${stepIndex}/`)
+            goto(`${encodeURIComponent(activity.id)}/${step.id}/`)
         }
     }
 
@@ -176,7 +177,7 @@
         
         <LearningJourneyTrail 
             {practicePlan}
-            on:practiceStepClicked={(e) => onLearningActivityStepClicked(e.detail.activity, e.detail.stepIndex)}/>
+            on:practiceStepClicked={(e) => onLearningActivityStepClicked(e.detail.activity, e.detail.step)}/>
     </div>
 
     <!-- <div class="column is-narrow">

@@ -2,8 +2,11 @@
 	import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
     import { navbarProps } from "$lib/elements/NavBar.svelte";
 	import PracticePage from "$lib/pages/PracticePage.svelte";
+	import type { SupabaseClient } from '@supabase/supabase-js';
+	import { getContext } from 'svelte';
 
     export let data;
+    let supabase: SupabaseClient = getContext('supabase');
 
     $: {
         navbarProps.update(props => ({
@@ -44,6 +47,9 @@
         isolateSegmentIndex: segmentIsolateIndex,
     };
 
+function onStepCompleted() {
+    
+}
 </script>
 
 <div class="p-4 overflow-hidden">
@@ -52,6 +58,7 @@
         practiceStep={data.practiceStep}
         pageActive={true}
         progressBarProps={progressBarProps}
+        on:stepCompleted={onStepCompleted}
     />
 </div>
 
