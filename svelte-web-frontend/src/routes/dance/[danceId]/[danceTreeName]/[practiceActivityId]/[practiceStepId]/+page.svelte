@@ -35,11 +35,6 @@
     $: if (data.practiceActivity.type === "segment") {
         segmentIsolateIndex = data.practiceActivity.segmentIndex;
     }
-    let segmentClasses = [] as string[][];
-    $: {
-        const segmentIndices = [...Array(segmentBreaks.length + 1).keys()];
-        segmentClasses = segmentIndices.map(x => x === segmentIsolateIndex ? ['bg-accent'] : []);
-    }
 
     let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime;
     $: progressBarProps = {
@@ -47,7 +42,6 @@
         endTime: data.practicePlan.endTime,
         breakpoints: data.practicePlan.demoSegmentation?.segmentBreaks ?? [],
         labels: data.practicePlan.demoSegmentation?.segmentLabels ?? [],
-        classes: segmentClasses,
         enableSegmentClick: true,
         isolateSegmentIndex: segmentIsolateIndex,
     };

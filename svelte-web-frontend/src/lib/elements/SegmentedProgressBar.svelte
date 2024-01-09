@@ -6,7 +6,7 @@
         currentTime: number,
         breakpoints: number[],
         labels: string[],
-        classes: string[][],
+        // classes: string[][],
         enableSegmentClick: boolean[] | boolean,
         isolateSegmentIndex: number | undefined,
     }
@@ -50,13 +50,14 @@
 <div class="segmented-progress-bar">
     {#each segments as segment, i}
         <button 
-            class={["progressbutton button is-rounded is-small", ...segment.classes].join(" ")}
+            class="progressbutton button is-rounded is-small"
             class:clickable={enableSegmentClick === true || (Array.isArray(enableSegmentClick) && enableSegmentClick[i])}
             on:click={() => {
                 if (enableSegmentClick === true || (Array.isArray(enableSegmentClick) && enableSegmentClick[i])) {
                     dispatch('segmentClicked', segment);
                 }
             }}
+            class:is-dark={isolateSegmentIndex !== undefined && isolateSegmentIndex !== segment.index}
             style:--segment-time={segment.duration}
             style:--percent-progress={
                 isolateSegmentIndex !== undefined && isolateSegmentIndex !== segment.index ? 0 :

@@ -28,12 +28,6 @@
     $:  segmentBreaks = practicePlan.demoSegmentation?.segmentBreaks ?? [];
     let focusedSegmentIndex: number | undefined;
     let repeatEnabled = false;
-    let segmentClasses = [] as string[][];
-
-    $: {
-        const segmentIndices = [...Array(segmentBreaks.length + 1).keys()];
-        segmentClasses = segmentIndices.map(x => x === focusedSegmentIndex ? ['bg-accent'] : []);
-    }
     
     function toggleRepeatMode() {
         repeatEnabled = !repeatEnabled;
@@ -140,7 +134,6 @@
                         endTime: practicePlan.endTime,
                         breakpoints: segmentBreaks,
                         labels: practicePlan.demoSegmentation?.segmentLabels ?? [],
-                        classes: segmentClasses,
                         isolateSegmentIndex: focusedSegmentIndex,
                     }
                 }}
