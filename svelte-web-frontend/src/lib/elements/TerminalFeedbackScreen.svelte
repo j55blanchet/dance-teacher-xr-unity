@@ -20,88 +20,6 @@ import StarIcon from 'virtual:icons/mdi/star';
 const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
-export let showActivityConfiguratorButton = false;
-
-let showingPerformanceReviewPage = false;
-
-type ActionData = {
-    title: string,
-    onClick?: () => Promise<void>,
-    type: 'button' | 'info';
-    suggested?: boolean;
-}
-
-const repeatAction: ActionData = {
-    title: "Do Again 🔁",
-    onClick: async () => { dispatch("repeat-clicked"); },
-    type: 'button',
-}
-// const continueButton: ButtonData = {
-//     title: "Continue ➡️",
-//     action: async () => { dispatch("continue-clicked"); },
-// }
-
-
-function generateActions(
-    feedback: TerminalFeedback | null,
-) : ActionData[] {
-    if (!feedback) return []
-
-    const actions: ActionData[] = [];
-    
-    let isSuggestingRepeat = feedback?.suggestedAction === "repeat"
-
-    actions.push({
-        ...repeatAction,
-        suggested: isSuggestingRepeat,
-    });
-
-    if (showActivityConfiguratorButton) {
-        actions.push({
-            title: "Setup ⚙️",
-            onClick: async () => { dispatch("configure-activity-clicked"); },
-            type: 'button',
-        })
-    }
-
-    if (feedback?.videoRecording) {
-        const videoRecording = feedback.videoRecording;
-        actions.push({
-            title: "Review 📹",
-            onClick: async () => {
-                showingPerformanceReviewPage = true;
-                dispatch("view-recording-clicked", videoRecording);
-            },
-            type: 'button',
-        })
-    }
-
-    const terminalFeedbackNavOptions = feedback?.navigateOptions ?? [];
-    const navOptionsSuggestingOtherNodes = terminalFeedbackNavOptions.filter(
-        opt => opt.nodeId && opt.nodeId !== feedback?.segmentName
-    );
-    const navigateActions: ActionData[] = navOptionsSuggestingOtherNodes.map(navOpt => {
-        return {
-            title: `${navOpt.label}`,
-            onClick: async () => {
-                dispatch("practice-action-clicked", navOpt.nodeId);
-            },
-            type: 'button',
-            suggested: true,
-        }
-    });
-    actions.push(...navigateActions);
-
-    actions.push({
-        title: 'ℹ️ Or, click on a part of the dance above',
-        type: 'info',
-    });
-    
-    return actions;
-}
-
-let actions = [] as ActionData[];
-$: actions = generateActions(feedback);
 
 let showingPerformanceSummary = false;
 let showingLLMOutput = false;
@@ -210,28 +128,6 @@ function exportRecordings() {
     </div>
     {/if}
     
-    <div class="buttons">
-    {#each actions as action, i}
-        {#if action.type === 'button'}
-        <button class="button" 
-            class:is-primary={action.suggested ?? false}
-            on:click={action.onClick}
-            >
-            {action.title}
-        </button>
-        {:else}
-        <article class="message is-light">
-            <div class="message-body">
-                {action.title}
-            </div>
-        </article>
-        <!-- <span class="actionInfo">
-            {action.title}
-        </span> -->
-        {/if}
-    {/each}
-    </div>
-    
     {#if $debugMode}
         <div class="debug buttons">
             {#if performanceSummaryWithoutTrack}
@@ -274,23 +170,6 @@ function exportRecordings() {
             {/if}
         </div>
     {/if}
-    
-    <Dialog 
-        open={showingPerformanceReviewPage} 
-        on:dialog-closed={() => showingPerformanceReviewPage = false }>
-        <span slot="title">Performance Review</span>
-        <div class="reviewPageWrapper">
-            {#if feedback?.videoRecording !== undefined}
-            <PerformanceReviewPage 
-                recordingUrl={feedback.videoRecording.url}
-                recordingMimeType={feedback.videoRecording.mimeType}
-                referenceVideoUrl={feedback.videoRecording.referenceVideoUrl}
-                recordingStartOffset={feedback.videoRecording.recordingStartOffset}
-                recordingSpeed={feedback.videoRecording.recordingSpeed}
-            />
-            {/if}
-        </div>
-    </Dialog>
 </div>
 
 

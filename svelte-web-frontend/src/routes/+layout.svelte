@@ -8,26 +8,13 @@
 	import CloseButton from '$lib/elements/CloseButton.svelte';
 	import { invalidate } from '$app/navigation'
 	import { waitSecs } from '$lib/utils/async';
+	import Dialog from "$lib/elements/Dialog.svelte";
 
-	let settingsDialog: HTMLDialogElement;
 
 	let showingSettings = false;
-	let showingSettingsCloseButton = false;
 	async function toggleSettings(setValue?: boolean) {
 		showingSettings = !showingSettings;
 		showingSettings = setValue ?? showingSettings;
-		if (showingSettings) {
-			settingsDialog.showModal();
-			
-			// Delay showing the close button until the dialog has finished opening,
-			// so that the animation can be appreciated
-			await tick();
-			await waitSecs(0.1);
-			showingSettingsCloseButton = true;
-		} else {
-			showingSettingsCloseButton = false;
-			settingsDialog.close();
-		}
 	}
 
 	export let data
@@ -52,22 +39,15 @@
 <div class="app-content" class:noNavBar={$navbarProps.collapsed} >
 	<slot />
 </div>
-<dialog class="settingsDialog" bind:this={settingsDialog}>
-	<div class="card">
-		<div class="card-header">
-			<h3 class="card-header-title is-centered">Settings</h3>
-			<div class="card-header-icon"><CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} /></div>
-		</div>
-		<div class="closeButtonContainer">
-			
-		</div>
-		<div class="settingsContainer ">
-			<SettingsPage 
-				user={session?.user ?? null} 
-				on:navigate={() => toggleSettings(false)}/>
-		</div>
-	</div>
-</dialog>
+<Dialog bind:open={showingSettings} 
+	modal={true} 
+	showCloseButton={true} closeWhenClickedOutside={true}
+	on:dialog-closed={() => showingSettings = false}>
+	<span slot="title">Settings</span>
+	<SettingsPage 
+		user={session?.user ?? null} 
+		on:navigate={() => toggleSettings(false)}/>
+</Dialog>
 
 
 <style lang="scss">

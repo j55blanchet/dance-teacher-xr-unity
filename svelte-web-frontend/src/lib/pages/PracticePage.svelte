@@ -25,10 +25,8 @@ import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import TerminalFeedbackScreen from '$lib/elements/TerminalFeedbackScreen.svelte';
 import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
-import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
-import { goto, invalidateAll } from '$app/navigation';
-import { GeneratePracticeStep, type GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent';
+import { goto } from '$app/navigation';
+import type { GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
@@ -37,8 +35,8 @@ import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type Pract
 import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
-	import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
-
+import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
+import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
 const supabase = getContext('supabase') as SupabaseClient;
 
 export let mirrorForEvaluation: boolean = true;
@@ -51,6 +49,7 @@ export let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime | undef
 let hasProgressBar = false;
 $: hasProgressBar = progressBarProps !== undefined;
 
+let showingPerformanceReviewPage = false;
 let interfaceSettings: PracticeStepInterfaceSettings = PracticeInterfaceModes[PracticeStepDefaultInterfaceSetting];
 $: interfaceSettings = PracticeInterfaceModes[practiceStep?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
 let skeletonDrawingEnabled: boolean;
@@ -133,52 +132,6 @@ let trialId = null as string | null;
 $: console.log('trialId changed, now is: ', trialId);
 let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
-let nodeHighlights = {} as Record<string, NodeHighlight>;
-$: {
-    const currentNodeId = practiceStep?.danceTreeNode?.id;
-    const terminalFeedbackNavOptions = terminalFeedback?.navigateOptions ?? [];
-    const navOptionsSuggestingANode = terminalFeedbackNavOptions.filter(opt => opt.nodeId);
-   
-    const defaultHighlight: NodeHighlight = {
-        color: 'var(--color-theme-1, yellow)',
-        pulse: true,
-    };
-    nodeHighlights = Object.fromEntries(
-        navOptionsSuggestingANode.map(navOpts => {
-            if (currentNodeId && navOpts.nodeId === currentNodeId) {
-                return [navOpts.nodeId, {
-                    ...defaultHighlight,
-                    label: navOpts.nodeId + ' 🔁'
-                }]
-            }
-            return [navOpts.nodeId, {
-                ...defaultHighlight,
-                label: `${navOpts.nodeId} ➡️`
-            }]
-        })
-    );
-
-    // If we've just performed an segment and aren't suggesting to repeat it,
-    // we will highlight the segment we just performed.
-    if (isShowingFeedback && currentNodeId && nodeHighlights[currentNodeId] === undefined) {
-        nodeHighlights[currentNodeId] = {
-            color: 'var(--color-text, green)',
-            pulse: false,
-            label: terminalFeedback?.suggestedAction === "repeat" ? `${currentNodeId} 🔁` : `✔️ ${currentNodeId}`,
-        }
-    }
-}
-
-async function onNodeClickedById(id: string) {
-    // find node;
-    if (!practiceStep) return;
-    const node = findDanceTreeNode(practiceStep.danceTree as any, id);
-
-    if (!node) {
-        console.warn("Ignoring onNodeClickedById: can't find node with id: " + id);
-    }
-    return onNodeClicked(node as DanceTreeNode);
-}
 
 // Base the settings for the next practice activity based on the current one
 let nextPracticeActivityParams: GeneratePracticeStepOptions = {
@@ -186,27 +139,6 @@ let nextPracticeActivityParams: GeneratePracticeStepOptions = {
     interfaceMode: practiceStep?.interfaceMode ?? $practiceActivities__interfaceMode,
     terminalFeedbackEnabled: practiceStep?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
     showUserSkeleton: practiceStep?.showUserSkeleton ?? $practiceActivities__showUserSkeleton,
-}
-
-async function onNodeClicked(clickedNode: DanceTreeNode) {
-    if (isPlayingOrCountdown) return;
-
-    if (!practiceStep?.dance || !practiceStep.danceTree) return;
-    const dance = practiceStep.dance;
-    const danceTree = practiceStep.danceTree;
-    const danceTreeSlug = makeDanceTreeSlug(practiceStep.danceTree);
-    const nodeSlug = clickedNode.id;
-        
-    let { step: newActivity, url} = await GeneratePracticeStep(
-        dance, 
-        danceTree, 
-        clickedNode, 
-        nextPracticeActivityParams,
-    );
-    await goto(url);
-
-    practiceStep = newActivity;
-    await reset();
 }
 
 let countdown = -1;
@@ -374,9 +306,7 @@ $: {
             }
             trialId = null;
             state = "feedback";
-            if (metronomeTimer) {
-                clearTimeout(metronomeTimer)
-            }
+           
             getFeedback(performanceSummary, recordedTrack)
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
@@ -395,26 +325,6 @@ async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
     clickAudioElement.volume = silent ? 0 : 1;
     return clickAudioElement.play();
-}
-
-let metronomePlaying = false;
-let metronomeTimer: number | null = null;
-async function launchMetronome() {
-    if (!browser) return;
-    if (metronomePlaying) return;
-    metronomePlaying = true;
-    let beatCount = 0;
-    while (state !== "feedback" && isMounted) {
-        playClickSound();
-        
-        await new Promise<void>((res) => {
-            metronomeTimer = window.setTimeout(() => {
-                res();
-            }, 1000 * beatDuration);
-        })
-    }
-    metronomePlaying = false;
-    metronomeTimer = null;
 }
 
 async function startCountdown() {
@@ -534,9 +444,6 @@ export async function reset() {
 
     if(!virtualMirrorElement) {
         await tick();
-    }
-    if (metronomeTimer) {
-        clearTimeout(metronomeTimer)
     }
 
     terminalFeedback = null;
@@ -713,9 +620,6 @@ onMount(() => {
     isMounted = true;
 
     return () => {
-        if (metronomeTimer) {
-            clearTimeout(metronomeTimer);
-        }
         if (unpauseVideoTimeout) {
             clearTimeout(unpauseVideoTimeout);
         }
@@ -740,24 +644,6 @@ onMount(() => {
     class:hasOnlyDemoVideo={hasVisibleReferenceVideo && !hasUserWebcamVisible}
     class:hasOnlyUserMirror={hasUserWebcamVisible && !hasVisibleReferenceVideo}
     >
-    {#if practiceStep?.danceTree}
-    <div class="treevis gridItem">
-        <DanceTreeVisual 
-            node={practiceStep.danceTree.root }
-            showProgressNode={isShowingFeedback ? undefined : practiceStep.danceTreeNode} 
-            currentTime={videoCurrentTime}
-            danceTree={practiceStep.danceTree}
-            nodeHighlights={nodeHighlights}
-            enableClick={isShowingFeedback}
-            enableColorCoding={ isShowingFeedback ? true : 'yesExceptCurrentNode'}
-            on:nodeClicked={(e) => onNodeClicked(e.detail)}
-            playingFocusMode={isShowingFeedback ?  
-                'show-all':
-                'hide-others'
-            }/>
-    </div>
-    {/if}
-
 
     <div class="demovid gridItem" style:display={!hasVisibleReferenceVideo ? 'none' : 'flex'}>
         <VideoWithSkeleton
@@ -776,8 +662,8 @@ onMount(() => {
         </VideoWithSkeleton>
         {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
         <div class="startCountdown">
-            <button class="button thick" on:click={() => startCountdown()}>
-                Start Countdown
+            <button class="daisy-btn daisy-btn-primary daisy-btn-circle size-32" on:click={() => startCountdown()}>
+                Start <br />Countdown
             </button>
         </div>
         {/if}
@@ -823,13 +709,26 @@ onMount(() => {
         <div class="feedback">
             <TerminalFeedbackScreen 
                 feedback={terminalFeedback}
-                showActivityConfiguratorButton={true}
-                on:repeat-clicked={() => onNodeClickedById(practiceStep?.danceTreeNode?.id ?? '')}
                 on:continue-clicked={() => dispatch('continue-clicked')}
-                on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
                 on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
             />
             <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
+        </div>
+    </Dialog>
+    <Dialog 
+        open={showingPerformanceReviewPage && terminalFeedback?.videoRecording !== undefined} 
+        on:dialog-closed={() => showingPerformanceReviewPage = false }>
+        <span slot="title">Performance Review</span>
+        <div class="reviewPageWrapper">
+            {#if terminalFeedback?.videoRecording !== undefined}
+            <PerformanceReviewPage 
+                recordingUrl={terminalFeedback.videoRecording.url}
+                recordingMimeType={terminalFeedback.videoRecording.mimeType}
+                referenceVideoUrl={terminalFeedback.videoRecording.referenceVideoUrl}
+                recordingStartOffset={terminalFeedback.videoRecording.recordingStartOffset}
+                recordingSpeed={terminalFeedback.videoRecording.recordingSpeed}
+            />
+            {/if}
         </div>
     </Dialog>
     <Dialog open={isShowingFeedback && isShowingNextActivityConfigurator}
@@ -856,20 +755,22 @@ onMount(() => {
         on:dialog-closed={() => showStartCountdownDialog = false}
     >
         <span slot="title">Click to Start</span>
-        <p class="limit-line-width">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
-        <button class="button" on:click={() => startCountdown()}>
-            Start Countdown
-        </button>
+        <div class="space-y-4">
+            <p class="max-w-xs">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
+            <div class="text-center">
+                <button class="daisy-btn daisy-btn-primary" on:click={() => startCountdown()}>
+                    Start Countdown
+                </button>
+            </div>
+        </div>
     </Dialog>
 </section>
 
 <style lang="scss">
 
-div.demovid { grid-area: demovid; }
-div.mirror {  grid-area: mirror;  }
-div.treevis { grid-area: treevis; }
-
-div.feedback { grid-area: feedback; overflow: hidden;}
+.demovid { grid-area: demovid; }
+.mirror {  grid-area: mirror;  }
+.feedback { grid-area: feedback; overflow: hidden;}
 
 .practicePage {
     overflow: hidden;
@@ -893,28 +794,6 @@ div.feedback { grid-area: feedback; overflow: hidden;}
         &.hasOnlyUserMirror {
             grid-template: "mirror" 1fr 
                 "progress" auto / 1fr;
-        }
-    }
-
-    &.hasDanceTree {
-        grid-template-areas:
-            "treevis treevis"
-            "demovid  mirror";
-        grid-template-rows: auto 1fr;
-        grid-template-columns: 1fr 1fr;
-        // grid-template:
-        //     "treevis treevis" auto
-        //     "demovid mirror" 1fr / 1fr 1fr;
-
-        &.hasOnlyDemoVideo {
-            grid-template-areas:
-                "treevis treevis"
-                "demovid  demovid";
-        }
-        &.hasOnlyUserMirror {
-            grid-template-areas:
-                "treevis treevis"
-                "mirror  mirror";
         }
     }
 
@@ -951,11 +830,7 @@ div.feedback { grid-area: feedback; overflow: hidden;}
     }
 
     .progressBar {
-        grid-area: progress;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;    
+        grid-area: progress; 
     }
 }
 

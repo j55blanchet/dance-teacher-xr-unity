@@ -68,39 +68,43 @@ async function selectDevices()  {
 
 
 
-<div class="webcamSelector">
+<div class="webcamSelector space-y-4">
     {#if state === "start"}
-    <div class="ta-center">
-        <button id="startWebcam" class="button is-primary" on:click={startWebcam}>
-            Start Webcam
-        </button>
-            {#if lastError}
-            <div class="error">
-                <p>Failed to start webcam: <code>{lastError?.message}</code></p>
-            </div>
-            {/if}
-    </div>
+        <div class="ta-center">
+            <button id="startWebcam" class="daisy-btn daisy-btn-primary" on:click={startWebcam}>
+                Start Webcam
+            </button>
+                {#if lastError}
+                <div class="error">
+                    <p>Failed to start webcam: <code>{lastError?.message}</code></p>
+                </div>
+                {/if}
+        </div>
     {:else if state === "busy"}
-    <div class="ta-center">
-        <div class="spinner large margin-auto"></div>
-        <p>{busyText}</p>
-    </div>
+        <div class="text-center">
+            <span class="daisy-loading daisy-loading-spinner daisy-loading-md"></span>
+            <p>{busyText}</p>
+        </div>
     {:else if state === "devicelist"}
-        <label for="videoDevices">Video Devices</label>
-        <select name="videoDevices" class="" bind:value={selectedVideoDeviceId}>
-            {#each videoDeviceList as device}
-            <option value={device.deviceId}>{device.label}</option>
-            {/each}
-        </select>
-        <div class="spacer"></div>
-        <label for="audioDevices">Audio Devices</label>
-        <select name="audioDevices" class="" bind:value={selectedAudioDeviceId}>
-            {#each audioDeviceList as device}
-            <option value={device.deviceId}>{device.label}</option>
-            {/each}
-        </select>
-        <div class="spacer"></div>
-        <button class="button is-primary" on:click={selectDevices}>Start Webcam</button>
+        <label class="daisy-form-control" for="videoDevices">
+            <div class="label"><span class="label-text">Video Devices</span></div>
+            <select class="daisy-select daisy-select-bordered" name="videoDevices" bind:value={selectedVideoDeviceId}>
+                {#each videoDeviceList as device}
+                <option value={device.deviceId}>{device.label}</option>
+                {/each}
+            </select>
+        </label>
+
+        <label class="daisy-form-control" for="audioDevices">
+            <div class="label"><span class="label-text">Audio Devices</span></div>
+            <select class="daisy-select daisy-select-bordered" name="audioDevices" bind:value={selectedAudioDeviceId}>
+                {#each audioDeviceList as device}
+                <option value={device.deviceId}>{device.label}</option>
+                {/each}
+            </select>
+        </label>
+        
+        <button class="daisy-btn daisy-btn-primary" on:click={selectDevices}>Start Webcam</button>
     {:else if state === "success"}
         <div>Webcam Started</div>
     {/if}
