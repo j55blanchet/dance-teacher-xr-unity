@@ -119,7 +119,6 @@ let videoDuration: number = 0;
 let videoVolume: number = 0.5;
 $: console.log("VideoDuration", videoDuration);
 let isVideoPausedBinding: boolean = true;
-let showStartCountdownDialog = false;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
@@ -327,9 +326,11 @@ async function playClickSound(silent: boolean = false) {
     return clickAudioElement.play();
 }
 
+let mediaElementsHaveBeenActivated = false;
 async function startCountdown() {
     if (countdownActive) return;
-
+    
+    isVideoPausedBinding = true;
     state = "countdown";
     countdownActive = true;
 
@@ -337,17 +338,20 @@ async function startCountdown() {
     // want to be able to control the playback of the video element programatically, which safari
     // will only allow once the user has triggered playback through a user interaction. So, we try 
     // starting playback at the beginning of the countdown. If the 
-    playClickSound(true);
-    videoVolume = 0.01;
-    videoPlaybackSpeed = 0.0625;// Minimum playback rate: https://stackoverflow.com/questions/30970920/html5-video-what-is-the-maximum-playback-rate
-    let testPlaybackSuccessful = true;
-    try {
-        await playClickSound(true);
-        await videoWithSkeleton.play();
-    }
-    catch(e) {
-        testPlaybackSuccessful = false
-        console.warn('startCountdown: test playback unsuccessful. Will try again after user interaction.', e);
+    if (!mediaElementsHaveBeenActivated) {
+        videoCurrentTime = practiceStep?.startTime ?? 0;
+        videoVolume = 0.01;
+        videoPlaybackSpeed = 0.0625;// Minimum playback rate: https://stackoverflow.com/questions/30970920/html5-video-what-is-the-maximum-playback-rate
+        let testPlaybackSuccessful = true;
+        try {
+            await playClickSound(true);
+            await videoWithSkeleton.play();
+            mediaElementsHaveBeenActivated = true;
+        }
+        catch(e) {
+            testPlaybackSuccessful = false
+            console.warn('startCountdown: test playback unsuccessful. Will try again after user interaction.', e);
+        }
     }
 
     isVideoPausedBinding = true;
@@ -359,9 +363,8 @@ async function startCountdown() {
         videoPlaybackSpeed = practiceStep.playbackSpeed;
     }
 
-    if (!testPlaybackSuccessful) {
+    if (!mediaElementsHaveBeenActivated) {
         state = 'waitStartUserInteraction';
-        showStartCountdownDialog = true;
         countdownActive = false;
         return;
     }
@@ -455,8 +458,6 @@ export async function reset() {
     videoCurrentTime = practiceStep?.startTime ?? 0;
     const playDuration = (practiceStep?.endTime ?? videoDuration) - (videoCurrentTime)
     currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceStep?.endTime ?? videoDuration;
-    
-
 
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
@@ -660,16 +661,8 @@ onMount(() => {
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-        {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
-        <div class="startCountdown">
-            <button class="daisy-btn daisy-btn-primary daisy-btn-circle size-32" on:click={() => startCountdown()}>
-                Start <br />Countdown
-            </button>
-        </div>
-        {/if}
         <div class="absolute left-0 right-0 bottom-0">
             <p>state: {state}</p>
-            <p>showStartCountdownDialog: {showStartCountdownDialog}</p>
         </div>
     </div>
     <div 
@@ -698,20 +691,46 @@ onMount(() => {
         {/if}
     </div>
     {#if hasProgressBar && progressBarProps !== undefined}
-    <div class="progressBar flex items-center flex-col">
+    <div class="progressBar flex items-center flex-col space-y-4">
         <SegmentedProgressBar {...progressBarProps} 
             currentTime={videoCurrentTime} />
+        <div class="space-x-4">
+            <button 
+                class="daisy-btn" 
+                class:daisy-btn-primary={state === 'waitStartUserInteraction'}
+                disabled={countdownActive} 
+                on:click={() => startCountdown()}
+            >
+                {#if state === 'waitStartUserInteraction'}
+                    Start Countdown
+                {:else if state === 'feedback'}
+                    Do Again
+                {:else if state === "playing"}
+                    Restart
+                {:else}
+                    <span class="daisy-loading daisy-loading-spinner"></span>
+                {/if}
+            </button>
+
+            {#if state === "feedback"}
+            <button class="daisy-btn daisy-btn-success" on:click={() => dispatch('stepCompleted')}>
+                Complete
+            </button>
+            {/if}
+        </div>
     </div>
     {/if}
 
     <Dialog open={isShowingFeedback} modal={false}>
         <span slot="title">Feedback</span>
         <div class="feedback">
+            {#if state==="feedback"}
             <TerminalFeedbackScreen 
                 feedback={terminalFeedback}
                 on:continue-clicked={() => dispatch('continue-clicked')}
                 on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
             />
+            {/if}
             <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
         </div>
     </Dialog>
@@ -742,28 +761,13 @@ onMount(() => {
 
     {#if countdown >= 0}
     <div class="absolute inset-0 flex justify-center items-center">
-        <div class="bg-primary rounded-box p-4 text-primary-content">
+        <div class="bg-neutral rounded-full p-4 text-neutral-content">
             <span class="text-6xl">
                 {countdown}
             </span>
         </div>
     </div>
     {/if}
-
-    <Dialog 
-        open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
-        on:dialog-closed={() => showStartCountdownDialog = false}
-    >
-        <span slot="title">Click to Start</span>
-        <div class="space-y-4">
-            <p class="max-w-xs">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
-            <div class="text-center">
-                <button class="daisy-btn daisy-btn-primary" on:click={() => startCountdown()}>
-                    Start Countdown
-                </button>
-            </div>
-        </div>
-    </Dialog>
 </section>
 
 <style lang="scss">

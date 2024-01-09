@@ -30,13 +30,13 @@
     let segmentClasses = [] as string[][];
     $: {
         const segmentIndices = [...Array(segmentBreaks.length + 1).keys()];
-        segmentClasses = segmentIndices.map(x => x === segmentIsolateIndex ? ['is-primary'] : []);
+        segmentClasses = segmentIndices.map(x => x === segmentIsolateIndex ? ['bg-accent'] : []);
     }
 
     let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime;
     $: progressBarProps = {
-        startTime: data.practiceStep.startTime,
-        endTime: data.practiceStep.endTime,
+        startTime: data.practicePlan.startTime,
+        endTime: data.practicePlan.endTime,
         breakpoints: data.practicePlan.demoSegmentation?.segmentBreaks ?? [],
         labels: data.practicePlan.demoSegmentation?.segmentLabels ?? [],
         classes: segmentClasses,

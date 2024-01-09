@@ -6,7 +6,7 @@ import PracticePage from '$lib/pages/PracticePage.svelte';
 import { INITIAL_STATE, type PracticePageState } from '$lib/pages/PracticePage.svelte';
 import { navbarProps } from '$lib/elements/NavBar.svelte';
 import type PracticeActivity from '$lib/model/PracticeStep';
-import type { PracticeInterfaceModeKey } from '$lib/model/PracticeStep';
+import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
 import { practiceActivities__playbackSpeed } from '$lib/model/settings';
 
 /** @type {import('./$types').PageData} */    
@@ -16,7 +16,7 @@ const danceTree: DanceTree = data.danceTree;
 const danceTreeNode: DanceTreeNode = data.danceTreeNode;
 const playbackSpeed: number = data.playbackSpeed ?? $practiceActivities__playbackSpeed; 
 
-const interfaceMode: PracticeInterfaceModeKey = data.interfaceMode;
+const interfaceMode: PracticeStepModeKey = data.interfaceMode;
 const terminalFeedbackEnabled: boolean = data.terminalFeedbackEnabled;
 const showUserSkeleton: boolean = data.showUserSkeleton;
 

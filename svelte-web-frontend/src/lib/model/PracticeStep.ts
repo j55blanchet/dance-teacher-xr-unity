@@ -1,6 +1,16 @@
 import type { Dance, DanceTree, DanceTreeNode } from "$lib/data/dances-store";
 
 
+export type StepEndBehavior = {
+    preFeedbackMessage?: string;
+    llmFeedback?: {
+        feedbackType: 'encouragement' | 'poseAccuracy';
+    },
+    completion: {
+        disableManualCompletion?: boolean;
+    }
+}
+
 export type PracticeStepInterfaceSettings = {
     referenceVideo: {
         visibility: 'visible' | 'hidden',

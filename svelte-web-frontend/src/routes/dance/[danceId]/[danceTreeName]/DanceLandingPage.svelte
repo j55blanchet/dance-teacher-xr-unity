@@ -30,10 +30,9 @@
 
     $: {
         const segmentIndices = [...Array(segmentBreaks.length + 1).keys()];
-        segmentClasses = segmentIndices.map(x => x === focusedSegmentIndex ? ['is-primary'] : []);
+        segmentClasses = segmentIndices.map(x => x === focusedSegmentIndex ? ['bg-accent'] : []);
     }
     
-
     function toggleRepeatMode() {
         repeatEnabled = !repeatEnabled;
     }
@@ -50,7 +49,6 @@
             videoPaused = false;
         }
     }
-
 
     async function startVideo(startTime?: number) {
         videoPaused = true;
