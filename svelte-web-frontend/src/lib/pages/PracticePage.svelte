@@ -661,9 +661,6 @@ onMount(() => {
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-        <div class="absolute left-0 right-0 bottom-0">
-            <p>state: {state}</p>
-        </div>
     </div>
     <div 
         class="mirror gridItem flex"

@@ -213,11 +213,12 @@ function onSkipBackClicked() {
         bind:ended
         bind:readyState
         class:flipped={flipHorizontal}
+        class="bg-base-200 rounded"
     >
         <slot />
     </video>
     <div class="is-overlay canvas">
-        <canvas bind:this={canvasElement}></canvas>
+        <canvas class="rounded" bind:this={canvasElement}></canvas>
     </div>
     <div class="is-overlay control-container p-2">
         
