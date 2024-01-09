@@ -22,7 +22,7 @@ function GenerateMarkDrillFulloutSteps(
     const mark: PracticeStep = {
         ...stepBase,
         id: 'mark',
-        title: 'Mark',
+        title: 'Marking',
         interfaceMode: 'watchDemo',
         terminalFeedbackEnabled: false,
         showUserSkeleton: false,
@@ -32,7 +32,7 @@ function GenerateMarkDrillFulloutSteps(
     const drill: PracticeStep = {
         ...stepBase,
         id: 'drill',
-        title: 'Drill',
+        title: 'Drilling',
         interfaceMode: 'bothVideos',
         terminalFeedbackEnabled: true,
         showUserSkeleton: true,
@@ -81,13 +81,14 @@ function getSegementLabel(segmentIndex: number, segmentCountTotal: number) {
 }
 
 function makeCheckpointActivity(segmentActivities: SegmentActivity[]): CheckpointActivity {
-    const checkpointLabel = segmentActivities
-        .map((segmentActivity) => segmentActivity.segmentTitle)
-        .join('-');
+    const segmentLabels = segmentActivities
+        .map((segmentActivity) => segmentActivity.segmentTitle);
 
+    const checkpointLabel = `checkpoint-${segmentLabels.join('-')}`;
     return {
         id: checkpointLabel,
         type: 'checkpoint',
+        title: "Checkpoint (" + segmentLabels.join(', ') + ')',
         steps: GenerateMarkDrillFulloutSteps(
             checkpointLabel,
             segmentActivities[0].steps[0].startTime,
@@ -99,6 +100,7 @@ function makeCheckpointActivity(segmentActivities: SegmentActivity[]): Checkpoin
 function makeDrillActivity(startTime: number, endTime: number): DrillActivity {
     return {
         id: `drill-${startTime}-${endTime}`,
+        title: 'Drill',
         type: 'drill',
         steps: GenerateMarkDrillFulloutSteps(
             `drill-${startTime}-${endTime}`,
@@ -112,6 +114,7 @@ function makeFinaleActivity(startTime: number, endTime: number): FinaleActivity 
     return {
         id: `finale`,
         type: 'finale',
+        title: 'Finale',
         steps: [{
             id: `finale`,
             title: 'Finale',
@@ -153,11 +156,14 @@ export function GeneratePracticePlan(
             };
         }
 
+        const segmentLabel = getSegementLabel(currentSegmentIndex, phraseNodes.length);
         const segmentActivity: SegmentActivity = {
             id: `segment-${phraseNode.id}`,
             type: 'segment',
+            title: "Segment " + segmentLabel,
             steps: GenerateStepsForSegment(phraseNode), // todo: mark > drill > full-out
-            segmentTitle: getSegementLabel(currentSegmentIndex, phraseNodes.length),
+            segmentTitle: segmentLabel,
+            segmentIndex: currentSegmentIndex,
         };
         currentStage.activities.push(segmentActivity);
         currentSegmentIndex += 1;

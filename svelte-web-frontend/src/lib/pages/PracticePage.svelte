@@ -36,6 +36,8 @@ import { waitSecs } from '$lib/utils/async';
 import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepInterfaceSettings } from '$lib/model/PracticeStep';
 import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
+	import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
 
 const supabase = getContext('supabase') as SupabaseClient;
 
@@ -44,6 +46,10 @@ export let dance: Dance;
 export let practiceStep: PracticeStep | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
+
+export let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime | undefined = undefined;
+let hasProgressBar = false;
+$: hasProgressBar = progressBarProps !== undefined;
 
 let interfaceSettings: PracticeStepInterfaceSettings = PracticeInterfaceModes[PracticeStepDefaultInterfaceSetting];
 $: interfaceSettings = PracticeInterfaceModes[practiceStep?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
@@ -728,6 +734,7 @@ onMount(() => {
 
 <section class="practicePage" 
     class:hasDanceTree={practiceStep?.danceTree}
+    class:hasProgressBar={hasProgressBar}
     class:hasFeedback={isShowingFeedback}
     class:isPracticing={!isShowingFeedback}
     class:hasOnlyDemoVideo={hasVisibleReferenceVideo && !hasUserWebcamVisible}
@@ -804,6 +811,12 @@ onMount(() => {
         </div>
         {/if}
     </div>
+    {#if hasProgressBar && progressBarProps !== undefined}
+    <div class="progressBar flex items-center flex-col">
+        <SegmentedProgressBar {...progressBarProps} 
+            currentTime={videoCurrentTime} />
+    </div>
+    {/if}
 
     <Dialog open={isShowingFeedback} modal={false}>
         <span slot="title">Feedback</span>
@@ -858,7 +871,7 @@ div.treevis { grid-area: treevis; }
 
 div.feedback { grid-area: feedback; overflow: hidden;}
 
-section {
+.practicePage {
     overflow: hidden;
     display: grid;
     grid-template: "demovid mirror" 1fr / 1fr 1fr;
@@ -867,6 +880,20 @@ section {
     }
     &.hasOnlyUserMirror {
         grid-template: "mirror" 1fr / 1fr;
+    }
+
+    &.hasProgressBar {
+        grid-template: "demovid mirror" 1fr 
+            "progress progress" auto / 1fr 1fr;
+
+        &.hasOnlyDemoVideo {
+            grid-template: "demovid" 1fr 
+                "progress" auto / 1fr;
+        }
+        &.hasOnlyUserMirror {
+            grid-template: "mirror" 1fr 
+                "progress" auto / 1fr;
+        }
     }
 
     &.hasDanceTree {
@@ -890,6 +917,7 @@ section {
                 "mirror  mirror";
         }
     }
+
     // &.hasFeedback {
     //     grid-template: "feedback feedback" 1fr / 1fr 1fr;
     // }
@@ -920,6 +948,14 @@ section {
         align-items: stretch;
         justify-content: stretch;
         flex-direction: column;
+    }
+
+    .progressBar {
+        grid-area: progress;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;    
     }
 }
 

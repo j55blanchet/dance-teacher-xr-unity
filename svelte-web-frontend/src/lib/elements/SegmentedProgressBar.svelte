@@ -8,8 +8,9 @@
         labels: string[],
         classes: string[][],
         enableSegmentClick: boolean[] | boolean,
-        isolateSegmentIndex?: number,
+        isolateSegmentIndex: number | undefined,
     }
+    export type SegmentedProgressBarPropsWithoutCurrentTime = Omit<SegmentedProgressBarProps, 'currentTime'>;
 </script>
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
@@ -63,7 +64,10 @@
                  / segment.duration
             }
             >
-            <span class="progress is-overlay"></span>
+            <span class="progress-container absolute inset-2 rounded-full overflow-hidden inset-2">
+                <span class="progress"></span>
+            </span>
+            
             {#if segment.label}
             <div class="is-overlay is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
                 <span class="label tag is-white m-0 is-small">{segment.label}</span>
@@ -100,7 +104,6 @@
                 height: 100%;
                 background: rgba(0,0,0,0.2);
                 width: calc(100% * var(--percent-progress));
-                border-radius: 999px 0 0 999px;
             }
         }
     }

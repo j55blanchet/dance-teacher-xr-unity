@@ -4,7 +4,7 @@ import { createEventDispatcher, onMount } from "svelte";
 import { type Pose2DPixelLandmarks, GetNormalizedLandmarksFromPixelLandmarks } from "$lib/webcam/mediapipe-utils";
 import type { DrawingUtils, PoseLandmarker, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { getContentSize } from "$lib/utils/resizing";
-import SegmentedProgressBar, { type SegmentedProgressBarProps } from "./SegmentedProgressBar.svelte";
+import SegmentedProgressBar, { type SegmentedProgressBarProps, type SegmentedProgressBarPropsWithoutCurrentTime } from "./SegmentedProgressBar.svelte";
 import Icon from '@iconify/svelte';
 
 const dispatch = createEventDispatcher();
@@ -61,7 +61,7 @@ $: {
     }
 }
 
-let progressBarEffectiveProps = {} as Omit<SegmentedProgressBarProps, "currentTime">;
+let progressBarEffectiveProps = {} as SegmentedProgressBarPropsWithoutCurrentTime;
 $: {
     progressBarEffectiveProps = {
         startTime: effectiveControls.overrideStartTime ?? 0,
@@ -70,6 +70,7 @@ $: {
         labels: [],
         classes: [["has-background-primary"]],
         enableSegmentClick: false,
+        isolateSegmentIndex: undefined,
         ...effectiveControls.progressBarProps,
     }
 }

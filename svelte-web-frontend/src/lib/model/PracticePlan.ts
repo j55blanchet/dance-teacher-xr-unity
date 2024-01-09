@@ -5,7 +5,8 @@ export type PracticePlanActivityType =
 
 export type PracticePlanActivityBase = {
     id: string;
-    steps: PracticeStep[],
+    steps: PracticeStep[];
+    title: string;
 
     state?: {
         completed?: boolean;
@@ -16,6 +17,7 @@ export type PracticePlanActivityBase = {
 export interface SegmentActivity extends PracticePlanActivityBase {
     type: 'segment';
     segmentTitle: string;
+    segmentIndex: number;
     // segmentTitle: string;
 }
 export interface CheckpointActivity extends PracticePlanActivityBase {
