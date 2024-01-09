@@ -179,6 +179,7 @@ export function GeneratePracticePlan(
         ],
     });
     return {
+        id: `practiceplan-${danceTree.tree_name.replaceAll(" ", "-")}`,
         startTime: danceTree.root.start_time,
         endTime: danceTree.root.end_time,
         stages: stages,

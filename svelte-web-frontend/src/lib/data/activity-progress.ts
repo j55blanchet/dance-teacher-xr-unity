@@ -6,20 +6,25 @@ export type StepProgressData = {
 export type ActivityProgress = {
     [step_id: string]: StepProgressData;
 }
-export type TreeProgress = {
+export type PracticePlanProgress = {
     [activity_id: string]: ActivityProgress;
 }
 
-export function get_tree_progress(
+export function get_practiceplan_progress(
     dance_id: string,
-    tree_name: string,
-): TreeProgress {
+    plan_id: string,
+): PracticePlanProgress {
     if (!browser) {
         return {};
     }
 
-    const tree_progress_string = localStorage.getItem(`progress_${dance_id}_${tree_name}`);
-    
+    const key = `progress_${dance_id}_${plan_id}`;
+    const tree_progress_string = localStorage.getItem(key);
+    if (tree_progress_string === null) {
+        console.log("no tree_progress_string found in localstorage for:", key)
+        return {};
+    } 
+    console.log('got a tree_progress_string', tree_progress_string, key);
     let localstorage_data = null;
     try {
         if (tree_progress_string !== null) {
@@ -41,21 +46,21 @@ export function get_tree_progress(
 
 export function save_activitystep_progress(
    dance_id: string,
-   tree_name: string,
+   practiceplan_id: string,
    activity_id: string,
    step_id: string,
    progressData: StepProgressData,
-): TreeProgress {
+): PracticePlanProgress {
     if (!browser) {
         return {};
     }
 
-    const tree_progress_data = get_tree_progress(dance_id, tree_name);
+    const tree_progress_data = get_practiceplan_progress(dance_id, practiceplan_id);
     const activity_data = tree_progress_data[activity_id] || {};
     activity_data[step_id] = progressData;
     tree_progress_data[activity_id] = activity_data;
 
-    localStorage.setItem(`progress_${dance_id}_${tree_name}`, JSON.stringify(tree_progress_data));
+    localStorage.setItem(`progress_${dance_id}_${practiceplan_id}`, JSON.stringify(tree_progress_data));
 
     return tree_progress_data;
 }

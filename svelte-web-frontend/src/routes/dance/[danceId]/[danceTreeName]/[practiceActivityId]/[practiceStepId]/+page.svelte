@@ -54,9 +54,10 @@
 
 function onStepCompleted() {
     
+
     save_activitystep_progress(
         data.dance.clipRelativeStem,
-        data.danceTree.tree_name,
+        data.practicePlan.id,
         data.practiceActivity.id,
         data.practiceStep.id, 
         { completed: true }

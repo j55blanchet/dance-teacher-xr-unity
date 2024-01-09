@@ -1,14 +1,15 @@
 <script lang="ts">
     import VideoWithSkeleton from '$lib/elements/VideoWithSkeleton.svelte';
 	import LearningJourneyTrail from '$lib/elements/LearningJourneyTrailUI.svelte';
-	import { getDanceVideoSrc, type Dance } from "$lib/data/dances-store";
+	import { getDanceVideoSrc, type Dance, danceTrees } from "$lib/data/dances-store";
     import type { SupabaseClient } from '@supabase/supabase-js';
-	import { getContext, tick } from 'svelte';
+	import { getContext, onMount, tick } from 'svelte';
 	import { danceVideoVolume } from '$lib/model/settings';
 	import type { PracticePlan, PracticePlanActivity } from '$lib/model/PracticePlan';
 	import Icon from '@iconify/svelte';
 	import { goto } from '$app/navigation';
 	import type PracticeStep from '$lib/model/PracticeStep';
+	import { get_practiceplan_progress, type PracticePlanProgress } from '$lib/data/activity-progress';
     
     let supabase: SupabaseClient = getContext('supabase');
 
@@ -112,6 +113,11 @@
         }
     }
 
+    let practicePlanProgress: PracticePlanProgress | undefined;
+    onMount(() => {
+        practicePlanProgress = get_practiceplan_progress(dance.clipRelativeStem, practicePlan.id);
+    });
+
 </script>
 
 <section class="learning-dashboard p-5">
@@ -177,6 +183,7 @@
         
         <LearningJourneyTrail 
             {practicePlan}
+            {practicePlanProgress}
             on:practiceStepClicked={(e) => onLearningActivityStepClicked(e.detail.activity, e.detail.step)}/>
     </div>
 

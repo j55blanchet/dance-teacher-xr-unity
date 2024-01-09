@@ -7,11 +7,6 @@ export type PracticePlanActivityBase = {
     id: string;
     steps: PracticeStep[];
     title: string;
-
-    state?: {
-        completed?: boolean;
-        locked?: boolean;
-    }
 }
 
 export interface SegmentActivity extends PracticePlanActivityBase {
@@ -38,6 +33,7 @@ export type PracticePlanStage = {
 }
 
 export type PracticePlan = {
+    id: string;
     startTime: number;
     endTime: number;
     stages: PracticePlanStage[];
