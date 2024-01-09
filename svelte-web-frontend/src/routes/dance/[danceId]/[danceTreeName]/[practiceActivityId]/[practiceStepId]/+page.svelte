@@ -54,8 +54,8 @@
 
 function onStepCompleted() {
     
-
     save_activitystep_progress(
+        supabase,
         data.dance.clipRelativeStem,
         data.practicePlan.id,
         data.practiceActivity.id,

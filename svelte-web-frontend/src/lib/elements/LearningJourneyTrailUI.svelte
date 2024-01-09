@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PracticeStepList from './PracticeStepList.svelte';
 	import type { PracticePlanProgress } from '$lib/data/activity-progress';
 	import type { PracticePlan, PracticePlanActivity, PracticePlanActivityBase } from '$lib/model/PracticePlan';
 	import type PracticeStep from '$lib/model/PracticeStep';
@@ -58,13 +59,44 @@
         return firstIncompleteActivity;
     }
     $: nextSuggestedActivity = nextIncompleteActivity(practicePlanProgress);
+    let nextSuggestedStep = undefined as undefined | PracticeStep;
+    $: practicePlanProgress, nextSuggestedStep = (nextSuggestedActivity?.steps ?? []).find(
+        step => {
+            const progressStatus = practicePlanProgress?.[nextSuggestedActivity?.id ?? '']?.[step.id];
+            const isCompleted = progressStatus?.completed ?? false;
+            return !isCompleted
+        }
+    );
 
     function onPracticeStepClicked(activity: PracticePlanActivity, step: PracticeStep) {
         dispatch('practiceStepClicked', { activity, step });
     }
+
+    let isVeryFirstActivityStep: boolean;
+    $: isVeryFirstActivityStep = practicePlanProgress === undefined || Object.values(practicePlanProgress).reduce(
+        (nonCompleteSoFar, activityProgress) => nonCompleteSoFar && Object.values(activityProgress).reduce(
+            (noStepCompleteSoFar, stepProgress) => noStepCompleteSoFar && !stepProgress.completed, 
+            true
+        ), 
+        true
+    
+    );
 </script>
 
-<pre>{JSON.stringify(practicePlanProgress, undefined, 2)}</pre>
+<!-- <details class="daisy-collapse bg-base-200">
+    <summary class="daisy-collapse-title text-xl font-medium">nextSuggestedActivity</summary>
+    <div class="daisy-collapse-content max-h-80 overflow-y-auto"> 
+        <pre>{JSON.stringify(nextSuggestedActivity, undefined, 2)}</pre>
+    </div>
+</details> -->
+
+<!-- <details class="daisy-collapse bg-base-200">
+    <summary class="daisy-collapse-title text-xl font-medium">nextSuggestedStep</summary>
+    <div class="daisy-collapse-content max-h-80 overflow-y-auto"> 
+        <pre>{JSON.stringify(nextSuggestedStep, undefined, 2)}</pre>
+    </div>
+</details> -->
+
 <div class="is-flex is-flex-direction-column learning-journey is-align-items-center is-relative">
     {#each practicePlan.stages as stage, stage_i}
     <div class="is-flex is-flex-direction-row learning-group is-justify-content-center is-relative is-flex-wrap-wrap">
@@ -76,54 +108,75 @@
                     ? getActivityCompletionPercent(activity, practicePlanProgress) 
                     : 0
             }
-            {@const isSuggested = nextSuggestedActivity?.id === activity.id}
+            {@const isActivitySuggested = nextSuggestedActivity?.id === activity.id}
+            {@const isDropdownMode = !isActivitySuggested}
+            {@const dropdownOpen = dropdownActivityId === activity.id}
+            {@const activitySuggestedStepId = isActivitySuggested ? nextSuggestedStep?.id : undefined}
 
-            <div class="dropdown" class:is-active={isSuggested}>
-                <div class="dropdown-trigger">
-                    <div  
-                        data-tip={isSuggested ? "Start here!" : ""}
-                        class="daisy-tooltip-primary"
-                        class:daisy-tooltip={isSuggested}
-                        class:daisy-tooltip-open={isSuggested}>
-                        <button class="button is-rounded activity-button" 
-                            on:click={() => onActivityClicked(activity)}
-                            class:is-primary={activity.id === nextSuggestedActivity?.id}
-                            class:is-success={nextSuggestedActivity?.id !== activity.id && isComplete}
-                            >
-                            {#if activity.type === 'segment'}
-                                <span class="segment-body has-background-light has-text-dark">
-                                    { activity.segmentTitle }
-                                </span>
-                            {:else if activity.type === 'checkpoint'}
-                                Checkpoint
-                            {:else if activity.type === 'drill'}
-                                Drill
-                            {:else if activity.type === 'finale'}
-                                Finale
-                            {:else}
-                                Unknown
-                            {/if}
-
-                            <!-- {#if isComplete}
-                            <span class="iconify-[lucide--check] size-6 md:size-7"></span>
-                            {:else if percentComplete > 0}
-                                {(percentComplete * 100).toFixed(0)}%
-                            {/if} -->
-
-                        </button>
-                    </div>
-                </div>
-                <div class="dropdown-menu">
-                    <div class="dropdown-content has-background-primary">
-                        {#each activity.steps as step, i}
-                        <div class="dropdown-item">    
-                            <button class="button is-fullwidth" on:click={() => onPracticeStepClicked(activity, step)}>
-                                {step.title}
-                            </button>
+            <div class="flex flex-col items-center justify-start"
+            >
+                <details class="" 
+                    class:daisy-dropdown={isDropdownMode}
+                    class:is-active={isDropdownMode && dropdownOpen}
+                    class:daisy-dropdown-open={isDropdownMode && dropdownOpen}>
+                    <summary
+                        role="button"
+                        tabindex="0" 
+                        class:daisy-btn={isDropdownMode}
+                        class:bg-base-300={isActivitySuggested}
+                        class:rounded-full={isDropdownMode}
+                        class:rounded-t-full={!isDropdownMode}
+                        class:rounded-b-lg={!isDropdownMode}
+                        class:border-b-4={!isDropdownMode}
+                        class:border-b-primary={!isDropdownMode}
+                        class="size-32 flex justify-center items-center" 
+                        on:click={() => { onActivityClicked(activity); }}
+                        class:daisy-btn-success={isDropdownMode && isComplete}
+                        >
+                        {#if activity.type === 'segment'}
+                            <span class="segment-body has-background-light has-text-dark">
+                                { activity.segmentTitle }
+                            </span>
+                        {:else if activity.type === 'checkpoint'}
+                            Checkpoint
+                        {:else if activity.type === 'drill'}
+                            Drill
+                        {:else if activity.type === 'finale'}
+                            Finale
+                        {:else}
+                            Unknown
+                        {/if}
+                        </summary>
+                    {#if isDropdownMode}
+                    <div class="daisy-dropdown-content  z-[1] daisy-card daisy-card-compact w-64 p-2 shadow"
+                        class:bg-primary={isActivitySuggested} 
+                        class:text-primary-content={isActivitySuggested}
+                        class:bg-base-200={!isActivitySuggested}
+                        class:text-base-content={!isActivitySuggested}>
+                        <div class="daisy-card-body p-0">
+                        <!-- <h3 class="daisy-card-title">Card title!</h3> -->
+                        <PracticeStepList 
+                            {activity}
+                            {practicePlanProgress} 
+                            on:practiceStepClicked={(e) => onPracticeStepClicked(e.detail.activity, e.detail.step)}
+                            stepClasses="hover:bg-base-100"
+                        />
                         </div>
-                        {/each}
                     </div>
+                    {/if}
+                </details>
+                {#if isActivitySuggested}
+                <div class="p-2 bg-base-200 rounded-box">
+                    <PracticeStepList 
+                        {activity} 
+                        {practicePlanProgress}
+                        suggestedStepId={activitySuggestedStepId}
+                        on:practiceStepClicked={(e) => onPracticeStepClicked(e.detail.activity, e.detail.step)}
+                        suggestedStepTooltip={isVeryFirstActivityStep ? "Try this first!": "Try this next!"}
+                        stepClasses="hover:bg-base-100"
+                        ></PracticeStepList>
                 </div>
+            {/if}
             </div>
         {/each}
     </div>
@@ -137,11 +190,6 @@
     }
     .learning-group {
         gap: 1rem;
-    }
-    .activity-button {
-        width: 96px;
-        height: 96px;
-        box-sizing: border-box;
     }
 
     .segment-body {

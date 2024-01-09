@@ -115,7 +115,7 @@
 
     let practicePlanProgress: PracticePlanProgress | undefined;
     onMount(() => {
-        practicePlanProgress = get_practiceplan_progress(dance.clipRelativeStem, practicePlan.id);
+        practicePlanProgress = get_practiceplan_progress(supabase, dance.clipRelativeStem, practicePlan.id);
     });
 
 </script>

@@ -9,6 +9,8 @@
 	import { invalidate } from '$app/navigation'
 	import { waitSecs } from '$lib/utils/async';
 	import Dialog from "$lib/elements/Dialog.svelte";
+	import { navigating } from "$app/stores";
+	import { debugMode } from "$lib/model/settings";
 
 
 	let showingSettings = false;
@@ -33,11 +35,43 @@
 
 		return () => data.subscription.unsubscribe()
 	})
+
+	let showNavigationOverlay = false;
+	let navigationOverlayTimeout: number | undefined = undefined;
+	$: {
+		if ($navigating && !navigationOverlayTimeout) {
+			setTimeout(() => {
+				navigationOverlayTimeout = undefined;
+				if ($navigating) {
+					showNavigationOverlay = true;
+				}
+			}, 500);
+		}
+	}
+	$: if (!$navigating) {
+		showNavigationOverlay = false;
+		if (navigationOverlayTimeout !== undefined) {
+			clearTimeout(navigationOverlayTimeout);
+			navigationOverlayTimeout = undefined;
+		}
+	}
 </script>
 
 <NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
 <div class="app-content" class:noNavBar={$navbarProps.collapsed} >
 	<slot />
+</div>
+
+<div class="inset-4 flex items-center justify-center" 
+	class:absolute={showNavigationOverlay}
+	class:hidden={showNavigationOverlay}>
+
+	<div class="daisy-card w-96 bg-neutral text-neutral-content">
+		<div class="daisy-card-body items-center text-center">
+		  <h2 class="daisy-card-title"><span class="daisy-loading daisy-loading-ring daisy-loading-lg"></span></h2>
+		  <p>Navigating</p>
+		</div>
+	</div>
 </div>
 <Dialog bind:open={showingSettings} 
 	modal={true} 
