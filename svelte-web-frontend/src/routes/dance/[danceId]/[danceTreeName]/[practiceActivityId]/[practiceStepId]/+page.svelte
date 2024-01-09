@@ -94,6 +94,7 @@
         bind:this={practicePage}
         dance={data.dance}    
         practiceStep={data.practiceStep}
+        practicePlan={data.practicePlan}
         pageActive={true}
         progressBarProps={progressBarProps}
         on:nextClicked={onNextClicked}

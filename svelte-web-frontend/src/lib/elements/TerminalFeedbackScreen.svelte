@@ -117,7 +117,7 @@ function getTrackDataUrl(track: any, description: string) {
     {/if}
     
     {#if feedback?.score}
-        <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
+        <p><code>Accuracy Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
     {/if}
 
     {#if skeletonHighlights.length > 0}

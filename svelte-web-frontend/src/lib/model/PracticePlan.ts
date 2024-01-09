@@ -32,6 +32,13 @@ export type PracticePlanStage = {
     activities: PracticePlanActivity[],
 }
 
+export type DanceSegmentation = {
+    startTime: number;
+    segmentBreaks: number[];
+    endTime: number;
+    segmentLabels: string[];
+}
+
 export type PracticePlan = {
     id: string;
     startTime: number;

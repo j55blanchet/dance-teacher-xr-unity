@@ -1,5 +1,6 @@
 import type { FrontendEvaluationTrack, FrontendPerformanceSummary } from "$lib/ai/FrontendDanceEvaluator";
 import type { Dance, DanceTree, DanceTreeNode } from "$lib/data/dances-store";
+import type { PracticePlan } from "./PracticePlan";
 import type { TerminalFeedback } from "./TerminalFeedback";
 
 export type FeedbackFunction = ((opts: {
@@ -10,9 +11,11 @@ export type FeedbackFunction = ((opts: {
         referenceVideoVisible: boolean,
         userVideoVisible: boolean,
     },
+    practicePlan?: PracticePlan,
+    practiceStep?: PracticeStep,
     performanceSummary: FrontendPerformanceSummary | null, 
     recordedTrack:  FrontendEvaluationTrack | null
-}) => TerminalFeedback | undefined);
+}) => Promise<TerminalFeedback | undefined>);
 
 export type StepEndBehavior = {
     preFeedbackMessage?: string;

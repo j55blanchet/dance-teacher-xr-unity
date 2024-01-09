@@ -1,4 +1,5 @@
 import type { DanceTree, DanceTreeNode } from "$lib/data/dances-store";
+import type { DanceSegmentation, PracticePlan } from "$lib/model/PracticePlan";
 import { GetArithmeticMean } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
@@ -19,6 +20,69 @@ function GetInaccurateJoints(skeleton3DSimilarity: Angle3DMetricSummaryOutput, b
         );
 
     return badJoints;
+}
+
+export function distillSegmentation(segmentation: DanceSegmentation) {
+    const { startTime, segmentBreaks, endTime, segmentLabels} = segmentation;
+
+    const segmentStartTimes = [startTime, ...segmentBreaks]
+    const segmentEndTimes = [...segmentBreaks, endTime]
+
+    const segments = segmentStartTimes.map((segmentStartTime, index) => {
+        const segmentEndTime = segmentEndTimes[index];
+        const segmentLabel = segmentLabels[index];
+        return {
+            startTime: segmentStartTime,
+            endTime: segmentEndTime,
+            label: segmentLabel,
+        }
+    });
+
+    let distillation = "To help with learning, the system has broken down the dance into segments that can be learned individually or in groups - as stepping stones to learning the entire dance. The following segments have been identified:\n";
+    
+    segments.map((x, i) => `* Segment '${x.label}', from (${x.startTime.toFixed(2)}s to ${x.endTime.toFixed(2)}s)`).join('\n');
+    return distillation;
+}
+
+const planDescription = `In our dance learning system, we utilize three distinct practice steps to help users progressively learn and master different sections of the dance. Each practice step serves a specific purpose and contributes to the overall dance learning experience. Below, we provide an overview of these practice steps:
+
+1. Marking:
+    * Description: Marking is the initial phase of our dance learning process. During this step, the user observes the dance sequence while simultaneously making small gestures or movements as placeholders for the actual dance moves. These gestures are intended to help users memorize the choreography and become familiar with the sequence.
+    * Purpose: Marking allows users to internalize the dance steps, rhythms, and patterns before attempting to execute them at full speed. It aids in building a foundation for muscle memory and understanding the dance structure.
+
+2. Drilling:
+    * Description: Drilling involves the user attempting to perform the dance sequence while watching a reference dance video. This phase allows users to practice the dance moves in a controlled environment. The system can gradually increase the speed of the reference video as the user's proficiency improves.
+    * Purpose: Drilling helps users refine their technique, timing, and coordination. It also provides an opportunity for evaluation, where the user's performance is assessed, and feedback is provided to help them make necessary adjustments.
+
+3. Full-Out:
+    * Description: In the Full-Out phase, users are expected to perform the dance sequence at full speed without watching the reference video. This simulates a performance-like condition where users must rely on their memorization and execution skills.
+    * Purpose: The Full-Out phase assesses the user's ability to perform the dance confidently and accurately without external guidance. Feedback can still be provided to help users fine-tune their performance, but the focus is on independence and mastery.`;
+
+export function distillPracticePlan(plan: PracticePlan): string {
+    
+    let distillation = planDescription + "\n\n";
+    if (plan.demoSegmentation) {
+        distillation += distillSegmentation({
+            startTime: plan.startTime,
+            segmentBreaks: plan.demoSegmentation.segmentBreaks,
+            endTime: plan.endTime,
+            segmentLabels: plan.demoSegmentation.segmentLabels,
+        }) + "\n\n";
+    }
+    let extraWord = ''
+    if (plan.demoSegmentation) extraWord = 'also ';
+    distillation += `The system has ${extraWord} generated a practice plan to guide the user through the process of learning this dance. The plan is ${plan.stages.length} stages long. Each stage consists of a series of activities, which are performed in sequence. Each activity focus on a specific time window, ranging in length from a short segment to potentially the entire dance. Each activity consists of multiple practice steps, each of which can ask the user to perform one task, such as marking, drilling, or performing the entire dance full-out. The following is a description of the plan:\n\n`;
+    
+    plan.stages.forEach((stage, stageIndex) => {
+        distillation += `* Stage ${stageIndex + 1} consists of ${stage.activities.length} learning activities. `;
+        stage.activities.forEach((activity, activityIndex) => {
+            
+            distillation += `Activity ${activity.id}(title: "${activity.title}") has ${activity.steps.length} steps (${activity.steps.map((s) => s.title).join(', ')}). `;
+        });
+    });
+
+
+    return distillation;
 }
 
 /**

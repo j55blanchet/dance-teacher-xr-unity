@@ -68,7 +68,6 @@ $: {
         endTime: effectiveControls.overrideEndTime ?? duration,
         breakpoints: [],
         labels: [],
-        classes: [["has-background-primary"]],
         enableSegmentClick: false,
         isolateSegmentIndex: undefined,
         ...effectiveControls.progressBarProps,

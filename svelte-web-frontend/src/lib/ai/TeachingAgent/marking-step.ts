@@ -24,7 +24,7 @@ export function CreateMarkingStep(
     return markStep;
 }
 
-const GenerateMarkingFeedback: FeedbackFunction = (args) => {
+const GenerateMarkingFeedback: FeedbackFunction = async (args) => {
 
     const feedback: TerminalFeedback = {
         paragraphs: [

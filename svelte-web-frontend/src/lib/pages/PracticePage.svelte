@@ -37,15 +37,18 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
 import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
 import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
+	import type { PracticePlan } from '$lib/model/PracticePlan';
 const supabase = getContext('supabase') as SupabaseClient;
 
 export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
 export let practiceStep: PracticeStep | null;
+export let practicePlan: PracticePlan | undefined = undefined;
 export let pageActive = false;
 export let flipVideo: boolean = false;
 export let continueBtnTitle: string = 'Continue';
 export let continueBtnIcon = 'check' as 'nextarrow' | 'check';
+
 
 export let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime | undefined = undefined;
 let mainContinueButton: HTMLButtonElement | undefined;
@@ -244,6 +247,8 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
                 referenceVideoVisible: interfaceSettings.referenceVideo.visibility === 'visible',
                 userVideoVisible: interfaceSettings.userVideo.visibility === 'visible',
             },
+            practicePlan,
+            practiceStep,
             performanceSummary, 
             recordedTrack
         });

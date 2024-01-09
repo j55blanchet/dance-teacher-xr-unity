@@ -135,7 +135,7 @@ export function GeneratePracticePlan(
 
         const segmentLabel = getSegementLabel(currentSegmentIndex, phraseNodes.length);
         const segmentActivity: SegmentActivity = {
-            id: `segment-${phraseNode.id}`,
+            id: `learn-segment-${phraseNode.id}`,
             type: 'segment',
             title: "Segment " + segmentLabel,
             steps: GenerateStepsForSegment(phraseNode), // todo: mark > drill > full-out
