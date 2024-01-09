@@ -44,8 +44,11 @@ export let dance: Dance;
 export let practiceStep: PracticeStep | null;
 export let pageActive = false;
 export let flipVideo: boolean = false;
+export let continueBtnTitle: string = 'Continue';
+export let continueBtnIcon = 'check' as 'nextarrow' | 'check';
 
 export let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime | undefined = undefined;
+let mainContinueButton: HTMLButtonElement | undefined;
 let hasProgressBar = false;
 $: hasProgressBar = progressBarProps !== undefined;
 
@@ -74,7 +77,7 @@ $: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible' |
 const dispatch = createEventDispatcher<{
     stateChanged: PracticePageState;
     'continue-clicked': undefined;
-    stepCompleted: undefined;
+    nextClicked: undefined;
 }>();
 
 let fitVideoToFlexbox = true;
@@ -87,6 +90,7 @@ let isPlayingOrCountdown: boolean;
 $: isPlayingOrCountdown = state === "playing" || state === "countdown";
 let isShowingFeedback: boolean;
 $: isShowingFeedback = state === 'feedback';
+let feedbackDialogOpen: boolean = false;
 let isMounted = false;
 let isShowingNextActivityConfigurator = false;
 
@@ -317,6 +321,7 @@ $: {
             feedbackPromise
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
+                    feedbackDialogOpen = true;
                 });
         }
         else {
@@ -445,7 +450,7 @@ async function startCountdown() {
     countdownActive = false;
 }
 
-export async function reset() {
+export async function reset(start: boolean = false) {
     console.log('Reseting practice page');
     if (unpauseVideoTimeout !== null) {
         clearTimeout(unpauseVideoTimeout);
@@ -459,6 +464,8 @@ export async function reset() {
     }
 
     terminalFeedback = null;
+    feedbackDialogOpen = false;
+    mainContinueButton?.focus();
     trialId = null;
     currentActivityStepIndex = 0;
     state = "waitWebcam";
@@ -510,7 +517,11 @@ export async function reset() {
 
     // state = 'waitStartUserInteraction';
     // showStartCountdownDialog = true;
-    startCountdown();
+    if (start ?? false) {
+        startCountdown();
+    } else {
+        state = 'waitStartUserInteraction';
+    }
 }
 
 
@@ -645,6 +656,11 @@ onMount(() => {
     }
 })
 
+function onContinueClicked() {
+    reset(false);
+    dispatch('nextClicked');
+}
+
 </script>
 
 <section class="practicePage" 
@@ -694,51 +710,91 @@ onMount(() => {
     </div>
     </div>
     {#if hasProgressBar && progressBarProps !== undefined}
+
     <div class="progressBar flex items-center flex-col space-y-4">
         <SegmentedProgressBar {...progressBarProps} 
             currentTime={videoCurrentTime} />
-        <div class="space-x-4">
-            <button 
-                class="daisy-btn" 
-                class:daisy-btn-primary={state === 'waitStartUserInteraction'}
-                disabled={countdownActive || state === "waitWebcam"} 
-                on:click={() => startCountdown()}
-            >
-                {#if state === 'waitStartUserInteraction'}
-                    Start Countdown
-                {:else if state === 'feedback'}
-                    Do Again
-                {:else if state === "playing"}
-                    Restart
-                {:else if state === "waitWebcam"}
-                    Waiting for webcam
-                {:else}
-                    <span class="daisy-loading daisy-loading-spinner"></span>
-                {/if}
-            </button>
+        <div class="flex gap-4 w-full justify-between" >
+            <div class="left space-x-4"></div>
+            <div class="center space-x-4">
+                <button 
+                    
+                    class="daisy-btn" 
+                    class:daisy-btn-primary={state === 'waitStartUserInteraction'}
+                    disabled={countdownActive || state === "waitWebcam"} 
+                    bind:this={mainContinueButton}
+                    on:click={() => reset(true)}
+                >
+                    {#if state === 'waitStartUserInteraction'}
+                        Start Countdown
+                    {:else if state === 'feedback'}
+                        Do Again
+                    {:else if state === "playing"}
+                        Restart
+                    {:else if state === "waitWebcam"}
+                        Waiting for webcam
+                    {:else}
+                        <span class="daisy-loading daisy-loading-spinner"></span>
+                    {/if}
+                </button>
+            </div>
+            <div class="right space-x-4">
+                {#if state === "feedback"}
+                <div class="daisy-dropdown  daisy-dropdown-top daisy-dropdown-end"
+                    class:daisy-dropdown-open={feedbackDialogOpen}>
+                    <button class="daisy-btn daisy-btn-neutral" role="button" tabindex="0" on:click={() => {
+                        feedbackDialogOpen = !feedbackDialogOpen;
+                        // unfocus the dialog
+                        mainContinueButton?.focus();
+                        
+                    }}>Feedback
+                        {#if feedbackDialogOpen}
+                            <span class="iconify-[lucide--chevron-down]"></span>
+                        {:else}
+                            <span class="iconify-[lucide--chevron-up]"></span>
+                        {/if}
+                        
+                    
+                    </button>
+                    <div class="daisy-dropdown-content daisy-card daisy-card-compact w-96 h-auto p-2 shadow bg-neutral text-neutral-content">
+                        <div class="daisy-card-body space-y-4">
+                            <TerminalFeedbackScreen 
+                                feedback={terminalFeedback}
+                                on:continue-clicked={() => dispatch('continue-clicked')}
+                                on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
+                            />
 
-            {#if state === "feedback"}
-            <button class="daisy-btn daisy-btn-success" on:click={() => dispatch('stepCompleted')}>
-                Complete
-            </button>
-            {/if}
+                            <div class="text-center">
+                                <div class="daisy-join">
+                                    <button class="daisy-btn daisy-join-item" 
+                                        on:click={() => reset(true)}
+                                        class:daisy-btn-accent={terminalFeedback?.suggestedAction === "repeat"}>
+                                        Do Again
+                                    </button>
+                                    <button 
+                                        class="daisy-btn daisy-join-item" 
+                                        class:daisy-btn-success={terminalFeedback?.suggestedAction === "next"}
+                                        on:click={() => onContinueClicked()}
+                                    >
+                                        {continueBtnTitle}
+
+                                        {#if continueBtnIcon === "nextarrow"}
+                                            <span class="iconify-[lucide--arrow-big-right]"></span>
+                                        {:else if continueBtnIcon === "check"}
+                                            <span class="iconify-[lucide--check-circle]"></span>
+                                        {/if}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+                {/if}                
+            </div>
         </div>
     </div>
     {/if}
 
-    <Dialog open={isShowingFeedback} modal={false}>
-        <span slot="title">Feedback</span>
-        <div class="feedback">
-            {#if state==="feedback"}
-            <TerminalFeedbackScreen 
-                feedback={terminalFeedback}
-                on:continue-clicked={() => dispatch('continue-clicked')}
-                on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
-            />
-            {/if}
-            <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
-        </div>
-    </Dialog>
     <Dialog 
         open={showingPerformanceReviewPage && videoRecording !== undefined} 
         on:dialog-closed={() => showingPerformanceReviewPage = false }>

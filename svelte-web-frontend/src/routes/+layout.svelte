@@ -36,25 +36,25 @@
 		return () => data.subscription.unsubscribe()
 	})
 
-	let showNavigationOverlay = false;
-	let navigationOverlayTimeout: number | undefined = undefined;
-	$: {
-		if ($navigating && !navigationOverlayTimeout) {
-			setTimeout(() => {
-				navigationOverlayTimeout = undefined;
-				if ($navigating) {
-					showNavigationOverlay = true;
-				}
-			}, 500);
-		}
-	}
-	$: if (!$navigating) {
-		showNavigationOverlay = false;
-		if (navigationOverlayTimeout !== undefined) {
-			clearTimeout(navigationOverlayTimeout);
-			navigationOverlayTimeout = undefined;
-		}
-	}
+	// let showNavigationOverlay = false;
+	// let navigationOverlayTimeout: number | undefined = undefined;
+	// $: {
+	// 	if ($navigating && !navigationOverlayTimeout) {
+	// 		setTimeout(() => {
+	// 			navigationOverlayTimeout = undefined;
+	// 			if ($navigating) {
+	// 				showNavigationOverlay = true;
+	// 			}
+	// 		}, 500);
+	// 	}
+	// }
+	// $: if (!$navigating) {
+	// 	showNavigationOverlay = false;
+	// 	if (navigationOverlayTimeout !== undefined) {
+	// 		clearTimeout(navigationOverlayTimeout);
+	// 		navigationOverlayTimeout = undefined;
+	// 	}
+	// }
 </script>
 
 <NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
@@ -62,7 +62,7 @@
 	<slot />
 </div>
 
-<div class="inset-4 flex items-center justify-center" 
+<!-- <div class="inset-4 flex items-center justify-center" 
 	class:absolute={showNavigationOverlay}
 	class:hidden={showNavigationOverlay}>
 
@@ -72,7 +72,7 @@
 		  <p>Navigating</p>
 		</div>
 	</div>
-</div>
+</div> -->
 <Dialog bind:open={showingSettings} 
 	modal={true} 
 	showCloseButton={true} closeWhenClickedOutside={true}

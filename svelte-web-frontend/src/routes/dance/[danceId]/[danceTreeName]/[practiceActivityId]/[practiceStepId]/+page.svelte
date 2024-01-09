@@ -6,13 +6,22 @@
 	import { getContext } from 'svelte';
 	import { save_activitystep_progress } from '$lib/data/activity-progress.js';
 	import { goto, invalidate } from '$app/navigation';
+	import type PracticeStep from '$lib/model/PracticeStep.js';
+	import type { PracticePlanActivity } from '$lib/model/PracticePlan';
 
     export let data;
+
+    let practicePage: PracticePage | undefined;
+    let practiceActivity: PracticePlanActivity;
+    $: practiceActivity = data.practiceActivity;
+
     let supabase: SupabaseClient = getContext('supabase');
 
     let parentUrl: string;
+    let activityBaseUrl: string;
     $: {
         parentUrl = '/dance/' + encodeURIComponent(data.dance.clipRelativeStem) + '/' + encodeURIComponent(data.danceTree.tree_name) + '/';
+        activityBaseUrl = parentUrl + encodeURIComponent(data.practiceActivity.id) + '/';
 
         navbarProps.update(props => ({
             ...props,
@@ -46,33 +55,50 @@
         isolateSegmentIndex: segmentIsolateIndex,
     };
 
-function onStepCompleted() {
-    
-    save_activitystep_progress(
-        supabase,
-        data.dance.clipRelativeStem,
-        data.practicePlan.id,
-        data.practiceActivity.id,
-        data.practiceStep.id, 
-        { completed: true }
-    );
+    let currentStepIndex: number;
+    $: currentStepIndex = practiceActivity.steps.findIndex(step => step.id === data.practiceStep.id);
 
-    // invalidate('progress:' + data.dance.clipRelativeStem);
-    
-    const queryString = '?completedStep=' + encodeURIComponent(data.practiceActivity.id) + '/' + encodeURIComponent(data.practiceStep.id); 
-    console.log('goto', parentUrl + queryString);
-    goto(parentUrl + queryString, { invalidateAll: true });
-    // );
-}
+    let nextStep: PracticeStep | undefined;
+    $: nextStep = practiceActivity.steps[currentStepIndex + 1]
+
+    async function onNextClicked() {
+
+        // save progress
+        save_activitystep_progress(
+            supabase,
+            data.dance.clipRelativeStem,
+            data.practicePlan.id,
+            data.practiceActivity.id,
+            data.practiceStep.id, 
+            { completed: true }
+        );
+
+        // invalidate('progress:' + data.dance.clipRelativeStem);
+        
+        if (nextStep) {
+            const url = activityBaseUrl + encodeURIComponent(nextStep.id) + "/";
+            goto(url, { invalidateAll: true });
+            return;
+        }
+
+        const queryString = '?completedStep=' + encodeURIComponent(data.practiceActivity.id) + '/' + encodeURIComponent(data.practiceStep.id); 
+        console.log('goto', parentUrl + queryString);
+        await goto(parentUrl + queryString, { invalidateAll: true });
+        practicePage?.reset();
+        // );
+    }
 </script>
 
 <div class="p-4 overflow-hidden">
     <PracticePage 
+        bind:this={practicePage}
         dance={data.dance}    
         practiceStep={data.practiceStep}
         pageActive={true}
         progressBarProps={progressBarProps}
-        on:stepCompleted={onStepCompleted}
+        on:nextClicked={onNextClicked}
+        continueBtnTitle={nextStep ? nextStep.title : "Finish"}
+        continueBtnIcon={nextStep ? "nextarrow" : "check"}
     />
 </div>
 

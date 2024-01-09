@@ -147,7 +147,7 @@
                         {/if}
                         </summary>
                     {#if isDropdownMode}
-                    <div class="daisy-dropdown-content  z-[1] daisy-card daisy-card-compact w-64 p-2 shadow"
+                    <div class="daisy-dropdown-content  z-[2] daisy-card daisy-card-compact w-64 p-2 shadow"
                         class:bg-primary={isActivitySuggested} 
                         class:text-primary-content={isActivitySuggested}
                         class:bg-base-200={!isActivitySuggested}
