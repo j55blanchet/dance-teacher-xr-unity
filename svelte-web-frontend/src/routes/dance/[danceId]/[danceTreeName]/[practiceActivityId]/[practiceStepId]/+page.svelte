@@ -4,18 +4,23 @@
 	import PracticePage from "$lib/pages/PracticePage.svelte";
 	import type { SupabaseClient } from '@supabase/supabase-js';
 	import { getContext } from 'svelte';
+	import { save_activitystep_progress } from '$lib/data/activity-progress.js';
+	import { goto, invalidate } from '$app/navigation';
 
     export let data;
     let supabase: SupabaseClient = getContext('supabase');
 
+    let parentUrl: string;
     $: {
+        parentUrl = '/dance/' + encodeURIComponent(data.dance.clipRelativeStem) + '/' + encodeURIComponent(data.danceTree.tree_name) + '/';
+
         navbarProps.update(props => ({
             ...props,
             collapsed: false,
             pageTitle: data.practiceActivity.title,
             subtitle:  data.practiceStep.title,
             back: {
-                url: '/dance/' + encodeURIComponent(data.dance.clipRelativeStem) + '/' + encodeURIComponent(data.danceTree.tree_name) + '/',
+                url: parentUrl,
                 title: `${data.dance.title} Home`,
             },
         }));
@@ -49,6 +54,20 @@
 
 function onStepCompleted() {
     
+    save_activitystep_progress(
+        data.dance.clipRelativeStem,
+        data.danceTree.tree_name,
+        data.practiceActivity.id,
+        data.practiceStep.id, 
+        { completed: true }
+    );
+
+    // invalidate('progress:' + data.dance.clipRelativeStem);
+    
+    const queryString = '?completedStep=' + encodeURIComponent(data.practiceActivity.id) + '/' + encodeURIComponent(data.practiceStep.id); 
+    console.log('goto', parentUrl + queryString);
+    goto(parentUrl + queryString, { invalidateAll: true });
+    // );
 }
 </script>
 
