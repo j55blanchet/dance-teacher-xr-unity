@@ -15,6 +15,7 @@ function GenerateMarkDrillFulloutSteps(
     segmentDescription: string,
     startTime: number,
     endTime: number,
+    parentActivityId: string,
 ) {
     const stepBase = {
         segmentDescription: segmentDescription,
@@ -25,22 +26,23 @@ function GenerateMarkDrillFulloutSteps(
     const mark = CreateMarkingStep(segmentDescription, startTime, endTime)
     const drill = CreateDrillStep(segmentDescription, startTime, endTime)
     const fullOut = CreateFulloutStep(segmentDescription, startTime, endTime)
-    return [mark, drill, fullOut];
+
+    const steps = [mark, drill, fullOut]
+    steps.forEach((step) => { step.parentActivityId = parentActivityId; });
+    return steps;
 }
 
 function GenerateStepsForSegment(
     node: DanceTreeNode,
+    parentActivityId: string,
 ) {
+
     const steps = GenerateMarkDrillFulloutSteps(
-        `node:${node.id}`,
+        node.id,
         node.start_time,
         node.end_time,
+        parentActivityId,
     );
-
-    steps.forEach((step) => {
-        step.danceTreeNode = node;
-        step.segmentDescription = node.id;
-    });
 
     return steps;
 }
@@ -71,41 +73,31 @@ function makeCheckpointActivity(segmentActivities: SegmentActivity[]): Checkpoin
     const segmentLabels = segmentActivities
         .map((segmentActivity) => segmentActivity.segmentTitle);
 
-    const checkpointLabel = `checkpoint-${segmentLabels.join('-')}`;
+    const checkpointId = `checkpoint-${segmentLabels.join('-')}`;
     return {
-        id: checkpointLabel,
+        id: checkpointId,
         type: 'checkpoint',
         title: "Checkpoint (" + makeEnglishList(segmentLabels) + ')',
         steps: GenerateMarkDrillFulloutSteps(
-            checkpointLabel,
+            checkpointId,
             segmentActivities[0].steps[0].startTime,
             segmentActivities[segmentActivities.length - 1].steps[0].endTime,
-        ),
-    }
-}
-
-function makeDrillActivity(startTime: number, endTime: number): DrillActivity {
-    return {
-        id: `drill-${startTime}-${endTime}`,
-        title: 'Drill',
-        type: 'drill',
-        steps: GenerateMarkDrillFulloutSteps(
-            `drill-${startTime}-${endTime}`,
-            startTime,
-            endTime,
+            checkpointId
         ),
     }
 }
 
 function makeFinaleActivity(startTime: number, endTime: number): FinaleActivity {
+    const activityId = 'finale';
     return {
-        id: `finale`,
+        id: activityId,
         type: 'finale',
         title: 'Finale',
         steps: GenerateMarkDrillFulloutSteps(
             `finale-wholesong`,
             startTime,
             endTime,
+            activityId
         )
     }
 }
@@ -143,11 +135,12 @@ export function GeneratePracticePlan(
         }
 
         const segmentLabel = getSegementLabel(currentSegmentIndex, phraseNodes.length);
+        const activityId = `learn-segment-${phraseNode.id}`;
         const segmentActivity: SegmentActivity = {
-            id: `learn-segment-${phraseNode.id}`,
+            id: activityId,
             type: 'segment',
-            title: "Segment " + segmentLabel,
-            steps: GenerateStepsForSegment(phraseNode), // todo: mark > drill > full-out
+            title: "Learn Segment " + segmentLabel,
+            steps: GenerateStepsForSegment(phraseNode, activityId), // todo: mark > drill > full-out
             segmentTitle: segmentLabel,
             segmentIndex: currentSegmentIndex,
         };
