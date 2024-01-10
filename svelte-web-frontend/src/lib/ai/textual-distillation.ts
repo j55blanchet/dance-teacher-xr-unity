@@ -1,5 +1,6 @@
 import type { DanceTree, DanceTreeNode } from "$lib/data/dances-store";
 import type { DanceSegmentation, PracticePlan } from "$lib/model/PracticePlan";
+import type PracticeStep from "$lib/model/PracticeStep";
 import { GetArithmeticMean } from "./EvaluationCommonUtils";
 import type { FrontendPerformanceSummary } from "./FrontendDanceEvaluator";
 import type { FrontendDancePeformanceHistory } from "./frontendPerformanceHistory";
@@ -73,11 +74,16 @@ export function distillPracticePlan(plan: PracticePlan): string {
     if (plan.demoSegmentation) extraWord = 'also ';
     distillation += `The system has ${extraWord} generated a practice plan to guide the user through the process of learning this dance. The plan is ${plan.stages.length} stages long. Each stage consists of a series of activities, which are performed in sequence. Each activity focus on a specific time window, ranging in length from a short segment to potentially the entire dance. Each activity consists of multiple practice steps, each of which can ask the user to perform one task, such as marking, drilling, or performing the entire dance full-out. The following is a description of the plan:\n\n`;
     
+    distillation += `* The plan teaches the time window of the dance starting at ${plan.startTime.toFixed(2)}s until ${plan.endTime.toFixed(2)}s. `;
+
+    function distillPracticeStep(step: PracticeStep): string {
+        return `${step.title}, from ${step.startTime.toFixed(2)}s to ${step.endTime.toFixed(2)}s.`
+    }
     plan.stages.forEach((stage, stageIndex) => {
         distillation += `* Stage ${stageIndex + 1} consists of ${stage.activities.length} learning activities. `;
         stage.activities.forEach((activity, activityIndex) => {
             
-            distillation += `Activity ${activity.id}(title: "${activity.title}") has ${activity.steps.length} steps (${activity.steps.map((s) => s.title).join(', ')}). `;
+            distillation += `Activity "${activity.title}") has ${activity.steps.length} steps (${activity.steps.map((s) => distillPracticeStep(s)).join('; ')}). `;
         });
     });
 

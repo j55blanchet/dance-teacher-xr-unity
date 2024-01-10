@@ -102,9 +102,9 @@
     }
 
     function onLearningActivityStepClicked(activity: PracticePlanActivity, step: PracticeStep) {
-        if (activity.type === 'segment') {
-            goto(`${encodeURIComponent(activity.id)}/${step.id}/`)
-        }
+        
+        goto(`${encodeURIComponent(activity.id)}/${step.id}/`)
+        
     }
 
     let practicePlanProgress: PracticePlanProgress | undefined;

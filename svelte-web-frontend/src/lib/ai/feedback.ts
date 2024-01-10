@@ -45,12 +45,14 @@ export function generateFeedbackNoPerformance(
 
 export async function getLLMResponse(prompt: string): Promise<string> {
 
+    const requestBody = {
+        prompt
+    };
+    console.log('Requesting feedback from Claude LLM', prompt);
     const httpResponse = await fetch('/restapi/get_feedback/unstructured', {
         'headers': { 'Content-Type': 'application/json' },
         'method': 'POST',
-        'body': JSON.stringify({
-            prompt
-        }),
+        'body': JSON.stringify(requestBody),
     });
 
     const textResponse = await httpResponse.json();

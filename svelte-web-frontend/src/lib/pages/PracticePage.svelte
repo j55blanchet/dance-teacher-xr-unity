@@ -1,4 +1,5 @@
 <script context="module" lang="ts">
+	import DropdownButton from './../elements/DropdownButton.svelte';
 	import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
     export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
     export const INITIAL_STATE: PracticePageState = "waitWebcam";
@@ -6,7 +7,7 @@
 <script lang="ts">
 import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
-import { evaluation_summarizeSubsections, practiceActivities__playbackSpeed, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
+import { evaluation_summarizeSubsections, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
 // import { replaceJSONForStringifyDisplay } from '$lib/utils/formatting';
 import { findDanceTreeNode, getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
@@ -95,7 +96,6 @@ let isShowingFeedback: boolean;
 $: isShowingFeedback = state === 'feedback';
 let feedbackDialogOpen: boolean = false;
 let isMounted = false;
-let isShowingNextActivityConfigurator = false;
 
 let currentActivityStepIndex: number = 0;
 
@@ -132,6 +132,21 @@ let poseEstimationReady: Promise<void> | null = null;
 let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
 let referenceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
+let customizedPlaybackSpeed: number | undefined = undefined;
+let effectivePlaybackSpeed: number = 1.0;
+$: {
+    // reset the customized playback speed if it's not valid for the current practice step
+    if (customizedPlaybackSpeed && 
+        (!practiceStep?.speedAdjustment?.enabled ||
+        practiceStep.speedAdjustment?.speedOptions.indexOf(customizedPlaybackSpeed) === -1
+        )) 
+    {
+        customizedPlaybackSpeed = undefined;
+    } 
+    effectivePlaybackSpeed = customizedPlaybackSpeed ?? practiceStep?.playbackSpeed ?? 1.0;
+}
+const defaultCustomSpeedOptions = [0.25, 0.5, 0.75, 0.9, 1]
+
 let lastEvaluationResult: FrontendLiveEvaluationResult | null = null;
 let evaluator: FrontendDanceEvaluator | null = null;
 let trialId = null as string | null;
@@ -147,14 +162,6 @@ let videoRecording: {
     recordingSpeed: number;
     recordingStartOffset: number;
 } | undefined = undefined;
-
-// Base the settings for the next practice activity based on the current one
-let nextPracticeActivityParams: GeneratePracticeStepOptions = {
-    playbackSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
-    interfaceMode: practiceStep?.interfaceMode ?? $practiceActivities__interfaceMode,
-    terminalFeedbackEnabled: practiceStep?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
-    showUserSkeleton: practiceStep?.showUserSkeleton ?? $practiceActivities__showUserSkeleton,
-}
 
 let countdown = -1;
 let countdownActive = false;
@@ -217,7 +224,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
             mimeType: webcamRecorderMimeType,
             referenceVideoUrl: danceSrc,
             recordingStartOffset: practiceStep?.startTime ?? 0,
-            recordingSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+            recordingSpeed: effectivePlaybackSpeed,
         };
     }
 
@@ -243,7 +250,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
             attemptSettings: {
                 startTime: practiceStep?.startTime ?? 0,
                 endTime: practiceStep?.endTime ?? videoDuration,
-                playbackSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+                playbackSpeed: effectivePlaybackSpeed,
                 referenceVideoVisible: interfaceSettings.referenceVideo.visibility === 'visible',
                 userVideoVisible: interfaceSettings.userVideo.visibility === 'visible',
             },
@@ -377,11 +384,7 @@ async function startCountdown() {
     isVideoPausedBinding = true;
     videoCurrentTime = practiceStep?.startTime ?? 0;
     videoVolume = $danceVideoVolume;
-    videoPlaybackSpeed = $practiceActivities__playbackSpeed;
-    if (practiceStep?.playbackSpeed !== undefined &&
-        !isNaN(practiceStep.playbackSpeed)) {
-        videoPlaybackSpeed = practiceStep.playbackSpeed;
-    }
+    videoPlaybackSpeed = effectivePlaybackSpeed;
 
     if (!mediaElementsHaveBeenActivated) {
         state = 'waitStartUserInteraction';
@@ -721,7 +724,29 @@ function onContinueClicked() {
         <SegmentedProgressBar {...progressBarProps} 
             currentTime={videoCurrentTime} />
         <div class="flex gap-4 w-full justify-between" >
-            <div class="left space-x-4"></div>
+            <div class="left space-x-4 flex items-center">
+                <DropdownButton position="top">
+                    <svelte:fragment slot="buttonTitle">
+                        <span class="iconify-[icon-park-solid--speed] text-xl"></span>
+                        {effectivePlaybackSpeed.toFixed(2)}x
+                    </svelte:fragment>
+                    <div class="daisy-card daisy-card-compact bg-neutral text-neutral-content mb-1">
+                        <div class="daisy-card-body grid grid-cols-2-maxcontent items-center">
+
+                            <label for="speedSelect">Speed</label>
+                            <select id="speedSelect" disabled={!practiceStep?.speedAdjustment?.enabled} 
+                                    class="daisy-select daisy-select-sm daisy-select-bordered max-w-xs" 
+                                    bind:value={customizedPlaybackSpeed}>
+                                <option selected value={undefined}>Default {`(${(practiceStep?.playbackSpeed ?? 1).toFixed(2)}x)`}</option>
+                                {#each practiceStep?.speedAdjustment?.speedOptions ?? [] as speed}
+                                    <option value={speed}>{speed.toFixed(2)}x</option>
+                                {/each}
+                            </select>
+                        </div>
+                    </div>
+                </DropdownButton>
+            
+            </div>
             <div class="center space-x-4">
                 <button 
                     
@@ -751,22 +776,23 @@ function onContinueClicked() {
                     <button class="daisy-btn daisy-btn-neutral" role="button" tabindex="0" on:click={() => {
                         feedbackDialogOpen = !feedbackDialogOpen;
                         // unfocus the dialog
-                        mainContinueButton?.focus();
+                        if (!feedbackDialogOpen) {
+                            mainContinueButton?.focus();
+                        }
                         
                     }}>Feedback
                         {#if feedbackDialogOpen}
-                            <span class="iconify-[lucide--chevron-down]"></span>
-                        {:else}
                             <span class="iconify-[lucide--chevron-up]"></span>
+                        {:else}
+                            <span class="iconify-[lucide--chevron-down]"></span>
                         {/if}
                     
                     </button>
-                    <div class="daisy-dropdown-content daisy-card daisy-card-compact w-96 h-auto p-2 shadow bg-neutral text-neutral-content">
+                    <div class="daisy-dropdown-content daisy-card daisy-card-compact w-[55ch] max-w-[90vw] h-auto p-2 m-1 shadow bg-neutral text-neutral-content">
                         <div class="daisy-card-body space-y-4">
                             <TerminalFeedbackScreen 
                                 feedback={terminalFeedback}
                                 on:continue-clicked={() => dispatch('continue-clicked')}
-                                on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
                             />
 
                             <div class="text-center">
@@ -815,14 +841,6 @@ function onContinueClicked() {
             />
             {/if}
         </div>
-    </Dialog>
-    <Dialog open={isShowingFeedback && isShowingNextActivityConfigurator}
-        on:dialog-closed={() => isShowingNextActivityConfigurator = false}>
-        <span slot="title">Practice Setup</span>
-        <PracticeActivityConfigurator 
-                persistInSettings={true}
-                bind:practiceActivityParams={nextPracticeActivityParams}
-            />
     </Dialog>
 
     {#if countdown >= 0}

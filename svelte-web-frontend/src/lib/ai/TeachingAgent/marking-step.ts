@@ -19,6 +19,10 @@ export function CreateMarkingStep(
         terminalFeedbackEnabled: false,
         showUserSkeleton: false,
         playbackSpeed: 0.5,
+        speedAdjustment: {
+            enabled: true,
+            speedOptions: [0.33, 0.5, 0.75, 1],
+        },
         feedbackFunction: GenerateMarkingFeedback,
     }
     return markStep;

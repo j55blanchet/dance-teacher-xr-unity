@@ -101,9 +101,17 @@ export default interface PracticeStep {
     showUserSkeleton: boolean;
     playbackSpeed: number;
     segmentDescription: string;
+
+    parentActivityId?: string;
+
     dance?: Dance;
     danceTree?: DanceTree;
     danceTreeNode?: DanceTreeNode;
+
+    speedAdjustment?: {
+        enabled: boolean;
+        speedOptions: number[];
+    };
 
     feedbackFunction?: FeedbackFunction;
 

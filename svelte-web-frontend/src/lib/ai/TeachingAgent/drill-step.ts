@@ -23,6 +23,10 @@ export function CreateDrillStep(
         terminalFeedbackEnabled: true,
         showUserSkeleton: true,
         playbackSpeed: 0.75,
+        speedAdjustment: {
+            enabled: true,
+            speedOptions: [0.33, 0.5, 0.75, 1],
+        },
         feedbackFunction: GenerateDrillFeedback,
     }
     return drillStep;
@@ -39,7 +43,10 @@ export const GenerateDrillFeedback: FeedbackFunction = async (args) => {
         prompt += distillPracticePlan(args.practicePlan);
     }
 
-    prompt += `They have performed a "${args.practiceStep?.title}" step of the dance routine, called "${args.practiceStep?.segmentDescription}", and the system has analyzed their performance. `
+    const allActivities = args.practicePlan?.stages.flatMap((stage) => stage.activities) ?? [];
+    const parentActivity = allActivities.find((activity) => activity.id === args.practiceStep?.parentActivityId);
+
+    prompt += `They have performed the "${args.practiceStep?.title}" step of the practice plan, as part of the "${parentActivity?.title}" activity, and the system has analyzed their performance. `
 
     let suggestedAction: TerminalFeedbackAction = 'repeat'; 
     const score = args.performanceSummary?.wholePerformance.skeleton3DAngleSimilarity.overallScore;
@@ -61,9 +68,6 @@ export const GenerateDrillFeedback: FeedbackFunction = async (args) => {
             suggestedAction = 'repeat';
             prompt += "The system has computed a score for their performance. They did poorly. "
         }
-
-        
-
         
     } else {
         suggestedAction = 'repeat';
@@ -96,7 +100,7 @@ export const GenerateDrillFeedback: FeedbackFunction = async (args) => {
 
         feedbackText = msgText;
     } catch (e) {
-        feedbackText = "There was an error generating the feedback. Please try again."
+        feedbackText = "There was an error generating feedback. Please try again and consider refreshing the page."
     }
     
 
