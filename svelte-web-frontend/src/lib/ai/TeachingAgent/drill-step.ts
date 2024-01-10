@@ -23,6 +23,10 @@ export function CreateDrillStep(
         terminalFeedbackEnabled: true,
         showUserSkeleton: true,
         playbackSpeed: 0.75,
+        speedAdjustment: {
+            enabled: true,
+            speedOptions: [0.33, 0.5, 0.75, 1],
+        },
         feedbackFunction: GenerateDrillFeedback,
     }
     return drillStep;
@@ -96,7 +100,7 @@ export const GenerateDrillFeedback: FeedbackFunction = async (args) => {
 
         feedbackText = msgText;
     } catch (e) {
-        feedbackText = "There was an error generating the feedback. Please try again."
+        feedbackText = "There was an error generating feedback. Please try again and consider refreshing the page."
     }
     
 

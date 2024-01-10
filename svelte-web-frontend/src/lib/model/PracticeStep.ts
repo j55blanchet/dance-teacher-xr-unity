@@ -105,6 +105,11 @@ export default interface PracticeStep {
     danceTree?: DanceTree;
     danceTreeNode?: DanceTreeNode;
 
+    speedAdjustment?: {
+        enabled: boolean;
+        speedOptions: number[];
+    };
+
     feedbackFunction?: FeedbackFunction;
 
     state?: {

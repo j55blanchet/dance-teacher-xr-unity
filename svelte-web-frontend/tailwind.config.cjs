@@ -5,6 +5,11 @@ const config = {
 	content: ['./src/**/*.{html,js,svelte,ts}', './src/app.html'],
 
 	theme: {
+		extend: {
+			gridTemplateColumns: {
+				'2-maxcontent': 'repeat(2, max-content)',
+			}
+		}
 	},
 
 	plugins: [
