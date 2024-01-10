@@ -21,7 +21,8 @@ if (browser) {
 import { browser } from "$app/environment";
 import { createEventDispatcher, onMount, tick } from "svelte";
 import { useTextToSpeech } from "$lib/model/settings";
-	import { lerp } from "$lib/utils/math";
+import { lerp } from "$lib/utils/math";
+	import { text } from "@sveltejs/kit";
 	
 export let textToSpeak: string = "";
 
@@ -138,6 +139,7 @@ const speakWithSpeechSynthesis =
 
                     if (cancelSpeechSynthesis) {
                         speechSynthesis?.cancel();
+                        console.log('Cancelling speech synthesis');
                     }
                 };
                 currentUtterance = utterance;
@@ -157,13 +159,22 @@ $: {
 }
 
 // Call speak method whenever the textToSpeak variable or the speak method 
-// itself is changes.
+// itself changes.
+let textToSpeakPrevious = "";
+let speakPrevious = speak;
+let isMounted = false;
 $: {
-    cancelSpeechSynthesis = true;
-    wait(0.5).then(() => {
-        cancelSpeechSynthesis = false;
-        speak(textToSpeak);    
-    })
+    if (isMounted && textToSpeak !== textToSpeakPrevious || speak !== speakPrevious) {
+        textToSpeakPrevious = textToSpeak;
+        speakPrevious = speak;
+        speechSythensizer?.cancel();
+        cancelSpeechSynthesis = true;
+        wait(0.5).then(() => {
+            cancelSpeechSynthesis = false;
+            speak(textToSpeak);    
+        })
+            
+    }
 }
 
 // The following code uses apis that can only be used in the browser. We don't want 
@@ -174,14 +185,18 @@ onMount(() => {
     if (!browser) {
         return;
     }
-
+    console.log('SpeechInterface mounted')
     speechSythensizer = window.speechSynthesis;
 
     const SpeechRecognitionConstructor: any | undefined= (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
     speechRecognition = SpeechRecognitionConstructor ? new SpeechRecognitionConstructor() : null;
-            
+     
+    isMounted = true;
+
     // cleanup code on dismount
     return () => {
+        isMounted = false;
+        console.log('SpeechInterface dismounted')
         speechSythensizer?.cancel();
     }
 })

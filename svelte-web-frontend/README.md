@@ -113,6 +113,7 @@ Other commands:
   * To run a file, add `-f <filename>` to the command.
 * `pnpm supabase status` to get the status of running services, including the local postgres instance (and their URLs).
 * `pnpm supabase projects api-keys` to get the api keys for the local supabase instance.
+* `pnpm supabase migration new <migration_name>` to create a new migration file in `migrations/`.
 
 Other useful links:
 

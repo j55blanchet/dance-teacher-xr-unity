@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import { getDanceFromDanceId } from '$lib/data/dances-store.js';
 
 /** @type {import('./$types').PageLoad} */
-export function load({ url, params })  {
+export function load({ params })  {
 
     const danceId: string = params.danceId;
     // const [dance, danceTree] = getDanceAndDanceTreeFromDanceTreeId(danceTreeId);

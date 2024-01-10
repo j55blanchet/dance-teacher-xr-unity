@@ -2,7 +2,7 @@
  * @file Takes raw evaluation data and creates feedback for the user's consumption
  */
 
-import { getAllNodes, type DanceTree, makeDanceTreeSlug } from "$lib/data/dances-store";
+import type { DanceTree } from "$lib/data/dances-store";
 import { TerminalFeedbackBodyParts, type TerminalFeedbackAction, type TerminalFeedbackBodyPart, type TerminalFeedback } from "$lib/model/TerminalFeedback";
 import { evaluation_GoodBadTrialThreshold } from "$lib/model/settings";
 import { ComparisonVectorToTerminalFeedbackBodyPartMap, QijiaMethodComparisionVectorNamesToIndexMap } from "./EvaluationCommonUtils";
@@ -36,12 +36,27 @@ export function generateFeedbackNoPerformance(
     }
 
     return {
-        headline: getRandomNoFeedbackHeadline(),
+        // headline: getRandomNoFeedbackHeadline(),
         paragraphs: ['Would you like to do that again or try something else?'],
         achievements: achievements,
         suggestedAction: 'repeat',
     }
 }
+
+export async function getLLMResponse(prompt: string): Promise<string> {
+
+    const httpResponse = await fetch('/restapi/get_feedback/unstructured', {
+        'headers': { 'Content-Type': 'application/json' },
+        'method': 'POST',
+        'body': JSON.stringify({
+            prompt
+        }),
+    });
+
+    const textResponse = await httpResponse.json();
+    return textResponse?.response;
+}   
+
 
 /**
  * Generates feedback for the user using simple rule-based approach. This can be computed locally,
@@ -106,7 +121,7 @@ export function generateFeedbackRuleBased(
     }
 
     return {
-        headline: headline,
+        // headline: headline,
         paragraphs: [subHeadline],
         achievements: achievements,
         score: {
@@ -202,36 +217,16 @@ export async function generateFeedbackWithClaudeLLM(
         throw new Error(`Failed to get feedback from Claude LLM. Status: ${claudeApiResponse.status}. Response: ${await claudeApiResponse.text()}`);
     }
 
+    const suggestedSection = currentSectionName;
     const claudeApiData = await claudeApiResponse.json();
 
     const feedbackMessage = claudeApiData['feedbackMessage'];
-    const claudeSuggestedNextSection = claudeApiData['nextSection'];
-    const coachingMessage = claudeApiData['coachingMessage'];
-    const feedbackTitle = claudeApiData['feedbackTitle'];
-
-    let suggestedSection = currentSectionName;
-    let suggestedURL = undefined;
-    if (danceTree) {
-        const allNodes = getAllNodes(danceTree?.root);
-        const allNodeIds = allNodes.map((node) => node.id);
-        if (allNodeIds.includes(claudeSuggestedNextSection)) {
-            suggestedSection = claudeSuggestedNextSection;
-            const danceTreeSlug = makeDanceTreeSlug(danceTree);
-            suggestedURL = `/teachlesson/${danceTreeSlug}/practicenode/${suggestedSection}`;
-        }
-    }
 
     return {
-        headline: feedbackTitle,
-        paragraphs: [feedbackMessage, coachingMessage],
+        paragraphs: [feedbackMessage],
         achievements: userFacingAchievements,
         // note the double equals here, we want to compare the string values
         suggestedAction: suggestedSection == currentSectionName ? "repeat" : "navigate", 
-        navigateOptions: suggestedURL ? [{ 
-            label: `Try '${suggestedSection}'`, 
-            url: suggestedURL,
-            nodeId: suggestedSection,
-        }] : undefined,
         debug: {
             llmInput: llmInput,
             llmOutput: claudeApiData,

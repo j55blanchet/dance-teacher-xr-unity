@@ -1,6 +1,7 @@
 <script context="module" lang="ts">
-export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
-export const INITIAL_STATE: PracticePageState = "waitWebcam";
+	import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
+    export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
+    export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
 import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
@@ -10,7 +11,7 @@ import { evaluation_summarizeSubsections, practiceActivities__playbackSpeed, sum
 import { findDanceTreeNode, getAllLeafNodes, getAllNodesInSubtree, makeDanceTreeSlug } from '$lib/data/dances-store';
 import { pauseInPracticePage, debugPauseDurationSecs, debugMode, useAIFeedback } from '$lib/model/settings';
 import { GetPixelLandmarksFromNormalizedLandmarks, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
-import type PracticeActivity from "$lib/model/PracticeStep";
+import type PracticeStep from "$lib/model/PracticeStep";
 import { getDanceVideoSrc, load2DPoseInformation, type Dance, type PoseReferenceData, load3DPoseInformation, type DanceTreeNode } from "$lib/data/dances-store";
 import { generateFeedbackNoPerformance, generateFeedbackRuleBased, generateFeedbackWithClaudeLLM } from '$lib/ai/feedback';
 import { Draw2dSkeleton } from '$lib/ai/SkeletonFeedbackVisualization'
@@ -21,40 +22,50 @@ import { onMount, createEventDispatcher, tick, getContext } from "svelte";
 import { webcamStream } from '$lib/webcam/streams';
 import { MirrorXPose, type Pose2DPixelLandmarks } from '$lib/webcam/mediapipe-utils';
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
-import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
-import TerminalFeedbackDialog from '$lib/elements/TerminalFeedbackScreen.svelte';
+import TerminalFeedbackScreen from '$lib/elements/TerminalFeedbackScreen.svelte';
 import { getFrontendDanceEvaluator, type FrontendDanceEvaluator, type FrontendPerformanceSummary, type FrontendLiveEvaluationResult, type FrontendEvaluationTrack } from '$lib/ai/FrontendDanceEvaluator';
 import ProgressEllipses from '$lib/elements/ProgressEllipses.svelte';
-import type { NodeHighlight } from '$lib/elements/DanceTreeVisual.svelte';
-import DanceTreeVisual from '$lib/elements/DanceTreeVisual.svelte';
-import { goto, invalidateAll } from '$app/navigation';
-import { GeneratePracticeStep, type GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent';
+import { goto } from '$app/navigation';
+import type { GeneratePracticeStepOptions } from '$lib/ai/TeachingAgent/TeachingAgent';
 import frontendPerformanceHistory from '$lib/ai/frontendPerformanceHistory';
 import Dialog from '$lib/elements/Dialog.svelte';
 import { browser } from '$app/environment';
 import { waitSecs } from '$lib/utils/async';
-import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepInterfaceSettings } from '$lib/model/PracticeStep';
+import { PracticeStepDefaultInterfaceSetting, PracticeInterfaceModes, type PracticeStepInterfaceSettings, type FeedbackFunction } from '$lib/model/PracticeStep';
 import PracticeActivityConfigurator from '$lib/elements/PracticeActivityConfigurator.svelte';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
+import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
+import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
+import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
+	import type { PracticePlan } from '$lib/model/PracticePlan';
 const supabase = getContext('supabase') as SupabaseClient;
 
 export let mirrorForEvaluation: boolean = true;
 export let dance: Dance;
-export let practiceActivity: PracticeActivity | null;
+export let practiceStep: PracticeStep | null;
+export let practicePlan: PracticePlan | undefined = undefined;
 export let pageActive = false;
 export let flipVideo: boolean = false;
+export let continueBtnTitle: string = 'Continue';
+export let continueBtnIcon = 'check' as 'nextarrow' | 'check';
 
+
+export let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime | undefined = undefined;
+let mainContinueButton: HTMLButtonElement | undefined;
+let hasProgressBar = false;
+$: hasProgressBar = progressBarProps !== undefined;
+
+let showingPerformanceReviewPage = false;
 let interfaceSettings: PracticeStepInterfaceSettings = PracticeInterfaceModes[PracticeStepDefaultInterfaceSetting];
-$: interfaceSettings = PracticeInterfaceModes[practiceActivity?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
+$: interfaceSettings = PracticeInterfaceModes[practiceStep?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
 let skeletonDrawingEnabled: boolean;
-$: skeletonDrawingEnabled = practiceActivity?.showUserSkeleton ?? true;
+$: skeletonDrawingEnabled = practiceStep?.showUserSkeleton ?? true;
 let terminalFeedbackEnabled: boolean;
-$: terminalFeedbackEnabled = practiceActivity?.terminalFeedbackEnabled ?? true;
+$: terminalFeedbackEnabled = practiceStep?.terminalFeedbackEnabled ?? true;
 
 let isDoingSomeSortOfFeedback = false;
 $: {
-    isDoingSomeSortOfFeedback = (practiceActivity?.terminalFeedbackEnabled ?? false)
+    isDoingSomeSortOfFeedback = (practiceStep?.terminalFeedbackEnabled ?? false)
         || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
         || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
 }
@@ -66,7 +77,11 @@ let hasUserWebcamVisible: boolean;
 $: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible' ||
     isDoingSomeSortOfFeedback && state === 'waitWebcam';
 
-const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher<{
+    stateChanged: PracticePageState;
+    'continue-clicked': undefined;
+    nextClicked: undefined;
+}>();
 
 let fitVideoToFlexbox = true;
 
@@ -78,6 +93,7 @@ let isPlayingOrCountdown: boolean;
 $: isPlayingOrCountdown = state === "playing" || state === "countdown";
 let isShowingFeedback: boolean;
 $: isShowingFeedback = state === 'feedback';
+let feedbackDialogOpen: boolean = false;
 let isMounted = false;
 let isShowingNextActivityConfigurator = false;
 
@@ -85,10 +101,10 @@ let currentActivityStepIndex: number = 0;
 
 let containingDanceTreeLeafNodes = [] as DanceTreeNode[];
 $: {
-    if (practiceActivity?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
-        containingDanceTreeLeafNodes = getAllLeafNodes(practiceActivity.danceTreeNode).filter((node) => node.id !== practiceActivity?.danceTreeNode?.id);
-    } else if (practiceActivity?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
-        containingDanceTreeLeafNodes = getAllNodesInSubtree(practiceActivity.danceTreeNode).filter((node) => node.id !== practiceActivity?.danceTreeNode?.id);
+    if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
+        containingDanceTreeLeafNodes = getAllLeafNodes(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
+    } else if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
+        containingDanceTreeLeafNodes = getAllNodesInSubtree(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
     }else {
         containingDanceTreeLeafNodes = [];
     }
@@ -110,7 +126,6 @@ let videoDuration: number = 0;
 let videoVolume: number = 0.5;
 $: console.log("VideoDuration", videoDuration);
 let isVideoPausedBinding: boolean = true;
-let showStartCountdownDialog = false;
 let danceSrc: string = '';
 let poseEstimationEnabled: boolean = false;
 let poseEstimationReady: Promise<void> | null = null;
@@ -123,87 +138,29 @@ let trialId = null as string | null;
 $: console.log('trialId changed, now is: ', trialId);
 let performanceSummary: FrontendPerformanceSummary | null = null;
 let terminalFeedback: TerminalFeedback | null = null;
-let nodeHighlights = {} as Record<string, NodeHighlight>;
-$: {
-    const currentNodeId = practiceActivity?.danceTreeNode?.id;
-    const terminalFeedbackNavOptions = terminalFeedback?.navigateOptions ?? [];
-    const navOptionsSuggestingANode = terminalFeedbackNavOptions.filter(opt => opt.nodeId);
-   
-    const defaultHighlight: NodeHighlight = {
-        color: 'var(--color-theme-1, yellow)',
-        pulse: true,
-    };
-    nodeHighlights = Object.fromEntries(
-        navOptionsSuggestingANode.map(navOpts => {
-            if (currentNodeId && navOpts.nodeId === currentNodeId) {
-                return [navOpts.nodeId, {
-                    ...defaultHighlight,
-                    label: navOpts.nodeId + ' 🔁'
-                }]
-            }
-            return [navOpts.nodeId, {
-                ...defaultHighlight,
-                label: `${navOpts.nodeId} ➡️`
-            }]
-        })
-    );
 
-    // If we've just performed an segment and aren't suggesting to repeat it,
-    // we will highlight the segment we just performed.
-    if (isShowingFeedback && currentNodeId && nodeHighlights[currentNodeId] === undefined) {
-        nodeHighlights[currentNodeId] = {
-            color: 'var(--color-text, green)',
-            pulse: false,
-            label: terminalFeedback?.suggestedAction === "repeat" ? `${currentNodeId} 🔁` : `✔️ ${currentNodeId}`,
-        }
-    }
-}
-
-async function onNodeClickedById(id: string) {
-    // find node;
-    if (!practiceActivity) return;
-    const node = findDanceTreeNode(practiceActivity.danceTree as any, id);
-
-    if (!node) {
-        console.warn("Ignoring onNodeClickedById: can't find node with id: " + id);
-    }
-    return onNodeClicked(node as DanceTreeNode);
-}
+let feedbackPromise: Promise<TerminalFeedback | undefined> | null = null;
+let videoRecording: {
+    url: string;
+    mimeType: string;
+    referenceVideoUrl: string;
+    recordingSpeed: number;
+    recordingStartOffset: number;
+} | undefined = undefined;
 
 // Base the settings for the next practice activity based on the current one
 let nextPracticeActivityParams: GeneratePracticeStepOptions = {
-    playbackSpeed: practiceActivity?.playbackSpeed ?? $practiceActivities__playbackSpeed,
-    interfaceMode: practiceActivity?.interfaceMode ?? $practiceActivities__interfaceMode,
-    terminalFeedbackEnabled: practiceActivity?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
-    showUserSkeleton: practiceActivity?.showUserSkeleton ?? $practiceActivities__showUserSkeleton,
-}
-
-async function onNodeClicked(clickedNode: DanceTreeNode) {
-    if (isPlayingOrCountdown) return;
-
-    if (!practiceActivity?.dance || !practiceActivity.danceTree) return;
-    const dance = practiceActivity.dance;
-    const danceTree = practiceActivity.danceTree;
-    const danceTreeSlug = makeDanceTreeSlug(practiceActivity.danceTree);
-    const nodeSlug = clickedNode.id;
-        
-    let { step: newActivity, url} = await GeneratePracticeStep(
-        dance, 
-        danceTree, 
-        clickedNode, 
-        nextPracticeActivityParams,
-    );
-    await goto(url);
-
-    practiceActivity = newActivity;
-    await reset();
+    playbackSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+    interfaceMode: practiceStep?.interfaceMode ?? $practiceActivities__interfaceMode,
+    terminalFeedbackEnabled: practiceStep?.terminalFeedbackEnabled ?? $practiceActivities__terminalFeedbackEnabled,
+    showUserSkeleton: practiceStep?.showUserSkeleton ?? $practiceActivities__showUserSkeleton,
 }
 
 let countdown = -1;
 let countdownActive = false;
 
 const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
-let currentPlaybackEndtime = practiceActivity?.endTime ?? 0;
+let currentPlaybackEndtime = practiceStep?.endTime ?? 0;
 
 let webcamRecorderMimeType = 'video/webm';
 let webcamRecorder: MediaRecorder | null = null;
@@ -224,13 +181,13 @@ $: {
 }
 
 let lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
-    practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
+    practiceStep?.dance?.clipRelativeStem ?? 'undefined',
     'skeleton3DAngleSimilarity',
     20,
 );
 $: {
     lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
-        practiceActivity?.dance?.clipRelativeStem ?? 'undefined',
+        practiceStep?.dance?.clipRelativeStem ?? 'undefined',
         'skeleton3DAngleSimilarity',
         20,
     )
@@ -239,11 +196,10 @@ $: {
 let unpauseVideoTimeout: number | null  = null;
 function unPauseVideo() {
     unpauseVideoTimeout = null;
-    currentPlaybackEndtime = practiceActivity?.endTime ?? videoDuration;
+    currentPlaybackEndtime = practiceStep?.endTime ?? videoDuration;
     isVideoPausedBinding = false;
     state = "playing";
 }
-
 
 async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
     if (gettingFeedback) return;
@@ -254,6 +210,15 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     let videoURL: undefined | string = undefined;
     if (webcamRecordedObjectURL) {
         videoURL = await webcamRecordedObjectURL;
+    }
+    if (videoURL) {
+        videoRecording = {
+            url: videoURL,
+            mimeType: webcamRecorderMimeType,
+            referenceVideoUrl: danceSrc,
+            recordingStartOffset: practiceStep?.startTime ?? 0,
+            recordingSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+        };
     }
 
     const attemptHistory = $lastNAttemptsAngleSimilarity.map((a) => {
@@ -267,73 +232,65 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
 
     let feedback: TerminalFeedback | undefined = undefined;
 
-    if (!terminalFeedbackEnabled || !performanceSummary) {
+    if (!practiceStep?.feedbackFunction) {
         feedback = generateFeedbackNoPerformance(
             dance.clipRelativeStem,
             $frontendPerformanceHistory,
-            practiceActivity?.danceTreeNode?.id ?? '',
+            practiceStep?.danceTreeNode?.id ?? '',
         );
+    } else {
+        feedback = await practiceStep.feedbackFunction({
+            attemptSettings: {
+                startTime: practiceStep?.startTime ?? 0,
+                endTime: practiceStep?.endTime ?? videoDuration,
+                playbackSpeed: practiceStep?.playbackSpeed ?? $practiceActivities__playbackSpeed,
+                referenceVideoVisible: interfaceSettings.referenceVideo.visibility === 'visible',
+                userVideoVisible: interfaceSettings.userVideo.visibility === 'visible',
+            },
+            practicePlan,
+            practiceStep,
+            performanceSummary, 
+            recordedTrack
+        });
     }
 
-    if ($useAIFeedback && !feedback) {
-        try {
-            const perfHistory = $frontendPerformanceHistory;
-            const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
-            feedback = await generateFeedbackWithClaudeLLM(
-                practiceActivity?.danceTree,
-                practiceActivity?.danceTreeNode?.id ?? 'undefined',
-                performanceSummary ?? undefined,
-                dancePerfHistory ?? undefined,
-                $summaryFeedback_skeleton3d_mediumPerformanceThreshold,
-                $summaryFeedback_skeleton3d_goodPerformanceThreshold,
-                $metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
-                attemptHistory,
-            )
-        } catch(e) {
-            console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
-        }
-    }
+    // if ($useAIFeedback && !feedback) {
+    //     try {
+    //         const perfHistory = $frontendPerformanceHistory;
+    //         const dancePerfHistory = practiceStep?.dance?.clipRelativeStem ? perfHistory?.[practiceStep.dance.clipRelativeStem] ?? null : null;
+    //         feedback = await generateFeedbackWithClaudeLLM(
+    //             practiceStep?.danceTree,
+    //             practiceStep?.danceTreeNode?.id ?? 'undefined',
+    //             performanceSummary ?? undefined,
+    //             dancePerfHistory ?? undefined,
+    //             $summaryFeedback_skeleton3d_mediumPerformanceThreshold,
+    //             $summaryFeedback_skeleton3d_goodPerformanceThreshold,
+    //             $metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
+    //             attemptHistory,
+    //         )
+    //     } catch(e) {
+    //         console.warn("Error generating feedback with AI - falling back to rule-based feedback", e);
+    //     }
+    // }
 
-    if (!feedback) {
-        const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
-        const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
+    // if (!feedback) {
+    //     const qijiaOverallScore = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.overallScore ?? 0;
+    //     const qijiaByVectorScores = performanceSummary?.wholePerformance.qijia2DSkeletonSimilarity.vectorByVectorScore ?? {} as Record<string, number>;
 
-        const perfHistory = $frontendPerformanceHistory;
-        const dancePerfHistory = practiceActivity?.dance?.clipRelativeStem ? perfHistory?.[practiceActivity.dance.clipRelativeStem] ?? null : null;
-        feedback = generateFeedbackRuleBased(
-            qijiaOverallScore, 
-            qijiaByVectorScores,
-            dancePerfHistory ?? undefined,
-            practiceActivity?.danceTreeNode?.id,
-        );
-    }
-    
-    feedback.debug = {
-        ...feedback.debug,
-        performanceSummary: performanceSummary ?? undefined,
-        recordedTrack: recordedTrack ?? undefined,
-    }
-
-    if (videoURL) {
-        let playbackSpeed = practiceActivity?.playbackSpeed;
-        if (playbackSpeed === undefined) {
-            playbackSpeed = $practiceActivities__playbackSpeed;
-        }
-        feedback.videoRecording = {
-            url: videoURL,
-            mimeType: webcamRecorderMimeType,
-            referenceVideoUrl: danceSrc,
-            recordingStartOffset: practiceActivity?.startTime ?? 0,
-            recordingSpeed: playbackSpeed,
-        };
-    }
-
-    feedback.segmentName = practiceActivity?.danceTreeNode?.id;
+    //     const perfHistory = $frontendPerformanceHistory;
+    //     const dancePerfHistory = practiceStep?.dance?.clipRelativeStem ? perfHistory?.[practiceStep.dance.clipRelativeStem] ?? null : null;
+    //     feedback = generateFeedbackRuleBased(
+    //         qijiaOverallScore, 
+    //         qijiaByVectorScores,
+    //         dancePerfHistory ?? undefined,
+    //         practiceStep?.danceTreeNode?.id,
+    //     );
+    // }
 
     gettingFeedback = false;
 
     if ($debugMode && $debugMode__addPlaceholderAchievement) {
-        feedback.achievements?.push("placeholder achievement");
+        feedback?.achievements?.push("placeholder achievement");
     }
 
     return feedback;
@@ -342,11 +299,11 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
 let gettingFeedback = false;
 // Auto-pause the video when the practice activity is over
 $: {
-    if ((practiceActivity?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
+    if ((practiceStep?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
         (videoDuration > 0 && videoCurrentTime >= videoDuration)) {
         isVideoPausedBinding = true;
 
-        if (currentPlaybackEndtime === practiceActivity?.endTime) {
+        if (currentPlaybackEndtime === practiceStep?.endTime) {
             console.log('Paused video - reached end of practice activity');
             terminalFeedback = null;
             performanceSummary = null;
@@ -364,12 +321,12 @@ $: {
             }
             trialId = null;
             state = "feedback";
-            if (metronomeTimer) {
-                clearTimeout(metronomeTimer)
-            }
-            getFeedback(performanceSummary, recordedTrack)
+           
+            feedbackPromise = getFeedback(performanceSummary, recordedTrack);
+            feedbackPromise
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
+                    feedbackDialogOpen = true;
                 });
         }
         else {
@@ -387,29 +344,12 @@ async function playClickSound(silent: boolean = false) {
     return clickAudioElement.play();
 }
 
-let metronomePlaying = false;
-let metronomeTimer: number | null = null;
-async function launchMetronome() {
-    if (!browser) return;
-    if (metronomePlaying) return;
-    metronomePlaying = true;
-    let beatCount = 0;
-    while (state !== "feedback" && isMounted) {
-        playClickSound();
-        
-        await new Promise<void>((res) => {
-            metronomeTimer = window.setTimeout(() => {
-                res();
-            }, 1000 * beatDuration);
-        })
-    }
-    metronomePlaying = false;
-    metronomeTimer = null;
-}
+let mediaElementsHaveBeenActivated = false;
 
 async function startCountdown() {
     if (countdownActive) return;
-
+    
+    isVideoPausedBinding = true;
     state = "countdown";
     countdownActive = true;
 
@@ -417,31 +357,33 @@ async function startCountdown() {
     // want to be able to control the playback of the video element programatically, which safari
     // will only allow once the user has triggered playback through a user interaction. So, we try 
     // starting playback at the beginning of the countdown. If the 
-    playClickSound(true);
-    videoVolume = 0.01;
-    videoPlaybackSpeed = 0.0625;// Minimum playback rate: https://stackoverflow.com/questions/30970920/html5-video-what-is-the-maximum-playback-rate
-    let testPlaybackSuccessful = true;
-    try {
-        await playClickSound(true);
-        await videoWithSkeleton.play();
-    }
-    catch(e) {
-        testPlaybackSuccessful = false
-        console.warn('startCountdown: test playback unsuccessful. Will try again after user interaction.', e);
+    if (!mediaElementsHaveBeenActivated) {
+        videoCurrentTime = practiceStep?.startTime ?? 0;
+        videoVolume = 0.01;
+        videoPlaybackSpeed = 0.0625;// Minimum playback rate: https://stackoverflow.com/questions/30970920/html5-video-what-is-the-maximum-playback-rate
+        let testPlaybackSuccessful = true;
+        try {
+            await playClickSound(true);
+            await videoWithSkeleton.play();
+            mediaElementsHaveBeenActivated = true;
+        }
+        catch(e) {
+            testPlaybackSuccessful = false
+            console.warn('startCountdown: test playback unsuccessful. Will try again after user interaction.', e);
+        }
     }
 
     isVideoPausedBinding = true;
-    videoCurrentTime = practiceActivity?.startTime ?? 0;
+    videoCurrentTime = practiceStep?.startTime ?? 0;
     videoVolume = $danceVideoVolume;
     videoPlaybackSpeed = $practiceActivities__playbackSpeed;
-    if (practiceActivity?.playbackSpeed !== undefined &&
-        !isNaN(practiceActivity.playbackSpeed)) {
-        videoPlaybackSpeed = practiceActivity.playbackSpeed;
+    if (practiceStep?.playbackSpeed !== undefined &&
+        !isNaN(practiceStep.playbackSpeed)) {
+        videoPlaybackSpeed = practiceStep.playbackSpeed;
     }
 
-    if (!testPlaybackSuccessful) {
+    if (!mediaElementsHaveBeenActivated) {
         state = 'waitStartUserInteraction';
-        showStartCountdownDialog = true;
         countdownActive = false;
         return;
     }
@@ -458,7 +400,7 @@ async function startCountdown() {
     playClickSound();
     await waitSecs(beatDuration);
     if (!isMounted) return
-    
+
     countdown = 6;
     playClickSound();
     await waitSecs(beatDuration);
@@ -513,33 +455,31 @@ async function startCountdown() {
     countdownActive = false;
 }
 
-export async function reset() {
+export async function reset(start: boolean = false) {
     console.log('Reseting practice page');
     if (unpauseVideoTimeout !== null) {
         clearTimeout(unpauseVideoTimeout);
     }
-    if (!practiceActivity) {
+    if (!practiceStep) {
         console.warn('Null practice activity during reset() call');
     }
 
     if(!virtualMirrorElement) {
         await tick();
     }
-    if (metronomeTimer) {
-        clearTimeout(metronomeTimer)
-    }
 
     terminalFeedback = null;
+    feedbackDialogOpen = false;
+    mainContinueButton?.focus();
     trialId = null;
     currentActivityStepIndex = 0;
     state = "waitWebcam";
     lastEvaluationResult = null;
     isVideoPausedBinding = true;
-    videoCurrentTime = practiceActivity?.startTime ?? 0;
-    const playDuration = (practiceActivity?.endTime ?? videoDuration) - (videoCurrentTime)
-    currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceActivity?.endTime ?? videoDuration;
-    
-
+    videoRecording = undefined;
+    videoCurrentTime = practiceStep?.startTime ?? 0;
+    const playDuration = (practiceStep?.endTime ?? videoDuration) - (videoCurrentTime)
+    currentPlaybackEndtime = $pauseInPracticePage ? videoCurrentTime + playDuration / 2 : practiceStep?.endTime ?? videoDuration;
 
     // Start doing these 3d tasks in parallel, wait for them
     // all to complete betore continuing.
@@ -569,7 +509,7 @@ export async function reset() {
     );
 
     isVideoPausedBinding = true;
-    videoCurrentTime = practiceActivity?.startTime ?? 0;
+    videoCurrentTime = practiceStep?.startTime ?? 0;
 
     await tick();
 
@@ -582,7 +522,11 @@ export async function reset() {
 
     // state = 'waitStartUserInteraction';
     // showStartCountdownDialog = true;
-    startCountdown();
+    if (start ?? false) {
+        startCountdown();
+    } else {
+        state = 'waitStartUserInteraction';
+    }
 }
 
 
@@ -672,7 +616,7 @@ function poseEstimationFrameReceived(e: any) {
         lastEvaluationResult = evaluator?.evaluateFrame(
             trialId, 
             dance.clipRelativeStem,
-            practiceActivity?.segmentDescription ?? 'undefined',
+            practiceStep?.segmentDescription ?? 'undefined',
             videoTimeSecs,
             actualTimeInMs,
             evaluation2DPose,
@@ -697,15 +641,12 @@ onMount(() => {
     // when we need it, as opposed to creating the model
     // after the video starts playing.
     clickAudioElement = new Audio(metronomeClickSoundSrc);
-    videoCurrentTime = practiceActivity?.startTime ?? 0;
+    videoCurrentTime = practiceStep?.startTime ?? 0;
     poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
     reset();
     isMounted = true;
 
     return () => {
-        if (metronomeTimer) {
-            clearTimeout(metronomeTimer);
-        }
         if (unpauseVideoTimeout) {
             clearTimeout(unpauseVideoTimeout);
         }
@@ -720,35 +661,23 @@ onMount(() => {
     }
 })
 
+function onContinueClicked() {
+    reset(false);
+    dispatch('nextClicked');
+}
+
 </script>
 
 <section class="practicePage" 
-    class:hasDanceTree={practiceActivity?.danceTree}
+    class:hasDanceTree={practiceStep?.danceTree}
+    class:hasProgressBar={hasProgressBar}
     class:hasFeedback={isShowingFeedback}
     class:isPracticing={!isShowingFeedback}
     class:hasOnlyDemoVideo={hasVisibleReferenceVideo && !hasUserWebcamVisible}
     class:hasOnlyUserMirror={hasUserWebcamVisible && !hasVisibleReferenceVideo}
     >
-    {#if practiceActivity?.danceTree}
-    <div class="treevis">
-        <DanceTreeVisual 
-            node={practiceActivity.danceTree.root }
-            showProgressNode={isShowingFeedback ? undefined : practiceActivity.danceTreeNode} 
-            currentTime={videoCurrentTime}
-            danceTree={practiceActivity.danceTree}
-            nodeHighlights={nodeHighlights}
-            enableClick={isShowingFeedback}
-            enableColorCoding={ isShowingFeedback ? true : 'yesExceptCurrentNode'}
-            on:nodeClicked={(e) => onNodeClicked(e.detail)}
-            playingFocusMode={isShowingFeedback ?  
-                'show-all':
-                'hide-others'
-            }/>
-    </div>
-    {/if}
 
-
-    <div class="demovid" style:display={state === "feedback" || !hasVisibleReferenceVideo ? 'none' : 'flex'}>
+    <div class="demovid gridItem" style:display={!hasVisibleReferenceVideo ? 'none' : 'flex'}>
         <VideoWithSkeleton
             bind:this={videoWithSkeleton}
             bind:currentTime={videoCurrentTime}
@@ -763,54 +692,131 @@ onMount(() => {
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>
-        {#if state === 'waitStartUserInteraction' && !showStartCountdownDialog}
-        <div class="startCountdown">
-            <button class="button thick" on:click={() => startCountdown()}>
-                Start Countdown
-            </button>
-        </div>
-        {/if}
     </div>
     <div 
-        class="mirror"
-        class:hidden={!hasUserWebcamVisible} 
-        style:display={state === "feedback" ? 'none' : 'flex'}
+        class="mirror gridItem flex"
+        class:hidden={!hasUserWebcamVisible}
         >
-        <VirtualMirror
-            bind:this={virtualMirrorElement}
-            {poseEstimationEnabled}
-            drawSkeleton={false}
-            poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
-            customDrawFn={(ctx, pose) => {
-                if (!skeletonDrawingEnabled) return;
-                
-                const evalResToPass = skeletonDrawingEnabled ? lastEvaluationResult : null;
-                Draw2dSkeleton(ctx, pose, evalResToPass, mirrorForEvaluation);
-            }}
-            on:poseEstimationFrameSent={poseEstimationFrameSent}
-            on:poseEstimationResult={poseEstimationFrameReceived}
-        />
-        {#if state === "waitStart"}  
-        <div class="loading outlined thick">
-            <!-- <div class="spinner large"></div> -->
-            <div class="label">Loading<ProgressEllipses /></div>
-        </div>
-        {/if}
+        <div class="is-overlay">
+            <VirtualMirror
+                bind:this={virtualMirrorElement}
+                {poseEstimationEnabled}
+                drawSkeleton={false}
+                poseEstimationCheckFunction={shouldSendNextPoseEstimationFrame}
+                customDrawFn={(ctx, pose) => {
+                    if (!skeletonDrawingEnabled) return;
+                    
+                    const evalResToPass = skeletonDrawingEnabled ? lastEvaluationResult : null;
+                    Draw2dSkeleton(ctx, pose, evalResToPass, mirrorForEvaluation);
+                }}
+                on:poseEstimationFrameSent={poseEstimationFrameSent}
+                on:poseEstimationResult={poseEstimationFrameReceived}
+            />
     </div>
+    </div>
+    {#if hasProgressBar && progressBarProps !== undefined}
 
-    {#if state === "feedback"}
-    <div class="feedback">
-        <TerminalFeedbackDialog 
-            feedback={terminalFeedback}
-            showActivityConfiguratorButton={true}
-            on:repeat-clicked={() => onNodeClickedById(practiceActivity?.danceTreeNode?.id ?? '')}
-            on:continue-clicked={() => dispatch('continue-clicked')}
-            on:practice-action-clicked={(e) => onNodeClickedById(e.detail)}
-            on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
-        />
-        <!-- <pre>{JSON.stringify(performanceSummary, replaceJSONForStringifyDisplay, 2)}</pre> -->
+    <div class="progressBar flex items-center flex-col space-y-4">
+        <SegmentedProgressBar {...progressBarProps} 
+            currentTime={videoCurrentTime} />
+        <div class="flex gap-4 w-full justify-between" >
+            <div class="left space-x-4"></div>
+            <div class="center space-x-4">
+                <button 
+                    
+                    class="daisy-btn" 
+                    class:daisy-btn-primary={state === 'waitStartUserInteraction'}
+                    disabled={countdownActive || state === "waitWebcam"} 
+                    bind:this={mainContinueButton}
+                    on:click={() => reset(true)}
+                >
+                    {#if state === 'waitStartUserInteraction'}
+                        Start Countdown
+                    {:else if state === 'feedback'}
+                        Do Again
+                    {:else if state === "playing"}
+                        Restart
+                    {:else if state === "waitWebcam"}
+                        Waiting for webcam
+                    {:else}
+                        <span class="daisy-loading daisy-loading-spinner"></span>
+                    {/if}
+                </button>
+            </div>
+            <div class="right space-x-4">
+                {#if state === "feedback"}
+                <div class="daisy-dropdown  daisy-dropdown-top daisy-dropdown-end"
+                    class:daisy-dropdown-open={feedbackDialogOpen}>
+                    <button class="daisy-btn daisy-btn-neutral" role="button" tabindex="0" on:click={() => {
+                        feedbackDialogOpen = !feedbackDialogOpen;
+                        // unfocus the dialog
+                        mainContinueButton?.focus();
+                        
+                    }}>Feedback
+                        {#if feedbackDialogOpen}
+                            <span class="iconify-[lucide--chevron-down]"></span>
+                        {:else}
+                            <span class="iconify-[lucide--chevron-up]"></span>
+                        {/if}
+                        
+                    
+                    </button>
+                    <div class="daisy-dropdown-content daisy-card daisy-card-compact w-96 h-auto p-2 shadow bg-neutral text-neutral-content">
+                        <div class="daisy-card-body space-y-4">
+                            <TerminalFeedbackScreen 
+                                feedback={terminalFeedback}
+                                on:continue-clicked={() => dispatch('continue-clicked')}
+                                on:configure-activity-clicked={() => isShowingNextActivityConfigurator = !isShowingNextActivityConfigurator}
+                            />
+
+                            <div class="text-center">
+                                <div class="daisy-join">
+                                    <button class="daisy-btn daisy-join-item" 
+                                        on:click={() => reset(true)}
+                                        class:daisy-btn-accent={terminalFeedback?.suggestedAction === "repeat"}>
+                                        Do Again
+                                    </button>
+                                    <button 
+                                        class="daisy-btn daisy-join-item" 
+                                        class:daisy-btn-success={terminalFeedback?.suggestedAction === "next"}
+                                        on:click={() => onContinueClicked()}
+                                    >
+                                        {continueBtnTitle}
+
+                                        {#if continueBtnIcon === "nextarrow"}
+                                            <span class="iconify-[lucide--arrow-big-right]"></span>
+                                        {:else if continueBtnIcon === "check"}
+                                            <span class="iconify-[lucide--check-circle]"></span>
+                                        {/if}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+                {/if}                
+            </div>
+        </div>
     </div>
-    <Dialog open={isShowingNextActivityConfigurator}
+    {/if}
+
+    <Dialog 
+        open={showingPerformanceReviewPage && videoRecording !== undefined} 
+        on:dialog-closed={() => showingPerformanceReviewPage = false }>
+        <span slot="title">Performance Review</span>
+        <div class="reviewPageWrapper">
+            {#if videoRecording !== undefined}
+            <PerformanceReviewPage 
+                recordingUrl={videoRecording.url}
+                recordingMimeType={videoRecording.mimeType}
+                referenceVideoUrl={videoRecording.referenceVideoUrl}
+                recordingStartOffset={videoRecording.recordingStartOffset}
+                recordingSpeed={videoRecording.recordingSpeed}
+            />
+            {/if}
+        </div>
+    </Dialog>
+    <Dialog open={isShowingFeedback && isShowingNextActivityConfigurator}
         on:dialog-closed={() => isShowingNextActivityConfigurator = false}>
         <span slot="title">Practice Setup</span>
         <PracticeActivityConfigurator 
@@ -818,35 +824,28 @@ onMount(() => {
                 bind:practiceActivityParams={nextPracticeActivityParams}
             />
     </Dialog>
-    {/if}
 
     {#if countdown >= 0}
-    <div class="countdown">
-        <span class="count">
-            {countdown}
-        </span>
+    <div class="absolute inset-0 flex justify-center items-center">
+        <div class="bg-accent rounded-full p-4 size-24 text-accent-content grid items-center justify-center shadow-xl">
+            <span class="text-6xl">
+                {countdown}
+            </span>
+        </div>
     </div>
     {/if}
-
-    <Dialog open={state === 'waitStartUserInteraction' && showStartCountdownDialog}
-        on:dialog-closed={() => showStartCountdownDialog = false}>
-        <span slot="title">Click to Start</span>
-        <p class="limit-line-width">We couldn't play the video automatically. Please click or tap the button on the button below to start the countdown.</p>
-        <button class="button" on:click={() => startCountdown()}>
-            Start Countdown
-        </button>
-    </Dialog>
 </section>
 
 <style lang="scss">
 
-div.demovid { grid-area: demovid; }
-div.mirror {  grid-area: mirror;  }
-div.treevis { grid-area: treevis; }
+.demovid { 
+    grid-area: demovid; 
+    max-height: calc(100% - 94px - 1rem);
+}
+.mirror {  grid-area: mirror;  }
+.feedback { grid-area: feedback; overflow: hidden;}
 
-div.feedback { grid-area: feedback; overflow: hidden;}
-
-section {
+.practicePage {
     overflow: hidden;
     display: grid;
     grid-template: "demovid mirror" 1fr / 1fr 1fr;
@@ -857,35 +856,28 @@ section {
         grid-template: "mirror" 1fr / 1fr;
     }
 
-    &.hasDanceTree {
-        grid-template-areas:
-            "treevis treevis"
-            "demovid  mirror";
-        grid-template-rows: auto 1fr;
-        grid-template-columns: 1fr 1fr;
-        // grid-template:
-        //     "treevis treevis" auto
-        //     "demovid mirror" 1fr / 1fr 1fr;
+    &.hasProgressBar {
+        grid-template: "demovid mirror" 1fr 
+            "progress progress" auto / 1fr 1fr;
 
         &.hasOnlyDemoVideo {
-            grid-template-areas:
-                "treevis treevis"
-                "demovid  demovid";
+            grid-template: "demovid" 1fr 
+                "progress" auto / 1fr;
         }
         &.hasOnlyUserMirror {
-            grid-template-areas:
-                "treevis treevis"
-                "mirror  mirror";
+            grid-template: "mirror" 1fr 
+                "progress" auto / 1fr;
         }
     }
-    &.hasFeedback {
-        grid-template: "feedback feedback" 1fr / 1fr 1fr;
-    }
-    &.hasDanceTree.hasFeedback {
-        grid-template:
-            "treevis treevis" auto
-            "feedback feedback" 1fr / 1fr 1fr;
-    }
+
+    // &.hasFeedback {
+    //     grid-template: "feedback feedback" 1fr / 1fr 1fr;
+    // }
+    // &.hasDanceTree.hasFeedback {
+    //     grid-template:
+    //         "treevis treevis" auto
+    //         "feedback feedback" 1fr / 1fr 1fr;
+    // }
     
     align-items: center;
     justify-content: stretch;
@@ -895,7 +887,7 @@ section {
     width: 100%;
     gap: 1rem;
 
-    & > div {
+    & > .gridItem {
         place-self: center;
         position: relative;
         flex-grow: 1;
@@ -909,23 +901,9 @@ section {
         justify-content: stretch;
         flex-direction: column;
     }
-}
 
-.startCountdown {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    // background-color: rgba(0, 0, 0, 0.2);
-
-    & .button {
-        padding: 1em;
+    .progressBar {
+        grid-area: progress; 
     }
 }
 
@@ -957,23 +935,9 @@ section {
     border-radius: 50%;
 }
 
-.loading {
-    // position the spinner in the center of the screen
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    padding: 2rem;
-    background-color: #fff;
-
-    & .label {
-        margin-top: 1em;
-    }
-}
-
 .hidden {
-    position: absolute;
-    left: 9999vw;
+    position: absolute !important; 
+    left: 9999vw !important;
 }
 
 </style>

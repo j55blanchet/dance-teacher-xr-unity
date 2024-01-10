@@ -3,7 +3,6 @@ import DanceTreePage from "$lib/pages/DanceTreePage.svelte";
 import type { DanceTree, Dance } from '$lib/data/dances-store';
 import { navbarProps } from "$lib/elements/NavBar.svelte";
 
-/** @type {import('./$types').PageData} */    
 export let data;
 let dance: Dance;
 let danceTree: DanceTree;

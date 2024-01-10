@@ -2,9 +2,17 @@
 
 // Set your brand colors
 $blue: #3C64B1;
+$lighterblue: #60a5fa;
+$infoBlue: #3b82f6;
+$pink: #F0ABFC;
+$redpink: #FA7C91;
+
+$yellow: #fdba74;
 $green: #0fb40b;
+$red: #f87171;
+
 $purple: #8A4D76;
-$pink: #FA7C91;
+
 $brown: #757763;
 $beige-light: #D0D1CD;
 $beige-lighter: #EFF0EB;
@@ -15,11 +23,17 @@ $radius-large: 6px;
 
 $code: darkgray;
 
+// Disable Bulma's navbar responsiveness
+$navbar-breakpoint: 0px;
+
 // Update Bulma's global variables
 $family-sans-serif: -apple-system, BlinkMacSystemFont, Roboto, Ubuntu, 'Segoe UI', 'Open Sans', 'Helvetica Neue', 'Arial', sans-serif;
 // $grey-dark: $brown;
 // $grey-light: $beige-light;
 $primary: $blue;
+$info: $infoBlue;
+$error: $red;
+$warning: $yellow;
 $link: $blue;
 // $widescreen-enabled: false;
 // $fullhd-enabled: false;
@@ -101,11 +115,14 @@ $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($sch
 	--max-line-width: 50ch;
 	// --std-border-radius: 1rem;
 	--std-border-radius: #{$radius};
+	--std-block-spacing: #{$block-spacing};
 	font-family: var(--font-body);
 	color: var(--color-text);
+
+	@each $key, $value in $spacing-values {
+		--spacing-#{$key}: #{$value};
+	}
 }
-
-
 
 body {
 	min-height: 100vh;

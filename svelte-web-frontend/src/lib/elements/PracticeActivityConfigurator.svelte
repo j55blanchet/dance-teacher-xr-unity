@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { GeneratePracticeStepOptions } from "$lib/ai/TeachingAgent";
+import type { GeneratePracticeStepOptions } from "$lib/ai/TeachingAgent/TeachingAgent";
 import { PracticeInterfaceModeOptions, type PracticeStepModeKey } from "$lib/model/PracticeStep";
 import { practiceActivities__playbackSpeed, practiceActivities__showUserSkeleton, practiceActivities__terminalFeedbackEnabled, practiceActivities__interfaceMode } from "$lib/model/settings";
 

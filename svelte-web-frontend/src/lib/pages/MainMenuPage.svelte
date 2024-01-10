@@ -110,7 +110,7 @@ let danceTiles = [] as {dance: Dance, pageUrl: string, oldPageUrl: string}[];
 $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
     return {
         dance,
-        pageUrl: "/dance/" + encodeURIComponent(dance.clipRelativeStem) + "/",
+        pageUrl: `/dance/${encodeURIComponent(dance.clipRelativeStem)}/${encodeURIComponent(danceTree.tree_name)}/`,
         oldPageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
     }
 })
@@ -154,7 +154,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
         <div class="card card-with-left-image m-2" >
             <figure class="card-image">
                 <p class="image">
-                    <img class="thumbnail is-9by16" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
+                    <img class="thumbnail" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
                 </p>
             </figure>
             <div class="card-content">
@@ -169,7 +169,9 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
                     </div>
                 </div>
                 <div class="buttons">
+                    {#if $debugMode}
                     <a href={tileData.oldPageUrl} class="button">Learn (Legacy)</a>
+                    {/if}
                     <a href={tileData.pageUrl} class="button is-primary">Learn</a>
                 </div>
             </div>
@@ -186,7 +188,9 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 <style lang="scss">
 
     .thumbnail {
-        height: 12rem;
+        --height: 11.5rem;
+        height: var(--height);
+        width: calc(var(--height) * 9 / 16);
     }
 
 </style>

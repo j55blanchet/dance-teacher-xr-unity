@@ -1,5 +1,31 @@
+import type { FrontendEvaluationTrack, FrontendPerformanceSummary } from "$lib/ai/FrontendDanceEvaluator";
 import type { Dance, DanceTree, DanceTreeNode } from "$lib/data/dances-store";
+import type { PracticePlan } from "./PracticePlan";
+import type { TerminalFeedback } from "./TerminalFeedback";
 
+export type FeedbackFunction = ((opts: {
+    attemptSettings: {
+        startTime: number,
+        endTime: number,
+        playbackSpeed: number,
+        referenceVideoVisible: boolean,
+        userVideoVisible: boolean,
+    },
+    practicePlan?: PracticePlan,
+    practiceStep?: PracticeStep,
+    performanceSummary: FrontendPerformanceSummary | null, 
+    recordedTrack:  FrontendEvaluationTrack | null
+}) => Promise<TerminalFeedback | undefined>);
+
+export type StepEndBehavior = {
+    preFeedbackMessage?: string;
+    llmFeedback?: {
+        feedbackType: 'encouragement' | 'poseAccuracy';
+    },
+    completion: {
+        disableManualCompletion?: boolean;
+    }
+}
 
 export type PracticeStepInterfaceSettings = {
     referenceVideo: {
@@ -66,6 +92,8 @@ export const PracticeInterfaceModeOptions: Record<PracticeStepModeKey, string> =
 } as const;
 export const PracticeStepDefaultInterfaceSetting: PracticeStepModeKey = 'bothVideos';
 export default interface PracticeStep {
+    id: string;
+    title: string;
     startTime: number;
     endTime: number;
     interfaceMode: PracticeStepModeKey;
@@ -76,4 +104,10 @@ export default interface PracticeStep {
     dance?: Dance;
     danceTree?: DanceTree;
     danceTreeNode?: DanceTreeNode;
+
+    feedbackFunction?: FeedbackFunction;
+
+    state?: {
+        completed?: boolean;
+    }
 };

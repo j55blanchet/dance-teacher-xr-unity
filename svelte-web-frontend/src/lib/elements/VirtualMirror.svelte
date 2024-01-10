@@ -356,6 +356,7 @@
     {#if $webcamStream}    
         <!-- svelte-ignore a11y-media-has-caption -->
         <video bind:this={videoElement} autoplay 
+            class="rounded"
             on:play={resizeCanvas}
             on:loadeddata={onLoadedVideoData}
             bind:muted={muted}
@@ -366,7 +367,9 @@
             ></canvas>  
         <!-- <span>Pose Estimation: {poseEstimationEnabled}</span> -->
     {:else}
-        <div>
+        <div class="is-overlay bg-base-200 rounded">
+        </div>
+        <div class="is-overlay grid items-center justify-center">
             <WebcamSelector />
             <!-- <p>$webcamStream: {$webcamStream}</p> -->
             <!-- <p>videoElement: {videoElement}</p> -->

@@ -20,103 +20,21 @@ import StarIcon from 'virtual:icons/mdi/star';
 const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
-export let showActivityConfiguratorButton = false;
-
-let showingPerformanceReviewPage = false;
-
-type ActionData = {
-    title: string,
-    onClick?: () => Promise<void>,
-    type: 'button' | 'info';
-    suggested?: boolean;
-}
-
-const repeatAction: ActionData = {
-    title: "Do Again 🔁",
-    onClick: async () => { dispatch("repeat-clicked"); },
-    type: 'button',
-}
-// const continueButton: ButtonData = {
-//     title: "Continue ➡️",
-//     action: async () => { dispatch("continue-clicked"); },
-// }
-
-
-function generateActions(
-    feedback: TerminalFeedback | null,
-) : ActionData[] {
-    if (!feedback) return []
-
-    const actions: ActionData[] = [];
-    
-    let isSuggestingRepeat = feedback?.suggestedAction === "repeat"
-
-    actions.push({
-        ...repeatAction,
-        suggested: isSuggestingRepeat,
-    });
-
-    if (showActivityConfiguratorButton) {
-        actions.push({
-            title: "Setup ⚙️",
-            onClick: async () => { dispatch("configure-activity-clicked"); },
-            type: 'button',
-        })
-    }
-
-    if (feedback?.videoRecording) {
-        const videoRecording = feedback.videoRecording;
-        actions.push({
-            title: "Review 📹",
-            onClick: async () => {
-                showingPerformanceReviewPage = true;
-                dispatch("view-recording-clicked", videoRecording);
-            },
-            type: 'button',
-        })
-    }
-
-    const terminalFeedbackNavOptions = feedback?.navigateOptions ?? [];
-    const navOptionsSuggestingOtherNodes = terminalFeedbackNavOptions.filter(
-        opt => opt.nodeId && opt.nodeId !== feedback?.segmentName
-    );
-    const navigateActions: ActionData[] = navOptionsSuggestingOtherNodes.map(navOpt => {
-        return {
-            title: `${navOpt.label}`,
-            onClick: async () => {
-                dispatch("practice-action-clicked", navOpt.nodeId);
-            },
-            type: 'button',
-            suggested: true,
-        }
-    });
-    actions.push(...navigateActions);
-
-    actions.push({
-        title: 'ℹ️ Or, click on a part of the dance above',
-        type: 'info',
-    });
-    
-    return actions;
-}
-
-let actions = [] as ActionData[];
-$: actions = generateActions(feedback);
 
 let showingPerformanceSummary = false;
 let showingLLMOutput = false;
 let showingTerminalFeedbackJson = false;
 
-let performanceSummaryWithoutTrack: any | undefined;
-$: {
-    performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
-    if (performanceSummaryWithoutTrack) {
-        performanceSummaryWithoutTrack = {
-            ...performanceSummaryWithoutTrack,
-            adjustedTrack: undefined,
-        }
-    }
-}
+let performanceSummaryWithoutTrack: any | undefined = undefined;
+// $: {
+//     performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
+//     if (performanceSummaryWithoutTrack) {
+//         performanceSummaryWithoutTrack = {
+//             ...performanceSummaryWithoutTrack,
+//             adjustedTrack: undefined,
+//         }
+//     }
+// }
 let skeletonHighlights: BodyPartHighlight[] = [];
 
 $: {
@@ -147,43 +65,43 @@ function getTrackDataUrl(track: any, description: string) {
     return URL.createObjectURL(blob);
 }
 
-function exportRecordings() {
+// function exportRecordings() {
 
-    const track = feedback?.debug?.recordedTrack;
-    if (!track) {
-        console.error("No track to export");
-        return;
-    }
+//     const track = feedback?.debug?.recordedTrack;
+//     if (!track) {
+//         console.error("No track to export");
+//         return;
+//     }
 
-    const trackDescription = prompt('Please describe this track');
-    if (!trackDescription?.length){
-        return;
-    }
+//     const trackDescription = prompt('Please describe this track');
+//     if (!trackDescription?.length){
+//         return;
+//     }
 
-    const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-    const url = getTrackDataUrl(track, trackDescription);
-    promptDownload(url, `${filenameRoot}.track.json`)
+//     const filenameRoot = `${trackDescription}.${track?.danceRelativeStem}`.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+//     const url = getTrackDataUrl(track, trackDescription);
+//     promptDownload(url, `${filenameRoot}.track.json`)
 
-    const adjustedTrack = (feedback?.debug?.performanceSummary as any)?.adjustedTrack;
-    if (adjustedTrack) {
-        const url = getTrackDataUrl(adjustedTrack, trackDescription + "-adjusted");
-        promptDownload(url, `${filenameRoot}.adjustedtrack.json`);
-    }
+//     const adjustedTrack = (feedback?.debug?.performanceSummary as any)?.adjustedTrack;
+//     if (adjustedTrack) {
+//         const url = getTrackDataUrl(adjustedTrack, trackDescription + "-adjusted");
+//         promptDownload(url, `${filenameRoot}.adjustedtrack.json`);
+//     }
 
-    const webcamRecording = feedback?.videoRecording?.url;
-    if (webcamRecording) {
-        let extension = 'webm';
-        if (feedback?.videoRecording?.mimeType == 'video/mp4' || webcamRecording.endsWith('.mp4')) {
-            extension = 'mp4';
-        }
-        promptDownload(webcamRecording, `${filenameRoot}.userrecording.${extension}`);
-    }
-}
+//     const webcamRecording = feedback?.videoRecording?.url;
+//     if (webcamRecording) {
+//         let extension = 'webm';
+//         if (feedback?.videoRecording?.mimeType == 'video/mp4' || webcamRecording.endsWith('.mp4')) {
+//             extension = 'mp4';
+//         }
+//         promptDownload(webcamRecording, `${filenameRoot}.userrecording.${extension}`);
+//     }
+// }
 
 </script>
 
-<div class="feedbackForm">
-    <h2>{#if !feedback?.headline}Thinking<ProgressEllipses />{:else}{feedback?.headline}{/if}</h2>
+<div class="feedbackForm text-xl">
+    {#if !feedback}<h2>Thinking<ProgressEllipses /></h2>{/if}
     
     {#each feedback?.achievements ?? [] as achivement, i}
         <p class="achievement animate pop"><StarIcon /><span>{achivement}</span></p>
@@ -199,7 +117,7 @@ function exportRecordings() {
     {/if}
     
     {#if feedback?.score}
-        <p><code>Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
+        <p><code>Accuracy Score: {feedback.score.achieved.toFixed(2)} / {feedback.score.maximumPossible.toFixed(2)}</code></p>
     {/if}
 
     {#if skeletonHighlights.length > 0}
@@ -209,28 +127,6 @@ function exportRecordings() {
         />
     </div>
     {/if}
-    
-    <div class="buttons">
-    {#each actions as action, i}
-        {#if action.type === 'button'}
-        <button class="button" 
-            class:is-primary={action.suggested ?? false}
-            on:click={action.onClick}
-            >
-            {action.title}
-        </button>
-        {:else}
-        <article class="message is-light">
-            <div class="message-body">
-                {action.title}
-            </div>
-        </article>
-        <!-- <span class="actionInfo">
-            {action.title}
-        </span> -->
-        {/if}
-    {/each}
-    </div>
     
     {#if $debugMode}
         <div class="debug buttons">
@@ -267,30 +163,13 @@ function exportRecordings() {
                 <pre>{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
-            {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
+            <!-- {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
             <button class="button" on:click={exportRecordings}>
                 Export Recorded Track
             </button>
-            {/if}
+            {/if} -->
         </div>
     {/if}
-    
-    <Dialog 
-        open={showingPerformanceReviewPage} 
-        on:dialog-closed={() => showingPerformanceReviewPage = false }>
-        <span slot="title">Performance Review</span>
-        <div class="reviewPageWrapper">
-            {#if feedback?.videoRecording !== undefined}
-            <PerformanceReviewPage 
-                recordingUrl={feedback.videoRecording.url}
-                recordingMimeType={feedback.videoRecording.mimeType}
-                referenceVideoUrl={feedback.videoRecording.referenceVideoUrl}
-                recordingStartOffset={feedback.videoRecording.recordingStartOffset}
-                recordingSpeed={feedback.videoRecording.recordingSpeed}
-            />
-            {/if}
-        </div>
-    </Dialog>
 </div>
 
 
@@ -306,24 +185,13 @@ function exportRecordings() {
     flex-grow: 1;
     gap: 0.5rem;
     overflow: scroll;
-    font-size: 1.5rem;
+    // font-size: 1.5rem;
 
     & p,h2,.paragraphs {
         max-width: 70ch;
     }
 }
 
-@media (max-width: 900px) {
-    .feedbackForm {
-        font-size: 1.25rem;
-    }
-}
-
-@media (max-width: 600px) {
-    .feedbackForm {
-        font-size: 1rem;
-    }
-}
 .skeleton {
     // min-height: 0;
     width: 100%;
@@ -357,7 +225,7 @@ p {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: start;
+    justify-content: flex-start;
     gap: 1em;
 }
 

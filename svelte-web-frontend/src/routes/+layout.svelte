@@ -1,4 +1,5 @@
 <script lang="ts">
+	import "../app.pcss";
 	import { tick, onMount, setContext } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
@@ -7,26 +8,15 @@
 	import CloseButton from '$lib/elements/CloseButton.svelte';
 	import { invalidate } from '$app/navigation'
 	import { waitSecs } from '$lib/utils/async';
+	import Dialog from "$lib/elements/Dialog.svelte";
+	import { navigating } from "$app/stores";
+	import { debugMode } from "$lib/model/settings";
 
-	let settingsDialog: HTMLDialogElement;
 
 	let showingSettings = false;
-	let showingSettingsCloseButton = false;
 	async function toggleSettings(setValue?: boolean) {
 		showingSettings = !showingSettings;
 		showingSettings = setValue ?? showingSettings;
-		if (showingSettings) {
-			settingsDialog.showModal();
-			
-			// Delay showing the close button until the dialog has finished opening,
-			// so that the animation can be appreciated
-			await tick();
-			await waitSecs(0.1);
-			showingSettingsCloseButton = true;
-		} else {
-			showingSettingsCloseButton = false;
-			settingsDialog.close();
-		}
 	}
 
 	export let data
@@ -45,28 +35,53 @@
 
 		return () => data.subscription.unsubscribe()
 	})
+
+	// let showNavigationOverlay = false;
+	// let navigationOverlayTimeout: number | undefined = undefined;
+	// $: {
+	// 	if ($navigating && !navigationOverlayTimeout) {
+	// 		setTimeout(() => {
+	// 			navigationOverlayTimeout = undefined;
+	// 			if ($navigating) {
+	// 				showNavigationOverlay = true;
+	// 			}
+	// 		}, 500);
+	// 	}
+	// }
+	// $: if (!$navigating) {
+	// 	showNavigationOverlay = false;
+	// 	if (navigationOverlayTimeout !== undefined) {
+	// 		clearTimeout(navigationOverlayTimeout);
+	// 		navigationOverlayTimeout = undefined;
+	// 	}
+	// }
 </script>
 
 <NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
 <div class="app-content" class:noNavBar={$navbarProps.collapsed} >
 	<slot />
 </div>
-<dialog class="settingsDialog" bind:this={settingsDialog}>
-	<div class="card">
-		<div class="card-header">
-			<h3 class="card-header-title is-centered">Settings</h3>
-			<div class="card-header-icon"><CloseButton isVisible={showingSettingsCloseButton} on:click={() => toggleSettings()} /></div>
-		</div>
-		<div class="closeButtonContainer">
-			
-		</div>
-		<div class="settingsContainer ">
-			<SettingsPage 
-				user={session?.user ?? null} 
-				on:navigate={() => toggleSettings(false)}/>
+
+<!-- <div class="inset-4 flex items-center justify-center" 
+	class:absolute={showNavigationOverlay}
+	class:hidden={showNavigationOverlay}>
+
+	<div class="daisy-card w-96 bg-neutral text-neutral-content">
+		<div class="daisy-card-body items-center text-center">
+		  <h2 class="daisy-card-title"><span class="daisy-loading daisy-loading-ring daisy-loading-lg"></span></h2>
+		  <p>Navigating</p>
 		</div>
 	</div>
-</dialog>
+</div> -->
+<Dialog bind:open={showingSettings} 
+	modal={true} 
+	showCloseButton={true} closeWhenClickedOutside={true}
+	on:dialog-closed={() => showingSettings = false}>
+	<span slot="title">Settings</span>
+	<SettingsPage 
+		user={session?.user ?? null} 
+		on:navigate={() => toggleSettings(false)}/>
+</Dialog>
 
 
 <style lang="scss">
@@ -77,7 +92,7 @@
 		min-height: var(--content_height);
 		// align-items: center;
 		// justify-content: center;
-		--navbar_height: 3rem;
+		--navbar_height: 3.25rem;
 	}
 
 	.app-content.noNavBar {

@@ -194,7 +194,7 @@ function clearPerformanceHistory() {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: start;
+    justify-content: flex-start;
     height: var(--content_height);
     padding: 1rem;
     box-sizing: border-box;
@@ -204,7 +204,7 @@ div.group {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: start;
+    justify-content: flex-start;
     gap: 0.5rem;
     width: 100%;
     // border: 1px solid lightgray;

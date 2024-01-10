@@ -1,12 +1,12 @@
 <script lang="ts">
 import { goto } from '$app/navigation';
-import { GeneratePracticeStep } from '$lib/ai/TeachingAgent';
+import { GeneratePracticeStep } from '$lib/ai/TeachingAgent/TeachingAgent';
 import { makeDanceTreeSlug, type DanceTree, type Dance, type DanceTreeNode } from '$lib/data/dances-store';
 import PracticePage from '$lib/pages/PracticePage.svelte';
 import { INITIAL_STATE, type PracticePageState } from '$lib/pages/PracticePage.svelte';
 import { navbarProps } from '$lib/elements/NavBar.svelte';
 import type PracticeActivity from '$lib/model/PracticeStep';
-import type { PracticeInterfaceModeKey } from '$lib/model/PracticeStep';
+import type { PracticeStepModeKey } from '$lib/model/PracticeStep';
 import { practiceActivities__playbackSpeed } from '$lib/model/settings';
 
 /** @type {import('./$types').PageData} */    
@@ -16,7 +16,7 @@ const danceTree: DanceTree = data.danceTree;
 const danceTreeNode: DanceTreeNode = data.danceTreeNode;
 const playbackSpeed: number = data.playbackSpeed ?? $practiceActivities__playbackSpeed; 
 
-const interfaceMode: PracticeInterfaceModeKey = data.interfaceMode;
+const interfaceMode: PracticeStepModeKey = data.interfaceMode;
 const terminalFeedbackEnabled: boolean = data.terminalFeedbackEnabled;
 const showUserSkeleton: boolean = data.showUserSkeleton;
 
@@ -66,7 +66,7 @@ $: {
 <section>
     <PracticePage 
         {dance} 
-        bind:practiceActivity={practiceActivity}
+        bind:practiceStep={practiceActivity}
         pageActive={true}
         on:continue-clicked={() => goto(parentURL)}
         on:stateChanged={(e) => pageState = e.detail}
