@@ -57,6 +57,16 @@ function getSegementLabel(segmentIndex: number, segmentCountTotal: number) {
     return `${segmentIndex + 1}`;
 }
 
+function makeEnglishList(items: string[]) {
+    if (items.length == 1) {
+        return items[0];
+    }
+    if (items.length == 2) {
+        return items.join(' and ');
+    }
+    return items.slice(0, items.length - 1).join(', ') + ', and ' + items[items.length - 1];
+}
+
 function makeCheckpointActivity(segmentActivities: SegmentActivity[]): CheckpointActivity {
     const segmentLabels = segmentActivities
         .map((segmentActivity) => segmentActivity.segmentTitle);
@@ -65,7 +75,7 @@ function makeCheckpointActivity(segmentActivities: SegmentActivity[]): Checkpoin
     return {
         id: checkpointLabel,
         type: 'checkpoint',
-        title: "Checkpoint (" + segmentLabels.join(', ') + ')',
+        title: "Checkpoint (" + makeEnglishList(segmentLabels) + ')',
         steps: GenerateMarkDrillFulloutSteps(
             checkpointLabel,
             segmentActivities[0].steps[0].startTime,
