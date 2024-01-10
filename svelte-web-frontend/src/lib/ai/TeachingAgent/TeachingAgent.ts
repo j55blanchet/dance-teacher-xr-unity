@@ -92,17 +92,11 @@ function makeFinaleActivity(startTime: number, endTime: number): FinaleActivity 
         id: `finale`,
         type: 'finale',
         title: 'Finale',
-        steps: [{
-            id: `finale`,
-            title: 'Finale',
-            segmentDescription: `finale`,
-            startTime: startTime,
-            endTime: endTime,
-            interfaceMode: 'userVideoOnly',
-            terminalFeedbackEnabled: false,
-            showUserSkeleton: false,
-            playbackSpeed: 1,
-        }]
+        steps: GenerateMarkDrillFulloutSteps(
+            `finale-wholesong`,
+            startTime,
+            endTime,
+        )
     }
 }
 
@@ -123,8 +117,13 @@ export function GeneratePracticePlan(
         activities: [],
     };
     let currentSegmentIndex = 0;
-    phraseNodes.forEach((phraseNode) => {
-        if (currentStage.activities.length >= CHECKPOINT_SEGMENT_COUNT) {
+    phraseNodes.forEach((phraseNode, node_i) => {
+        let remainingActivitiesCount = phraseNodes.length - node_i;
+
+        if ((currentStage.activities.length >= CHECKPOINT_SEGMENT_COUNT && remainingActivitiesCount > 1)
+            || currentStage.activities.length >= 2 && remainingActivitiesCount == 2) {
+
+
             currentStage.activities.push(makeCheckpointActivity(currentStage.activities as SegmentActivity[]));
             stages.push(currentStage);
             currentStage = {
@@ -151,7 +150,7 @@ export function GeneratePracticePlan(
     stages.push({
         // type: '',
         activities: [
-            makeDrillActivity(danceTree.root.start_time, danceTree.root.end_time),
+            // makeDrillActivity(danceTree.root.start_time, danceTree.root.end_time),
             makeFinaleActivity(danceTree.root.start_time, danceTree.root.end_time),
         ],
     });

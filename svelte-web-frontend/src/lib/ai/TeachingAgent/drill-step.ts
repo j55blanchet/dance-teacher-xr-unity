@@ -31,7 +31,7 @@ export function CreateDrillStep(
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
-const GenerateDrillFeedback: FeedbackFunction = async (args) => {
+export const GenerateDrillFeedback: FeedbackFunction = async (args) => {
 
     let prompt = `${HUMAN_PROMPT} You are an AI dance coach and you are giving feedback to a dancer, who is learning a dance choreography from a dance video. `;
 
@@ -62,21 +62,23 @@ const GenerateDrillFeedback: FeedbackFunction = async (args) => {
             prompt += "The system has computed a score for their performance. They did poorly. "
         }
 
-        if (suggestedAction === 'repeat') {
-            prompt += " The system is suggesting that they repeat the current activity."
-        } else if (suggestedAction === 'next') {
-            prompt += " The system is suggesting that they proceed to the next activity."
-        }
-
-        prompt +=  "Can you response a message that will be spoken aloud to the user letting them know this?";
+        
 
         
     } else {
         suggestedAction = 'repeat';
-        prompt += "The system was not able to compute a score for their performance. As a fallback, the system suggests that they refresh the page and try again. Can you response a message that will be spoken aloud to the user letting them know this?  "
+        prompt += "The system was not able to compute a score for their performance. As a fallback, the system suggests that they refresh the page before trying again."
     }
 
-    prompt += "You should take the persona of an AI dance coach, and pretend that YOU, as an young, friendly, positive AI dance coach, have made these observations, thereby mimicing the experience of learning from a human dance coach. Your message should be short - not more than 2 sentances long. Please please please do not make up anything about their dance performance other than what the system has identified. If you do not have specific feedback to give that is firmly grounded in the system's analysis, you should not make something up.";
+    if (suggestedAction === 'repeat') {
+        prompt += " The system is suggesting that they repeat the current activity."
+    } else if (suggestedAction === 'next') {
+        prompt += " The system is suggesting that they proceed to the next activity."
+    }
+
+    prompt +=  "Can you response a message that will be spoken aloud to the user letting them know this? The suggestion on what to do next should be included in the message and phrased as a suggestive question (e.g. 'How about we try that again?', 'Shall we move on now?', etc.). ";
+
+    prompt += "You should take the persona of an AI dance coach, and pretend that YOU, as an young, friendly, positive AI dance coach, have made these observations, thereby mimicing the experience of learning from a human dance coach. Your message should be short - not more than 2 sentances long. Please please please do not make up anything about their dance performance other than what the system has identified. Also, be aware that the system is quite limited it's ability to perceive dance performances, and the utility of the accuracy score is limited. Therefore, the message should be deferential to the user's own judgement.";
 
     prompt += "Please put the feedback message for the using within xml tags in the following format: <feedbackmessage>YOUR MESSAGE HERE</feedbackmessage>"
 

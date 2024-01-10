@@ -1,5 +1,6 @@
 
 import type PracticeStep from "$lib/model/PracticeStep";
+import { GenerateDrillFeedback } from "./drill-step";
 
 export function CreateFulloutStep(
     segmentDescription: string,
@@ -17,6 +18,7 @@ export function CreateFulloutStep(
         terminalFeedbackEnabled: true,
         showUserSkeleton: false,
         playbackSpeed: 1,
+        feedbackFunction: GenerateDrillFeedback,
     }
     return fulloutStep;
 }
