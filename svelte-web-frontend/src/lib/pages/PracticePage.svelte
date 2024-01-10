@@ -323,6 +323,7 @@ $: {
             state = "feedback";
            
             feedbackPromise = getFeedback(performanceSummary, recordedTrack);
+            feedbackDialogOpen = true;
             feedbackPromise
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
@@ -758,7 +759,6 @@ function onContinueClicked() {
                         {:else}
                             <span class="iconify-[lucide--chevron-up]"></span>
                         {/if}
-                        
                     
                     </button>
                     <div class="daisy-dropdown-content daisy-card daisy-card-compact w-96 h-auto p-2 shadow bg-neutral text-neutral-content">

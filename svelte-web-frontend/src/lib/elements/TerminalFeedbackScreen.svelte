@@ -184,7 +184,7 @@ function getTrackDataUrl(track: any, description: string) {
     flex-shrink: 1;
     flex-grow: 1;
     gap: 0.5rem;
-    overflow: scroll;
+    // overflow: scroll;
     // font-size: 1.5rem;
 
     & p,h2,.paragraphs {
