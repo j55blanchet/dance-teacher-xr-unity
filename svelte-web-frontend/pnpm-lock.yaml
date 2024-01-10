@@ -9,8 +9,8 @@ devDependencies:
     specifier: ^0.12.0
     version: 0.12.0
   '@iconify/json':
-    specifier: ^2.2.151
-    version: 2.2.165
+    specifier: ^2.2.166
+    version: 2.2.166
   '@iconify/svelte':
     specifier: ^3
     version: 3.1.6(svelte@4.2.8)
@@ -443,8 +443,8 @@ packages:
     resolution: {integrity: sha512-dvuCeX5fC9dXgJn9t+X5atfmgQAzUOWqS1254Gh0m6i8wKd10ebXkfNKiRK+1GWi/yTvvLDHpoxLr0xxxeslWw==}
     dev: true
 
-  /@iconify/json@2.2.165:
-    resolution: {integrity: sha512-KlwAxSejmRGx7D9pvT/OanmraEWk364phfrCPYBOMQx4nO1aQSDUBLkUFMAWobqjBMv6wraoiacuDVwAaxuJcQ==}
+  /@iconify/json@2.2.166:
+    resolution: {integrity: sha512-Cq+t8xOBWU2Dt+bECLvGnF6yxj5hEEF5rmHiEvVR68flgcmG6/ph5xDr9+YWqT3Ita1WxDtj5lVWxoEe/c+U3A==}
     dependencies:
       '@iconify/types': 2.0.0
       pathe: 1.1.1
