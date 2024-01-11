@@ -312,9 +312,6 @@ video {
     gap: var(--spacing-2);
 }
 
-.debug {
-    bottom: auto;
-}
 canvas {
     background: transparent;
 }
