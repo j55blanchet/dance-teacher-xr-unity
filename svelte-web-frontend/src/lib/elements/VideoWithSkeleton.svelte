@@ -26,7 +26,7 @@ export let flipHorizontal: boolean = false;
 export let volume: number = 1.0;
 export let seekable: any;
 export let readyState: number = 0;
-export let preload: boolean = true;
+export let preload: "auto" | "metadata" | "none" = "auto";
 
 let videoAspectRatio = 1;
 $: if (videoWidth > 0 && videoHeight > 0) {
@@ -216,7 +216,7 @@ function onSkipBackClicked() {
         bind:seekable
         class:flipped={flipHorizontal}
         class="bg-base-200 rounded"
-        preload="auto"
+        preload={preload}
     >
         <slot />
     </video>
