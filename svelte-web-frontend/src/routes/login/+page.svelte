@@ -26,22 +26,19 @@ $: console.log('Redirect path: ', forgotPasswordRedirectPath);
 	<meta name="description" content="Dance Teacher Login Page" />
 </svelte:head>	
 
-<div class="row flex-center flex">
-	<div class="col-6 form-widget">
-
-		<EmailAuthView
-			supabaseClient={data.supabase}
-			view={state}
-			forgotPasswordRedirectPath={forgotPasswordRedirectPath}
-			on:signedup={() => {
-				goto("/menu")
-				// goto("/account")
-			}}
-			on:signedin={() => {
-				goto("/menu")
-			}}
-			/>
-	</div>
+<div class="flex items-center mt-4 justify-center">
+	<EmailAuthView
+		supabaseClient={data.supabase}
+		view={state}
+		forgotPasswordRedirectPath={forgotPasswordRedirectPath}
+		on:signedup={() => {
+			goto("/menu")
+			// goto("/account")
+		}}
+		on:signedin={() => {
+			goto("/menu")
+		}}
+		/>
 </div>
 
 <style>

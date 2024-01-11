@@ -53,65 +53,40 @@
 </svelte:head>	
 
 <div class="accountPage">
-    <div class="form-widget">
+    <div class="flex flex-col justify-center mt-4 space-y-2">
+
         <form
-            class="form-widget"
+            class="grid grid-cols-2-maxcontent items-center justify-center gap-2 gap-y-4"
             method="post"
             action="?/update"
             use:enhance={handleSubmit}
             bind:this={profileForm}
         >
-            <div>
-                <label for="email">Email</label>
-                <input class="outlined thin text-disabled" id="email" type="text" value={session?.user?.email} disabled />
-            </div>
+            
+            <label class="justify-self-end" for="email">Email</label>
+            <input class="daisy-input daisy-input-bordered" id="email" type="text" value={session?.user?.email} disabled />
+            
+            <label class="justify-self-end" for="fullName">Full Name</label>
+            <input class="daisy-input daisy-input-bordered" id="fullName" name="fullName" type="text" value={form?.fullName ?? fullName} />
+              
+            <label class="justify-self-end" for="username">Username</label>
+            <input class="daisy-input daisy-input-bordered" id="username" name="username" type="text" value={form?.username ?? username} />
+            
 
-            <div>
-                <label for="fullName">Full Name</label>
-                <input class="outlined thin" id="fullName" name="fullName" type="text" value={form?.fullName ?? fullName} />
-            </div>
-
-            <div>
-                <label for="username">Username</label>
-                <input class="outlined thin" id="username" name="username" type="text" value={form?.username ?? username} />
-            </div>
-
-            <div>
+            <div class="col-span-2 text-center">
                 <button
                     type="submit"
-                    class="button block primary"
+                    class="daisy-btn daisy-btn-primary daisy-btn-block"
                     disabled={loading}
                 >{loading ? 'Loading...' : 'Update'}</button>
                 <span>{#if form?.success}Update Successful{/if}</span>
             </div>
-
-            
         </form>
 
-        <form method="post" action="?/signout" use:enhance={handleSignOut}>
-            <div>
-                <button class="button block" disabled={loading}>Sign Out</button>
-            </div>
+        <form class="text-center" method="post" action="?/signout" use:enhance={handleSignOut}>
+            <button class="daisy-btn daisy-btn-link daisy-btn-sm" disabled={loading}>Sign Out</button>
         </form>
 
-        <a href="/updatepassword">Update Password</a>
+        <a class="daisy-btn daisy-btn-link daisy-btn-sm" href="/updatepassword">Update Password</a>
     </div>
 </div>
-
-<style lang="scss">
-    .accountPage {
-        width: 100%;
-        min-height: var(--content_height);
-        display: flex;
-        flex-flow: column nowrap;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .form-widget {
-        display: flex;
-        flex-flow: column nowrap;
-        gap: 0.5em;
-    }
-
-</style>

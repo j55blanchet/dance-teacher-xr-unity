@@ -82,7 +82,7 @@
   
   <form on:submit|preventDefault={submit}>
 
-    <h3>
+    <h3 class="text-xl">
         {#if view === "sign_in"}
             Sign In
         {:else if view === "sign_up"}
@@ -94,38 +94,47 @@
         {/if}
     </h3>
 
-    <label>Email
-        <input class="outlined thin" name="email" type="email" bind:value={email}/>
+    <label class="daisy-form-control w-full max-w-xs">
+        <div class="daisy-label">
+          <span class="daisy-label-text">Email</span>
+        </div>
+        <input class="daisy-input w-full max-w-xs daisy-input-bordered" name="email" type="email" bind:value={email}/>
     </label>
+
     {#if view == 'sign_up' || view == 'sign_in'}
-        <label>Password
-            <input class="outlined thin" name="password" type="password" bind:value={password}/>
+        <label class="daisy-form-control w-full max-w-xs">
+            <div class="daisy-label">
+            <span class="daisy-label-text">Password</span>
+            </div>
+            <input class="daisy-input w-full max-w-xs daisy-input-bordered" name="password" type="password" bind:value={password}/>
         </label>
     {/if}
     {#if view == 'sign_up'}
-    <label>Confirm Password
-        <input class="outlined thin" name="confirm_password" type="password" bind:value={confirmpassword}/>
+    <label class="daisy-form-control w-full max-w-xs">
+        <div class="daisy-label">
+        <span class="daisy-label-text">Confirm Password</span>
+        </div>
+        <input class="daisy-input w-full max-w-xs daisy-input-bordered" name="confirmpassword" type="password" bind:value={confirmpassword}/>
     </label>
     {/if}
     
-  
     {#if view == 'sign_up'}
-        <button class="button" type="submit" disabled={loading}>Sign up</button>
+        <button class="daisy-btn daisy-btn-primary w-full max-w-xs" type="submit" disabled={loading}>Sign up</button>
     {:else if view == 'sign_in'}
-        <button class="button" type="submit" disabled={loading}>Sign in</button>
+        <button class="daisy-btn daisy-btn-primary w-full max-w-xs" type="submit" disabled={loading}>Sign in</button>
     {:else}
-        <button class="button" type="submit" disabled={loading}>Reset Password</button>
+        <button class="daisy-btn daisy-btn-primary w-full max-w-xs" type="submit" disabled={loading}>Reset Password</button>
     {/if}
   
-    <div class="flex flex-col buttons">
+    <div class="flex flex-col gap-2">
         {#if view !== "sign_in"}
-        <button class="link" on:click={() => view = "sign_in"}>Sign In</button>
+        <button class="daisy-btn daisy-btn-link daisy-btn-sm" on:click={() => view = "sign_in"}>Sign In</button>
         {/if}
         {#if view !== "sign_up"}
-        <button class="link" on:click={() => view = "sign_up"}>Create Account</button>
+        <button class="daisy-btn daisy-btn-link daisy-btn-sm" on:click={() => view = "sign_up"}>Create Account</button>
         {/if}
         {#if view !== "forgot_password"}
-        <button class="link" on:click={() => view = "forgot_password"}>Forgot Password</button>
+        <button class="daisy-btn daisy-btn-link daisy-btn-sm" on:click={() => view = "forgot_password"}>Forgot Password</button>
         {/if}
     </div>
 
