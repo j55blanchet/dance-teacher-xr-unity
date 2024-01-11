@@ -3,28 +3,29 @@
 	import type { PracticePlanProgress } from '$lib/data/activity-progress';
 	import type { PracticePlan, PracticePlanActivity, PracticePlanActivityBase } from '$lib/model/PracticePlan';
 	import type PracticeStep from '$lib/model/PracticeStep';
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
 
     export let practicePlan: PracticePlan;
     export let practicePlanProgress: PracticePlanProgress | undefined;
 
-    let dropdownActivityId: string | undefined = undefined;
+    let openActivityDropdowns = {} as { [activityId: string]: boolean };    
+
     const dispatch = createEventDispatcher<{
         activityClicked: PracticePlanActivity;
         practiceStepClicked: { activity: PracticePlanActivity, step: PracticeStep };
     }>();
 
     function onActivityClicked(activity: PracticePlanActivity) {
-        const shouldContinue = dispatch('activityClicked', activity, { cancelable: true });
-        if (!shouldContinue) {
-            return;
-        }
-
-        if (dropdownActivityId === activity.id) {
-            dropdownActivityId = undefined
-        } else {
-            dropdownActivityId = activity.id;
-        }
+        // close all other activities
+        let wasOpen = openActivityDropdowns[activity.id] ?? false;
+        console.log('onActivityClicked', activity.id, 'isOpen: ' + wasOpen)
+        for (const activityId in openActivityDropdowns) {
+            if (activityId !== activity.id && openActivityDropdowns[activityId] === true) {
+                openActivityDropdowns[activityId] = false;
+                console.log('closing', activityId)
+            }
+        }      
+        openActivityDropdowns[activity.id] = !wasOpen;  
     }
 
     function isActivityComplete(activity: PracticePlanActivity, progress: PracticePlanProgress) {
@@ -59,6 +60,12 @@
         return firstIncompleteActivity;
     }
     $: nextSuggestedActivity = nextIncompleteActivity(practicePlanProgress);
+    onMount(() => {
+        const anyDropdownOpen = Object.values(openActivityDropdowns).reduce((acc, isOpen) => acc || isOpen, false);
+        if (nextSuggestedActivity !== undefined && !anyDropdownOpen) {
+            openActivityDropdowns[nextSuggestedActivity.id] = true;
+        }
+    });
     let nextSuggestedStep = undefined as undefined | PracticeStep;
     $: practicePlanProgress, nextSuggestedStep = (nextSuggestedActivity?.steps ?? []).find(
         step => {
@@ -80,7 +87,7 @@
         ), 
         true
     
-    );
+    );    
 </script>
 
 <!-- <details class="daisy-collapse bg-base-200">
@@ -109,29 +116,24 @@
                     : 0
             }
             {@const isActivitySuggested = nextSuggestedActivity?.id === activity.id}
-            {@const isDropdownMode = !isActivitySuggested}
-            {@const dropdownOpen = dropdownActivityId === activity.id}
+            {@const isDropdownOpen = openActivityDropdowns[activity.id] ?? false}
             {@const activitySuggestedStepId = isActivitySuggested ? nextSuggestedStep?.id : undefined}
 
             <div class="flex flex-col items-center justify-start"
             >
-                <details class="" 
-                    class:daisy-dropdown={isDropdownMode}
-                    class:is-active={isDropdownMode && dropdownOpen}
-                    class:daisy-dropdown-open={isDropdownMode && dropdownOpen}>
+                <details class="daisy-dropdown" 
+                         bind:open={openActivityDropdowns[activity.id]}>
                     <summary
                         role="button"
-                        tabindex="0" 
-                        class:daisy-btn={isDropdownMode}
-                        class:bg-base-300={isActivitySuggested}
-                        class:rounded-full={true}
-                        class:border-b-base-300={isDropdownMode}
-                        class:border-b-primary={!isDropdownMode}
+                        tabindex="0"                     
                         class="size-32 flex justify-center items-center
-                               border-b-4" 
-                        on:click={() => { onActivityClicked(activity); }}
-                        class:daisy-btn-success={isDropdownMode && isComplete}
-                        >
+                               border-b-4 daisy-btn 
+                               rounded-full" 
+                        class:border-b-base-300={!isDropdownOpen}
+                        class:border-b-primary={isDropdownOpen}
+                        class:[hov:border-b-primary]={isDropdownOpen}
+                        class:daisy-btn-success={isComplete}
+                        on:click|preventDefault={() => { onActivityClicked(activity); }} >
                         {#if activity.type === 'segment'}
                             <span class="segment-body has-background-light has-text-dark">
                                 { activity.segmentTitle }
@@ -145,37 +147,25 @@
                         {:else}
                             Unknown
                         {/if}
-                        </summary>
-                    {#if isDropdownMode}
-                    <div class="daisy-dropdown-content  z-[2] daisy-card daisy-card-compact w-64 p-2 shadow"
-                        class:bg-primary={isActivitySuggested} 
-                        class:text-primary-content={isActivitySuggested}
-                        class:bg-base-200={!isActivitySuggested}
-                        class:text-base-content={!isActivitySuggested}>
+                    </summary>
+                    <div class="daisy-dropdown-content  z-[2] daisy-card daisy-card-compact w-64 p-2 shadow
+                    bg-base-200 text-base-content shadow-primary"
+                    >
                         <div class="daisy-card-body p-0">
                         <!-- <h3 class="daisy-card-title">Card title!</h3> -->
                         <PracticeStepList 
                             {activity}
                             {practicePlanProgress} 
+                            suggestedStepId={isActivitySuggested ? activitySuggestedStepId : undefined}
+                            suggestedStepTooltip={isActivitySuggested ? 
+                                (isVeryFirstActivityStep ? "Try this first!": "Try this next!") : 
+                                undefined}
                             on:practiceStepClicked={(e) => onPracticeStepClicked(e.detail.activity, e.detail.step)}
                             stepClasses="hover:bg-base-100"
                         />
                         </div>
                     </div>
-                    {/if}
                 </details>
-                {#if isActivitySuggested}
-                <div class="p-2 bg-base-200 rounded-box border-b-4">
-                    <PracticeStepList 
-                        {activity} 
-                        {practicePlanProgress}
-                        suggestedStepId={activitySuggestedStepId}
-                        on:practiceStepClicked={(e) => onPracticeStepClicked(e.detail.activity, e.detail.step)}
-                        suggestedStepTooltip={isVeryFirstActivityStep ? "Try this first!": "Try this next!"}
-                        stepClasses="hover:bg-base-100"
-                        ></PracticeStepList>
-                </div>
-            {/if}
             </div>
         {/each}
     </div>

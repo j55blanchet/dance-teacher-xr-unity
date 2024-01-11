@@ -81,7 +81,6 @@
     {currentTime.toFixed(2)}s
 </div> -->
 
-
 <style lang="scss">
     .segmented-progress-bar {
         display: flex;
