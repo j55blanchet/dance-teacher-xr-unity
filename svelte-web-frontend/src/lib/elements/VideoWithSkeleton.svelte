@@ -24,7 +24,9 @@ export let videoWidth: number = 0;
 export let videoHeight: number = 0;
 export let flipHorizontal: boolean = false;
 export let volume: number = 1.0;
+export let seekable: any;
 export let readyState: number = 0;
+export let preload: boolean = true;
 
 let videoAspectRatio = 1;
 $: if (videoWidth > 0 && videoHeight > 0) {
@@ -211,8 +213,10 @@ function onSkipBackClicked() {
         bind:duration
         bind:ended
         bind:readyState
+        bind:seekable
         class:flipped={flipHorizontal}
         class="bg-base-200 rounded"
+        preload="auto"
     >
         <slot />
     </video>
@@ -220,7 +224,11 @@ function onSkipBackClicked() {
         <canvas class="rounded" bind:this={canvasElement}></canvas>
     </div>
     <div class="is-overlay control-container p-2">
-        
+        <span class="hidden">
+            {#each seekable ?? [] as seekableRange, i}
+                <span>{seekableRange.start}-{seekableRange.end}</span>&nbsp;
+            {/each}
+        </span>
         {#if effectiveControls.showProgressBar}
         <SegmentedProgressBar 
             {...progressBarEffectiveProps}
