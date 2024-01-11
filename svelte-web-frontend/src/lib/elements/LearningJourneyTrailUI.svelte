@@ -3,7 +3,7 @@
 	import type { PracticePlanProgress } from '$lib/data/activity-progress';
 	import type { PracticePlan, PracticePlanActivity, PracticePlanActivityBase } from '$lib/model/PracticePlan';
 	import type PracticeStep from '$lib/model/PracticeStep';
-    import { createEventDispatcher, onMount } from 'svelte';
+    import { createEventDispatcher, onMount, tick } from 'svelte';
 
     export let practicePlan: PracticePlan;
     export let practicePlanProgress: PracticePlanProgress | undefined;
@@ -61,10 +61,11 @@
     }
     $: nextSuggestedActivity = nextIncompleteActivity(practicePlanProgress);
     onMount(() => {
-        const anyDropdownOpen = Object.values(openActivityDropdowns).reduce((acc, isOpen) => acc || isOpen, false);
-        if (nextSuggestedActivity !== undefined && !anyDropdownOpen) {
-            openActivityDropdowns[nextSuggestedActivity.id] = true;
-        }
+        tick().then(() => {
+            if (nextSuggestedActivity) {
+                openActivityDropdowns[nextSuggestedActivity.id] = true;
+            }
+        });
     });
     let nextSuggestedStep = undefined as undefined | PracticeStep;
     $: practicePlanProgress, nextSuggestedStep = (nextSuggestedActivity?.steps ?? []).find(
@@ -118,7 +119,22 @@
             {@const isActivitySuggested = nextSuggestedActivity?.id === activity.id}
             {@const isDropdownOpen = openActivityDropdowns[activity.id] ?? false}
             {@const activitySuggestedStepId = isActivitySuggested ? nextSuggestedStep?.id : undefined}
-
+            {@const showActivityTooltip = isActivitySuggested && !isDropdownOpen}
+            <!-- {@const hasStepCompleted = practicePlanProgress?.[activity.id] !== undefined && 
+                    activity.steps.reduce(
+                        (acc, step) => acc || (
+                            (practicePlanProgress?.[activity.id]?.[step.id]?.completed) ?? false), 
+                            false
+                    )} -->
+            {@const isSuggestingFirstStepInActivity = isActivitySuggested && activitySuggestedStepId && activitySuggestedStepId === activity.steps[0]?.id}
+            {@const isSuggestingLastStepInActivity = isActivitySuggested && activitySuggestedStepId && activitySuggestedStepId === activity.steps[activity.steps.length - 1]?.id}
+            {@const activityTooltipText = !isActivitySuggested ? 
+                undefined : 
+                (isVeryFirstActivityStep ? "Start learning here!": 
+                    (isSuggestingFirstStepInActivity ? "Let's start this activity!" : 
+                        (isSuggestingLastStepInActivity ? "Let's finish this activity!" : "Continue with this activity!")))
+                }
+                    
             <div class="flex flex-col items-center justify-start"
             >
                 <details class="daisy-dropdown" 
@@ -133,6 +149,10 @@
                         class:border-b-primary={isDropdownOpen}
                         class:[hov:border-b-primary]={isDropdownOpen}
                         class:daisy-btn-success={isComplete}
+                        data-tip={activityTooltipText}
+                        class:daisy-tooltip-accent={showActivityTooltip}
+                        class:daisy-tooltip={showActivityTooltip}
+                        class:daisy-tooltip-open={showActivityTooltip}
                         on:click|preventDefault={() => { onActivityClicked(activity); }} >
                         {#if activity.type === 'segment'}
                             <span class="segment-body has-background-light has-text-dark">
@@ -158,7 +178,8 @@
                             {practicePlanProgress} 
                             suggestedStepId={isActivitySuggested ? activitySuggestedStepId : undefined}
                             suggestedStepTooltip={isActivitySuggested ? 
-                                (isVeryFirstActivityStep ? "Try this first!": "Try this next!") : 
+                                (isVeryFirstActivityStep ? "Try this first!" : 
+                                    (isSuggestingLastStepInActivity ? "Wrap it up here!" : "Try this next!")) : 
                                 undefined}
                             on:practiceStepClicked={(e) => onPracticeStepClicked(e.detail.activity, e.detail.step)}
                             stepClasses="hover:bg-base-100"

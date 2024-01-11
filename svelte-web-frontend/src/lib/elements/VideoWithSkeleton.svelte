@@ -24,7 +24,7 @@ export let videoWidth: number = 0;
 export let videoHeight: number = 0;
 export let flipHorizontal: boolean = false;
 export let volume: number = 1.0;
-export let seekable: any;
+export let seekable: any = undefined;
 export let readyState: number = 0;
 export let preload: "auto" | "metadata" | "none" = "auto";
 
