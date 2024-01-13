@@ -33,6 +33,8 @@ export const danceTrees = danceTreeData;
 // );
 
 const USER_VISIBLE_DANCES: string[] = [
+    'paper/attention',
+    'paper/attention_zoom_out',
     'other/colddance',
     'other/renegade',
     'study2/last-christmas-tutorial',
