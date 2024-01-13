@@ -150,6 +150,14 @@ export function GeneratePracticePlan(
     currentStage.activities.push(makeCheckpointActivity(currentStage.activities as SegmentActivity[]));
     stages.push(currentStage);
 
+    // Remove checkpoint activity if there is only 1 stage, as
+    // the finale activity will serve as the checkpoint.
+    if (stages.length == 1 
+        && stages[0].activities.length > 0 &&
+        stages[0].activities[stages[0].activities.length - 1].type == 'checkpoint') {
+            stages[0].activities.pop();
+    }
+
     stages.push({
         // type: '',
         activities: [
