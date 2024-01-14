@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { poseEstimation__interFrameIdleTimeMs } from '$lib/model/settings';
 	import { PoseLandmarkKeys, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
     import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/pose-estimation.worker';
@@ -53,7 +54,6 @@
     let lastFrameSent = -1;
     let lastFrameReceivedTime = new Date().getTime();
     let lastFrameDecoded = -1;
-    const poseEstimationInterFrameIdleTime = 50; // wait 50ms before dispatching the next frame.
 
     let lastEstimated2DPose: null | NormalizedLandmark[] = null;
 
@@ -285,7 +285,7 @@
         const timeSinceLastFrameReceived = currentTime - lastFrameReceivedTime;
         if (poseEstimationEnabled && 
             lastFrameDecoded == lastFrameSent && 
-            timeSinceLastFrameReceived > poseEstimationInterFrameIdleTime && 
+            timeSinceLastFrameReceived > $poseEstimation__interFrameIdleTimeMs && 
             poseEstimationCheckFunction()) 
         {
             const timeSinceStart = currentTime - mirrorStartedTime;
