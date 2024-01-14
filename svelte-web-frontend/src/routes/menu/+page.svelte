@@ -18,17 +18,14 @@ onMount(() => {
 	<meta name="description" content="Dance sleection menu for the dance teacher app." />
 </svelte:head>	
 
-<div class="mainMenuPage">
-    <MainMenuPage />
+<div class="sm:mt-4 md:mt-8 lg:mt-12 xl:mt-16 2xl:mt-20
+    max-w-screen-2xl">
+    <h2 class="mt-4 mx-4 sm:text-center
+        text-xl md:text-2xl lg:text-3xl xl:text-4xl
+        mb-2 sm:mb-4 md:mb-8">
+		Pick a dance to learn
+	</h2>
+    <div class="mx-4 mb-4">
+        <MainMenuPage />
+    </div>
 </div>
-
-<style lang="scss">
-.mainMenuPage {
-    height: var(--content_height);
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-</style>

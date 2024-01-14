@@ -117,10 +117,6 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 </script>
 
 <section>
-	<h1 class="has-text-centered is-size-2 block">
-		Pick a dance to learn
-	</h1>
-
     {#if $debugMode && $debugMode__viewDanceMenuAsList}
 	<div class="columns">
 		<div class="column dance-picking ta-center" style="max-width: 60ch;">
@@ -149,30 +145,27 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 		{/if}
 	</div>
     {:else}
-    <div class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-center">
+    <div class="
+        grid  grid-cols-[repeat(auto-fit,_minmax(18rem,1fr))]
+        gap-4">
         {#each danceTiles as tileData, i (tileData.dance.clipRelativeStem)}
-        <div class="card card-with-left-image m-2" >
-            <figure class="card-image">
-                <p class="image">
-                    <img class="thumbnail" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
-                </p>
+        <div class="daisy-card daisy-card-side bg-base-200 text-base-content shadow-xl" >
+            <figure class="aspect-9/16 w-24">
+                <img class="h-full w-full aspect-9/16" src={getThumbnailUrl(supabase, tileData.dance)} alt={tileData.dance.title + " thumbnail"}>
             </figure>
-            <div class="card-content">
-                <div class="content">
-                    <h3>{tileData.dance.title}</h3>
-                    <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->
-                    <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span> -->
+            <div class="daisy-card-body">
+                <h2 class="daisy-card-title">{tileData.dance.title}</h2>
+                <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->
+                <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span> -->
                     
-                    <div class="performance-history is-flex is-align-items-center">
-                        <span class="label" title="Dance Attempts"><DanceIcon /></span>
-                        {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
-                    </div>
-                </div>
-                <div class="buttons">
-                    {#if $debugMode}
-                    <a href={tileData.oldPageUrl} class="button">Learn (Legacy)</a>
-                    {/if}
-                    <a href={tileData.pageUrl} class="button is-primary">Learn</a>
+                <!-- <div class="hidden performance-history is-flex is-align-items-center">
+                    <span class="label" title="Dance Attempts"><DanceIcon /></span>
+                    {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
+                </div> -->
+                <div class="grow"></div>
+                
+                <div class="daisy-card-actions justify-end">
+                    <a href={tileData.pageUrl} class="daisy-btn daisy-btn-primary">Learn</a>
                 </div>
             </div>
             

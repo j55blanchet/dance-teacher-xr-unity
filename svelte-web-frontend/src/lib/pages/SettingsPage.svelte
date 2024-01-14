@@ -19,6 +19,7 @@ import {
     evaluation_summarizeSubsections,
     evaluation_summarizeSubsectionsOptions,
     metric__3dskeletonsimilarity__badJointStdDeviationThreshold,
+    poseEstimation__interFrameIdleTimeMs,
 	useTextToSpeech,
     practiceActivities__enablePerformanceRecording,
 	summaryFeedback_skeleton3d_mediumPerformanceThreshold,
@@ -61,127 +62,172 @@ function clearPerformanceHistory() {
 <section class="settingsPage">
     <div class="group">
         <h3>General Settings</h3>
-        <div>
-            <label for="debugMode">Debug Mode</label>
-            <input type="checkbox" name="debugMode" bind:checked={$debugMode}>
+        <div class="daisy-form-control">
+            <label class="daisy-label cursor-pointer justify-center gap-2">
+              <span class="daisy-label-text">Debug Mode</span> 
+              <input class="daisy-toggle daisy-toggle-primary" type="checkbox" bind:checked={$debugMode} />
+            </label>
         </div>
     </div>
     {#if $debugMode}
-    <div class="group">
-        <h3>Debug Settings</h3>
-        <div>
-            <label for="debugMode__viewBeatsOnDanceTreepage">View Beats on Dance Tree Page</label>
-            <input type="checkbox" name="debugMode__viewBeatsOnDanceTreepage" bind:checked={$debugMode__viewBeatsOnDanceTreepage}>
+    <div class="daisy-collapse bg-base-200 daisy-collapse-arrow">
+        <input type="checkbox" /> 
+        <div class="daisy-collapse-title text-md font-medium ">
+            Debug Settings
         </div>
-        <div>
-            <label for="debugMode__viewDanceMenuAsList">View Dance Menu as List</label>
-            <input type="checkbox" name="debugMode__viewDanceMenuAsList" bind:checked={$debugMode__viewDanceMenuAsList}>
-        </div>
-        <div>
-            <label for="debugMode__addPlaceholderAchievement">Add placeholder achievement</label>
-            <input type="checkbox" name="debugMode__addPlaceholderAchievement" bind:checked={$debugMode__addPlaceholderAchievement}>
+        <div class="daisy-collapse-content"> 
+            <div class="daisy-form-control">
+                <label class="daisy-label cursor-pointer justify-center gap-2">
+                  <span class="daisy-label-text">View Beats on Dance Tree Page</span> 
+                  <input class="daisy-checkbox" type="checkbox" bind:checked={$debugMode__viewBeatsOnDanceTreepage} />
+                </label>
+            </div>
+            <div class="daisy-form-control">
+                <label class="daisy-label cursor-pointer justify-center gap-2">
+                  <span class="daisy-label-text">View Dance Menu as List</span> 
+                  <input class="daisy-checkbox" type="checkbox" bind:checked={$debugMode__viewDanceMenuAsList} />
+                </label>
+            </div>
+            <div class="daisy-form-control">
+                <label class="daisy-label cursor-pointer justify-center gap-2">
+                  <span class="daisy-label-text">Add placeholder achievement</span> 
+                  <input class="daisy-checkbox" type="checkbox" bind:checked={$debugMode__addPlaceholderAchievement} />
+                </label>
+            </div>
         </div>
     </div>
     {/if}
-    <div class="group">
-        <h3>Practice Page</h3>
-        {#if $debugMode}
-        <div>
-            <label for="pauseInPracticePage">Add midway Pause</label>
-            <input type="checkbox" name="pauseInPracticePage" bind:checked={$pauseInPracticePage}>
+    <div class="daisy-collapse bg-base-200 daisy-collapse-arrow">
+        <input type="checkbox" /> 
+        <div class="daisy-collapse-title text-md font-medium ">
+            Practice Page
         </div>
-        <div>
-            <label for="debugPauseDuration">Debug Pause Duration</label>
-            <input class="outlined thin" type="number" name="debugPauseDuration" bind:value={$debugPauseDurationSecs} min={pauseDurationMin} max={pauseDurationMax} step={pauseDurationStep}>
-        </div>
-        {/if}
-        <div>
-            <label for="practiceActivities__enablePerformanceRecording">Record Performances</label>
-            <input type="checkbox" name="practiceActivities__enablePerformanceRecording" bind:checked={$practiceActivities__enablePerformanceRecording}>
-        </div>
-        <div>
-            <label for="danceVideoVolume">Dance Video Volume</label>
-            <input class="outlined thin" type="range" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>
-            <input class="outlined thin" type="number" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.05}>
+        <div class="daisy-collapse-content"> 
+            {#if $debugMode}
+            <div>
+                <label class="daisy-label justify-center gap-2" for="poseEstimation__interFrameIdleTimeMs">
+                    <span class="daisy-label-text">Pose Estimation Inter-Frame Idle Time</span>
+                    <input class="daisy-input daisy-input-bordered min-w-24" type="number" name="poseEstimation__interFrameIdleTimeMs" bind:value={$poseEstimation__interFrameIdleTimeMs} min={-1} max={100} step={1}>
+                </label>
+            </div>
+            <div class="daisy-form-control">
+                <label class="daisy-label cursor-pointer justify-center gap-2">
+                  <span class="daisy-label-text">Pause Midway through Playback</span> 
+                  <input class="daisy-toggle" type="checkbox" bind:checked={$pauseInPracticePage} />
+                </label>
+            </div>
+            <div class="daisy-form-control">
+                <label class="daisy-label justify-center gap-2">
+                  <span class="daisy-label-text">Pause Duration (secs)</span> 
+                  <input class="daisy-input daisy-input-bordered min-w-24" type="number" bind:value={$debugPauseDurationSecs}/>
+                </label>
+            </div>
+            {/if}
+            <div class="daisy-form-control">
+                <label class="daisy-label cursor-pointer justify-center gap-2">
+                  <span class="daisy-label-text">Enable Record/Review Functionality</span> 
+                  <input class="daisy-toggle" type="checkbox" bind:checked={$practiceActivities__enablePerformanceRecording}/>
+                </label>
+            </div>
+            <div class="daisy-form-control">
+                <label class="daisy-label justify-center gap-2">
+                  <span class="daisy-label-text">Dance Video Volume <code>{($danceVideoVolume * 100).toFixed(0).padStart(3, "\u00A0")}%</code></span> 
+                  <input class="daisy-range daisy-range-sm min-w-32" type="range" name="danceVideoVolume" bind:value={$danceVideoVolume} min={0} max={1} step={0.01}>
+                </label>
+            </div>
         </div>
     </div>
+
     {#if $debugMode}
-    <div class="group">
-        <h3>Summary Feedback</h3>
-        <div>
-            <label for="useAIFeedback">Use AI Feedback</label>
-            <input type="checkbox" name="useAIFeedback" bind:checked={$useAIFeedback}>
+    <div class="daisy-collapse bg-base-200 daisy-collapse-arrow">
+        <input type="checkbox" /> 
+        <div class="daisy-collapse-title text-md font-medium ">
+            Terminal Feedback
         </div>
-        <div>
-            <label for="useTextToSpeech">Use Text to Speech</label>
-            <input type="checkbox" name="useTextToSpeech" bind:checked={$useTextToSpeech}>
-        </div>
-        <div>
-            <label for="evaluation_GoodBadTrialThreshold">(Rule Based Feedback)<br />Good/Bad Trial Threshold</label>
-            <input class="outlined thin" type="number" name="evaluation_GoodBadTrialThreshold" disabled={$useAIFeedback} bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-        </div>
-        <div>
-            <label for="evaluation_summarizeSubsections">Evaluate Subsections</label>
-            <select class="outlined thin" name="evaluation_summarizeSubsections" bind:value={$evaluation_summarizeSubsections}>
-                {#each Object.entries(evaluation_summarizeSubsectionsOptions) as [optionValue, optionTitle]}
-                    <option value={optionValue}>{optionTitle}</option>
-                {/each}
-            </select>
-        </div>
-    </div>
-    <div class="group">
-        <h3>Metrics Parameters</h3>
-        <details>
-            <summary>3D Skeleton Joint Angle Similarity</summary>
-            <div class="controlGrid">
-                <label for="metric__3dskeletonsimilarity__badJointStdDeviationThreshold">'Troublsome Joint' Threshold</label>
-                <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$metric__3dskeletonsimilarity__badJointStdDeviationThreshold} min={0} max={3.0} step={0.05}>
-                <span class="note">
-                    Used to determine which joints get 
-                    reported to the LLM as "troublesome joints"
-                </span>
-
-                <label for="summaryFeedback_skeleton3d_mediumPerformanceThreshold">3D Angle - Yellow Threshold</label>
-                <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_mediumPerformanceThreshold} min={0} max={1} step={0.01}>
-                <span class="note">This is used for bar coloring</span>
-
-                <label for="summaryFeedback_skeleton3d_goodPerformanceThreshold">3D Angle - Green Threshold</label>
-                <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_goodPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_goodPerformanceThreshold} min={0} max={1} step={0.01}>
-                <span class="note">This is used for bar coloring</span>
+        <div class="daisy-collapse-content"> 
+            <div class="daisy-form-control">
+                <label class="daisy-label cursor-pointer justify-center gap-2">
+                  <span class="daisy-label-text">Use AI Feedback</span> 
+                  <input class="daisy-toggle" type="checkbox" bind:checked={$useAIFeedback} />
+                </label>
             </div>
-        </details>
-        <details>
-            <summary>2D Skeleton Vector Similarity (Qijia's Method)</summary>
-            <div class="controlGrid">
-                
-                
-                <label for="feedback_YellowThreshold">Yellow Threshold</label>
-                <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-                <span class="note">This is used for live feedback color coding</span>
-
-                <label for="feedback_GreenThreshold">Green Threshold</label>
-                <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
-                <span class="note">This is used for live feedback color coding</span>
+            <div class="daisy-form-control">
+                <label class="daisy-label cursor-pointer justify-center gap-2">
+                  <span class="daisy-label-text">Use Text to Speech</span> 
+                  <input class="daisy-toggle" type="checkbox" bind:checked={$useTextToSpeech} />
+                </label>
             </div>
-        </details>
+            <div class="daisy-form-control">
+                <label class="daisy-label justify-center gap-2">
+                  <span class="daisy-label-text">(Rule Based Feedback)<br />Good/Bad Trial Threshold (2D)</span> 
+                  <input class="daisy-input daisy-input-bordered min-w-24" type="number" name="evaluation_GoodBadTrialThreshold" disabled={$useAIFeedback} bind:value={$evaluation_GoodBadTrialThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+                </label>
+            </div>
+            <div class="daisy-form-control">
+                <label>Evaluate Subsections
+                    <select class="daisy-select daisy-select-bordered" bind:value={$evaluation_summarizeSubsections}>
+                        {#each Object.entries(evaluation_summarizeSubsectionsOptions) as [optionValue, optionTitle]}
+                            <option value={optionValue}>{optionTitle}</option>
+                        {/each}
+                    </select>
+                </label>
+            </div>
+        </div>
     </div>
-    {/if}
+    <div class="daisy-collapse bg-base-200 daisy-collapse-arrow">
+        <input type="checkbox" /> 
+        <div class="daisy-collapse-title text-md font-medium ">
+            Metrics Parameters
+        </div>
+        <div class="daisy-collapse-content">
+            <details>
+                <summary>3D Skeleton Joint Angle Similarity</summary>
+                <div class="controlGrid">
+                    <label for="metric__3dskeletonsimilarity__badJointStdDeviationThreshold">'Troublsome Joint' Threshold</label>
+                    <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$metric__3dskeletonsimilarity__badJointStdDeviationThreshold} min={0} max={3.0} step={0.05}>
+                    <span class="note">
+                        Used to determine which joints get 
+                        reported to the LLM as "troublesome joints"
+                    </span>
+    
+                    <label for="summaryFeedback_skeleton3d_mediumPerformanceThreshold">3D Angle - Yellow Threshold</label>
+                    <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_mediumPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_mediumPerformanceThreshold} min={0} max={1} step={0.01}>
+                    <span class="note">This is used for bar coloring</span>
+    
+                    <label for="summaryFeedback_skeleton3d_goodPerformanceThreshold">3D Angle - Green Threshold</label>
+                    <input class="outlined thin" type="number" name="summaryFeedback_skeleton3d_goodPerformanceThreshold" bind:value={$summaryFeedback_skeleton3d_goodPerformanceThreshold} min={0} max={1} step={0.01}>
+                    <span class="note">This is used for bar coloring</span>
+                </div>
+            </details>
+            <details>
+                <summary>2D Skeleton Vector Similarity (Qijia's Method)</summary>
+                <div class="controlGrid">
+                    
+                    
+                    <label for="feedback_YellowThreshold">Yellow Threshold</label>
+                    <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+                    <span class="note">This is used for live feedback color coding</span>
+    
+                    <label for="feedback_GreenThreshold">Green Threshold</label>
+                    <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+                    <span class="note">This is used for live feedback color coding</span>
+                </div>
+            </details> 
+        </div>
+    </div>
     <div>
-        <button class="button" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
+        <button class="daisy-btn" disabled={Object.keys($frontendPerformanceHistory).length === 0} on:click={clearPerformanceHistory}>Clear Performance History</button>
     </div>
-    <div>
-        <button class="button" on:click={resetSettingsToDefault}>Reset Settings</button>
-    </div>    
-    <div class="group">
-    </div>
+    {/if}   
     {#if user}
     <div class="group">
         <h3>Account</h3>
-        <p>{user.email}</p>
+        <code class="text-base-content">{user.email}</code>
         <form method="post" action="/account?/signout">
-            <div class="buttons">
-                <a on:click={() => dispatch('navigate', '/account')} href="/account" class="button" aria-label="Account Page">Edit Account</a>
-                <button class="button block">Sign Out</button>
+            <div class="daisy-join">
+                <button class="daisy-btn daisy-join-item" on:click={resetSettingsToDefault}>Reset Settings</button>
+                <a tabindex="0" class="daisy-btn daisy-join-item" on:click={() => dispatch('navigate', '/account')} href="/account" aria-label="Account Page">Edit Account</a>
+                <button class="daisy-btn daisy-join-item daisy-btn-error">Sign Out</button>
             </div>
         </form>
     </div>

@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
    summaryFeedback_skeleton3d_goodPerformanceThreshold: 0.9,
    evaluation_summarizeSubsections: 'allnodes' as const,
    metric__3dskeletonsimilarity__badJointStdDeviationThreshold: 1.5,
+   poseEstimation__interFrameIdleTimeMs: 50,
    danceVideoVolume: 0.5,
 
    practiceActivities__playbackSpeed: 0.5,
@@ -86,6 +87,7 @@ export const evaluation_summarizeSubsections = createOptionsSettingsStore(
     "evaluation_analyzeSubsections", DEFAULT_SETTINGS.evaluation_summarizeSubsections, evaluation_summarizeSubsectionsOptions
 );
 export const metric__3dskeletonsimilarity__badJointStdDeviationThreshold = createNumberSettingsStore("metric__3dskeletonsimilarity__badJointStdDeviationThreshold", DEFAULT_SETTINGS.metric__3dskeletonsimilarity__badJointStdDeviationThreshold);
+export const poseEstimation__interFrameIdleTimeMs = createNumberSettingsStore("poseEstimation__interFrameIdleTimeMs", DEFAULT_SETTINGS.poseEstimation__interFrameIdleTimeMs);
 export const summaryFeedback_skeleton3d_mediumPerformanceThreshold = createNumberSettingsStore("summaryFeedback_skeleton3d_mediumPerformanceThreshold", DEFAULT_SETTINGS.summaryFeedback_skeleton3d_mediumPerformanceThreshold);
 export const summaryFeedback_skeleton3d_goodPerformanceThreshold = createNumberSettingsStore("summaryFeedback_skeleton3d_goodPerformanceThreshold", DEFAULT_SETTINGS.summaryFeedback_skeleton3d_goodPerformanceThreshold);
 export const danceVideoVolume = createNumberSettingsStore("danceVideoVolume", DEFAULT_SETTINGS.danceVideoVolume);    
@@ -114,6 +116,7 @@ export function resetSettingsToDefault() {
     summaryFeedback_skeleton3d_goodPerformanceThreshold.set(DEFAULT_SETTINGS.summaryFeedback_skeleton3d_goodPerformanceThreshold);
     evaluation_summarizeSubsections.set(DEFAULT_SETTINGS.evaluation_summarizeSubsections)
     metric__3dskeletonsimilarity__badJointStdDeviationThreshold.set(DEFAULT_SETTINGS.metric__3dskeletonsimilarity__badJointStdDeviationThreshold);
+    poseEstimation__interFrameIdleTimeMs.set(DEFAULT_SETTINGS.poseEstimation__interFrameIdleTimeMs);
     danceVideoVolume.set(DEFAULT_SETTINGS.danceVideoVolume)
 
     practiceActivities__playbackSpeed.set(DEFAULT_SETTINGS.practiceActivities__playbackSpeed);

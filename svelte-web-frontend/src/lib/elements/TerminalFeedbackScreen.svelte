@@ -3,6 +3,7 @@
 //
 // A component for offering feedback after a user has completed a
 // practice attempt of a dance. 
+import type { FrontendPerformanceSummary } from '$lib/ai/FrontendDanceEvaluator.ts';
 import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
 import type { BodyPartHighlight } from '$lib/elements/StaticSkeletonVisual.svelte';
 import StaticSkeletonVisual from '$lib/elements/StaticSkeletonVisual.svelte';
@@ -20,21 +21,22 @@ import StarIcon from 'virtual:icons/mdi/star';
 const dispatch = createEventDispatcher();
 
 export let feedback: TerminalFeedback | null = null;
+export let performanceSummary: FrontendPerformanceSummary | undefined = undefined;
 
 let showingPerformanceSummary = false;
 let showingLLMOutput = false;
 let showingTerminalFeedbackJson = false;
 
 let performanceSummaryWithoutTrack: any | undefined = undefined;
-// $: {
-//     performanceSummaryWithoutTrack = feedback?.debug?.performanceSummary;
-//     if (performanceSummaryWithoutTrack) {
-//         performanceSummaryWithoutTrack = {
-//             ...performanceSummaryWithoutTrack,
-//             adjustedTrack: undefined,
-//         }
-//     }
-// }
+$: {
+    performanceSummaryWithoutTrack = performanceSummary;
+    if (performanceSummaryWithoutTrack) {
+        performanceSummaryWithoutTrack = {
+            ...performanceSummaryWithoutTrack,
+            adjustedTrack: undefined,
+        }
+    }
+}
 let skeletonHighlights: BodyPartHighlight[] = [];
 
 $: {
@@ -107,6 +109,7 @@ function getTrackDataUrl(track: any, description: string) {
         <p class="achievement animate pop"><StarIcon /><span>{achivement}</span></p>
     {/each}
 
+    
     {#if feedback?.paragraphs}
     <div class="paragraphs">
         <SpeechInterface textToSpeak={[

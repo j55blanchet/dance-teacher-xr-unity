@@ -8,6 +8,9 @@ const config = {
 		extend: {
 			gridTemplateColumns: {
 				'2-maxcontent': 'repeat(2, max-content)',
+			},
+			aspectRatio: {
+				'9/16': '9 / 16',
 			}
 		}
 	},

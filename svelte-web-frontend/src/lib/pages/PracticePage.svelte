@@ -228,14 +228,13 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
         };
     }
 
-    const attemptHistory = $lastNAttemptsAngleSimilarity.map((a) => {
-        return {
-            score: a.summary?.overall ?? NaN, 
-            date: a.date,
-            segmentId: a.segmentId
-        }
-    });
-
+    // const attemptHistory = $lastNAttemptsAngleSimilarity.map((a) => {
+    //     return {
+    //         score: a.summary?.overall ?? NaN, 
+    //         date: a.date,
+    //         segmentId: a.segmentId
+    //     }
+    // });
 
     let feedback: TerminalFeedback | undefined = undefined;
 
@@ -293,6 +292,8 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
     //         practiceStep?.danceTreeNode?.id,
     //     );
     // }
+
+
 
     gettingFeedback = false;
 
@@ -792,6 +793,7 @@ function onContinueClicked() {
                         <div class="daisy-card-body space-y-4">
                             <TerminalFeedbackScreen 
                                 feedback={terminalFeedback}
+                                performanceSummary={performanceSummary ?? undefined}
                                 on:continue-clicked={() => dispatch('continue-clicked')}
                             />
 
