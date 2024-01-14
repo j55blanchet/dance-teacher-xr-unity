@@ -71,7 +71,7 @@ $: {
         breakpoints: [],
         labels: [],
         enableSegmentClick: false,
-        isolateSegmentIndex: undefined,
+        isolatedSegments: undefined,
         ...effectiveControls.progressBarProps,
     }
 }

@@ -8,7 +8,7 @@
         labels: string[],
         // classes: string[][],
         enableSegmentClick: boolean[] | boolean,
-        isolateSegmentIndex: number | undefined,
+        isolatedSegments: number | undefined | number[],
     }
     export type SegmentedProgressBarPropsWithoutCurrentTime = Omit<SegmentedProgressBarProps, 'currentTime'>;
 </script>
@@ -22,7 +22,7 @@
     export let labels: string[] = [];
     export let classes: string[][] = [];
     export let enableSegmentClick: boolean[] | boolean = false;
-    export let isolateSegmentIndex: number | undefined;
+    export let isolatedSegments: number | undefined | number[];
 
     const dispatch = createEventDispatcher();
     
@@ -48,7 +48,14 @@
 </script>
 
 <div class="segmented-progress-bar">
+    
     {#each segments as segment, i}
+        {@const hasAnIsolatedSegment = isolatedSegments !== undefined}    
+        {@const isIsolatedSegment = hasAnIsolatedSegment && 
+                    (isolatedSegments === segment.index ||
+                     Array.isArray(isolatedSegments) && isolatedSegments.includes(segment.index))}
+        {@const isNonActiveSegment = hasAnIsolatedSegment && !isIsolatedSegment}
+        {@const isActiveSegment = !isNonActiveSegment}
         <button 
             class="progressbutton button is-rounded is-small"
             class:clickable={enableSegmentClick === true || (Array.isArray(enableSegmentClick) && enableSegmentClick[i])}
@@ -57,10 +64,10 @@
                     dispatch('segmentClicked', segment);
                 }
             }}
-            class:is-dark={isolateSegmentIndex !== undefined && isolateSegmentIndex !== segment.index}
+            class:is-dark={isNonActiveSegment}
             style:--segment-time={segment.duration}
             style:--percent-progress={
-                isolateSegmentIndex !== undefined && isolateSegmentIndex !== segment.index ? 0 :
+                isNonActiveSegment ? 0 :
                 (Math.max(0, Math.min(segment.duration, currentTime - segment.start)))
                  / segment.duration
             }
@@ -79,6 +86,7 @@
 </div>
 <!-- <div style="background: white">
     {currentTime.toFixed(2)}s
+    {isolatedSegments?.toString()}
 </div> -->
 
 <style lang="scss">

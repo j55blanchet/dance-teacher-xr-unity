@@ -134,7 +134,7 @@
                         endTime: practicePlan.endTime,
                         breakpoints: segmentBreaks,
                         labels: practicePlan.demoSegmentation?.segmentLabels ?? [],
-                        isolateSegmentIndex: focusedSegmentIndex,
+                        isolatedSegments: focusedSegmentIndex,
                     }
                 }}
                 volume={$danceVideoVolume}

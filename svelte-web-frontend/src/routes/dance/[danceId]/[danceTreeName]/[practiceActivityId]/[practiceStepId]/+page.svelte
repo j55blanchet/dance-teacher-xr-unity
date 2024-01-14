@@ -11,6 +11,10 @@
 
     export let data;
 
+    function rangeInt(from: number, upTo: number) {
+        return Array.from( { length: upTo-from }, (e, i) => i + from );
+    }
+
     let practicePage: PracticePage | undefined;
     let practiceActivity: PracticePlanActivity;
     $: practiceActivity = data.practiceActivity;
@@ -39,10 +43,28 @@
     $: {
         segmentBreaks = data.practicePlan.demoSegmentation?.segmentBreaks ?? [];
     }
-    let segmentIsolateIndex = undefined as undefined | number;
+    let segmentIsolateIndex = undefined as undefined | number | number[];
 
     $: if (data.practiceActivity.type === "segment") {
         segmentIsolateIndex = data.practiceActivity.segmentIndex;
+    }  else {
+        let segmentStarts = [data.practicePlan.startTime, ...segmentBreaks];
+        let segmentEnds = [...segmentBreaks, data.practicePlan.endTime];
+        console.log('segment starts:', segmentStarts)
+        console.log('segment ends:', segmentEnds)
+        console.log(' data.practiceStep.startTime:',  data.practiceStep.startTime)
+        console.log(' data.practiceStep.endTime:',  data.practiceStep.endTime)
+        // determine isolated segments manually.
+        let isolateStartIndex = segmentEnds.findIndex(time => time >= data.practiceStep.startTime);
+        let isolateEndIndex = segmentStarts.findIndex(time => time >= data.practiceStep.endTime);
+        if (isolateEndIndex === -1) {
+            isolateEndIndex = segmentStarts.length;
+        }
+        console.log('isolate start,end:', isolateStartIndex, isolateEndIndex)
+        segmentIsolateIndex = undefined;
+        if (isolateStartIndex !== -1 && isolateEndIndex !== -1 && isolateStartIndex <= isolateEndIndex) {
+            segmentIsolateIndex = rangeInt(isolateStartIndex, isolateEndIndex);
+        }
     }
 
     let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime;
@@ -52,7 +74,7 @@
         breakpoints: data.practicePlan.demoSegmentation?.segmentBreaks ?? [],
         labels: data.practicePlan.demoSegmentation?.segmentLabels ?? [],
         enableSegmentClick: true,
-        isolateSegmentIndex: segmentIsolateIndex,
+        isolatedSegments: segmentIsolateIndex,
     };
 
     let currentStepIndex: number;
