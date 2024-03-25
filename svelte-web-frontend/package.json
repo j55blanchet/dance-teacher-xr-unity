@@ -34,7 +34,7 @@
 		"@vitest/coverage-v8": "^0.34.6",
 		"autoprefixer": "^10.4.16",
 		"bulma": "^0.9.4",
-		"daisyui": "^4.5",
+		"daisyui": "^4.8",
 		"eslint": "^8.51.0",
 		"eslint-config-prettier": "^9.0.0",
 		"eslint-plugin-svelte": "^2.34.0",
