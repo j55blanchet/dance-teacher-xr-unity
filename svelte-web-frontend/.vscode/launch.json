@@ -26,6 +26,14 @@
                 "${workspaceFolder}/src",
                 "!%{workspaceFolder}/node_modules/**"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Sync Storage Assets",
+            "cwd": "${workspaceFolder}",
+            "runtimeArgs": ["--experimental-modules"],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
         }
     ]
 }
