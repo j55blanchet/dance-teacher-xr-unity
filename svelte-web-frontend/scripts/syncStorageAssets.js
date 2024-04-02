@@ -12,10 +12,11 @@ dotenv.config({
  * @param {string} args.url - The URL of the Supabase project.
  * @param {string} args.key - The service role key for accessing Supabase.
  * @param {boolean} [args.makeSync=true] - Whether to perform the sync operation.
+ * @param {boolean} [args.dryRun=false] - Whether to perform a dry run without actually syncing the files.
  * @returns {Promise<void>}
  */
 async function syncStorageAssets(args) {
-    const { url, key, makeSync = true } = args;
+    const { url, key, makeSync = true, dryRun = false } = args;
     const supabase = createClient(url, key);
 
     // Sync: 
@@ -59,13 +60,20 @@ async function syncStorageAssets(args) {
 
     const syncFolderPromises = syncFolders.map(async (args) => {
         // create bucket if not exists
+        let bucketDoesntExist = false;
         if (undefined === existingBuckets.data.find(x => x.name === args.bucketName)) {
-            await supabase.storage.createBucket(args.bucketName, {
-                    public: true,
-                    allowedMimeTypes: [args.mimeType],
-                })
-                .then(() => console.log(`✅ Bucket ${args.bucketName} created successfully`))
-                .catch((error) => console.error('❌ Error creating bucket:', error));            
+            if (dryRun) {
+                console.log(`⚠️ Dry run: Bucket ${args.bucketName} would be created`);
+                bucketDoesntExist = true;
+
+            } else {
+                await supabase.storage.createBucket(args.bucketName, {
+                        public: true,
+                        allowedMimeTypes: [args.mimeType],
+                    })
+                    .then(() => console.log(`✅ Bucket ${args.bucketName} created successfully`))
+                    .catch((error) => console.error('❌ Error creating bucket:', error));   
+            }         
         } else {
             console.log(`ℹ️ Bucket ${args.bucketName} already exists`);
         }
@@ -77,13 +85,22 @@ async function syncStorageAssets(args) {
             allowedFileSuffixes: args.allowedFileSuffixes,
             mimeType: args.mimeType,
             makeSync: makeSync,
+            dryRun: dryRun,
+            dryRunBucketDoesntExist: bucketDoesntExist,
+            printIndent: '    ',
         })
         if (!makeSync) {
-            return syncPromise;
+            return syncPromise.then(x => [...x, bucketDoesntExist ? 1 : 0])
         }
-        return await syncPromise;
+        return [...await syncPromise, (bucketDoesntExist ? 1 : 0)];
     });
-    await Promise.all(syncFolderPromises);
+    const fileStatistics = await Promise.all(syncFolderPromises);
+    const totalFilesSynced = fileStatistics.reduce((acc, val) => acc + val[0], 0);
+    const totalFilesSkipped = fileStatistics.reduce((acc, val) => acc + val[1], 0);
+    const totalBucketsCreated = fileStatistics.reduce((acc, val) => acc + val[2], 0);
+
+    const wouldHave = dryRun ? '⚠️ would have ' : '';
+    console.log(`🚀 ${dryRun ? '⚠️ Would have synced': 'Synced'} ${totalFilesSynced} files, skipped ${totalFilesSkipped} files, ${wouldHave}created ${totalBucketsCreated} buckets`);
 }
 
 /**
@@ -98,6 +115,7 @@ async function syncStorageAssets(args) {
  * @param {string} args.printIndent - The indentation for logging.
  * @param {boolean} [args.makeSync=false] - Whether to perform the sync operation.
  * @param {boolean} [args.dryRun=false] - Whether to perform a dry run without actually syncing the files.
+ * @param {boolean} [args.dryRunBucketDoesntExist=false] - In dry run mode, whether to simulate that the bucket doesn't exist.
  * @returns {Promise<[number, number]>} - A promise that resolves to an array containing the number of files synced and skipped.
  */
 async function syncFolderToBucket(args) {
@@ -112,7 +130,10 @@ async function syncFolderToBucket(args) {
     // Get all files in folder
     const directoryContents = fs.readdirSync(args.folderPath, { withFileTypes: true });
 
-    const bucketContents = await args.supabase.storage.from(args.bucketName).list(args.prefix);
+    let bucketContents = args.dryRunBucketDoesntExist ? 
+        { data: [], error: undefined } : 
+        await args.supabase.storage.from(args.bucketName).list(args.prefix);
+    
     if (bucketContents.error) {
         console.error(`${args.printIndent}Error listing bucket contents:`, bucketContents.error);
         return;
@@ -178,6 +199,7 @@ async function syncFolderToBucket(args) {
             printIndent: `${args.printIndent}    `,
             makeSync: args.makeSync,
             dryRun: args.dryRun,
+            dryRunBucketDoesntExist: args.dryRunBucketDoesntExist,
         })
         if (args.makeSync) {
             return await subfolderPromise;
@@ -198,10 +220,18 @@ async function syncFolderToBucket(args) {
  */
 async function main() {
 
+    const dryRun = process.argv.includes('--dry-run');
+    const onProduction = process.argv.includes('--production');
+    const async = process.argv.includes('--async');
+
+    const url = onProduction ? process.env.PRODUCTION_SUPABASE_URL : process.env.NEXT_PUBLIC_SUPABASE_URL;
+    let key = onProduction ? process.env.PRODUCTION_SUPABASE_SERVICE_ROLE_KEY : process.env.SUPABASE_SERVICE_ROLE_KEY;
+
     await syncStorageAssets({
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL, 
-        key: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        makeSync: true // make sync
+        url: url, 
+        key: key,
+        makeSync: !async,
+        dryRun: dryRun,
     });
 }
 

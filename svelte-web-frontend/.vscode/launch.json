@@ -34,6 +34,33 @@
             "cwd": "${workspaceFolder}",
             "runtimeArgs": ["--experimental-modules"],
             "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Sync Storage Assets (dry run)",
+            "cwd": "${workspaceFolder}",
+            "runtimeArgs": ["--experimental-modules"],
+            "args": ["--dry-run"],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Sync Storage Assets PROD (dry run)",
+            "cwd": "${workspaceFolder}",
+            "runtimeArgs": ["--experimental-modules"],
+            "args": ["--dry-run", "--production"],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Sync Storage Assets PROD",
+            "cwd": "${workspaceFolder}",
+            "runtimeArgs": ["--experimental-modules"],
+            "args": ["--production", "--async"],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
         }
     ]
 }
