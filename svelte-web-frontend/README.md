@@ -91,6 +91,13 @@ Then use it like so:
 <ClockIcon />
 ```
 
+### Updating Mediapipe
+
+You can update the mediapipe version with pip (be sure to update requirements.txt).
+
+Be sure to download the improved model and put it in the static/mediapipe folder. See <https://developers.google.com/mediapipe/solutions/vision/pose_landmarker/index#models> for more information.
+
+
 ### Supabase
 
 We use [supabase](https://supabase.io/) for our database. For local development, we use the [supabase CLI](https://supabase.io/docs/reference/cli/installation) to interact with the database. This will be installed with `pnpm install`.

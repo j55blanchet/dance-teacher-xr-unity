@@ -189,6 +189,6 @@ export function GetNormalizedLandmarksFromPixelLandmarks(
         x: lm.x / srcWidth,
         y: lm.y / srcHeight,
         z: lm.dist_from_camera / srcWidth,
-        visibility: lm.visibility,
+        visibility: lm.visibility ?? 1.0,
     }));
 }
