@@ -105,9 +105,13 @@ def update_create_videoentry(
 
     return out_entry
 
-def create_thumbnail(video_path: Path, relative_path: Path, timestamp: float, thumbnails_dir: Path):
+def create_thumbnail(video_path: Path, relative_path: Path, timestamp: float, thumbnails_dir: Path, skip_existing: bool):
     thumbnail_path = relative_path.parent.joinpath(relative_path.stem + '.jpg')
     thumbnail_path = thumbnails_dir.joinpath(thumbnail_path)
+
+    if thumbnail_path.exists() and skip_existing:
+        return thumbnail_path
+    
     cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS)
     thumbnail_frame = int(fps * timestamp)
@@ -131,6 +135,7 @@ def update_database(
         database_csv_path: PathLike,
         videos_dir: PathLike, 
         thumbnails_dir: t.Optional[PathLike],
+        replace_existing_thumbnails: bool = False,
         print_prefix: t.Callable[[], str] = lambda: '',
     ):
 
@@ -211,7 +216,13 @@ def update_database(
         )
         start_time: float = entry['startTime']
         if thumbnails_dir:
-            thumbnail_path = create_thumbnail(videos_dir.joinpath(relative_path), relative_path, start_time, thumbnails_dir)
+            thumbnail_path = create_thumbnail(
+                video_path=videos_dir.joinpath(relative_path), 
+                relative_path=relative_path, 
+                timestamp=start_time, 
+                thumbnails_dir=thumbnails_dir, 
+                skip_existing=not replace_existing_thumbnails
+            )            
             entry['thumbnailSrc'] = thumbnail_path.relative_to(thumbnails_dir).as_posix()
 
         out_db[relative_clip_stem] = entry

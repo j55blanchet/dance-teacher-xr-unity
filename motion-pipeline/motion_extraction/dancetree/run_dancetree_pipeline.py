@@ -60,6 +60,7 @@ def run_dancetree_pipeline(
         videos_dir=video_srcdir,
         thumbnails_dir=thumbnails_outdir,
         print_prefix=lambda: f'{step()} update database:',
+        replace_existing_thumbnails=False,
     )
 
     current_step += 1
