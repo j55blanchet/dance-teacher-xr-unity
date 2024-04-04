@@ -117,6 +117,8 @@
 <section class="learning-dashboard p-5">
     
     <div class="preview-video-container"
+        style:--videoWidth={videoWidth}px
+        style:--videoHeight={videoHeight}px
         style:--aspect-ratio={videoWidth / videoHeight}>
         <div class="box p-0 video-wrapper">
             <VideoWithSkeleton 
@@ -210,7 +212,7 @@
 .preview-video-container {
     grid-area: preview;
     overflow: hidden;
-    max-height: calc(100%);
+    max-height: 100%;
     align-self: center;
     justify-self: right;
     aspect-ratio: var(--aspect-ratio);

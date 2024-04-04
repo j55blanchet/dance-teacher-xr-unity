@@ -19,7 +19,7 @@ onMount(() => {
 </svelte:head>	
 
 <div class="sm:mt-4 md:mt-8 lg:mt-12 xl:mt-16 2xl:mt-20
-    max-w-screen-2xl">
+    max-w-screen-2xl mx-auto">
     <h2 class="mt-4 mx-4 sm:text-center
         text-xl md:text-2xl lg:text-3xl xl:text-4xl
         mb-2 sm:mb-4 md:mb-8">

@@ -39,6 +39,7 @@ const USER_VISIBLE_DANCES: string[] = [
     'other/renegade',
     'study2/last-christmas-tutorial',
     'study2/mad-at-disney-tutorial',
+    'longer/texas-hold-em',
 ];
 
 export const userVisibleDances: [Dance, DanceTree][] = dances
@@ -264,7 +265,7 @@ export async function load2DPoseInformation(supabase: SupabaseClient, dance: Dan
  */
 export async function load3DPoseInformation(supabase: SupabaseClient, dance: Dance): Promise<PoseReferenceData<Pose3DLandmarkFrame>> {
     const pose3dCsvPath = getHolisticDataSrc(supabase, dance);
-    return await loadPoseInformation(pose3dCsvPath, dance.fps, GetPixelLandmarksFromPose3DRow);
+    return await loadPoseInformation(pose3dCsvPath, dance.fps, GetPixelLandmarksFromPose3DRow) as PoseReferenceData<Pose3DLandmarkFrame>;
 }
 
 function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) {
