@@ -21,6 +21,7 @@ def run_dancetree_pipeline(
     rewrite_existing_holistic_data: bool = False,
     skip_existing_cumulative_complexity: bool = False,
     skip_existing_audioanalysis: bool = False,
+    output_holistic_debug_frames: bool = False
 
 ):
     complexities_temp_dir = temp_dir / 'complexities'
@@ -30,6 +31,8 @@ def run_dancetree_pipeline(
         result_type='dancetrees', 
         input_type='video'
     )
+    holistic_frames_dir = temp_dir / 'holistic_debug_frames'
+
     trees_with_complexity_dir = temp_dir / 'trees_with_complexity'
 
     audio_cache_dir =  bundle_media_export_path / 'audio' if include_audio_in_bundle \
@@ -68,6 +71,7 @@ def run_dancetree_pipeline(
         video_folder=video_srcdir,
         output_folder=holistic_data_srcdir,
         pose2d_output_folder=pose2d_data_srcdir,
+        frame_output_folder=holistic_frames_dir if output_holistic_debug_frames else None,
         rewrite_existing=rewrite_existing_holistic_data,
         print_prefix=lambda: f'{step()} compute holistic data:',
     )
@@ -134,6 +138,7 @@ if __name__ == "__main__":
     parser.add_argument("--rewrite_existing_holistic_data", action='store_true')
     parser.add_argument("--skip_existing_cumulative_complexity", action='store_true')
     parser.add_argument("--skip_existing_audioanalysis", action='store_true')
+    parser.add_argument("--output_holistic_debug_frames", action='store_true')
     args = parser.parse_args()
     
     run_dancetree_pipeline(
@@ -149,4 +154,5 @@ if __name__ == "__main__":
         rewrite_existing_holistic_data=args.rewrite_existing_holistic_data,
         skip_existing_cumulative_complexity=args.skip_existing_cumulative_complexity,
         skip_existing_audioanalysis=args.skip_existing_audioanalysis,
+        output_holistic_debug_frames=args.output_holistic_debug_frames
     )

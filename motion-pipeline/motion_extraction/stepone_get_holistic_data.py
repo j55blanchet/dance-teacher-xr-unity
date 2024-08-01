@@ -446,7 +446,7 @@ def compute_holistic_data(
         holistic_data_filepath = output_folder / video_file_relative.with_suffix(".holisticdata.csv")
         pose_2d_data_filepath = (pose2d_output_folder / video_file_relative.with_suffix(".pose2d.csv")) if pose2d_output_folder is not None else None
 
-        if not rewrite_existing and holistic_data_filepath.exists() and pose_2d_data_filepath is None or pose_2d_data_filepath.exists():
+        if not rewrite_existing and holistic_data_filepath.exists() and (pose_2d_data_filepath is None or pose_2d_data_filepath.exists()):
             skipped_count += 1
             continue
         else:
@@ -481,11 +481,10 @@ if __name__ == "__main__":
     parser.add_argument('--frame_output_folder', type=Path, default=None)
     parser.add_argument('--rewrite_existing', action='store_true', default=False)
     args = parser.parse_args()
-
+    
     compute_holistic_data(
         video_folder=args.video_folder,
         output_folder=args.output_folder,
-        log_level=args.log_level,
         model_complexity=args.model_complexity,
         frame_output_folder=args.frame_output_folder,
         rewrite_existing=args.rewrite_existing,
