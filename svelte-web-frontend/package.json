@@ -19,6 +19,8 @@
 		"@iconify/json": "^2.2.196",
 		"@iconify/svelte": "^3.1.6",
 		"@iconify/tailwind": "^0.1.4",
+		"@langchain/openai": "^0.2.5",
+		"@langchain/core": "0.2.18",
 		"@mediapipe/tasks-vision": "^0.10.12",
 		"@supabase/auth-helpers-sveltekit": "^0.10.7",
 		"@supabase/auth-ui-shared": "^0.1.8",
@@ -40,6 +42,7 @@
 		"eslint": "^8.57.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.35.1",
+		"langchain": "^0.2.12",
 		"papaparse": "^5.4.1",
 		"postcss": "^8.4.38",
 		"postcss-load-config": "^5.0.3",
@@ -58,6 +61,11 @@
 		"vite": "^4.5.3",
 		"vitest": "^0.34.6",
 		"wasm-feature-detect": "^1.6.1"
+	},
+	"pnpm": {
+		"overrides": {
+			"@langchain/core": "0.2.18"
+		}
 	},
 	"type": "module"
 }
