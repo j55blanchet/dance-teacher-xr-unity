@@ -10,7 +10,7 @@ export function load({ params })  {
     const dance = getDanceFromDanceId(danceId);
     
     if (!dance) {
-        throw  error(404, 'Dance Not found');
+        error(404, 'Dance Not found');
     }
     
     // if (!danceTree) {

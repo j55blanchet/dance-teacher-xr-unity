@@ -6,8 +6,8 @@ export const GET = async ({ url, locals: { supabase } }) => {
 
   if (code) {
     await supabase.auth.exchangeCodeForSession(code)
-    throw redirect(303, '/updatepassword')
+    redirect(303, '/updatepassword');
   }
 
-  throw redirect(303, '/menu')
+  redirect(303, '/menu');
 }
