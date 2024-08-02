@@ -47,6 +47,9 @@ devDependencies:
   '@sveltejs/kit':
     specifier: ^2.5.19
     version: 2.5.19(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@4.2.18)(vite@5.3.5)
+  '@sveltejs/vite-plugin-svelte':
+    specifier: ^3.0.0
+    version: 3.1.1(svelte@4.2.18)(vite@5.3.5)
   '@tailwindcss/typography':
     specifier: ^0.5.13
     version: 0.5.13(tailwindcss@3.4.7)
@@ -72,8 +75,8 @@ devDependencies:
     specifier: ^10.4.19
     version: 10.4.19(postcss@8.4.40)
   bulma:
-    specifier: ^1.0.2
-    version: 1.0.2
+    specifier: ^0.9.4
+    version: 0.9.4
   daisyui:
     specifier: ^4.12.10
     version: 4.12.10(postcss@8.4.40)
@@ -1558,8 +1561,8 @@ packages:
     engines: {node: '>=8.0.0'}
     dev: true
 
-  /bulma@1.0.2:
-    resolution: {integrity: sha512-D7GnDuF6seb6HkcnRMM9E739QpEY9chDzzeFrHMyEns/EXyDJuQ0XA0KxbBl/B2NTsKSoDomW61jFGFaAxhK5A==}
+  /bulma@0.9.4:
+    resolution: {integrity: sha512-86FlT5+1GrsgKbPLRRY7cGDg8fsJiP/jzTqXXVqiUZZ2aZT8uemEOHlU1CDU+TxklPEZ11HZNNWclRBBecP4CQ==}
     dev: true
 
   /cac@6.7.14:

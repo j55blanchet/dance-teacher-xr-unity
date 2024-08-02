@@ -36,10 +36,10 @@ export async function load({ url, params })  {
     const [dance, danceTree] = getDanceAndDanceTreeFromDanceTreeId(danceTreeId);
 
     if (!dance) {
-        throw  error(404, 'Dance Not found');
+        error(404, 'Dance Not found');
     }
     if (!danceTree) {
-        throw  error(404, 'Dance Tree Not found');   
+        error(404, 'Dance Tree Not found');   
     }
 
     const danceTreeNode = findDanceTreeNode(danceTree, params.practiceNodeId);

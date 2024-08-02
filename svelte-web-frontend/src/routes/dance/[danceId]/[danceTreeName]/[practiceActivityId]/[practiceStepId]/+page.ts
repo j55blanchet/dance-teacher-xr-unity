@@ -12,7 +12,7 @@ export async function load({ params, parent })  {
     const matchingPracticeStep: PracticeStep | undefined = practiceActivity.steps[practiceStepIndex];
 
     if (!matchingPracticeStep) {
-        throw error(404, 'Practice Step Not found');
+        error(404, 'Practice Step Not found');
     }
     
     return {

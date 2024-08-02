@@ -12,7 +12,7 @@ export async function load({ params, parent })  {
     
     
     if (!danceTree) {
-        throw  error(404, 'Dance Segmentation Not found');
+        error(404, 'Dance Segmentation Not found');
     }
 
     const practicePlan = GeneratePracticePlan(dance, danceTree);

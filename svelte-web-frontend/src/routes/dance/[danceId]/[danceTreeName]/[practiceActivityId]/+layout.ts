@@ -14,7 +14,7 @@ export async function load({ params, parent })  {
     const matchingActivity = allActivities.find((x) => x.id === params.practiceActivityId)
 
     if (!matchingActivity) {
-        throw error(404, 'Practice Activity Not found');
+        error(404, 'Practice Activity Not found');
     }
     
     return {
