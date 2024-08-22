@@ -212,8 +212,8 @@
 .preview-video-container {
     grid-area: preview;
     overflow: hidden;
-    max-height: 100%;
-    align-self: center;
+    max-height: calc(var(--content_height) - 2 * var(--std-block-spacing));
+    align-self: start;
     justify-self: right;
     aspect-ratio: var(--aspect-ratio);
 }
@@ -226,5 +226,7 @@
 
 .learning-journey {
     grid-area: journey;
+    max-height: calc(var(--content_height) - 2 * var(--std-block-spacing));
+    overflow: scroll;
 }
 </style>
