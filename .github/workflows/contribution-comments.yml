@@ -34,6 +34,12 @@ jobs:
           /^-/ && !/^---/ { if ($0 !~ /^-$/) removed++; }
           END { print author ": +" added " -" removed; }
         ' > results.txt
+        cat results.txt
+      continue-on-error: true
+
+    - name: Read results
+      id: read-results
+      run: echo "::set-output name=results::$(cat results.txt)"
 
     - name: Create PR comment
       uses: peter-evans/create-or-update-comment@v2
@@ -43,5 +49,5 @@ jobs:
         body: |
           ## Lines of Code Contribution
           ```
-          ${{ steps.count-lines.outputs.results }}
+          ${{ steps.read-results.outputs.results }}
           ```
