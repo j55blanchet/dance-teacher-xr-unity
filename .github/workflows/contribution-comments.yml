@@ -27,7 +27,7 @@ jobs:
         git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
         git fetch origin +refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pull/${{ github.event.pull_request.number }}/head
 
-    - name: Debugging: Show fetched refs
+    - name: Debugging - Show fetched refs
       run: git show-ref
 
     - name: Count lines of code by author
