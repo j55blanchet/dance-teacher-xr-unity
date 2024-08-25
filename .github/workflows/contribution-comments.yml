@@ -37,7 +37,7 @@ jobs:
 
     - name: Test git log -p
       run: |
-        git log -p --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
+        git log --shortstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
 
     - name: Test git diff cmd
       run: | 
@@ -47,15 +47,13 @@ jobs:
     - name: Count lines of code by author
       id: count-lines
       run: |
-        git log --shortstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
+        git log --numstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
         awk '
           BEGIN { added = 0; removed = 0; author = ""; }
           /^[^ ]/ { if (author != "") { print author ": +" added " -" removed; added = 0; removed = 0; } author = $0; next }
-          /files changed/ {
-            match($0, /([0-9]+) insertions?\(\+\)/, a);
-            match($0, /([0-9]+) deletions?\(-\)/, r);
-            added += a[1];
-            removed += r[1];
+          /^[0-9]/ {
+            added += $1;
+            removed += $2;
           }
           END { if (author != "") { print author ": +" added " -" removed; } }
         ' > results.txt
