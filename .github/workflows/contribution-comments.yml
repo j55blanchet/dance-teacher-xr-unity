@@ -1,0 +1,47 @@
+name: Count Lines of Code in Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  count-lines:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install git
+      run: sudo apt-get install -y git
+
+    - name: Fetch pull request changes
+      run: git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
+
+    - name: Count lines of code by author
+      id: count-lines
+      run: |
+        git log -p --pretty=format:"%an" origin/main..FETCH_HEAD | \
+        awk '
+          BEGIN { author = ""; added = 0; removed = 0; }
+          /^Author:/ { author = $2; }
+          /^+/ && !/^+++/ { if ($0 !~ /^+$/) added++; }
+          /^-/ && !/^---/ { if ($0 !~ /^-$/) removed++; }
+          END { print author ": +" added " -" removed; }
+        ' > results.txt
+
+    - name: Create PR comment
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          ## Lines of Code Contribution
+          ```
+          ${{ steps.count-lines.outputs.results }}
+          ```
