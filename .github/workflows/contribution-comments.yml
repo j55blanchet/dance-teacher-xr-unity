@@ -35,15 +35,18 @@ jobs:
     - name: Debugging - Show fetched refs
       run: git show-ref
 
+    - name: Test git log -p
+      run: |
+        git log -p --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
+
+    - name: Test git diff cmd
+      run: | 
+        git diff origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
+
     # Step 6: Count lines of code by author
     - name: Count lines of code by author
       id: count-lines
       run: |
-        # Show the diffs for debugging
-        git diff origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
-
-        # Count lines of code by author
-        git log -p --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
         awk '
           BEGIN { added = 0; removed = 0; author = ""; }
           /^Author:/ { author = $2; }
