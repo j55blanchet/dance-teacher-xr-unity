@@ -57,6 +57,7 @@ jobs:
           /^\+\+\+/ { next }
           /^\+/ { added++ }
           /^-/ { removed++ }
+          { print "DEBUG: " $0 }  # Debug print to see each line processed
           END { if (author != "") { print author ": +" added " -" removed; } }
         ' > results.txt
         cat results.txt
