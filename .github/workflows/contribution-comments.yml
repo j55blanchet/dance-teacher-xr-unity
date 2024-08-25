@@ -11,6 +11,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -21,12 +23,17 @@ jobs:
       run: sudo apt-get install -y git
 
     - name: Fetch pull request changes
-      run: git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
+      run: |
+        git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
+        git fetch origin +refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pull/${{ github.event.pull_request.number }}/head
+
+    - name: Debugging: Show fetched refs
+      run: git show-ref
 
     - name: Count lines of code by author
       id: count-lines
       run: |
-        git log -p --pretty=format:"%an" origin/main..FETCH_HEAD | \
+        git log -p --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
         awk '
           BEGIN { author = ""; added = 0; removed = 0; }
           /^Author:/ { author = $2; }
