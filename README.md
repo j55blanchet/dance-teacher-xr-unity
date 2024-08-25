@@ -31,3 +31,7 @@ Example:
 
 ## Updating the Published Webapp
 The webapp is published on github pages. The published webapp is hosted from the `docs` folder. Running a svelte build job in the web frontend folder will update the published verison in the docs folder. When pushed to the main branch, the published webapp will be updated. The webapp is available at <https://dancetutor.julien.studio>.
+
+## Github Actions
+* We created a new github action to count the number of line additions and deletions by each author.
+
