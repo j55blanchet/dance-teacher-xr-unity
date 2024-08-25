@@ -45,11 +45,12 @@ jobs:
         # Count lines of code by author
         git log -p --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
         awk '
-          BEGIN { added = 0; removed = 0; }
+          BEGIN { added = 0; removed = 0; author = ""; }
           /^Author:/ { author = $2; }
+          /^diff --git/ { if (author != "") { print author ": +" added " -" removed; added = 0; removed = 0; } }
           /^+/ && !/^+++/ { if ($0 !~ /^+$/) added++; }
           /^-/ && !/^---/ { if ($0 !~ /^-$/) removed++; }
-          END { print author ": +" added " -" removed; }
+          END { if (author != "") { print author ": +" added " -" removed; } }
         ' > results.txt
         cat results.txt
       continue-on-error: true
