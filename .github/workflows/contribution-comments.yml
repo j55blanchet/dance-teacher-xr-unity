@@ -9,33 +9,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Step 1: Checkout the repository
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
+    # Step 2: Set up Python environment
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
+    # Step 3: Install git
     - name: Install git
       run: sudo apt-get install -y git
 
+    # Step 4: Fetch pull request changes
     - name: Fetch pull request changes
       run: |
         git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
         git fetch origin +refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pull/${{ github.event.pull_request.number }}/head
 
+    # Step 5: Debugging - Show fetched refs
     - name: Debugging - Show fetched refs
       run: git show-ref
 
+    # Step 6: Count lines of code by author
     - name: Count lines of code by author
       id: count-lines
       run: |
+        # Show the diffs for debugging
+        git diff origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
+
+        # Count lines of code by author
         git log -p --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
         awk '
-          BEGIN { author = ""; added = 0; removed = 0; }
+          BEGIN { added = 0; removed = 0; }
           /^Author:/ { author = $2; }
           /^+/ && !/^+++/ { if ($0 !~ /^+$/) added++; }
           /^-/ && !/^---/ { if ($0 !~ /^-$/) removed++; }
@@ -44,10 +54,12 @@ jobs:
         cat results.txt
       continue-on-error: true
 
+    # Step 7: Read results from the file and set as output
     - name: Read results
       id: read-results
       run: echo "::set-output name=results::$(cat results.txt)"
 
+    # Step 8: Create a comment on the pull request with the results
     - name: Create PR comment
       uses: peter-evans/create-or-update-comment@v2
       with:
