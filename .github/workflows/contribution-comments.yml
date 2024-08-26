@@ -52,7 +52,8 @@ jobs:
     - name: Count lines of code by author
       id: count-lines
       run: |
-        git log --numstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
+        git log --numstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head -- \
+        ':(exclude)Pods' ':(exclude)node_modules' ':(exclude)Prefabs' ':(exclude)Photon' ':(exclude)Oculus' ':(exclude)XR' ':(exclude).expo' ':(exclude)assets' ':(exclude)android' | \
         awk '
           BEGIN { added = 0; removed = 0; author = ""; }
           /^[^ \t0-9]/ {
