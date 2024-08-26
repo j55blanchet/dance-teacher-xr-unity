@@ -47,6 +47,8 @@ jobs:
         git diff origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
 
     # Step 6: Count lines of code by author and aggregate results
+    #   The awk command is the star of the show here, responsible for parsing the git log output
+    #   and aggregating the counts by author.
     - name: Count lines of code by author
       id: count-lines
       run: |
