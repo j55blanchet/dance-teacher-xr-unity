@@ -50,12 +50,25 @@ jobs:
         git log --numstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head | \
         awk '
           BEGIN { added = 0; removed = 0; author = ""; }
-          /^[^ ]/ { if (author != "") { print author ": +" added " -" removed; added = 0; removed = 0; } author = $0; next }
+          /^[^ \t0-9]/ {
+            if (author != "") {
+              print author ": +" added " -" removed;
+              added = 0; removed = 0;
+            }
+            author = $0;
+            next;
+          }
           /^[0-9]/ {
             added += $1;
             removed += $2;
+            next;
           }
-          END { if (author != "") { print author ": +" added " -" removed; } }
+          { next; }
+          END {
+            if (author != "") {
+              print author ": +" added " -" removed;
+            }
+          }
         ' > results.txt
         cat results.txt
       continue-on-error: true
