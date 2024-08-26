@@ -90,7 +90,17 @@ jobs:
         cat results.txt >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
 
-    # Step 8: Create a comment on the pull request with the results
+    # Step 8: Delete previous "Lines of Code Contribution" comments
+    - name: Delete previous comments
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        delete: true
+        body: |
+          ## Lines of Code Contribution
+
+    # Step 9: Create a comment on the pull request with the results
     - name: Create PR comment
       uses: peter-evans/create-or-update-comment@v2
       with:
