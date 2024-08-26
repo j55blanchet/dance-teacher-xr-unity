@@ -1,3 +1,6 @@
+# A GitHub action which will count and aggregate the contributions of each author in terms of numbers of lines
+# created and deleted. This is cumulative across commits, so if an author writes 10 lines and then deletes those lines
+# in a later commit, it will count as +10 -10 lines, as opposed to +0 +0
 name: Count Lines of Code in Pull Request
 
 on:
