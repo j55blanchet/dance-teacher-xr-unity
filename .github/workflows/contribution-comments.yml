@@ -43,7 +43,7 @@ jobs:
       run: | 
         git diff origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
 
-    # Step 6: Count lines of code by author
+    # Step 6: Count lines of code by author and aggregate results
     - name: Count lines of code by author
       id: count-lines
       run: |
@@ -52,10 +52,15 @@ jobs:
           BEGIN { added = 0; removed = 0; author = ""; }
           /^[^ \t0-9]/ {
             if (author != "") {
-              print author ": +" added " -" removed;
+              authors[author]["added"] += added;
+              authors[author]["removed"] += removed;
               added = 0; removed = 0;
             }
             author = $0;
+            if (!(author in authors)) {
+              authors[author]["added"] = 0;
+              authors[author]["removed"] = 0;
+            }
             next;
           }
           /^[0-9]/ {
@@ -66,7 +71,11 @@ jobs:
           { next; }
           END {
             if (author != "") {
-              print author ": +" added " -" removed;
+              authors[author]["added"] += added;
+              authors[author]["removed"] += removed;
+            }
+            for (author in authors) {
+              print author ": +" authors[author]["added"] " -" authors[author]["removed"];
             }
           }
         ' > results.txt
@@ -76,8 +85,6 @@ jobs:
     # Step 7: Read results from the file and set as output
     - name: Read results
       id: read-results
-      # run: echo "::set-output name=results::$(cat results.txt)"
-      # run: echo "results=$(cat results.txt)" >> $GITHUB_OUTPUT
       run: |
         echo "results<<EOF" >> $GITHUB_OUTPUT
         cat results.txt >> $GITHUB_OUTPUT
