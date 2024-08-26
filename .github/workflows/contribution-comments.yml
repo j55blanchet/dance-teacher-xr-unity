@@ -76,7 +76,12 @@ jobs:
     # Step 7: Read results from the file and set as output
     - name: Read results
       id: read-results
-      run: echo "::set-output name=results::$(cat results.txt)"
+      # run: echo "::set-output name=results::$(cat results.txt)"
+      # run: echo "results=$(cat results.txt)" >> $GITHUB_OUTPUT
+      run: |
+        echo "results<<EOF" >> $GITHUB_OUTPUT
+        cat results.txt >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     # Step 8: Create a comment on the pull request with the results
     - name: Create PR comment
