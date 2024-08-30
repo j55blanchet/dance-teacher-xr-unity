@@ -117,10 +117,12 @@ jobs:
               total_authors[author "_added"] += added;
               total_authors[author "_removed"] += removed;
             }
+            print "| **Author** | **Added** | **Removed** |";
+            print "|------------|-----------|-------------|";
             for (author in total_authors) {
               if (match(author, /_added$/)) {
                 base_author = substr(author, 1, length(author) - 6);
-                print base_author " (total): +" total_authors[base_author "_added"] "  -" total_authors[base_author "_removed"];
+                print "|base_author " (total) |  +" total_authors[base_author "_added"] " |  -" total_authors[base_author "_removed"] " |";
               }
             }
           }
@@ -182,7 +184,5 @@ jobs:
         comment-id: ${{ steps.find-comment.outputs.comment-id }}
         edit-mode: replace
         body: |
-          ## Lines of Code Contribution
-          
           ${{ steps.read-results.outputs.results }}
           
