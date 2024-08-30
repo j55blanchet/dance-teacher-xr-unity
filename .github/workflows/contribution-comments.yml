@@ -43,13 +43,12 @@ jobs:
       run: | 
         git diff origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
 
-    # Step 6: Count lines of code by author and aggregate results
+    # Step 6a: Count lines of code by author and aggregate results
     #   The awk command is the star of the show here, responsible for parsing the git log output
     #   and aggregating the counts by author.
-    - name: Count lines of code by author
-      id: count-lines
+    - name: Fetch lines of code added and removed in the current pull request
+      id: fetch-pr-lines
       run: |
-        # Fetch lines of code added and removed in the current pull request
         git log --numstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head -- \
         ':(exclude)Pods' ':(exclude)node_modules' ':(exclude)Prefabs' ':(exclude)Photon' ':(exclude)Oculus' ':(exclude)XR' ':(exclude).expo' ':(exclude)assets' ':(exclude)android' | \
         awk '
@@ -84,7 +83,10 @@ jobs:
           }
         ' > pr_results.txt
 
-        # Fetch total lines of code added and removed by each author across the entire repository history
+    # Step 6b: Fetch total lines of code added and removed by each author across the entire repository history
+    - name: Fetch total lines of code added and removed by each author across the entire repository history
+      id: fetch-total-lines
+      run: |
         git log --numstat --pretty=format:"%an" -- \
         ':(exclude)Pods' ':(exclude)node_modules' ':(exclude)Prefabs' ':(exclude)Photon' ':(exclude)Oculus' ':(exclude)XR' ':(exclude).expo' ':(exclude)assets' ':(exclude)android' | \
         awk '
@@ -118,7 +120,11 @@ jobs:
             }
           }
         ' > total_results.txt
-
+    
+    # Step 6c: Combine results and count lines authored by each contributor
+    - name: Combine results and count lines authored by each contributor
+      id: combine-results
+      run: |
         # Combine results
         echo "## Lines of Code Contribution" > combined_results.txt
         echo "### Current Pull Request" >> combined_results.txt
@@ -127,7 +133,7 @@ jobs:
         echo "### Total Contributions" >> combined_results.txt
         cat total_results.txt >> combined_results.txt
 
-        # Run coworker's command to count lines authored by each contributor
+        # Run Tim's command to count lines authored by each contributor
         git ls-tree --name-only -r HEAD | \
         grep -E '\.(swift|js|css|jsx|py|cs|scss|ts)$' | \
         grep -E -v 'Pods|node_modules|Prefabs|Photon|Oculus|XR|.expo|assets|android' | \
@@ -143,7 +149,7 @@ jobs:
         cat authored_lines.txt >> combined_results.txt
 
         cat combined_results.txt
-
+        
     # Step 7: Read results from the file and set as output
     - name: Read results
       id: read-results
