@@ -82,6 +82,7 @@ jobs:
             }
           }
         ' > pr_results.txt
+        cat pr_results.txt
 
     # Step 6b: Fetch total lines of code added and removed by each author across the entire repository history
     - name: Fetch total lines of code added and removed by each author across the entire repository history
@@ -89,18 +90,19 @@ jobs:
       run: |
         git log --numstat --pretty=format:"%an" -- \
         ':(exclude)Pods' ':(exclude)node_modules' ':(exclude)Prefabs' ':(exclude)Photon' ':(exclude)Oculus' ':(exclude)XR' ':(exclude).expo' ':(exclude)assets' ':(exclude)android' | \
+        grep -v '^-.*' | \
         awk '
           BEGIN { added = 0; removed = 0; author = ""; }
           /^[^ \t0-9]/ {
             if (author != "") {
-              total_authors[author]["added"] += added;
-              total_authors[author]["removed"] += removed;
+              total_authors[author "_added"] += added;
+              total_authors[author "_removed"] += removed;
               added = 0; removed = 0;
             }
             author = $0;
-            if (!(author in total_authors)) {
-              total_authors[author]["added"] = 0;
-              total_authors[author]["removed"] = 0;
+            if (!(author "_added" in total_authors)) {
+              total_authors[author "_added"] = 0;
+              total_authors[author "_removed"] = 0;
             }
             next;
           }
@@ -109,15 +111,17 @@ jobs:
             removed += $2;
             next;
           }
-          /^-/ { next; }  # Skip lines that start with a hyphen
           { next; }
           END {
             if (author != "") {
-              total_authors[author]["added"] += added;
-              total_authors[author]["removed"] += removed;
+              total_authors[author "_added"] += added;
+              total_authors[author "_removed"] += removed;
             }
             for (author in total_authors) {
-              print author ": total +" total_authors[author]["added"] " total -" total_authors[author]["removed"];
+              if (match(author, /_added$/)) {
+                base_author = substr(author, 1, length(author) - 6);
+                print base_author " (total): +" total_authors[base_author "_added"] "  -" total_authors[base_author "_removed"];
+              }
             }
           }
         ' > total_results.txt
@@ -179,6 +183,6 @@ jobs:
         edit-mode: replace
         body: |
           ## Lines of Code Contribution
-          ```
+          
           ${{ steps.read-results.outputs.results }}
-          ```
+          
