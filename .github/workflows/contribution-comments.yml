@@ -77,8 +77,11 @@ jobs:
               authors[author]["added"] += added;
               authors[author]["removed"] += removed;
             }
+            print "| **Author** | **Added** | **Removed** |";
+            print "|------------|-----------|-------------|";
             for (author in authors) {
-              print author ": +" authors[author]["added"] " -" authors[author]["removed"];
+              print  "|" author "| +" authors[author]["added"] "| -" authors[author]["removed"] " |";
+              # print "|" base_author " | +" total_authors[author] " | -" total_authors[base_author "_removed"] " |";
             }
           }
         ' > pr_results.txt
@@ -133,11 +136,11 @@ jobs:
       id: combine-results
       run: |
         # Combine results
-        echo "## Lines of Code Contribution" > combined_results.txt
+        echo "## Code Contribution" > combined_results.txt
         echo "### Current Pull Request" >> combined_results.txt
         cat pr_results.txt >> combined_results.txt
         echo "" >> combined_results.txt
-        echo "### Total Contributions" >> combined_results.txt
+        echo "### Lines Added / Removed Over Time >> combined_results.txt
         cat total_results.txt >> combined_results.txt
 
         # Run Tim's command to count lines authored by each contributor
@@ -152,8 +155,8 @@ jobs:
         sort -nr > authored_lines.txt
 
         echo "" >> combined_results.txt
-        echo "### Authored Lines" >> combined_results.txt
-        cat authored_lines.txt >> combined_results.txt
+        echo "### Authored Lines *(Current Repository Snapshot)*" >> combined_results.txt
+        cat authored_lines.txt | awk '{print $1 " lines by " $3}' >> combined_results.txt
 
         cat combined_results.txt
         
