@@ -122,7 +122,7 @@ jobs:
             for (author in total_authors) {
               if (match(author, /_added$/)) {
                 base_author = substr(author, 1, length(author) - 6);
-                print "|base_author " (total) |  +" total_authors[base_author "_added"] " |  -" total_authors[base_author "_removed"] " |";
+                print "|base_author " total_authors[base_author "_added"] " |  -" total_authors[base_author "_removed"] " |";
               }
             }
           }
