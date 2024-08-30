@@ -155,8 +155,10 @@ jobs:
         sort -nr > authored_lines.txt
 
         echo "" >> combined_results.txt
-        echo "### Authored Lines *(Current Repository Snapshot)*" >> combined_results.txt
-        cat authored_lines.txt | awk '{print $1 " lines by " $3}' >> combined_results.txt
+        echo "### Authored Lines in Current Repository Snapshot" >> combined_results.txt
+        echo "| **Author** | **Lines Authored** |" >> combined_results.txt
+        echo "|------------|-------------------|" >> combined_results.txt
+        cat authored_lines.txt | awk '{print "| " $3 " | " $1 " |"}' >> combined_results.txt
 
         cat combined_results.txt
         
