@@ -140,7 +140,7 @@ jobs:
         echo "### Current Pull Request" >> combined_results.txt
         cat pr_results.txt >> combined_results.txt
         echo "" >> combined_results.txt
-        echo "### Lines Added / Removed Over Time >> combined_results.txt
+        echo "### Lines Added / Removed Over Time" >> combined_results.txt
         cat total_results.txt >> combined_results.txt
 
         # Run Tim's command to count lines authored by each contributor
