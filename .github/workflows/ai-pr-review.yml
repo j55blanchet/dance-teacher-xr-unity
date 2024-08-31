@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+
+
 jobs:
   review:
     runs-on: ubuntu-latest
@@ -47,25 +49,25 @@ jobs:
         pr_files=$(cat pr_files.json)
         prompt="${{ env.prompt }}"
         response=$(python -c "
-          import openai
-          import os
-          import json
+import openai
+import os
+import json
 
-          openai.api_key = os.getenv('OPENAI_API_KEY')
-          pr_files = json.loads(os.getenv('pr_files'))
-          prompt = os.getenv('prompt')
+openai.api_key = os.getenv('OPENAI_API_KEY')
+pr_files = json.loads(os.getenv('pr_files'))
+prompt = os.getenv('prompt')
 
-          # Prepare the input for ChatGPT
-          input_text = prompt + '\n\n' + json.dumps(pr_files, indent=2)
+# Prepare the input for ChatGPT
+input_text = prompt + '\n\n' + json.dumps(pr_files, indent=2)
 
-          response = openai.Completion.create(
-            engine='text-davinci-003',
-            prompt=input_text,
-            max_tokens=1500
-          )
+response = openai.Completion.create(
+  engine='text-davinci-003',
+  prompt=input_text,
+  max_tokens=1500
+)
 
-          print(response.choices[0].text.strip())
-        ")
+print(response.choices[0].text.strip())
+")
         echo "response=$response" >> $GITHUB_ENV
     
     - name: Post review comments
