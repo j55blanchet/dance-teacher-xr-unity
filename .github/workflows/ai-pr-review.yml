@@ -1,0 +1,82 @@
+name: AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install openai requests
+  
+    - name: Skip Dependabot PRs
+      if: env.pr_author == 'dependabot[bot]'
+      run: echo "Skipping Dependabot PR."
+
+    - name: Fetch PR details
+      id: fetch-pr
+      run: |
+        pr_number=${{ github.event.pull_request.number }}
+        repo=${{ github.repository }}
+        curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/$repo/pulls/$pr_number/files" > pr_files.json
+    
+    - name: Prepare review prompt
+      id: prepare-prompt
+      run: |
+        default_prompt="Please review the following code changes for substantive issues."
+        custom_prompt="${{ secrets.CUSTOM_REVIEW_PROMPT }}"
+        prompt="${custom_prompt:-$default_prompt}"
+        echo "prompt=$prompt" >> $GITHUB_ENV
+    
+    - name: Call OpenAI API
+      id: call-openai
+      run: |
+        pr_files=$(cat pr_files.json)
+        prompt="${{ env.prompt }}"
+        response=$(python -c "
+          import openai
+          import os
+          import json
+
+          openai.api_key = os.getenv('OPENAI_API_KEY')
+          pr_files = json.loads(os.getenv('pr_files'))
+          prompt = os.getenv('prompt')
+
+          # Prepare the input for ChatGPT
+          input_text = prompt + '\n\n' + json.dumps(pr_files, indent=2)
+
+          response = openai.Completion.create(
+            engine='text-davinci-003',
+            prompt=input_text,
+            max_tokens=1500
+          )
+
+          print(response.choices[0].text.strip())
+        ")
+        echo "response=$response" >> $GITHUB_ENV
+    
+    - name: Post review comments
+      run: |
+        pr_number=${{ github.event.pull_request.number }}
+        repo=${{ github.repository }}
+        response="${{ env.response }}"
+        curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -X POST -d "{\"body\": \"$response\"}" \
+          "https://api.github.com/repos/$repo/issues/$pr_number/comments"
+    
+    - name: Handle errors
+      if: failure()
+      run: echo "An error occurred during the AI PR review process."
