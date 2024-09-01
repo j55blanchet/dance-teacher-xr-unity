@@ -24,8 +24,10 @@ jobs:
         pip install openai requests
   
     - name: Skip Dependabot PRs
-      if: env.pr_author == 'dependabot[bot]'
-      run: echo "Skipping Dependabot PR."
+      if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+      run: |
+        echo "Skipping Dependabot PR."
+        exit 0
 
     - name: Fetch PR details
       id: fetch-pr
@@ -48,26 +50,7 @@ jobs:
       run: |
         pr_files=$(cat pr_files.json)
         prompt="${{ env.prompt }}"
-        response=$(python -c "
-import openai
-import os
-import json
-
-openai.api_key = os.getenv('OPENAI_API_KEY')
-pr_files = json.loads(os.getenv('pr_files'))
-prompt = os.getenv('prompt')
-
-# Prepare the input for ChatGPT
-input_text = prompt + '\n\n' + json.dumps(pr_files, indent=2)
-
-response = openai.Completion.create(
-  engine='text-davinci-003',
-  prompt=input_text,
-  max_tokens=1500
-)
-
-print(response.choices[0].text.strip())
-")
+        response=$(python -c "import openai, os, json; openai.api_key = os.getenv('OPENAI_API_KEY'); pr_files = json.loads(os.getenv('pr_files')); prompt = os.getenv('prompt'); input_text = prompt + '\n\n' + json.dumps(pr_files, indent=2); response = openai.Completion.create(engine='text-davinci-003', prompt=input_text, max_tokens=1500); print(response.choices[0].text.strip())")
         echo "response=$response" >> $GITHUB_ENV
     
     - name: Post review comments
