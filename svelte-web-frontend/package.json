@@ -15,7 +15,7 @@
 		"supabase:localsync": "node ./scripts/syncStorageAssets.js"
 	},
 	"devDependencies": {
-		"@anthropic-ai/sdk": "^0.25.0",
+		"@anthropic-ai/sdk": "^0.27.2",
 		"@iconify/json": "^2.2.233",
 		"@iconify/svelte": "^4.0.2",
 		"@iconify/tailwind": "^1.1.2",
