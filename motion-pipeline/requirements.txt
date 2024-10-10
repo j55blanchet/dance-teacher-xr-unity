@@ -1,11 +1,11 @@
 mediapipe == 0.10.11
-pandas == 2.2.2
+pandas == 2.2.3
 #protobuf ~= 3.20
-pytransform3d ~=3.5
+pytransform3d ~=3.6
 # open3d ~=0.17
 moviepy ~= 1.0.3
-librosa ~=0.10.1
+librosa ~=0.10.2
 pydub ~=0.25.1
-psutil~=5.9
+psutil~=6.0
 dataclasses-json~=0.6.7
 tqdm >= 4.66.2
