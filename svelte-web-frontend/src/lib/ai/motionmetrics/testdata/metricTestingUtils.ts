@@ -218,7 +218,7 @@ function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any, a
         data: rows,
     });
     
-    ensureDirectoryExistence('./testResults/metricOutput/');
+    ensureDirectoryExistence('./testResults/');
     fs.writeFileSync(`./testResults/${metric.constructor.name}.csv`, csv);
 }
 
