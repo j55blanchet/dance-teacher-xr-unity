@@ -35,64 +35,6 @@ $info: $infoBlue;
 $error: $red;
 $warning: $yellow;
 $link: $blue;
-// $widescreen-enabled: false;
-// $fullhd-enabled: false;
-
-// Update some of Bulma's component variables
-$body-background-color: $beige-lighter;
-// $control-border-width: 2px;
-// $input-border-color: transparent;
-// $input-shadow: none;
-
-// @import "../../node_modules/bulma/bulma.sass";
-
-// $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($scheme-invert, 0.04);
-
-// .card.card-with-left-image {
-// 	display: flex;
-// 	flex-direction: row;
-// 	align-items: start;
-
-// 	& .card-image .image img {
-// 		border-radius: $radius 0 0 $radius;
-// 	}
-// }
-
-// .card.card-button{
-// 	transition: box-shadow 0.2s $easing;
-
-// 	&:hover {
-// 		box-shadow: $shadow-deep;
-// 	}
-// }
-
-// .navbar {
-// 	@each $name, $pair in $navbar-colors {
-// 		$color: nth($list: $pair, $n: 1);
-// 		$color-invert: nth($pair, 2);
-// 		&.is-#{$name} {
-// 			background-color: $color;
-// 			color: $color-invert;
-// 			> .navbar-item {
-// 				color: $color-invert;
-// 				// &:hover {
-// 					// background-color: $color-invert;
-// 					// color: $color;
-// 				// }
-// 				.navbar-title {
-// 					color: $color-invert;
-// 					font-weight: 600;
-// 				}
-// 				.navbar-subtitle {
-// 					color: $color-invert;
-// 					font-weight: 400;
-// 					font-size: 0.75rem;
-// 				}
-// 			}
-// 		}		
-// 	}
-// }
-
 
 :root {
 	/* --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
@@ -175,77 +117,33 @@ div.spinner {
 	100% { transform: rotate(360deg); border-radius: 50%;}
 }
   
-
-.flex {
-	display: flex;
-	box-sizing: border-box;
-}
-.flex-row {
-	flex-direction: row;
-}
-.flex-col {
-	flex-direction: column;
-}
-.flex-wrap {
-	flex-wrap: wrap;
-}
-.flex-nowrap {
-	flex-wrap: nowrap;
-}
-.flex-mainaxis-center {
-	justify-content: center;
-}
-
-.flex-crossaxis-center {
-	align-items: center;
-}
-.flex-crossaxis-end {
-	align-items: flex-end;
-}
-
-.flex-center {
-	justify-content: center;
-	align-items: center;
-}
-
-.flex-mainaxis-stretch {
-	justify-content: stretch;
-}
-.flex-crossaxis-stretch {
-	align-items: stretch;
-}
-.flex-stretch {
-	justify-content: stretch;
-	align-items: stretch;
-}
-
-.animate.pop {
-	animation-duration: 0.5s;
-	animation-name: animate-pop;
-	animation-timing-function: cubic-bezier(.26, .53, .74, 1.48);
-  }
+// .animate.pop {
+// 	animation-duration: 0.5s;
+// 	animation-name: animate-pop;
+// 	animation-timing-function: cubic-bezier(.26, .53, .74, 1.48);
+//   }
   
-  @keyframes animate-pop {
-	0% {
-	  opacity: 0;
-	  transform: scale(0.5, 0.5);
-	}
+//   @keyframes animate-pop {
+// 	0% {
+// 	  opacity: 0;
+// 	  transform: scale(0.5, 0.5);
+// 	}
   
-	100% {
-	  opacity: 1;
-	  transform: scale(1, 1);
-	}
-  }
+// 	100% {
+// 	  opacity: 1;
+// 	  transform: scale(1, 1);
+// 	}
+//   }
 
-  @keyframes highlightPulse {
-	from {
-		box-shadow: 0 0 0.05em 0.05em var(--highlight-color), inset 0 0 0.05em 0.05em var(--highlight-color);
-	}
-	to {
-		box-shadow: 0 0 0.2em 0.2em var(--highlight-color), inset 0 0 0.1em 0.1em var(--highlight-color);
-	}
-}
+//   @keyframes highlightPulse {
+// 	from {
+// 		box-shadow: 0 0 0.05em 0.05em var(--highlight-color), inset 0 0 0.05em 0.05em var(--highlight-color);
+// 	}
+// 	to {
+// 		box-shadow: 0 0 0.2em 0.2em var(--highlight-color), inset 0 0 0.1em 0.1em var(--highlight-color);
+// 	}
+// }
 
-  .no-scroll {
-	overflow: hidden;
-  }
+//   .no-scroll {
+// 	overflow: hidden;
+//   }

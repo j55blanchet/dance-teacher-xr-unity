@@ -64,7 +64,6 @@
                     dispatch('segmentClicked', segment);
                 }
             }}
-            class:is-dark={isNonActiveSegment}
             style:--segment-time={segment.duration}
             style:--percent-progress={
                 isNonActiveSegment ? 0 :

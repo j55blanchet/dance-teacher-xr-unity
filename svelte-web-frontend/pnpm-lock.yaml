@@ -71,9 +71,6 @@ devDependencies:
   autoprefixer:
     specifier: ^10.4.19
     version: 10.4.19(postcss@8.4.41)
-  bulma:
-    specifier: ^0.9.4
-    version: 0.9.4
   daisyui:
     specifier: ^4.12.10
     version: 4.12.10(postcss@8.4.41)
@@ -1568,10 +1565,6 @@ packages:
       electron-to-chromium: 1.4.723
       node-releases: 2.0.14
       update-browserslist-db: 1.0.13(browserslist@4.23.0)
-    dev: true
-
-  /bulma@0.9.4:
-    resolution: {integrity: sha512-86FlT5+1GrsgKbPLRRY7cGDg8fsJiP/jzTqXXVqiUZZ2aZT8uemEOHlU1CDU+TxklPEZ11HZNNWclRBBecP4CQ==}
     dev: true
 
   /cac@6.7.14:
