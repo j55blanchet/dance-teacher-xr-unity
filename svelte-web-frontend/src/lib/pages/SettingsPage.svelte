@@ -28,7 +28,7 @@ import {
 } from "$lib/model/settings";
 import { lerp } from "$lib/utils/math";
 import type { User } from "@supabase/supabase-js";
-	import { createEventDispatcher } from "svelte";
+import { createEventDispatcher } from "svelte";
 
 export let user: User | null = null;
 
