@@ -12,7 +12,7 @@ devDependencies:
     specifier: ^0.28.0
     version: 0.28.0
   '@iconify/json':
-    specifier: ^2.2.233
+    specifier: ^2.2.239
     version: 2.2.239
   '@iconify/svelte':
     specifier: ^4.0.2
@@ -24,7 +24,7 @@ devDependencies:
     specifier: 0.2.18
     version: 0.2.18(langchain@0.2.16)
   '@langchain/openai':
-    specifier: ^0.3.5
+    specifier: ^0.3.8
     version: 0.3.8(@langchain/core@0.2.18)
   '@mediapipe/tasks-vision':
     specifier: ^0.10.14
@@ -39,19 +39,19 @@ devDependencies:
     specifier: ^0.2.9
     version: 0.2.9(@supabase/supabase-js@2.45.1)
   '@supabase/supabase-js':
-    specifier: ^2.45.0
+    specifier: ^2.45.1
     version: 2.45.1
   '@sveltejs/adapter-vercel':
-    specifier: ^5.4.1
+    specifier: ^5.4.3
     version: 5.4.3(@sveltejs/kit@2.5.24)
   '@sveltejs/kit':
-    specifier: ^2.5.19
+    specifier: ^2.5.24
     version: 2.5.24(@sveltejs/vite-plugin-svelte@3.1.2)(svelte@4.2.18)(vite@5.4.2)
   '@sveltejs/vite-plugin-svelte':
-    specifier: ^3.0.0
+    specifier: ^3.1.2
     version: 3.1.2(svelte@4.2.18)(vite@5.4.2)
   '@tailwindcss/typography':
-    specifier: ^0.5.13
+    specifier: ^0.5.14
     version: 0.5.14(tailwindcss@3.4.10)
   '@types/cookie':
     specifier: ^0.6.0
@@ -63,10 +63,10 @@ devDependencies:
     specifier: ^10.0.0
     version: 10.0.0
   '@typescript-eslint/eslint-plugin':
-    specifier: ^8.0.0
+    specifier: ^8.2.0
     version: 8.2.0(@typescript-eslint/parser@8.2.0)(eslint@9.9.0)(typescript@5.5.4)
   '@typescript-eslint/parser':
-    specifier: ^8.0.0
+    specifier: ^8.2.0
     version: 8.2.0(eslint@9.9.0)(typescript@5.5.4)
   '@vitest/coverage-v8':
     specifier: ^2.0.5
@@ -84,7 +84,7 @@ devDependencies:
     specifier: ^16.4.5
     version: 16.4.5
   eslint:
-    specifier: ^9.8.0
+    specifier: ^9.9.0
     version: 9.9.0
   eslint-config-prettier:
     specifier: ^9.1.0
@@ -93,13 +93,13 @@ devDependencies:
     specifier: ^2.43.0
     version: 2.43.0(eslint@9.9.0)(svelte@4.2.18)
   langchain:
-    specifier: ^0.2.12
+    specifier: ^0.2.16
     version: 0.2.16(@supabase/supabase-js@2.45.1)
   papaparse:
     specifier: ^5.4.1
     version: 5.4.1
   postcss:
-    specifier: ^8.4.40
+    specifier: ^8.4.41
     version: 8.4.41
   postcss-load-config:
     specifier: ^6.0.1
@@ -111,22 +111,22 @@ devDependencies:
     specifier: ^3.2.6
     version: 3.2.6(prettier@3.3.3)(svelte@4.2.18)
   prettier-plugin-tailwindcss:
-    specifier: ^0.6.5
+    specifier: ^0.6.6
     version: 0.6.6(prettier-plugin-svelte@3.2.6)(prettier@3.3.3)
   sass:
     specifier: ^1.77.8
     version: 1.77.8
   supabase:
-    specifier: ^1.187.10
+    specifier: ^1.190.0
     version: 1.190.0
   svelte:
     specifier: ^4.2.18
     version: 4.2.18
   svelte-check:
-    specifier: ^4.0.4
+    specifier: ^4.0.5
     version: 4.0.5(svelte@4.2.18)(typescript@5.5.4)
   tailwindcss:
-    specifier: ^3.4.7
+    specifier: ^3.4.10
     version: 3.4.10
   tslib:
     specifier: ^2.6.3
@@ -135,13 +135,13 @@ devDependencies:
     specifier: ^5.5.4
     version: 5.5.4
   unplugin-icons:
-    specifier: ^0.19.1
+    specifier: ^0.19.2
     version: 0.19.2
   uuid:
     specifier: ^10.0.0
     version: 10.0.0
   vite:
-    specifier: ^5.3.5
+    specifier: ^5.4.2
     version: 5.4.2(sass@1.77.8)
   vitest:
     specifier: ^2.0.5
@@ -1518,7 +1518,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.23.0
-      caniuse-lite: 1.0.30001605
+      caniuse-lite: 1.0.30001669
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.0.0
@@ -1590,7 +1590,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001605
+      caniuse-lite: 1.0.30001669
       electron-to-chromium: 1.4.723
       node-releases: 2.0.14
       update-browserslist-db: 1.0.13(browserslist@4.23.0)
@@ -1624,8 +1624,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /caniuse-lite@1.0.30001605:
-    resolution: {integrity: sha512-nXwGlFWo34uliI9z3n6Qc0wZaf7zaZWA1CPZ169La5mV3I/gem7bst0vr5XQH5TJXZIMfDeZyOrZnSlVzKxxHQ==}
+  /caniuse-lite@1.0.30001669:
+    resolution: {integrity: sha512-DlWzFDJqstqtIVx1zeSpIMLjunf5SmwOw0N2Ck/QSQdS8PLS4+9HrLaYei4w8BIAL7IB/UEDu889d8vhCTPA0w==}
     dev: true
 
   /chai@5.1.1:

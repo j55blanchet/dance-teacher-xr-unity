@@ -209,6 +209,7 @@ export default class UserDanceEvaluator<
             try {
                 const metricSummary = (metric).summarizeMetric(
                     trackHistory,
+                    undefined,
                 )
                 metricSummaryResult = metricSummary;
                 if (this.performanceHistoryStore) {

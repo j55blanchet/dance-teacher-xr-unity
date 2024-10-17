@@ -8,7 +8,7 @@ type TemporalAlignmentMetricOutput = ReturnType<TemporalAlignmentMetric['summari
 type TemporalAlignmentMetricFormattedOutput = ReturnType<TemporalAlignmentMetric['formatSummary']>;
 
 
-function calculateImpactEnvelope(frameHistory: Pose3DLandmarkFrame[]) {
+function calculateImpactEnvelope(frameHistory: Pose3DLandmarkFrame[], debugFileRoot?: string) {
 
     // Step 1. Calculate pose flow -- direction that each body part is moving at each frame
     const poseFlow = frameHistory.map((frame, index, arr) => {
@@ -79,7 +79,10 @@ function weighByGaussian(impactEnvelope: number[], envelopeCenterIndex: number, 
 
 // REFACTORING:: will need to support looking at adjacent segments in the future!
 export default class TemporalAlignmentMetric implements SummaryMetric<TemporalAlignmentMetricOutput, TemporalAlignmentMetricFormattedOutput> {
-    summarizeMetric(history: TrackHistory) {
+    summarizeMetric(
+        history: TrackHistory,
+        debugFilepathRoot?: string,
+    ) {
 
         if (history.user3DFrameHistory.length !== history.ref3DFrameHistory.length) {
             throw new Error("Impact envelope calculation failed: user and reference impact envelopes are different lengths");
@@ -88,16 +91,19 @@ export default class TemporalAlignmentMetric implements SummaryMetric<TemporalAl
             throw new Error("Impact envelope calculation failed: not enough frames to calculate impact envelope");
         }
 
-        const userImpactEnvelope = calculateImpactEnvelope(history.user3DFrameHistory);
+        const userImpactEnvelope = calculateImpactEnvelope(history.user3DFrameHistory, debugFilepathRoot + "user_impact_envelope/");
         const referenceImpactEnvelope = calculateImpactEnvelope(history.ref3DFrameHistory);
 
-        function saveEnvelopesToCSV(userEnvelope: number[], referenceEnvelope: number[], filePath: string) {
-            const csvContent = userEnvelope.map((value, index) => `${value},${referenceEnvelope[index]}`).join('\n');
+        function saveTimeSeriesToCSV(data: number[][], filePath: string) {
+            if (!debugFilepathRoot) return;
+
+            const csvContent = data.map((value, index) => 
+                [index, ...value].join(', ')
+            ).join('\n');
             writeFileSync(filePath, csvContent, 'utf8');
         }
 
-        const filePath = 'testResults/impact_envelopes.csv';
-        saveEnvelopesToCSV(userImpactEnvelope, referenceImpactEnvelope, filePath);
+        saveTimeSeriesToCSV([userImpactEnvelope, userImpactEnvelope], debugFilepathRoot + 'impact_envelopes.csv');
 
         // create a array of weights corresponding to a gaussian distribution
         // with a mean at the center of the impact envelope and a standard deviation of 1/2 
@@ -116,25 +122,45 @@ export default class TemporalAlignmentMetric implements SummaryMetric<TemporalAl
         // the peak of the cross correlation will be the temporal offset
         // between the two envelopes
         function crossCorrelate(signalA: number[], signalB: number[]): number[] {
+            // Initialize the result array with zeros, the length is twice the length of signalA minus 1
             const result = new Array(signalA.length).fill(0);
+
+            // Iterate over each possible lag (shift) value, starting from the largest possible negative lag
+            // and ending at the largest possible positive lag
+            //    > a lag at the middle of the result array corresponds to a perfect alignment 
+            //      between the two signals
             for (let lag = -signalA.length + 1; lag < signalA.length; lag++) {
                 let sum = 0;
+
+                // For each lag, compute the sum of products of overlapping values
                 for (let i = 0; i < signalA.length; i++) {
                     const j = i + lag;
+
+                    // Ensure the index j is within the bounds of signalB
                     if (j >= 0 && j < signalB.length) {
                         sum += signalA[i] * signalB[j];
                     }
                 }
+
+                // Store the computed sum in the result array at the appropriate index
                 result[lag + signalA.length - 1] = sum;
             }
+
+            // Return the result array containing the cross-correlation values
             return result;
         }
 
         const crossCorrelation = crossCorrelate(userWeightedEnvelope, referenceWeightedEnvelope);
 
+        saveTimeSeriesToCSV([crossCorrelation], debugFilepathRoot + 'cross_correlation.csv');
+
         // Find the peak of the cross-correlation to determine the temporal alignment
         const maxCorrelation = Math.max(...crossCorrelation);
-        const temporalOffsetFrames = crossCorrelation.indexOf(maxCorrelation) - envelopeLength + 1;
+        const indexOfMaxCorrelation = crossCorrelation.indexOf(maxCorrelation);
+        const correlationCenter = Math.floor(crossCorrelation.length / 2);
+        const framesToCenter = indexOfMaxCorrelation - correlationCenter;
+        const temporalOffsetFrames = framesToCenter;
+
         
         const timeOfFirstFrame = history.actualTimesInMs[0];
         const timeOfLastFrame = history.actualTimesInMs[history.actualTimesInMs.length - 1];
@@ -143,6 +169,7 @@ export default class TemporalAlignmentMetric implements SummaryMetric<TemporalAl
 
         return {
             temporalOffsetSecs,
+            temporalOffsetFrames,
         }
     }
     formatSummary(summary: Readonly<TemporalAlignmentMetricOutput>) {

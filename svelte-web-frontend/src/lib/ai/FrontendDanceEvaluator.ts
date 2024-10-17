@@ -11,6 +11,7 @@ import BasicInfoSummaryMetric from "./motionmetrics/BasicInfoSummaryMetric";
 import KinematicErrorMetric from "./motionmetrics/KinematicErrorMetric";
 
 import frontendPerformanceHistory from "./frontendPerformanceHistory";
+import TemporalAlignmentMetric from "./motionmetrics/TemporalAlignmentMetric";
 
 export const FrontendLiveMetrics = Object.freeze({
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
@@ -21,6 +22,7 @@ export const FrontendLiveMetrics = Object.freeze({
 export const FrontendSummaryMetrics = Object.freeze({
     basicInfo: new BasicInfoSummaryMetric(),
     kinematicError: new KinematicErrorMetric(),
+    temporalAlignment: new TemporalAlignmentMetric(),
 });
 
 export const FrontendMetrics = Object.freeze({
