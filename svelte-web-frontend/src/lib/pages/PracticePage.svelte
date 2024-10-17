@@ -702,7 +702,7 @@ function onContinueClicked() {
         class="mirror gridItem flex"
         class:hidden={!hasUserWebcamVisible}
         >
-        <div class="is-overlay">
+        <div class="absolute inset-0">
             <VirtualMirror
                 bind:this={virtualMirrorElement}
                 {poseEstimationEnabled}

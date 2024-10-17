@@ -44,54 +44,54 @@ $body-background-color: $beige-lighter;
 // $input-border-color: transparent;
 // $input-shadow: none;
 
-@import "../../node_modules/bulma/bulma.sass";
+// @import "../../node_modules/bulma/bulma.sass";
 
-$shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($scheme-invert, 0.04);
+// $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($scheme-invert, 0.04);
 
-.card.card-with-left-image {
-	display: flex;
-	flex-direction: row;
-	align-items: start;
+// .card.card-with-left-image {
+// 	display: flex;
+// 	flex-direction: row;
+// 	align-items: start;
 
-	& .card-image .image img {
-		border-radius: $radius 0 0 $radius;
-	}
-}
+// 	& .card-image .image img {
+// 		border-radius: $radius 0 0 $radius;
+// 	}
+// }
 
-.card.card-button{
-	transition: box-shadow 0.2s $easing;
+// .card.card-button{
+// 	transition: box-shadow 0.2s $easing;
 
-	&:hover {
-		box-shadow: $shadow-deep;
-	}
-}
+// 	&:hover {
+// 		box-shadow: $shadow-deep;
+// 	}
+// }
 
-.navbar {
-	@each $name, $pair in $navbar-colors {
-		$color: nth($list: $pair, $n: 1);
-		$color-invert: nth($pair, 2);
-		&.is-#{$name} {
-			background-color: $color;
-			color: $color-invert;
-			> .navbar-item {
-				color: $color-invert;
-				// &:hover {
-					// background-color: $color-invert;
-					// color: $color;
-				// }
-				.navbar-title {
-					color: $color-invert;
-					font-weight: 600;
-				}
-				.navbar-subtitle {
-					color: $color-invert;
-					font-weight: 400;
-					font-size: 0.75rem;
-				}
-			}
-		}		
-	}
-}
+// .navbar {
+// 	@each $name, $pair in $navbar-colors {
+// 		$color: nth($list: $pair, $n: 1);
+// 		$color-invert: nth($pair, 2);
+// 		&.is-#{$name} {
+// 			background-color: $color;
+// 			color: $color-invert;
+// 			> .navbar-item {
+// 				color: $color-invert;
+// 				// &:hover {
+// 					// background-color: $color-invert;
+// 					// color: $color;
+// 				// }
+// 				.navbar-title {
+// 					color: $color-invert;
+// 					font-weight: 600;
+// 				}
+// 				.navbar-subtitle {
+// 					color: $color-invert;
+// 					font-weight: 400;
+// 					font-size: 0.75rem;
+// 				}
+// 			}
+// 		}		
+// 	}
+// }
 
 
 :root {
@@ -115,13 +115,9 @@ $shadow-deep: 0 1em 2em -0.25em rgba($scheme-invert, 0.2), 0 0px 0 2px rgba($sch
 	--max-line-width: 50ch;
 	// --std-border-radius: 1rem;
 	--std-border-radius: #{$radius};
-	--std-block-spacing: #{$block-spacing};
+	// --std-block-spacing: #{$block-spacing};
 	font-family: var(--font-body);
 	color: var(--color-text);
-
-	@each $key, $value in $spacing-values {
-		--spacing-#{$key}: #{$value};
-	}
 }
 
 body {

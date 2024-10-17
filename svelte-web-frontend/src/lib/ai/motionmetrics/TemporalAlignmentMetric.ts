@@ -1,8 +1,19 @@
 import type { Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 import { getMagnitude3DVec } from "../EvaluationCommonUtils";
 import type { SummaryMetric, TrackHistory } from "./MotionMetric";
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+let writeFileSync: typeof import('fs').writeFileSync;
+
+if (typeof process !== 'undefined' && process.versions != null && process.versions.node != null) {
+    // We are in a Node.js environment
+    import('fs').then(fs => {
+        writeFileSync = fs.writeFileSync;
+    }).catch(() => {
+        writeFileSync = () => {};
+    });
+} else {
+    // make a no-op function if we're not in node
+    writeFileSync = () => {};
+}
 
 type TemporalAlignmentMetricOutput = ReturnType<TemporalAlignmentMetric['summarizeMetric']>;
 type TemporalAlignmentMetricFormattedOutput = ReturnType<TemporalAlignmentMetric['formatSummary']>;

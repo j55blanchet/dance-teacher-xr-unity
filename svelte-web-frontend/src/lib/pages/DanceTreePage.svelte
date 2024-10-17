@@ -280,7 +280,7 @@ $: {
                     bind:practiceActivityParams={practiceActivityParams}
                 />
                 <div class="control mt-4" class:animate={practiceButtonAnimationEnabled} class:pop={practiceButtonAnimationEnabled}>
-                    <button class="is-primary button"
+                    <button class="daisy-btn daisy-btn-primary"
                         on:click={practiceClicked}
                         disabled={$navigating!==null}>
                         {#if $navigating}

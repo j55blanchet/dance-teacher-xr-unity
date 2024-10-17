@@ -98,7 +98,7 @@
 		min-height: var(--content_height);
 		// align-items: center;
 		// justify-content: center;
-		--navbar_height: 3.25rem;
+		--navbar_height: 4rem;
 	}
 
 	.app-content.noNavBar {
