@@ -205,11 +205,11 @@ function clearPerformanceHistory() {
                     
                     
                     <label for="feedback_YellowThreshold">Yellow Threshold</label>
-                    <input class="outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+                    <input class="daisy-input daisy-input-xs outlined thin" type="number" name="feedback_YellowThreshold" bind:value={$feedback_YellowThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
                     <span class="note">This is used for live feedback color coding</span>
     
                     <label for="feedback_GreenThreshold">Green Threshold</label>
-                    <input class="outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
+                    <input class="daisy-input daisy-input-xs outlined thin" type="number" name="feedback_GreenThreshold" bind:value={$feedback_GreenThreshold} min={qijiaScoreMin} max={qijiaScoreMax} step={0.1}>
                     <span class="note">This is used for live feedback color coding</span>
                 </div>
             </details> 
