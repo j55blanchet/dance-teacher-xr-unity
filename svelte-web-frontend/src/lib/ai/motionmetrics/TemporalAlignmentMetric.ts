@@ -1,4 +1,5 @@
 import type { Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
+import { mkdir, mkdirSync } from "fs";
 import { getMagnitude3DVec } from "../EvaluationCommonUtils";
 import type { SummaryMetric, TrackHistory } from "./MotionMetric";
 let writeFileSync: typeof import('fs').writeFileSync;
@@ -62,6 +63,16 @@ function calculateImpactEnvelope(frameHistory: Pose3DLandmarkFrame[], debugFileR
         return bins;
     });
 
+    // store posegram as csv
+    if (debugFileRoot) {
+        const csvContent = posegram.map((frame, index) => 
+            [index, ...frame].join(', ')
+        ).join('\n');
+        const filepath = debugFileRoot + 'posegram.csv';
+        mkdirSync(debugFileRoot, { recursive: true });
+        writeFileSync(filepath, csvContent, 'utf8');
+    }
+
     // Step 3: Calculate posegram flux - the derivative of the posegram at each bin
     const posegramFlux = posegram.map((posegramFrame, frameIndex, arr) => {
         const nextPosegramFrame = arr[frameIndex + 1];
@@ -79,6 +90,16 @@ function calculateImpactEnvelope(frameHistory: Pose3DLandmarkFrame[], debugFileR
         return frame.reduce((acc, binValue) => acc + Math.abs(binValue), 0);
     }, 0);
 
+    // save the impact envelope as a csv
+    if (debugFileRoot) {
+        const csvContent = impactEnvelope.map((value, index) => 
+            [index, value].join(', ')
+        ).join('\n');
+        const filepath = debugFileRoot + 'impact_envelope.csv';
+        mkdirSync(debugFileRoot, { recursive: true });
+        writeFileSync(filepath, csvContent, 'utf8');
+    }
+    
     return impactEnvelope;
 }
 
@@ -103,11 +124,10 @@ export default class TemporalAlignmentMetric implements SummaryMetric<TemporalAl
         }
 
         const userImpactEnvelope = calculateImpactEnvelope(history.user3DFrameHistory, debugFilepathRoot + "user_impact_envelope/");
-        const referenceImpactEnvelope = calculateImpactEnvelope(history.ref3DFrameHistory);
+        const referenceImpactEnvelope = calculateImpactEnvelope(history.ref3DFrameHistory, debugFilepathRoot + "ref_impact_envelope/");
 
         function saveTimeSeriesToCSV(data: number[][], filePath: string) {
             if (!debugFilepathRoot) return;
-
             const csvContent = data.map((value, index) => 
                 [index, ...value].join(', ')
             ).join('\n');
