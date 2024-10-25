@@ -1,15 +1,17 @@
 import type { Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
-import { mkdir, mkdirSync } from "fs";
 import { getMagnitude3DVec } from "../EvaluationCommonUtils";
 import type { SummaryMetric, TrackHistory } from "./MotionMetric";
 let writeFileSync: typeof import('fs').writeFileSync;
+let mkdirSync: typeof import('fs').mkdirSync;
 
 if (typeof process !== 'undefined' && process.versions != null && process.versions.node != null) {
     // We are in a Node.js environment
     import('fs').then(fs => {
         writeFileSync = fs.writeFileSync;
+        mkdirSync = fs.mkdirSync;
     }).catch(() => {
         writeFileSync = () => {};
+        mkdirSync = () => {};
     });
 } else {
     // make a no-op function if we're not in node

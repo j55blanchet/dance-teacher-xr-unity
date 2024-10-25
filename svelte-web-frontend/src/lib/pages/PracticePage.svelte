@@ -325,6 +325,7 @@ $: {
 
             if (trialId) {
                 performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+                console.log("saving performance summary", performanceSummary);
                 recordedTrack = performanceSummary?.adjustedTrack ?? null;
             }
             trialId = null;

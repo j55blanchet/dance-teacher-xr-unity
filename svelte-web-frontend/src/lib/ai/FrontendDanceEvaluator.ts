@@ -12,6 +12,7 @@ import KinematicErrorMetric from "./motionmetrics/KinematicErrorMetric";
 
 import frontendPerformanceHistory from "./frontendPerformanceHistory";
 import TemporalAlignmentMetric from "./motionmetrics/TemporalAlignmentMetric";
+import Skeleton3DAngleDistanceDTW from "./motionmetrics/Skeleton3DAngleDistanceDTW";
 
 export const FrontendLiveMetrics = Object.freeze({
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
@@ -23,6 +24,7 @@ export const FrontendSummaryMetrics = Object.freeze({
     basicInfo: new BasicInfoSummaryMetric(),
     kinematicError: new KinematicErrorMetric(),
     temporalAlignment: new TemporalAlignmentMetric(),
+    skeleton3dSimilarityDtw: new Skeleton3DAngleDistanceDTW(),
 });
 
 export const FrontendMetrics = Object.freeze({
