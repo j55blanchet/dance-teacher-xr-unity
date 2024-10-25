@@ -325,6 +325,7 @@ $: {
 
             if (trialId) {
                 performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+                console.log("saving performance summary", performanceSummary);
                 recordedTrack = performanceSummary?.adjustedTrack ?? null;
             }
             trialId = null;
@@ -702,7 +703,7 @@ function onContinueClicked() {
         class="mirror gridItem flex"
         class:hidden={!hasUserWebcamVisible}
         >
-        <div class="is-overlay">
+        <div class="absolute inset-0">
             <VirtualMirror
                 bind:this={virtualMirrorElement}
                 {poseEstimationEnabled}

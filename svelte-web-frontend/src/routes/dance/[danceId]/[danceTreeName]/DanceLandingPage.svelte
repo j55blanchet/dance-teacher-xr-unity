@@ -114,13 +114,13 @@
 
 </script>
 
-<section class="learning-dashboard p-5">
+<section class="learning-dashboard p-4 gap-4">
     
     <div class="preview-video-container"
         style:--videoWidth={videoWidth}px
         style:--videoHeight={videoHeight}px
         style:--aspect-ratio={videoWidth / videoHeight}>
-        <div class="box p-0 video-wrapper">
+        <div class="card p-0 video-wrapper">
             <VideoWithSkeleton 
                 bind:this={videoElement}
                 dance={dance}
@@ -173,8 +173,8 @@
         </div>
     </div>
 
-    <div class="box learning-journey is-flex is-flex-direction-column">
-        <h3 class="is-size-4 mb-4">Learning Journey</h3>
+    <div class="card learning-journey flex flex-col">
+        <h3 class="mb-4 text-xl text-center">Learning Journey</h3>
         
         <LearningJourneyTrail 
             {practicePlan}
@@ -198,7 +198,7 @@
 
 <style lang="scss">
 .learning-dashboard {
-    height: var(--content_height);
+    height: var(--content_height) - 1rem;
     box-sizing: border-box;
     overflow: hidden;
     display: grid;
@@ -206,14 +206,13 @@
         'preview journey' 1fr / 
         minmax(320px, auto) minmax(200px, 1fr)
         ;
-    gap: var(--std-block-spacing);
 }
 
 .preview-video-container {
     grid-area: preview;
     overflow: hidden;
-    max-height: 100%;
-    align-self: center;
+    max-height: calc(var(--content_height) - 2rem);
+    align-self: start;
     justify-self: right;
     aspect-ratio: var(--aspect-ratio);
 }
@@ -226,5 +225,7 @@
 
 .learning-journey {
     grid-area: journey;
+    max-height: calc(var(--content_height) - 2rem);
+    overflow: auto;
 }
 </style>

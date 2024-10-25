@@ -82,5 +82,6 @@ export interface SummaryMetric<SummaryType, FormattedSummaryType extends Record<
      */
     summarizeMetric(
         history: TrackHistory,
+        debugFilepathRoot?: string,
     ): SummaryType;
 }

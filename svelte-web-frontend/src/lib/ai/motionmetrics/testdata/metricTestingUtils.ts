@@ -140,6 +140,8 @@ export function runLiveEvaluationMetricOnTestTrack<T extends LiveEvaluationMetri
  */
 export function runSummaryMetricOnTestTrack<T extends SummaryMetric<any, any>>(metric: T, track: TestTrack) {
 
+    const debugRoot = './testResults/bydance/' + track.danceRelativeStem + '/';
+    fs.mkdirSync(debugRoot, { recursive: true });
     const summary = metric.summarizeMetric(
         {
             videoFrameTimesInSecs: track.videoFrameTimesInSecs,
@@ -149,6 +151,7 @@ export function runSummaryMetricOnTestTrack<T extends SummaryMetric<any, any>>(m
             user2DFrameHistory: track.user2dPoses,
             user3DFrameHistory: track.user3dPoses
         },
+        debugRoot,
     ) as ReturnType<T['summarizeMetric']>;
 
     return {
@@ -218,7 +221,7 @@ function publishMetricOutputForTracks<T extends LiveEvaluationMetric<any, any, a
         data: rows,
     });
     
-    ensureDirectoryExistence('./testResults/metricOutput/');
+    ensureDirectoryExistence('./testResults/');
     fs.writeFileSync(`./testResults/${metric.constructor.name}.csv`, csv);
 }
 

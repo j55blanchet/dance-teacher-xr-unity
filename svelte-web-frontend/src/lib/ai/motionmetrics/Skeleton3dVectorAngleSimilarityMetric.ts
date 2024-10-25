@@ -28,7 +28,7 @@ function compute3dAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmar
  * @param userLandmarks 3D pose of the user
  * @returns An object containing the overall similarity score, and an array of the similarity scores for each vector
  */
-function computeSkeleton3DVectorAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame) {
+export function computeSkeleton3DVectorAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame) {
 
     const results = Object.fromEntries(
         (Object.entries(BodyInnerAnglesComparisons) as [AngleComparisonKey, AngleComparisonValue][]).map((v) => {

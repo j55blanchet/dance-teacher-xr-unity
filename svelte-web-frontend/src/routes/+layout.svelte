@@ -11,6 +11,7 @@
 	import Dialog from "$lib/elements/Dialog.svelte";
 	import { navigating } from "$app/stores";
 	import { debugMode } from "$lib/model/settings";
+	import type { User } from "@supabase/supabase-js";
 
 
 	let showingSettings = false;
@@ -24,6 +25,8 @@
 	let { supabase, session } = data
 	$: ({ supabase, session } = data)
 
+	let user: User | null = null;
+
 	setContext('supabase', supabase);
 
 	onMount(() => {
@@ -31,6 +34,9 @@
 			if (_session?.expires_at !== session?.expires_at) {
 				invalidate('supabase:auth')
 			}
+			supabase.auth.getUser().then(userResp => {
+				user = userResp.data.user;
+			});
 		})
 
 		return () => data.subscription.unsubscribe()
@@ -79,7 +85,7 @@
 	on:dialog-closed={() => showingSettings = false}>
 	<span slot="title">Settings</span>
 	<SettingsPage 
-		user={session?.user ?? null} 
+		user={user ?? null} 
 		on:navigate={() => toggleSettings(false)}/>
 </Dialog>
 
@@ -92,7 +98,7 @@
 		min-height: var(--content_height);
 		// align-items: center;
 		// justify-content: center;
-		--navbar_height: 3.25rem;
+		--navbar_height: 4rem;
 	}
 
 	.app-content.noNavBar {

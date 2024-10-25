@@ -36,13 +36,16 @@ export let settingsActive: boolean;
 
 </script>
 
-<nav class="navbar is-primary has-shadow" role="navigation" aria-label="main navigation" class:collapsed={$navbarProps.collapsed}>
+<nav class="daisy-navbar bg-primary text-primary-content gap-4" 
+     role="navigation" 
+     aria-label="main navigation" 
+     class:collapsed={$navbarProps.collapsed}>
     
-    <div class="navbar-start">
+    <div class="flex-none">
         <!-- Container for left-aligned content -->
         {#if $navbarProps.back}
             
-            <a class="navbar-item" href={$navbarProps.back.url}>
+            <a class="daisy-btn" href={$navbarProps.back.url}>
                 {#if !$navigating}
                     <span class="icon"><Icon icon="icon-park-outline:down" rotate={1} /></span>&nbsp;{$navbarProps.back.title}
                 {:else}
@@ -56,11 +59,11 @@ export let settingsActive: boolean;
     </div>
 
     <!-- Container for centered content-->
-    <div class="navbar-item">
-        <span class="navbar-title">
+    <div class="flex-1 justify-center">
+        <span class="text-xl">
             {$navbarProps.pageTitle}
             {#if $navbarProps.subtitle}
-                <span class="navbar-subtitle">
+                <span class="text-base">
                     &nbsp;{$navbarProps.subtitle}
                 </span>
             {/if}
@@ -68,9 +71,9 @@ export let settingsActive: boolean;
     </div>
 
     <!-- Container for right-aligned content-->
-    <div class="navbar-end">
+    <div class="flex-none">
         {#if !$navbarProps.hideSettings}
-        <a class="navbar-item settings"
+        <a class="daisy-btn flex items-center justify-center settings"
             class:active={settingsActive}
             role="button"
             tabindex="0"
@@ -99,23 +102,11 @@ export let settingsActive: boolean;
 
 <style lang="scss">
 
-nav {
-    width: 100%;
-}
 nav.collapsed {
     height: 0;
 }
 
-@media (max-width: 600px) {
-    nav h1 {
-        font-size: 1rem;
-    }
-}
-
 .settings {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition: background-color 0.5s ease-in-out;
 }
 

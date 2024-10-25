@@ -367,9 +367,9 @@
             ></canvas>  
         <!-- <span>Pose Estimation: {poseEstimationEnabled}</span> -->
     {:else}
-        <div class="is-overlay bg-base-200 rounded">
+        <div class="absolute inset-0 bg-base-200 rounded">
         </div>
-        <div class="is-overlay grid items-center justify-center">
+        <div class="absolute inset-0 grid items-center justify-center">
             <WebcamSelector />
             <!-- <p>$webcamStream: {$webcamStream}</p> -->
             <!-- <p>videoElement: {videoElement}</p> -->

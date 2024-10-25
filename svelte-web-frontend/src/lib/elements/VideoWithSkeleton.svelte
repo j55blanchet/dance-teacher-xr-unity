@@ -220,10 +220,10 @@ function onSkipBackClicked() {
     >
         <slot />
     </video>
-    <div class="is-overlay canvas">
+    <div class="absolute inset-0 canvas">
         <canvas class="rounded" bind:this={canvasElement}></canvas>
     </div>
-    <div class="is-overlay control-container p-2">
+    <div class="absolute inset-0 control-container p-2 gap-4">
         <span class="hidden">
             {#each seekable ?? [] as seekableRange, i}
                 <span>{seekableRange.start}-{seekableRange.end}</span>&nbsp;
@@ -308,8 +308,6 @@ video {
     align-items: stretch;
     justify-content: flex-end;
     flex-direction: column;
-
-    gap: var(--spacing-2);
 }
 
 canvas {

@@ -105,9 +105,9 @@
     </div>
 </details> -->
 
-<div class="is-flex is-flex-direction-column learning-journey is-align-items-center is-relative">
+<div class="flex flex-col learning-journey items-center relative gap-20">
     {#each practicePlan.stages as stage, stage_i}
-    <div class="is-flex is-flex-direction-row learning-group is-justify-content-center is-relative is-flex-wrap-wrap">
+    <div class="flex flex-row gap-4 justify-center relative flex-wrap">
         {#each stage.activities as activity, activity_i}
             {@const isComplete = practicePlanProgress?.[activity.id] !== undefined && 
                     isActivityComplete(activity, practicePlanProgress)
@@ -155,7 +155,7 @@
                         class:daisy-tooltip-open={showActivityTooltip}
                         on:click|preventDefault={() => { onActivityClicked(activity); }} >
                         {#if activity.type === 'segment'}
-                            <span class="segment-body has-background-light has-text-dark">
+                            <span class="px-8 py-1 rounded-full bg-green-500">
                                 { activity.segmentTitle }
                             </span>
                         {:else if activity.type === 'checkpoint'}
@@ -194,13 +194,6 @@
 </div>
 
 <style lang="scss">
-
-    .learning-journey {
-        gap: 5rem;
-    }
-    .learning-group {
-        gap: 1rem;
-    }
 
     .segment-body {
         padding: 0.25rem 2rem;

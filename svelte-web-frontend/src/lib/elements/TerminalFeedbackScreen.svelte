@@ -142,6 +142,8 @@ function getTrackDataUrl(track: any, description: string) {
                 <span slot="title">Performance Summary</span>
                 <pre>{JSON.stringify(performanceSummaryWithoutTrack, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
+            {:else if $debugMode}
+            <p class="text-gray-500">(No performance summary available)</p>
             {/if}
             {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
             <button class="button" on:click={() => showingLLMOutput = true }>View LLM Output</button>

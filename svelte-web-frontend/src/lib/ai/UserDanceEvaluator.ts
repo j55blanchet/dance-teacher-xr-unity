@@ -105,12 +105,13 @@ export default class UserDanceEvaluator<
      * Generates a summary of the performance for a given track. This summary is computed from the
      * live metrics and summary metrics provided to the constructor.
      * @param id Id of the track to get the performance summary for
+     * @param subsections A mapping of subsection names to start and end times for each subsection.
      * @returns Performance summary for the given track, accululated from the live metrics and
      * summary metrics provided to the constructor.
      */
-    generatePerformanceSummary<T extends Record<string, { startTime: number, endTime: number}>>(
+    generatePerformanceSummary<S extends Record<string, { startTime: number, endTime: number}>>(
         id: string, 
-        subsections: T,
+        subsections: S,
     ) {
 
         const track = this.trackRecorder.tracks.get(id)
@@ -208,6 +209,7 @@ export default class UserDanceEvaluator<
             try {
                 const metricSummary = (metric).summarizeMetric(
                     trackHistory,
+                    undefined,
                 )
                 metricSummaryResult = metricSummary;
                 if (this.performanceHistoryStore) {

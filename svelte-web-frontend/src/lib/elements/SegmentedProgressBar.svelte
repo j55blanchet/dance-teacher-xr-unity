@@ -57,14 +57,13 @@
         {@const isNonActiveSegment = hasAnIsolatedSegment && !isIsolatedSegment}
         {@const isActiveSegment = !isNonActiveSegment}
         <button 
-            class="progressbutton button is-rounded is-small"
+            class="daisy-btn progressbutton rounded-full text-sm"
             class:clickable={enableSegmentClick === true || (Array.isArray(enableSegmentClick) && enableSegmentClick[i])}
             on:click={() => {
                 if (enableSegmentClick === true || (Array.isArray(enableSegmentClick) && enableSegmentClick[i])) {
                     dispatch('segmentClicked', segment);
                 }
             }}
-            class:is-dark={isNonActiveSegment}
             style:--segment-time={segment.duration}
             style:--percent-progress={
                 isNonActiveSegment ? 0 :
@@ -72,13 +71,13 @@
                  / segment.duration
             }
             >
-            <span class="progress-container absolute inset-2 rounded-full overflow-hidden inset-2">
-                <span class="progress"></span>
+            <span class="progress-container absolute inset-2 rounded-full overflow-hidden inset-2 bg-white">
+                <span class="progress bg-gray block"></span>
             </span>
             
             {#if segment.label}
-            <div class="is-overlay is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
-                <span class="label tag is-white m-0 is-small">{segment.label}</span>
+            <div class="absolute inset-0  flex flex-column items-center justify-center">
+                <span class="m-0 text-xs">{segment.label}</span>
             </div>
             {/if}
         </button>
@@ -102,6 +101,7 @@
             flex-grow: var(--segment-time);
             margin: 0;
             overflow: hidden;
+            position: relative;
 
             &.clickable {
                 cursor: pointer;
