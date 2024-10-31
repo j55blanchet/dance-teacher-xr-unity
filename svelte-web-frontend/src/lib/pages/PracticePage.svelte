@@ -5,8 +5,8 @@
     export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
-import { run } from 'svelte/legacy';
 
+import { $state  } from 'svelte';
 import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
@@ -40,7 +40,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
 import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
 import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
-	import type { PracticePlan } from '$lib/model/PracticePlan';
+import type { PracticePlan } from '$lib/model/PracticePlan';
 const supabase = getContext('supabase') as SupabaseClient;
 
 
