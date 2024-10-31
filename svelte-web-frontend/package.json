@@ -42,7 +42,7 @@
 		"eslint": "^9.8.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.43.0",
-		"langchain": "^0.2.12",
+		"langchain": "^0.2.19",
 		"papaparse": "^5.4.1",
 		"postcss": "^8.4.40",
 		"postcss-load-config": "^6.0.1",
