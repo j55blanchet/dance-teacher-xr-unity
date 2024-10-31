@@ -6,7 +6,6 @@
 </script>
 <script lang="ts">
 
-import { $state  } from 'svelte';
 import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
@@ -725,6 +724,7 @@ $effect(() => {
             poseData={referenceDancePoses2D}
             drawSkeleton={drawReferenceDanceSkeleton}
             volume={videoVolume}
+            src={danceSrc}
         >
             <source src={danceSrc} type="video/mp4" />
         </VideoWithSkeleton>

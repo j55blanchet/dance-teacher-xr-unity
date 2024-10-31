@@ -27,6 +27,7 @@ export let volume: number = 1.0;
 export let seekable: any = undefined;
 export let readyState: number = 0;
 export let preload: "auto" | "metadata" | "none" = "auto";
+export let src: string | MediaStream | MediaSource | Blob | undefined = undefined;
 
 let videoAspectRatio = 1;
 $: if (videoWidth > 0 && videoHeight > 0) {
@@ -214,6 +215,7 @@ function onSkipBackClicked() {
         bind:ended
         bind:readyState
         bind:seekable
+        src={src}
         class:flipped={flipHorizontal}
         class="bg-base-200 rounded"
         preload={preload}

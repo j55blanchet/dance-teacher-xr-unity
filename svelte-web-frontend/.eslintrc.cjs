@@ -36,5 +36,6 @@ module.exports = {
 	rules: {
 		'@typescript-eslint/no-explicit-any': 0, // allow explicit any
 		'@typescript-eslint/no-unused-vars': [2, { argsIgnorePattern: '^_' }], // allow unused vars that start with `_`
+		'svelte/a11y_media_has_caption': 'off', // disable media without captions rule
 	}
 };
