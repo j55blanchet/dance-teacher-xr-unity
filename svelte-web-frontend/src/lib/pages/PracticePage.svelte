@@ -1,10 +1,12 @@
-<script context="module" lang="ts">
+<script module lang="ts">
 	import DropdownButton from './../elements/DropdownButton.svelte';
 	import type { TerminalFeedback } from '$lib/model/TerminalFeedback';
     export type PracticePageState = "waitWebcam" | "waitStart" | 'waitStartUserInteraction' | "countdown" | "playing" | "paused" | "feedback";
     export const INITIAL_STATE: PracticePageState = "waitWebcam";
 </script>
 <script lang="ts">
+
+import { $state  } from 'svelte';
 import { danceVideoVolume, debugMode__addPlaceholderAchievement, metric__3dskeletonsimilarity__badJointStdDeviationThreshold, practiceActivities__enablePerformanceRecording, practiceActivities__interfaceMode, practiceActivities__terminalFeedbackEnabled, practiceActivities__showUserSkeleton } from './../model/settings';
 import { v4 as generateUUIDv4 } from 'uuid';
 import { evaluation_summarizeSubsections, summaryFeedback_skeleton3d_mediumPerformanceThreshold, summaryFeedback_skeleton3d_goodPerformanceThreshold } from '$lib/model/settings';
@@ -38,45 +40,48 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/SegmentedProgressBar.svelte';
 import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
 import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
-	import type { PracticePlan } from '$lib/model/PracticePlan';
+import type { PracticePlan } from '$lib/model/PracticePlan';
 const supabase = getContext('supabase') as SupabaseClient;
 
-export let mirrorForEvaluation: boolean = true;
-export let dance: Dance;
-export let practiceStep: PracticeStep | null;
-export let practicePlan: PracticePlan | undefined = undefined;
-export let pageActive = false;
-export let flipVideo: boolean = false;
-export let continueBtnTitle: string = 'Continue';
-export let continueBtnIcon = 'check' as 'nextarrow' | 'check';
 
 
-export let progressBarProps: SegmentedProgressBarPropsWithoutCurrentTime | undefined = undefined;
-let mainContinueButton: HTMLButtonElement | undefined;
-let hasProgressBar = false;
-$: hasProgressBar = progressBarProps !== undefined;
+    interface Props {
+        mirrorForEvaluation?: boolean;
+        dance: Dance;
+        practiceStep: PracticeStep | null;
+        practicePlan?: PracticePlan | undefined;
+        pageActive?: boolean;
+        flipVideo?: boolean;
+        continueBtnTitle?: string;
+        continueBtnIcon?: any;
+        progressBarProps?: SegmentedProgressBarPropsWithoutCurrentTime | undefined;
+    }
 
-let showingPerformanceReviewPage = false;
-let interfaceSettings: PracticeStepInterfaceSettings = PracticeInterfaceModes[PracticeStepDefaultInterfaceSetting];
-$: interfaceSettings = PracticeInterfaceModes[practiceStep?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
-let skeletonDrawingEnabled: boolean;
-$: skeletonDrawingEnabled = practiceStep?.showUserSkeleton ?? true;
-let terminalFeedbackEnabled: boolean;
-$: terminalFeedbackEnabled = practiceStep?.terminalFeedbackEnabled ?? true;
+    let {
+        mirrorForEvaluation = true,
+        dance,
+        practiceStep,
+        practicePlan = undefined,
+        pageActive = false,
+        flipVideo = false,
+        continueBtnTitle = 'Continue',
+        continueBtnIcon = 'check' as 'nextarrow' | 'check',
+        progressBarProps = undefined
+    }: Props = $props();
+let mainContinueButton: HTMLButtonElement | undefined = $state();
+let hasProgressBar = $state(false);
 
-let isDoingSomeSortOfFeedback = false;
-$: {
-    isDoingSomeSortOfFeedback = (practiceStep?.terminalFeedbackEnabled ?? false)
-        || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
-        || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
-}
+let showingPerformanceReviewPage = $state(false);
+let interfaceSettings: PracticeStepInterfaceSettings = $state(PracticeInterfaceModes[PracticeStepDefaultInterfaceSetting]);
+let skeletonDrawingEnabled: boolean = $state();
+let terminalFeedbackEnabled: boolean = $derived(practiceStep?.terminalFeedbackEnabled ?? true);
 
-let hasVisibleReferenceVideo: boolean;
-$: hasVisibleReferenceVideo = interfaceSettings.referenceVideo.visibility === 'visible';
+let isDoingSomeSortOfFeedback = $state(false);
 
-let hasUserWebcamVisible: boolean;
-$: hasUserWebcamVisible = interfaceSettings.userVideo.visibility === 'visible' ||
-    isDoingSomeSortOfFeedback && state === 'waitWebcam';
+let hasVisibleReferenceVideo: boolean = $derived(interfaceSettings.referenceVideo.visibility === 'visible');
+
+let hasUserWebcamVisible: boolean = $derived(interfaceSettings.userVideo.visibility === 'visible' ||
+    isDoingSomeSortOfFeedback && state === 'waitWebcam');
 
 const dispatch = createEventDispatcher<{
     stateChanged: PracticePageState;
@@ -86,88 +91,57 @@ const dispatch = createEventDispatcher<{
 
 let fitVideoToFlexbox = true;
 
-let state: PracticePageState = INITIAL_STATE;
-$: console.log("PracticePage state", state);
-$: dispatch('stateChanged', state); 
+let state: PracticePageState = $state(INITIAL_STATE); 
 
-let isPlayingOrCountdown: boolean;
-$: isPlayingOrCountdown = state === "playing" || state === "countdown";
-let isShowingFeedback: boolean;
-$: isShowingFeedback = state === 'feedback';
-let feedbackDialogOpen: boolean = false;
+let isPlayingOrCountdown: boolean = $derived(state === "playing" || state === "countdown");
+let isShowingFeedback: boolean = $derived(state === 'feedback');
+let feedbackDialogOpen: boolean = $state(false);
 let isMounted = false;
 
 let currentActivityStepIndex: number = 0;
 
-let containingDanceTreeLeafNodes = [] as DanceTreeNode[];
-$: {
-    if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
-        containingDanceTreeLeafNodes = getAllLeafNodes(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
-    } else if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
-        containingDanceTreeLeafNodes = getAllNodesInSubtree(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
-    }else {
-        containingDanceTreeLeafNodes = [];
-    }
-}
+let containingDanceTreeLeafNodes = $state([] as DanceTreeNode[]);
 
-let beatDuration = 1;
-$: {
-    const danceBpm = dance?.bpm ?? 60;
-    const danceSecsPerBeat = 60 / danceBpm;
-    beatDuration = danceSecsPerBeat / videoPlaybackSpeed;
-}
+let beatDuration = $state(1);
 
 let clickAudioElement: HTMLAudioElement;
-let virtualMirrorElement: VirtualMirror;
-let videoWithSkeleton: VideoWithSkeleton;
-let videoCurrentTime: number = 0;
-let videoPlaybackSpeed: number = 1;
-let videoDuration: number = 0;
-let videoVolume: number = 0.5;
-$: console.log("VideoDuration", videoDuration);
-let isVideoPausedBinding: boolean = true;
-let danceSrc: string = '';
-let poseEstimationEnabled: boolean = false;
+let virtualMirrorElement: VirtualMirror = $state();
+let videoWithSkeleton: VideoWithSkeleton = $state();
+let videoCurrentTime: number = $state(0);
+let videoPlaybackSpeed: number = $state(1);
+let videoDuration: number = $state(0);
+let videoVolume: number = $state(0.5);
+let isVideoPausedBinding: boolean = $state(true);
+let danceSrc: string = $state('');
+let poseEstimationEnabled: boolean = $state(false);
 let poseEstimationReady: Promise<void> | null = null;
-let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = null;
+let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = $state(null);
 let referenceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
-let customizedPlaybackSpeed: number | undefined = undefined;
-let effectivePlaybackSpeed: number = 1.0;
-$: {
-    // reset the customized playback speed if it's not valid for the current practice step
-    if (customizedPlaybackSpeed && 
-        (!practiceStep?.speedAdjustment?.enabled ||
-        practiceStep.speedAdjustment?.speedOptions.indexOf(customizedPlaybackSpeed) === -1
-        )) 
-    {
-        customizedPlaybackSpeed = undefined;
-    } 
-    effectivePlaybackSpeed = customizedPlaybackSpeed ?? practiceStep?.playbackSpeed ?? 1.0;
-}
+let customizedPlaybackSpeed: number | undefined = $state(undefined);
+let effectivePlaybackSpeed: number = $state(1.0);
 const defaultCustomSpeedOptions = [0.25, 0.5, 0.75, 0.9, 1]
 
-let lastEvaluationResult: FrontendLiveEvaluationResult | null = null;
-let evaluator: FrontendDanceEvaluator | null = null;
-let trialId = null as string | null;
-$: console.log('trialId changed, now is: ', trialId);
-let performanceSummary: FrontendPerformanceSummary | null = null;
-let terminalFeedback: TerminalFeedback | null = null;
+let lastEvaluationResult: FrontendLiveEvaluationResult | null = $state(null);
+let evaluator: FrontendDanceEvaluator | null = $state(null);
+let trialId = $state(null as string | null);
+let performanceSummary: FrontendPerformanceSummary | null = $state(null);
+let terminalFeedback: TerminalFeedback | null = $state(null);
 
-let feedbackPromise: Promise<TerminalFeedback | undefined> | null = null;
+let feedbackPromise: Promise<TerminalFeedback | undefined> | null = $state(null);
 let videoRecording: {
     url: string;
     mimeType: string;
     referenceVideoUrl: string;
     recordingSpeed: number;
     recordingStartOffset: number;
-} | undefined = undefined;
+} | undefined = $state(undefined);
 
-let countdown = -1;
-let countdownActive = false;
+let countdown = $state(-1);
+let countdownActive = $state(false);
 
 const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
-let currentPlaybackEndtime = practiceStep?.endTime ?? 0;
+let currentPlaybackEndtime = $state(practiceStep?.endTime ?? 0);
 
 let webcamRecorderMimeType = 'video/webm';
 let webcamRecorder: MediaRecorder | null = null;
@@ -177,30 +151,15 @@ let resolveWebcamRecordedObjectUrl: ((url: string) => void) | null = null;
 let rejectWebcamRecordedObjectUrl: ((reason?: any) => void) | null = null;
 let webcamRecordedObjectURL: Promise<string> | null = null;
 
-$: {
-    danceSrc = getDanceVideoSrc(supabase, dance);
-}
 
-$: {
-    poseEstimationEnabled = pageActive 
-        && isDoingSomeSortOfFeedback 
-        &&  (countdownActive || !isVideoPausedBinding || state==="paused");
-}
 
-let lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
+let lastNAttemptsAngleSimilarity = $state(frontendPerformanceHistory.lastNAttempts(
     practiceStep?.dance?.clipRelativeStem ?? 'undefined',
     'skeleton3DAngleSimilarity',
     20,
-);
-$: {
-    lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
-        practiceStep?.dance?.clipRelativeStem ?? 'undefined',
-        'skeleton3DAngleSimilarity',
-        20,
-    )
-}
+));
 
-let unpauseVideoTimeout: number | null  = null;
+let unpauseVideoTimeout: number | null  = $state(null);
 function unPauseVideo() {
     unpauseVideoTimeout = null;
     currentPlaybackEndtime = practiceStep?.endTime ?? videoDuration;
@@ -305,48 +264,6 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
 }
 
 let gettingFeedback = false;
-// Auto-pause the video when the practice activity is over
-$: {
-    if ((practiceStep?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
-        (videoDuration > 0 && videoCurrentTime >= videoDuration)) {
-        isVideoPausedBinding = true;
-
-        if (currentPlaybackEndtime === practiceStep?.endTime) {
-            console.log('Paused video - reached end of practice activity');
-            terminalFeedback = null;
-            performanceSummary = null;
-            let recordedTrack = null as null | FrontendEvaluationTrack;
-            
-            let subsequences = Object.fromEntries(
-                containingDanceTreeLeafNodes.map((node) => 
-                    [node.id, { startTime: node.start_time, endTime: node.end_time }]
-                )
-            );
-
-            if (trialId) {
-                performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
-                console.log("saving performance summary", performanceSummary);
-                recordedTrack = performanceSummary?.adjustedTrack ?? null;
-            }
-            trialId = null;
-            state = "feedback";
-           
-            feedbackPromise = getFeedback(performanceSummary, recordedTrack);
-            feedbackDialogOpen = true;
-            feedbackPromise
-                .then(feedback => {
-                    terminalFeedback = feedback ?? null;
-                    feedbackDialogOpen = true;
-                });
-        }
-        else {
-            state = "paused"
-            if (unpauseVideoTimeout === null) {
-                unpauseVideoTimeout = window.setTimeout(unPauseVideo, 1000 * $debugPauseDurationSecs);
-            }
-        }
-    }
-}
 
 async function playClickSound(silent: boolean = false) {
     clickAudioElement.currentTime = 0;
@@ -672,6 +589,119 @@ function onContinueClicked() {
     dispatch('nextClicked');
 }
 
+$effect(() => {
+        hasProgressBar = progressBarProps !== undefined;
+    });
+$effect(() => {
+        interfaceSettings = PracticeInterfaceModes[practiceStep?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
+    });
+$effect(() => {
+        skeletonDrawingEnabled = practiceStep?.showUserSkeleton ?? true;
+    });
+
+$effect(() => {
+    isDoingSomeSortOfFeedback = (practiceStep?.terminalFeedbackEnabled ?? false)
+        || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
+        || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
+});
+
+$effect(() => {
+    if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
+        containingDanceTreeLeafNodes = getAllLeafNodes(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
+    } else if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
+        containingDanceTreeLeafNodes = getAllNodesInSubtree(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
+    }else {
+        containingDanceTreeLeafNodes = [];
+    }
+});
+// Auto-pause the video when the practice activity is over
+$effect(() => {
+    if ((practiceStep?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
+        (videoDuration > 0 && videoCurrentTime >= videoDuration)) {
+        isVideoPausedBinding = true;
+
+        if (currentPlaybackEndtime === practiceStep?.endTime) {
+            console.log('Paused video - reached end of practice activity');
+            terminalFeedback = null;
+            performanceSummary = null;
+            let recordedTrack = null as null | FrontendEvaluationTrack;
+            
+            let subsequences = Object.fromEntries(
+                containingDanceTreeLeafNodes.map((node) => 
+                    [node.id, { startTime: node.start_time, endTime: node.end_time }]
+                )
+            );
+
+            if (trialId) {
+                performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+                console.log("saving performance summary", performanceSummary);
+                recordedTrack = performanceSummary?.adjustedTrack ?? null;
+            }
+            trialId = null;
+            state = "feedback";
+           
+            feedbackPromise = getFeedback(performanceSummary, recordedTrack);
+            feedbackDialogOpen = true;
+            feedbackPromise
+                .then(feedback => {
+                    terminalFeedback = feedback ?? null;
+                    feedbackDialogOpen = true;
+                });
+        }
+        else {
+            state = "paused"
+            if (unpauseVideoTimeout === null) {
+                unpauseVideoTimeout = window.setTimeout(unPauseVideo, 1000 * $debugPauseDurationSecs);
+            }
+        }
+    }
+});
+
+$effect(() => {
+        console.log("PracticePage state", state);
+    });
+$effect(() => {
+        dispatch('stateChanged', state);
+    });
+
+
+$effect(() => {
+    const danceBpm = dance?.bpm ?? 60;
+    const danceSecsPerBeat = 60 / danceBpm;
+    beatDuration = danceSecsPerBeat / videoPlaybackSpeed;
+});
+$effect(() => {
+        console.log("VideoDuration", videoDuration);
+    });
+$effect(() => {
+    // reset the customized playback speed if it's not valid for the current practice step
+    if (customizedPlaybackSpeed && 
+        (!practiceStep?.speedAdjustment?.enabled ||
+        practiceStep.speedAdjustment?.speedOptions.indexOf(customizedPlaybackSpeed) === -1
+        )) 
+    {
+        customizedPlaybackSpeed = undefined;
+    } 
+    effectivePlaybackSpeed = customizedPlaybackSpeed ?? practiceStep?.playbackSpeed ?? 1.0;
+});
+$effect(() => {
+        console.log('trialId changed, now is: ', trialId);
+    });
+$effect(() => {
+    danceSrc = getDanceVideoSrc(supabase, dance);
+});
+$effect(() => {
+    poseEstimationEnabled = pageActive 
+        && isDoingSomeSortOfFeedback 
+        &&  (countdownActive || !isVideoPausedBinding || state==="paused");
+});
+$effect(() => {
+    lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
+        practiceStep?.dance?.clipRelativeStem ?? 'undefined',
+        'skeleton3DAngleSimilarity',
+        20,
+    )
+});
 </script>
 
 <section class="practicePage" 
@@ -728,10 +758,12 @@ function onContinueClicked() {
         <div class="flex gap-4 w-full justify-between" >
             <div class="left space-x-4 flex items-center">
                 <DropdownButton position="top">
-                    <svelte:fragment slot="buttonTitle">
-                        <span class="iconify-[icon-park-solid--speed] text-xl"></span>
-                        {effectivePlaybackSpeed.toFixed(2)}x
-                    </svelte:fragment>
+                    {#snippet buttonTitle()}
+                                            
+                            <span class="iconify-[icon-park-solid--speed] text-xl"></span>
+                            {effectivePlaybackSpeed.toFixed(2)}x
+                        
+                                            {/snippet}
                     <div class="daisy-card daisy-card-compact bg-neutral text-neutral-content mb-1">
                         <div class="daisy-card-body grid grid-cols-2-maxcontent items-center">
 
@@ -756,7 +788,7 @@ function onContinueClicked() {
                     class:daisy-btn-primary={state === 'waitStartUserInteraction'}
                     disabled={countdownActive || state === "waitWebcam"} 
                     bind:this={mainContinueButton}
-                    on:click={() => reset(true)}
+                    onclick={() => reset(true)}
                 >
                     {#if state === 'waitStartUserInteraction'}
                         Start Countdown
@@ -775,7 +807,7 @@ function onContinueClicked() {
                 {#if state === "feedback"}
                 <div class="daisy-dropdown  daisy-dropdown-top daisy-dropdown-end"
                     class:daisy-dropdown-open={feedbackDialogOpen}>
-                    <button class="daisy-btn daisy-btn-neutral" role="button" tabindex="0" on:click={() => {
+                    <button class="daisy-btn daisy-btn-neutral" role="button" tabindex="0" onclick={() => {
                         feedbackDialogOpen = !feedbackDialogOpen;
                         // unfocus the dialog
                         if (!feedbackDialogOpen) {
@@ -801,14 +833,14 @@ function onContinueClicked() {
                             <div class="text-center">
                                 <div class="daisy-join">
                                     <button class="daisy-btn daisy-join-item" 
-                                        on:click={() => reset(true)}
+                                        onclick={() => reset(true)}
                                         class:daisy-btn-accent={terminalFeedback?.suggestedAction === "repeat"}>
                                         Do Again
                                     </button>
                                     <button 
                                         class="daisy-btn daisy-join-item" 
                                         class:daisy-btn-success={terminalFeedback?.suggestedAction === "next"}
-                                        on:click={() => onContinueClicked()}
+                                        onclick={() => onContinueClicked()}
                                     >
                                         {continueBtnTitle}
 
@@ -832,7 +864,9 @@ function onContinueClicked() {
     <Dialog 
         open={showingPerformanceReviewPage && videoRecording !== undefined} 
         on:dialog-closed={() => showingPerformanceReviewPage = false }>
-        <span slot="title">Performance Review</span>
+        {#snippet title()}
+                <span >Performance Review</span>
+            {/snippet}
         <div class="reviewPageWrapper">
             {#if videoRecording !== undefined}
             <PerformanceReviewPage 
@@ -870,6 +904,13 @@ function onContinueClicked() {
     overflow: hidden;
     display: grid;
     grid-template: "demovid mirror" 1fr / 1fr 1fr;
+    align-items: center;
+    justify-content: stretch;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    gap: 1rem;
+
     &.hasOnlyDemoVideo {
         grid-template: "demovid" 1fr / 1fr;
     }
@@ -890,23 +931,6 @@ function onContinueClicked() {
                 "progress" auto / 1fr;
         }
     }
-
-    // &.hasFeedback {
-    //     grid-template: "feedback feedback" 1fr / 1fr 1fr;
-    // }
-    // &.hasDanceTree.hasFeedback {
-    //     grid-template:
-    //         "treevis treevis" auto
-    //         "feedback feedback" 1fr / 1fr 1fr;
-    // }
-    
-    align-items: center;
-    justify-content: stretch;
-    
-    box-sizing: border-box;
-    height: 100%;
-    width: 100%;
-    gap: 1rem;
 
     & > .gridItem {
         place-self: center;
