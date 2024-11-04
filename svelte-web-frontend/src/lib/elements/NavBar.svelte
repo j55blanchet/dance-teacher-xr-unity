@@ -37,7 +37,6 @@ export let settingsActive: boolean;
 </script>
 
 <nav class="daisy-navbar bg-primary text-primary-content gap-4" 
-     role="navigation" 
      aria-label="main navigation" 
      class:collapsed={$navbarProps.collapsed}>
     
@@ -77,9 +76,10 @@ export let settingsActive: boolean;
             class:active={settingsActive}
             role="button"
             tabindex="0"
+            aria-label="Settings"
             on:click={() => dispatch('settingsButtonClicked')}>
             <svg 
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www.w3.org</svg></svg>/2000/svg"
                 viewBox="0 0 45.973 45.973">
                 <path d="M43.454,18.443h-2.437c-0.453-1.766-1.16-3.42-2.082-4.933l1.752-1.756c0.473-0.473,0.733-1.104,0.733-1.774
                     c0-0.669-0.262-1.301-0.733-1.773l-2.92-2.917c-0.947-0.948-2.602-0.947-3.545-0.001l-1.826,1.815

@@ -1,4 +1,5 @@
 <script lang="ts">
+
 import { debugMode__viewDanceMenuAsList } from '$lib/model/settings';
 import { derived } from 'svelte/store';
 import { dances, danceTrees, getThumbnailUrl, makeDanceTreeSlug, userVisibleDances } from '$lib/data/dances-store';
@@ -66,25 +67,33 @@ for(const dance of dances) {
     }
 }
 
-let selectedDance: Dance | null = null;
+let selectedDance: Dance | null = $state(null);
 
-let matchingDanceTrees: DanceTree[] = [];
-let danceTreeMenuItems: FolderContents<DanceTree> = [];
+let matchingDanceTrees: DanceTree[] = $state([]);
+let danceTreeMenuItems: FolderContents<DanceTree> = $state([]);
 
-let menuOptions = [];
+let menuOptions = $state([]);
 
 // @ts-ignore
-$: matchingDanceTrees = danceTrees[selectedDance?.clipRelativeStem] ?? [];
-$: danceTreeMenuItems = matchingDanceTrees.map(function(tree: DanceTree) {
-    return {
-        type: 'file',
-        name: tree.tree_name,
-        file: tree,
-        href: "/teachlesson/" + makeDanceTreeSlug(tree)
-    } as FileMenuItem<DanceTree>
+$effect(() => {
+    const clipStem = selectedDance?.clipRelativeStem;
+    if (!clipStem) {
+        matchingDanceTrees = [];
+    }
+    matchingDanceTrees = danceTrees[clipStem as keyof typeof danceTrees] ?? [];
+});
+$effect(() => {
+        danceTreeMenuItems = matchingDanceTrees.map(function(tree: DanceTree) {
+        return {
+            type: 'file',
+            name: tree.tree_name,
+            file: tree,
+            href: "/teachlesson/" + makeDanceTreeSlug(tree)
+        } as FileMenuItem<DanceTree>
+    });
 });
 
-$: menuOptions = []
+    
 function toggleSelectDance(dance: Dance) {
     if (selectedDance === dance) {
         selectedDance = null;
@@ -106,14 +115,16 @@ const perfHistoryAggregatedStore = derived(perfHistoryStores, (stores) => {
     return stores;
 });
 
-let danceTiles = [] as {dance: Dance, pageUrl: string, oldPageUrl: string}[];
-$: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
-    return {
-        dance,
-        pageUrl: `/dance/${encodeURIComponent(dance.clipRelativeStem)}/${encodeURIComponent(danceTree.tree_name)}/`,
-        oldPageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
-    }
-})
+let danceTiles = $state([] as {dance: Dance, pageUrl: string, oldPageUrl: string}[]);
+$effect(() => {
+    danceTiles = userVisibleDances.map(([dance, danceTree]) => {
+        return {
+            dance,
+            pageUrl: `/dance/${encodeURIComponent(dance.clipRelativeStem)}/${encodeURIComponent(danceTree.tree_name)}/`,
+            oldPageUrl: "/teachlesson/" + makeDanceTreeSlug(danceTree)
+        }
+    })
+});
 </script>
 
 <section>
@@ -121,7 +132,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
 	<div class="columns">
 		<div class="column dance-picking ta-center" style="max-width: 60ch;">
 			<FolderMenu menuContents={menuData} 
-				on:fileSelected={e => toggleSelectDance(e.detail)}
+				on:fileSelected={(e:any) => { toggleSelectDance(e.detail); }}
 				selectedFile={selectedDance}
 				/>
 			<!-- <ul>
@@ -158,7 +169,7 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
                 <!-- <span class="detail duration" title="Duration"><span class="label"><ClockIcon /></span> {(danceTree.root.end_time - danceTree.root.start_time).toFixed(1)}s</span> -->
                 <!-- <span class="detail complexity" title="Complexity"><span class="label"><ConfoundedFaceIcon /></span> {(danceTree.root.complexity / (danceTree.root.end_time - danceTree.root.start_time) * 100).toFixed(0)}&percnt;</span> -->
                     
-                <!-- <div class="hidden performance-history is-flex is-align-items-center">
+                <!-- <div class="hidden performance-history flex align-center">
                     <span class="label" title="Dance Attempts"><DanceIcon /></span>
                     {($perfHistoryAggregatedStore[i] ?? []).length} Repetitions
                 </div> -->
@@ -177,13 +188,3 @@ $: danceTiles = userVisibleDances.map(([dance, danceTree]) => {
     {/if} 
 	<!-- <Counter /> -->
 </section>
-
-<style lang="scss">
-
-    .thumbnail {
-        --height: 11.5rem;
-        height: var(--height);
-        width: calc(var(--height) * 9 / 16);
-    }
-
-</style>

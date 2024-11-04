@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 export type FolderContents<D> = Array<MenuItem<D>>;
 export type FolderMenuItem<D> = { type: 'folder', name: string, contents: FolderContents<D>, expanded: boolean};
 export type FileMenuItem<D> = { 
@@ -9,90 +9,53 @@ export type FileMenuItem<D> = {
 };
 export type MenuItem<D> = FileMenuItem<D> | FolderMenuItem<D>;
 </script>
+
 <script lang="ts">
+
+import FolderMenu from './FolderMenu.svelte';
 import { createEventDispatcher } from 'svelte';
 
 const dispatch = createEventDispatcher();
 type T = $$Generic;
 
-export let menuContents: FolderContents<T>;
-export let selectedFile: T | null = null;
+interface Props {
+    menuContents: FolderContents<T>;
+    selectedFile?: T | null;
+}
 
-function fileSelected(file: T) {
+let { menuContents, selectedFile = null }: Props = $props();
+
+function fileSelected(file: T): void {
     dispatch('fileSelected', file);
 }
 
 </script>
 
-<ul>
+<ul class="mt-0 p-0 text-left">
     {#each menuContents as item}
         
         {#if item.type === 'folder'}
         <li class="folder">
-            <details>
+            <details class="ml-4 pl-4 border-l border-black">
                 <summary>{item.name}</summary>
-                <svelte:self menuContents={item.contents} on:fileSelected {selectedFile}/>
+                <FolderMenu menuContents={item.contents} on:fileSelected {selectedFile}/>
             </details>
         </li>
         {:else}
-        <li class="outlined thin file"
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <li class="outlined thin file list-none py-1 px-2 transition-all duration-200 ease-in-out hover:cursor-pointer hover:scale-101 hover:bg-gray-300 hover:shadow-sm"
             class:selected={selectedFile === item.file}
-            on:click={() => fileSelected(item.file)}>
-            {#if item.href}
+            >
+            <a href={item.href}
+               onclick={() => fileSelected(item.file)}>
+                {item.name}
+            </a>
+            <!-- {#if item.href}
                 <a href={item.href}>{item.name}</a>
             {:else}
                 {item.name}
-            {/if}
+            {/if} -->
         </li>
         {/if}
     {/each}
 </ul>
-
-<style lang="scss">
-    
-ul li.selected {
-    background-color: #dedede;
-    box-shadow: 0 0 2px #000;
-    scale: 1.04 1;
-}
-
-ul {
-    margin-top: 0;
-    padding: 0;
-    text-align:left;
-}
-
-details > *:not(summary) {
-    margin-left: 1em;
-    padding-left: 1em;
-    border-left: 1px solid #000;
-}
-
-details > *:not(summary) {
-    margin-top: 0.5em;
-}
-
-ul li {
-    list-style: none;
-    padding: 0.25em 0.5em;
-    scale: 1;
-    transition: background-color 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out
-    scale 0.2s ease-in-out;
-}
-
-ul li:not(:last-child) {
-    margin-bottom: 0.15em;
-}
-
-ul li.file:hover, details:hover {
-    cursor: pointer;
-    scale: 1.01 1;
-}
-
-ul li.file:hover {
-    background-color: #dedede;
-    box-shadow: 0 0 2px #555;
-}
-
-</style>
