@@ -20,5 +20,13 @@ export default defineConfig({
 			reportsDirectory: './testResults/coverage',
 			reporter: ['lcov', 'text'],
 		}
+	},
+	css: {
+		preprocessorOptions: {
+			scss: {
+				api: 'modern',
+				// additionalData: '@use "sass:math";'
+			}
+		}
 	}
 });

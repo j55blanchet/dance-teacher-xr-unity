@@ -62,5 +62,8 @@
 		"vitest": "^2.1.4",
 		"wasm-feature-detect": "^1.8.0"
 	},
+	"overrides": {
+		"uri-js": "npm:uri-js-replace"
+	},
 	"type": "module"
 }
