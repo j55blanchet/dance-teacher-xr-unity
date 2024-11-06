@@ -48,10 +48,11 @@ export default class Skeleton3DAngleDistanceDTW implements SummaryMetric<Angle3D
 
     formatSummary(summary: Angle3D_DtwMetricSummaryOutput) {
 
-        const dtwPathJson = dfd.toJSON(summary.dtwPath);
+
+        const dtwPathJson = dfd.toJSON(summary.dtwPath, { format: "row" });
         return {
             "DTW Distance": summary.dtwDistance,
-            "DTW Path": dtwPathJson,
+            "DTW Path": JSON.stringify(dtwPathJson),
             "Warping Factor": summary.warpingFactor
         } as const;
     }

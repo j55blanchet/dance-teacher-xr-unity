@@ -40,6 +40,7 @@ import type { SegmentedProgressBarPropsWithoutCurrentTime } from '$lib/elements/
 import SegmentedProgressBar from '$lib/elements/SegmentedProgressBar.svelte';
 import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
 import type { PracticePlan } from '$lib/model/PracticePlan';
+	import PlayableVideoWithSkeleton from '$lib/elements/PlayableVideoWithSkeleton.svelte';
 const supabase = getContext('supabase') as SupabaseClient;
 
 
@@ -68,14 +69,18 @@ const supabase = getContext('supabase') as SupabaseClient;
         progressBarProps = undefined
     }: Props = $props();
 let mainContinueButton: HTMLButtonElement | undefined = $state();
-let hasProgressBar = $state(false);
+let hasProgressBar = $derived(progressBarProps !== undefined);
 
 let showingPerformanceReviewPage = $state(false);
-let interfaceSettings: PracticeStepInterfaceSettings = $state(PracticeInterfaceModes[PracticeStepDefaultInterfaceSetting]);
-let skeletonDrawingEnabled: boolean = $state();
+let interfaceSettings: PracticeStepInterfaceSettings = $derived(PracticeInterfaceModes[practiceStep?.interfaceMode ?? PracticeStepDefaultInterfaceSetting]);
+let skeletonDrawingEnabled: boolean = $derived(practiceStep?.showUserSkeleton ?? true);
 let terminalFeedbackEnabled: boolean = $derived(practiceStep?.terminalFeedbackEnabled ?? true);
 
-let isDoingSomeSortOfFeedback = $state(false);
+let isDoingSomeSortOfFeedback = $derived(
+    (practiceStep?.terminalFeedbackEnabled ?? false)
+        || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
+        || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user')
+);
 
 let hasVisibleReferenceVideo: boolean = $derived(interfaceSettings.referenceVideo.visibility === 'visible');
 
@@ -99,26 +104,45 @@ let isMounted = false;
 
 let currentActivityStepIndex: number = 0;
 
-let containingDanceTreeLeafNodes = $state([] as DanceTreeNode[]);
-
-let beatDuration = $state(1);
+let countdown = $state(-1);
+let countdownActive = $state(false);
 
 let clickAudioElement: HTMLAudioElement;
 let virtualMirrorElement: VirtualMirror = $state();
-let videoWithSkeleton: VideoWithSkeleton = $state();
+let videoWithSkeleton: PlayableVideoWithSkeleton = $state();
 let videoCurrentTime: number = $state(0);
 let videoPlaybackSpeed: number = $state(1);
 let videoDuration: number = $state(0);
 let videoVolume: number = $state(0.5);
 let isVideoPausedBinding: boolean = $state(true);
 let danceSrc: string = $state('');
-let poseEstimationEnabled: boolean = $state(false);
+let poseEstimationEnabled: boolean = $derived(
+    pageActive 
+        && isDoingSomeSortOfFeedback 
+        &&  (countdownActive || !isVideoPausedBinding || state==="paused")
+);
+
+let containingDanceTreeLeafNodes = $derived.by(() => {
+    if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
+        return getAllLeafNodes(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
+    } else if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
+        return getAllNodesInSubtree(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
+    }
+    return [] as DanceTreeNode[]
+});
+
+let beatDuration = $derived.by(() => {
+    const danceBpm = dance?.bpm ?? 60;
+    const danceSecsPerBeat = 60 / danceBpm;
+    return danceSecsPerBeat / videoPlaybackSpeed;
+});
+
 let poseEstimationReady: Promise<void> | null = null;
 let referenceDancePoses2D: PoseReferenceData<Pose2DPixelLandmarks> | null = $state(null);
 let referenceDancePoses3D: PoseReferenceData<Pose3DLandmarkFrame> | null = null;
 
 let customizedPlaybackSpeed: number | undefined = $state(undefined);
-let effectivePlaybackSpeed: number = $state(1.0);
+let effectivePlaybackSpeed: number = $derived( customizedPlaybackSpeed ?? practiceStep?.playbackSpeed ?? 1.0);
 const defaultCustomSpeedOptions = [0.25, 0.5, 0.75, 0.9, 1]
 
 let lastEvaluationResult: FrontendLiveEvaluationResult | null = $state(null);
@@ -136,9 +160,6 @@ let videoRecording: {
     recordingStartOffset: number;
 } | undefined = $state(undefined);
 
-let countdown = $state(-1);
-let countdownActive = $state(false);
-
 const debugPauseDuration = 10.0; // if pauseInPracticePage is enabled, we'll pause for this many seconds midway through playback
 let currentPlaybackEndtime = $state(practiceStep?.endTime ?? 0);
 
@@ -152,11 +173,13 @@ let webcamRecordedObjectURL: Promise<string> | null = null;
 
 
 
-let lastNAttemptsAngleSimilarity = $state(frontendPerformanceHistory.lastNAttempts(
-    practiceStep?.dance?.clipRelativeStem ?? 'undefined',
-    'skeleton3DAngleSimilarity',
-    20,
-));
+let lastNAttemptsAngleSimilarity = $derived(
+    frontendPerformanceHistory.lastNAttempts(
+        practiceStep?.dance?.clipRelativeStem ?? 'undefined',
+        'skeleton3DAngleSimilarity',
+        20,
+    )
+);
 
 let unpauseVideoTimeout: number | null  = $state(null);
 function unPauseVideo() {
@@ -588,39 +611,24 @@ function onContinueClicked() {
     dispatch('nextClicked');
 }
 
-$effect(() => {
-        hasProgressBar = progressBarProps !== undefined;
-    });
-$effect(() => {
-        interfaceSettings = PracticeInterfaceModes[practiceStep?.interfaceMode ?? PracticeStepDefaultInterfaceSetting];
-    });
-$effect(() => {
-        skeletonDrawingEnabled = practiceStep?.showUserSkeleton ?? true;
-    });
 
-$effect(() => {
-    isDoingSomeSortOfFeedback = (practiceStep?.terminalFeedbackEnabled ?? false)
-        || (skeletonDrawingEnabled && interfaceSettings.referenceVideo.visibility === 'visible' && interfaceSettings.referenceVideo.skeleton === 'user')
-        || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user');
-});
-
-$effect(() => {
-    if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "leafnodes") {
-        containingDanceTreeLeafNodes = getAllLeafNodes(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
-    } else if (practiceStep?.danceTreeNode && $evaluation_summarizeSubsections == "allnodes") {
-        containingDanceTreeLeafNodes = getAllNodesInSubtree(practiceStep.danceTreeNode).filter((node) => node.id !== practiceStep?.danceTreeNode?.id);
-    }else {
-        containingDanceTreeLeafNodes = [];
-    }
-});
+// this is the effect that keeeps doing to infinite depth
 // Auto-pause the video when the practice activity is over
 $effect(() => {
+    if (state === "feedback" || state === "paused"){
+        return;
+    }
+
     if ((practiceStep?.endTime && videoCurrentTime >= currentPlaybackEndtime) || 
         (videoDuration > 0 && videoCurrentTime >= videoDuration)) {
-        isVideoPausedBinding = true;
 
-        if (currentPlaybackEndtime === practiceStep?.endTime) {
-            console.log('Paused video - reached end of practice activity');
+        isVideoPausedBinding = true;
+        console.log('Pausing video');
+
+        if (currentPlaybackEndtime >= (practiceStep?.endTime ?? videoDuration)) {
+            console.log("Practice activity is over");
+            state = "feedback";
+            
             terminalFeedback = null;
             performanceSummary = null;
             let recordedTrack = null as null | FrontendEvaluationTrack;
@@ -641,7 +649,7 @@ $effect(() => {
                 recordedTrack = performanceSummary?.adjustedTrack ?? null;
             }
             trialId = null;
-            state = "feedback";
+
            
             feedbackPromise = getFeedback(performanceSummary, recordedTrack);
             feedbackDialogOpen = true;
@@ -652,6 +660,7 @@ $effect(() => {
                 });
         }
         else {
+            console.log("Reached a pause point in the middle of the practice activity");
             state = "paused"
             if (unpauseVideoTimeout === null) {
                 unpauseVideoTimeout = window.setTimeout(unPauseVideo, 1000 * $debugPauseDurationSecs);
@@ -661,21 +670,14 @@ $effect(() => {
 });
 
 $effect(() => {
-        console.log("PracticePage state", state);
-    });
-$effect(() => {
-        dispatch('stateChanged', state);
-    });
-
-
-$effect(() => {
-    const danceBpm = dance?.bpm ?? 60;
-    const danceSecsPerBeat = 60 / danceBpm;
-    beatDuration = danceSecsPerBeat / videoPlaybackSpeed;
+    console.log("PracticePage state", state);
+    dispatch('stateChanged', state);
 });
+
 $effect(() => {
-        console.log("VideoDuration", videoDuration);
-    });
+    console.log("VideoDuration", videoDuration);
+});
+
 $effect(() => {
     // reset the customized playback speed if it's not valid for the current practice step
     if (customizedPlaybackSpeed && 
@@ -685,26 +687,16 @@ $effect(() => {
     {
         customizedPlaybackSpeed = undefined;
     } 
-    effectivePlaybackSpeed = customizedPlaybackSpeed ?? practiceStep?.playbackSpeed ?? 1.0;
 });
+
 $effect(() => {
-        console.log('trialId changed, now is: ', trialId);
-    });
+    console.log('trialId changed, now is: ', trialId);
+});
+
 $effect(() => {
     danceSrc = getDanceVideoSrc(supabase, dance);
 });
-$effect(() => {
-    poseEstimationEnabled = pageActive 
-        && isDoingSomeSortOfFeedback 
-        &&  (countdownActive || !isVideoPausedBinding || state==="paused");
-});
-$effect(() => {
-    lastNAttemptsAngleSimilarity = frontendPerformanceHistory.lastNAttempts(
-        practiceStep?.dance?.clipRelativeStem ?? 'undefined',
-        'skeleton3DAngleSimilarity',
-        20,
-    )
-});
+
 </script>
 
 <section class="practicePage" 
@@ -717,7 +709,7 @@ $effect(() => {
     >
 
     <div class="demovid gridItem" style:display={!hasVisibleReferenceVideo ? 'none' : 'flex'}>
-        <VideoWithSkeleton
+        <PlayableVideoWithSkeleton
             bind:this={videoWithSkeleton}
             bind:currentTime={videoCurrentTime}
             bind:playbackRate={videoPlaybackSpeed}
@@ -730,8 +722,10 @@ $effect(() => {
             volume={videoVolume}
             src={danceSrc}
         >
-            <source src={danceSrc} type="video/mp4" />
-        </VideoWithSkeleton>
+            {#snippet children()}
+                <source src={danceSrc} type="video/mp4" />    
+            {/snippet}
+        </PlayableVideoWithSkeleton>
     </div>
     <div 
         class="mirror gridItem flex"
@@ -806,9 +800,9 @@ $effect(() => {
                 </button>
             </div>
             <div class="right space-x-4">
-                {#if state === "feedback"}
                 <div class="daisy-dropdown  daisy-dropdown-top daisy-dropdown-end"
-                    class:daisy-dropdown-open={feedbackDialogOpen}>
+                    class:daisy-dropdown-open={feedbackDialogOpen}
+                    class:hidden={state !== "feedback"}>
                     <button class="daisy-btn daisy-btn-neutral" role="button" tabindex="0" onclick={() => {
                         feedbackDialogOpen = !feedbackDialogOpen;
                         // unfocus the dialog
@@ -832,7 +826,7 @@ $effect(() => {
                                 on:continue-clicked={() => dispatch('continue-clicked')}
                             />
 
-                            <div class="terminalfeedback-plots">
+                            <div id="terminalfeedback-plots">
                             </div>
 
                             <div class="text-center">
@@ -859,8 +853,7 @@ $effect(() => {
                             </div>
                         </div>
                     </div>
-                </div> 
-                {/if}                
+                </div>     
             </div>
         </div>
     </div>

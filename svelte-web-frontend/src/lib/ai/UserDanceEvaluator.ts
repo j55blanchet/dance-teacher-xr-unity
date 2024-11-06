@@ -222,11 +222,17 @@ export default class UserDanceEvaluator<
                     const metricHeader = document.createElement('h3');
                     const metricPlotDiv = document.createElement('div');
                     metricPlotDiv.id = `${sectionName}-${String(summaryMetricKey)}-plot`;
+                    metricPlotDiv.style.aspectRatio = '16/9';
                     metricDiv.appendChild(metricHeader);
                     metricDiv.appendChild(metricPlotDiv);
                     document.getElementById(plotElement)?.appendChild(metricDiv);
 
-                    metric.plotSummary(metricPlotDiv.id, metricSummary as any);
+
+                    try {
+                        metric.plotSummary(metricPlotDiv.id, metricSummary as any);
+                    } catch(e) {
+                        console.error(`Unable to plot summary metric ${String(summaryMetricKey)} for section ${sectionName}`, e);
+                    }
                 }
 
                 metricSummaryResult = metricSummary;
