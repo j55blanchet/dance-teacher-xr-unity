@@ -112,6 +112,7 @@ export default class UserDanceEvaluator<
     generatePerformanceSummary<S extends Record<string, { startTime: number, endTime: number}>>(
         id: string, 
         subsections: S,
+        plotElement?: string,
     ) {
 
         const track = this.trackRecorder.tracks.get(id)
@@ -132,6 +133,7 @@ export default class UserDanceEvaluator<
             adjustedTrack.segmentDescription,
             adjustedTrack,
             false,
+            plotElement,
         );
 
         return {
@@ -156,6 +158,7 @@ export default class UserDanceEvaluator<
         sectionName: string,
         track: NonNullable<ReturnType<typeof this.trackRecorder.tracks["get"]>>,
         partOfLargerPerformance: boolean,
+        plotElement?: string,
     ) {
         const liveMetricKeys = Object.keys(this.liveMetrics) as (keyof T)[];
 
@@ -189,6 +192,7 @@ export default class UserDanceEvaluator<
                 trackHistory,
                 recomputedMetricHistory,
             )
+
             if (this.performanceHistoryStore) {
                 const formattedSummary = metric.formatSummary(metricSummary as any);
                 this.performanceHistoryStore.recordPerformance(
@@ -211,6 +215,20 @@ export default class UserDanceEvaluator<
                     trackHistory,
                     undefined,
                 )
+
+                if (metric.plotSummary && plotElement && document.getElementById(plotElement)) {
+                    // create new div in plot element with an h3 for the metric name
+                    const metricDiv = document.createElement('div');
+                    const metricHeader = document.createElement('h3');
+                    const metricPlotDiv = document.createElement('div');
+                    metricPlotDiv.id = `${sectionName}-${String(summaryMetricKey)}-plot`;
+                    metricDiv.appendChild(metricHeader);
+                    metricDiv.appendChild(metricPlotDiv);
+                    document.getElementById(plotElement)?.appendChild(metricDiv);
+
+                    metric.plotSummary(metricPlotDiv.id, metricSummary as any);
+                }
+
                 metricSummaryResult = metricSummary;
                 if (this.performanceHistoryStore) {
                     const formattedSummary = metric.formatSummary(metricSummary as any);

@@ -632,7 +632,11 @@ $effect(() => {
             );
 
             if (trialId) {
-                performanceSummary = evaluator?.generatePerformanceSummary(trialId, subsequences) ?? null;
+                performanceSummary = evaluator?.generatePerformanceSummary(
+                    trialId, 
+                    subsequences,
+                    "terminalfeedback-plots"
+                ) ?? null;
                 console.log("saving performance summary", performanceSummary);
                 recordedTrack = performanceSummary?.adjustedTrack ?? null;
             }
@@ -759,11 +763,9 @@ $effect(() => {
             <div class="left space-x-4 flex items-center">
                 <DropdownButton position="top">
                     {#snippet buttonTitle()}
-                                            
                             <span class="iconify-[icon-park-solid--speed] text-xl"></span>
                             {effectivePlaybackSpeed.toFixed(2)}x
-                        
-                                            {/snippet}
+                    {/snippet}
                     <div class="daisy-card daisy-card-compact bg-neutral text-neutral-content mb-1">
                         <div class="daisy-card-body grid grid-cols-2-maxcontent items-center">
 
@@ -830,6 +832,9 @@ $effect(() => {
                                 on:continue-clicked={() => dispatch('continue-clicked')}
                             />
 
+                            <div class="terminalfeedback-plots">
+                            </div>
+
                             <div class="text-center">
                                 <div class="daisy-join">
                                     <button class="daisy-btn daisy-join-item" 
@@ -864,9 +869,9 @@ $effect(() => {
     <Dialog 
         open={showingPerformanceReviewPage && videoRecording !== undefined} 
         on:dialog-closed={() => showingPerformanceReviewPage = false }>
-        {#snippet title()}
-                <span >Performance Review</span>
-            {/snippet}
+        <div slot="title">
+            <span>Performance Review</span>
+        </div>
         <div class="reviewPageWrapper">
             {#if videoRecording !== undefined}
             <PerformanceReviewPage 

@@ -16,6 +16,7 @@ if (typeof process !== 'undefined' && process.versions != null && process.versio
 } else {
     // make a no-op function if we're not in node
     writeFileSync = () => {};
+    mkdirSync = () => {};
 }
 
 type TemporalAlignmentMetricOutput = ReturnType<TemporalAlignmentMetric['summarizeMetric']>;

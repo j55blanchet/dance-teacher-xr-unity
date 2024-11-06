@@ -84,4 +84,14 @@ export interface SummaryMetric<SummaryType, FormattedSummaryType extends Record<
         history: TrackHistory,
         debugFilepathRoot?: string,
     ): SummaryType;
+
+    /**
+     * Optionally plot the summary result in a given HTML element.
+     * @param elementID The ID of the HTML element where the plot should be rendered
+     * @param summary The summary object to be plotted
+     */
+    plotSummary?(
+        elementID: string,
+        summary: SummaryType
+    ): void;
 }

@@ -6,6 +6,8 @@ import type { LiveEvaluationMetric, SummaryMetric, TrackHistory } from "./Motion
 import { DynamicTimeWarping } from "./DynamicTimeWarping";
 import { computeSkeleton3DVectorAngleSimilarity } from "./Skeleton3dVectorAngleSimilarityMetric";
 
+import * as dfd from "danfojs/dist/danfojs-browser/src"
+
 type AngleComparisonKey = keyof typeof BodyInnerAnglesComparisons;
 type AngleComparisonValue = ValueOf<typeof BodyInnerAnglesComparisons>;
 
@@ -27,6 +29,8 @@ export default class Skeleton3DAngleDistanceDTW implements SummaryMetric<Angle3D
 
         const distance = dtw.getDistance();
         const path = dtw.getPath();
+
+        const pathDf = new dfd.DataFrame(path);
         
         // quantify degree of warping
         const pathLength = path.length;
@@ -37,16 +41,24 @@ export default class Skeleton3DAngleDistanceDTW implements SummaryMetric<Angle3D
 
         return {
             dtwDistance: distance,
-            dtwPath: path,
+            dtwPath: pathDf,
             warpingFactor: warpingFactor
         }
     }
 
     formatSummary(summary: Angle3D_DtwMetricSummaryOutput) {
+
+        const dtwPathJson = dfd.toJSON(summary.dtwPath);
         return {
             "DTW Distance": summary.dtwDistance,
-            "DTW Path": JSON.stringify(summary.dtwPath),
+            "DTW Path": dtwPathJson,
             "Warping Factor": summary.warpingFactor
         } as const;
+    }
+
+    plotSummary(elementID: string, summary: { dtwDistance: number; dtwPath: dfd.DataFrame; warpingFactor: number; }): void {
+        
+        summary.dtwPath.plot(elementID);
+        // throw new Error("Method not implemented.");
     }
 }

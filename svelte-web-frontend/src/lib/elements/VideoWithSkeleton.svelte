@@ -202,6 +202,7 @@ function onSkipBackClicked() {
 </script>
 
 <div class:fitToFlexbox={fitToFlexbox} class="videoWithSkeleton">
+    <!-- svelte-ignore a11y_media_has_caption -->
     <video 
         bind:this={videoElement}
         bind:currentTime
