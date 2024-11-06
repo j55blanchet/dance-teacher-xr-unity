@@ -189,7 +189,7 @@ function unPauseVideo() {
     state = "playing";
 }
 
-async function getFeedback(performanceSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
+async function getFeedback(perfSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
     if (gettingFeedback) return;
 
     gettingFeedback = true;
@@ -236,7 +236,7 @@ async function getFeedback(performanceSummary: FrontendPerformanceSummary | null
             },
             practicePlan,
             practiceStep,
-            performanceSummary, 
+            performanceSummary: perfSummary, 
             recordedTrack
         });
     }
@@ -657,6 +657,7 @@ $effect(() => {
                 .then(feedback => {
                     terminalFeedback = feedback ?? null;
                     feedbackDialogOpen = true;
+                    performanceSummary = performanceSummary;
                 });
         }
         else {
@@ -677,6 +678,10 @@ $effect(() => {
 $effect(() => {
     console.log("VideoDuration", videoDuration);
 });
+
+$effect(() => {
+    console.log("New performance summary", performanceSummary);
+})
 
 $effect(() => {
     // reset the customized playback speed if it's not valid for the current practice step
@@ -825,6 +830,7 @@ $effect(() => {
                                 performanceSummary={performanceSummary ?? undefined}
                                 on:continue-clicked={() => dispatch('continue-clicked')}
                             />
+                            {"Performance summary: " + performanceSummary}
 
                             <div id="terminalfeedback-plots">
                             </div>

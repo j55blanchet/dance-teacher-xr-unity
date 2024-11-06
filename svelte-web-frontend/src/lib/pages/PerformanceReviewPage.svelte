@@ -127,10 +127,10 @@ const debugDigits = 2;
         {/if}
         
         <div class="control-row">
-            <button class="button" on:click={resetToStart}>
+            <button class="daisy-btn" on:click={resetToStart}>
                 &lt;&lt;
             </button>
-            <button class="button" on:click={togglePlayPauseRecording}>
+            <button class="daisy-btn" on:click={togglePlayPauseRecording}>
                 {#if isNearPlaybackEnd}
                     Reset
                 {:else if recordingVideoPaused}

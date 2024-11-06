@@ -134,7 +134,7 @@ function getTrackDataUrl(track: any, description: string) {
     {#if $debugMode}
         <div class="debug buttons">
             {#if performanceSummaryWithoutTrack}
-            <button class="button" on:click={() => showingPerformanceSummary = true }>
+            <button class="daisy-btn daisy-btn-small" on:click={() => showingPerformanceSummary = true }>
                 View Performance Summary
             </button>
             <Dialog open={showingPerformanceSummary}
@@ -146,7 +146,7 @@ function getTrackDataUrl(track: any, description: string) {
             <p class="text-gray-500">(No performance summary available)</p>
             {/if}
             {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
-            <button class="button" on:click={() => showingLLMOutput = true }>View LLM Output</button>
+            <button class="daisy-btn daisy-btn-small" on:click={() => showingLLMOutput = true }>View LLM Output</button>
             <Dialog open={showingLLMOutput}
                 on:dialog-closed={() => showingLLMOutput = false}>
                 <span slot="title">LLM Data</span>
@@ -161,7 +161,7 @@ function getTrackDataUrl(track: any, description: string) {
             </Dialog>
             {/if}
             {#if feedback}
-            <button class="button" on:click={() => showingTerminalFeedbackJson = true }>View Terminal Feedback</button>
+            <button class="daisy-btn daisy-btn-small" on:click={() => showingTerminalFeedbackJson = true }>View Terminal Feedback</button>
             <Dialog open={showingTerminalFeedbackJson}
                 on:dialog-closed={() => showingTerminalFeedbackJson = false}>
                 <span slot="title">TerminalFeedback JSON</span>
@@ -169,7 +169,7 @@ function getTrackDataUrl(track: any, description: string) {
             </Dialog>
             {/if}
             <!-- {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
-            <button class="button" on:click={exportRecordings}>
+            <button class="daisy-btn" on:click={exportRecordings}>
                 Export Recorded Track
             </button>
             {/if} -->
