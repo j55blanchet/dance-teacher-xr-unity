@@ -824,13 +824,13 @@ $effect(() => {
                     
                     </button>
                     <div class="daisy-dropdown-content daisy-card daisy-card-compact w-[55ch] max-w-[90vw] h-auto p-2 m-1 shadow bg-neutral text-neutral-content">
-                        <div class="daisy-card-body space-y-4">
+                        <div class="daisy-card-body space-y-4 overflow-y-scroll"
+                            style="max-height: calc(100vh - 10rem);">
                             <TerminalFeedbackScreen 
                                 feedback={terminalFeedback}
                                 performanceSummary={performanceSummary ?? undefined}
                                 on:continue-clicked={() => dispatch('continue-clicked')}
                             />
-                            {"Performance summary: " + performanceSummary}
 
                             <div id="terminalfeedback-plots">
                             </div>
