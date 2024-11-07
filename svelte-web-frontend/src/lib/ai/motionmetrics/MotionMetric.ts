@@ -91,7 +91,7 @@ export interface SummaryMetric<SummaryType, FormattedSummaryType extends Record<
      * @param summary The summary object to be plotted
      */
     plotSummary?(
-        elementID: string,
+        element: HTMLElement,
         summary: SummaryType
-    ): void;
+    ): Promise<void>;
 }

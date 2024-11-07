@@ -147,6 +147,7 @@
                 on:segmentClicked={onSegmentClicked}
                 on:skipBackClicked={onSkipBackClicked}
                 on:playPauseClicked={onPlayPauseClicked}
+                src={danceSrc}
                 >
                 <source src={danceSrc} type="video/mp4" />
                 <span slot="extra-control-buttons">

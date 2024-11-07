@@ -32,7 +32,7 @@ $: showSkeletonSettingVisible = showSkeletonSettingVisibleConditions.indexOf(pra
     </div>
     <div class="control interfaceMode" >
         {#each Object.entries(PracticeInterfaceModeOptions) as [modeOptionValue, modeOptionTitle]}
-        <label class="button outlined thin" class:selected={modeOptionValue === practiceActivityParams.interfaceMode }>
+        <label class="daisy-btn outlined thin" class:selected={modeOptionValue === practiceActivityParams.interfaceMode }>
             <input type="radio" name="practiceActivityInterfaceMode" value={modeOptionValue} bind:group={practiceActivityParams.interfaceMode}/>
             {modeOptionTitle}
         </label>
