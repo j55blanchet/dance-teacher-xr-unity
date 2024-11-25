@@ -3,7 +3,7 @@ pandas == 2.2.3
 #protobuf ~= 3.20
 pytransform3d ~=3.6
 # open3d ~=0.17
-moviepy ~= 1.0.3
+moviepy ~= 2.1.1
 librosa ~=0.10.2
 pydub ~=0.25.1
 psutil~=6.0
