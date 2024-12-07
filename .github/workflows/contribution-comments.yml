@@ -1,0 +1,193 @@
+name: Count Lines of Code in Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  count-lines:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    # Step 2: Set up Python environment
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    # Step 3: Install git
+    - name: Install git
+      run: sudo apt-get install -y git
+
+    # Step 4: Fetch pull request changes
+    - name: Fetch pull request changes
+      run: |
+        git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
+        git fetch origin +refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pull/${{ github.event.pull_request.number }}/head
+
+    # Step 5: Debugging - Show fetched refs
+    - name: Debugging - Show fetched refs
+      run: git show-ref
+
+    - name: Test git log -p
+      run: |
+        git log --shortstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
+
+    - name: Test git diff cmd
+      run: | 
+        git diff origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head
+
+    # Step 6a: Count lines of code by author and aggregate results
+    #   The awk command is the star of the show here, responsible for parsing the git log output
+    #   and aggregating the counts by author.
+    - name: Fetch lines of code added and removed in the current pull request
+      id: fetch-pr-lines
+      run: |
+        git log --numstat --pretty=format:"%an" origin/${{ github.event.pull_request.base.ref }}..origin/pull/${{ github.event.pull_request.number }}/head -- \
+        ':(exclude)Pods' ':(exclude)node_modules' ':(exclude)Prefabs' ':(exclude)Photon' ':(exclude)Oculus' ':(exclude)XR' ':(exclude).expo' ':(exclude)assets' ':(exclude)android' | \
+        awk '
+          BEGIN { added = 0; removed = 0; author = ""; }
+          /^[^ \t0-9]/ {
+            if (author != "") {
+              authors[author]["added"] += added;
+              authors[author]["removed"] += removed;
+              added = 0; removed = 0;
+            }
+            author = $0;
+            if (!(author in authors)) {
+              authors[author]["added"] = 0;
+              authors[author]["removed"] = 0;
+            }
+            next;
+          }
+          /^[0-9]/ {
+            added += $1;
+            removed += $2;
+            next;
+          }
+          { next; }
+          END {
+            if (author != "") {
+              authors[author]["added"] += added;
+              authors[author]["removed"] += removed;
+            }
+            print "| **Author** | **Added** | **Removed** |";
+            print "|------------|-----------|-------------|";
+            for (author in authors) {
+              print  "|" author "| +" authors[author]["added"] "| -" authors[author]["removed"] " |";
+              # print "|" base_author " | +" total_authors[author] " | -" total_authors[base_author "_removed"] " |";
+            }
+          }
+        ' > pr_results.txt
+        cat pr_results.txt
+
+    # Step 6b: Fetch total lines of code added and removed by each author across the entire repository history
+    - name: Fetch total lines of code added and removed by each author across the entire repository history
+      id: fetch-total-lines
+      run: |
+        git log --numstat --pretty=format:"%an" -- \
+        ':(exclude)Pods' ':(exclude)node_modules' ':(exclude)Prefabs' ':(exclude)Photon' ':(exclude)Oculus' ':(exclude)XR' ':(exclude).expo' ':(exclude)assets' ':(exclude)android' | \
+        grep -v '^-.*' | \
+        awk '
+          BEGIN { added = 0; removed = 0; author = ""; }
+          /^[^ \t0-9]/ {
+            if (author != "") {
+              total_authors[author "_added"] += added;
+              total_authors[author "_removed"] += removed;
+              added = 0; removed = 0;
+            }
+            author = $0;
+            if (!(author "_added" in total_authors)) {
+              total_authors[author "_added"] = 0;
+              total_authors[author "_removed"] = 0;
+            }
+            next;
+          }
+          /^[0-9]/ {
+            added += $1;
+            removed += $2;
+            next;
+          }
+          { next; }
+          END {
+            if (author != "") {
+              total_authors[author "_added"] += added;
+              total_authors[author "_removed"] += removed;
+            }
+            print "| **Author** | **Added** | **Removed** |";
+            print "|------------|-----------|-------------|";
+            for (author in total_authors) {
+              if (match(author, /_added$/)) {
+                base_author = substr(author, 1, length(author) - 6);
+                print "|" base_author " | +" total_authors[author] " | -" total_authors[base_author "_removed"] " |";
+              }
+            }
+          }
+        ' > total_results.txt
+    
+    # Step 6c: Combine results and count lines authored by each contributor
+    - name: Combine results and count lines authored by each contributor
+      id: combine-results
+      run: |
+        # Combine results
+        echo "## Code Contribution" > combined_results.txt
+        echo "### Current Pull Request" >> combined_results.txt
+        cat pr_results.txt >> combined_results.txt
+        echo "" >> combined_results.txt
+        echo "### Lines Added / Removed Over Time" >> combined_results.txt
+        cat total_results.txt >> combined_results.txt
+
+        # Run Tim's command to count lines authored by each contributor
+        git ls-tree --name-only -r HEAD | \
+        grep -E '\.(swift|js|css|jsx|py|cs|scss|ts)$' | \
+        grep -E -v 'Pods|node_modules|Prefabs|Photon|Oculus|XR|.expo|assets|android' | \
+        tr '\n' '\0' | \
+        xargs -0 -n1 git blame --line-porcelain | \
+        grep "^author " | \
+        sort | \
+        uniq -c | \
+        sort -nr > authored_lines.txt
+
+        echo "" >> combined_results.txt
+        echo "### Authored Lines in Current Repository Snapshot" >> combined_results.txt
+        echo "| **Author** | **Lines Authored** |" >> combined_results.txt
+        echo "|------------|-------------------|" >> combined_results.txt
+        cat authored_lines.txt | awk '{print "| " $3 " | " $1 " |"}' >> combined_results.txt
+
+        cat combined_results.txt
+        
+    # Step 7: Read results from the file and set as output
+    - name: Read results
+      id: read-results
+      run: |
+        echo "results<<EOF" >> $GITHUB_OUTPUT
+        cat combined_results.txt >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    # Step 8: Find previous "Lines of Code Contribution" comment
+    - name: Find previous comment
+      id: find-comment
+      uses: peter-evans/find-comment@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: github-actions[bot]
+        body-includes: '## Code Contribution'
+
+    # Step 9: Create or update the comment on the pull request with the results
+    - name: Create or update PR comment
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        edit-mode: replace
+        body: |
+          ${{ steps.read-results.outputs.results }}
+          
