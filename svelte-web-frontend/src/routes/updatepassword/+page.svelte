@@ -64,7 +64,7 @@
     <label for="confirmpassword">Confirm New Password:</label>
     <input  class="outlined thin" type="confirmpassword" bind:value={confirmNewPassword} />
     
-    <button class="button" type="submit" disabled={submitInProgress}>Set Password</button>
+    <button class="daisy-btn" type="submit" disabled={submitInProgress}>Set Password</button>
     {#if errorMessage}
       <p style="color: red">{errorMessage}</p>
     {/if}

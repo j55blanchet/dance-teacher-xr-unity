@@ -129,6 +129,10 @@ export default class UserDanceEvaluator<
             this.reference3DData
         )
 
+        if (plotElement && document.getElementById(plotElement)) {
+            // clear the plot element
+            document.getElementById(plotElement)!.innerHTML = '';
+        }
         const perfTrackWholePerformance = this.generateMetricSummariesForTrackSection(
             adjustedTrack.segmentDescription,
             adjustedTrack,
@@ -222,11 +226,15 @@ export default class UserDanceEvaluator<
                     const metricHeader = document.createElement('h3');
                     const metricPlotDiv = document.createElement('div');
                     metricPlotDiv.id = `${sectionName}-${String(summaryMetricKey)}-plot`;
+                    metricPlotDiv.style.aspectRatio = '16/9';
                     metricDiv.appendChild(metricHeader);
                     metricDiv.appendChild(metricPlotDiv);
                     document.getElementById(plotElement)?.appendChild(metricDiv);
 
-                    metric.plotSummary(metricPlotDiv.id, metricSummary as any);
+                    metric.plotSummary(metricPlotDiv, metricSummary as any)
+                        .catch((e) => {
+                            console.error(`Unable to plot summary metric ${String(summaryMetricKey)} for section ${sectionName}`, e);
+                        });
                 }
 
                 metricSummaryResult = metricSummary;

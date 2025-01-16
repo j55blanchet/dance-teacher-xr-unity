@@ -4,7 +4,22 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "type": "firefox",
+            "request": "launch",
+            "name": "Launch Firefox against localhost",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src",
+            "skipFiles": [
+                "**/node_modules/**"
+            ],
+            "pathMappings": [
+                {
+                    "url": "http://localhost:5173/src",
+                    "path": "${workspaceFolder}/src"
+                }
+            ]
+        },
         {
             "type": "chrome",
             "request": "launch",
@@ -32,35 +47,51 @@
             "request": "launch",
             "name": "Sync Storage Assets",
             "cwd": "${workspaceFolder}",
-            "runtimeArgs": ["--experimental-modules"],
-            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
+            "runtimeArgs": [
+                "--experimental-modules"
+            ],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js"
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Sync Storage Assets (dry run)",
             "cwd": "${workspaceFolder}",
-            "runtimeArgs": ["--experimental-modules"],
-            "args": ["--dry-run"],
-            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
+            "runtimeArgs": [
+                "--experimental-modules"
+            ],
+            "args": [
+                "--dry-run"
+            ],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js"
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Sync Storage Assets PROD (dry run)",
             "cwd": "${workspaceFolder}",
-            "runtimeArgs": ["--experimental-modules"],
-            "args": ["--dry-run", "--production"],
-            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
+            "runtimeArgs": [
+                "--experimental-modules"
+            ],
+            "args": [
+                "--dry-run",
+                "--production"
+            ],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js"
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Sync Storage Assets PROD",
             "cwd": "${workspaceFolder}",
-            "runtimeArgs": ["--experimental-modules"],
-            "args": ["--production", "--async"],
-            "program": "${workspaceFolder}/scripts/syncStorageAssets.js",
+            "runtimeArgs": [
+                "--experimental-modules"
+            ],
+            "args": [
+                "--production",
+                "--async"
+            ],
+            "program": "${workspaceFolder}/scripts/syncStorageAssets.js"
         }
     ]
 }

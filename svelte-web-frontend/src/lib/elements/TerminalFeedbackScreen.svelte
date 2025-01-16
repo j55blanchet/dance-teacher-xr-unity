@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
 // TerminalFeedbackDialog.svelte
 //
 // A component for offering feedback after a user has completed a
@@ -18,54 +20,57 @@ import PerformanceReviewPage from '$lib/pages/PerformanceReviewPage.svelte';
 import InfoIcon from 'virtual:icons/mdi/information';
 import StarIcon from 'virtual:icons/mdi/star';
 
-const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
-export let feedback: TerminalFeedback | null = null;
-export let performanceSummary: FrontendPerformanceSummary | undefined = undefined;
+    interface Props {
+        feedback?: TerminalFeedback | null;
+        performanceSummary?: FrontendPerformanceSummary | undefined;
+    }
 
-let showingPerformanceSummary = false;
-let showingLLMOutput = false;
-let showingTerminalFeedbackJson = false;
+    let { feedback = null, performanceSummary = undefined }: Props = $props();
 
-let performanceSummaryWithoutTrack: any | undefined = undefined;
-$: {
-    performanceSummaryWithoutTrack = performanceSummary;
-    if (performanceSummaryWithoutTrack) {
-        performanceSummaryWithoutTrack = {
-            ...performanceSummaryWithoutTrack,
+    let showingPerformanceSummary = $state(false);
+    let showingLLMOutput = $state(false);
+    let showingTerminalFeedbackJson = $state(false);
+
+    let performanceSummaryWithoutTrack = $derived.by(() => {
+        if (!performanceSummary) {
+            return undefined;
+        }
+        return {
+            ...performanceSummary,
             adjustedTrack: undefined,
         }
+    });
+
+    let skeletonHighlights: BodyPartHighlight[] = $derived.by(() => {
+        const incorrectHighlights  = (feedback?.incorrectBodyPartsToHighlight ?? []).map((bodyPart) => {
+            return { bodyPart, outlineColor: "#F00" }
+        })
+        const correctHighlights = (feedback?.correctBodyPartsToHighlight ?? []).map((bodyPart) => {
+            return { bodyPart, outlineColor: "#0F0" }
+        })
+        return [...incorrectHighlights, ...correctHighlights];
+    });
+
+
+    function promptDownload(objUrl: string, filename: string) {
+        const link = document.createElement('a');
+        link.href = objUrl;
+        link.download = filename;
+        link.click();
     }
-}
-let skeletonHighlights: BodyPartHighlight[] = [];
 
-$: {
-    const incorrectHighlights  = (feedback?.incorrectBodyPartsToHighlight ?? []).map((bodyPart) => {
-        return { bodyPart, outlineColor: "#F00" }
-    })
-    const correctHighlights = (feedback?.correctBodyPartsToHighlight ?? []).map((bodyPart) => {
-        return { bodyPart, outlineColor: "#0F0" }
-    })
-    skeletonHighlights = [...incorrectHighlights, ...correctHighlights];
-}
-
-function promptDownload(objUrl: string, filename: string) {
-    const link = document.createElement('a');
-    link.href = objUrl;
-    link.download = filename;
-    link.click();
-}
-
-function getTrackDataUrl(track: any, description: string) {
-    let trackDictionary = track.asDictWithoutTimeSeriesResults();
-    trackDictionary = {
-        ...trackDictionary,
-        trackDescription: description,
+    function getTrackDataUrl(track: any, description: string) {
+        let trackDictionary = track.asDictWithoutTimeSeriesResults();
+        trackDictionary = {
+            ...trackDictionary,
+            trackDescription: description,
+        }
+        const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
+        const blob = new Blob([trackJson], {type: "application/json"});
+        return URL.createObjectURL(blob);
     }
-    const trackJson = JSON.stringify(trackDictionary, replaceJSONForStringifyDisplay);
-    const blob = new Blob([trackJson], {type: "application/json"});
-    return URL.createObjectURL(blob);
-}
 
 // function exportRecordings() {
 
@@ -103,6 +108,7 @@ function getTrackDataUrl(track: any, description: string) {
 </script>
 
 <div class="feedbackForm text-xl">
+    
     {#if !feedback}<h2>Thinking<ProgressEllipses /></h2>{/if}
     
     {#each feedback?.achievements ?? [] as achivement, i}
@@ -133,23 +139,28 @@ function getTrackDataUrl(track: any, description: string) {
     
     {#if $debugMode}
         <div class="debug buttons">
-            {#if performanceSummaryWithoutTrack}
-            <button class="button" on:click={() => showingPerformanceSummary = true }>
+            <!-- {#if performanceSummaryWithoutTrack}
+            <button class="daisy-btn daisy-btn-small" onclick={() => showingPerformanceSummary = true}>
                 View Performance Summary
             </button>
             <Dialog open={showingPerformanceSummary}
               on:dialog-closed={() => showingPerformanceSummary = false}>
-                <span slot="title">Performance Summary</span>
+                {#snippet title()}
+                    <span >Performance Summary</span>
+                {/snippet}
                 <pre>{JSON.stringify(performanceSummaryWithoutTrack, replaceJSONForStringifyDisplay, 2)}</pre>
             </Dialog>
             {:else if $debugMode}
             <p class="text-gray-500">(No performance summary available)</p>
-            {/if}
+            {/if} -->
+            
             {#if feedback?.debug?.llmOutput || feedback?.debug?.llmInput}
-            <button class="button" on:click={() => showingLLMOutput = true }>View LLM Output</button>
+            <button class="daisy-btn daisy-btn-small" onclick={() => showingLLMOutput = true}>View LLM Output</button>
             <Dialog open={showingLLMOutput}
                 on:dialog-closed={() => showingLLMOutput = false}>
-                <span slot="title">LLM Data</span>
+                {#snippet title()}
+                                        <span >LLM Data</span>
+                                    {/snippet}
                 {#if feedback?.debug?.llmInput}
                     <h3>Input</h3>
                     <pre>{JSON.stringify(feedback?.debug?.llmInput, undefined, 2)}</pre>
@@ -161,15 +172,17 @@ function getTrackDataUrl(track: any, description: string) {
             </Dialog>
             {/if}
             {#if feedback}
-            <button class="button" on:click={() => showingTerminalFeedbackJson = true }>View Terminal Feedback</button>
+            <button class="daisy-btn daisy-btn-small" onclick={() => showingTerminalFeedbackJson = true}>View Terminal Feedback</button>
             <Dialog open={showingTerminalFeedbackJson}
                 on:dialog-closed={() => showingTerminalFeedbackJson = false}>
-                <span slot="title">TerminalFeedback JSON</span>
+                {#snippet title()}
+                                        <span >TerminalFeedback JSON</span>
+                                    {/snippet}
                 <pre>{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
             <!-- {#if feedback?.debug?.recordedTrack || feedback?.videoRecording}
-            <button class="button" on:click={exportRecordings}>
+            <button class="daisy-btn" on:click={exportRecordings}>
                 Export Recorded Track
             </button>
             {/if} -->

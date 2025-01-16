@@ -1,16 +1,31 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
 import { createEventDispatcher } from "svelte";
 import CloseButton from "./CloseButton.svelte";
 
 const dispatcher = createEventDispatcher();
 
-let dialogElement: HTMLDialogElement | undefined;
-export let open = false;
-export let modal = true;
-export let showCloseButton = true;
-export let closeWhenClickedOutside = true;
+  let dialogElement: HTMLDialogElement | undefined = $state();
+  interface Props {
+    open?: boolean;
+    modal?: boolean;
+    showCloseButton?: boolean;
+    closeWhenClickedOutside?: boolean;
+    title?: import('svelte').Snippet;
+    children?: import('svelte').Snippet;
+  }
 
-$: {
+  let {
+    open = $bindable(false),
+    modal = true,
+    showCloseButton = true,
+    closeWhenClickedOutside = true,
+    title,
+    children
+  }: Props = $props();
+
+$effect(() => {
     if (open) {
         if (modal) {
             dialogElement?.showModal();
@@ -20,7 +35,7 @@ $: {
     } else {
         dialogElement?.close();
     }
-}
+});
 </script>
 
 
@@ -28,14 +43,14 @@ $: {
     <div class="daisy-modal-box w-auto h-auto ">
         <form method="dialog">
             <button class="daisy-btn daisy-btn-sm daisy-btn-circle absolute right-2 top-2"
-                on:click={() => dispatcher('dialog-closed', 'button')}>✕</button>
+                onclick={() => dispatcher('dialog-closed', 'button')}>✕</button>
         </form>
-        <h3 class="font-bold text-lg"><slot name="title"></slot></h3>
-        <slot></slot>
+        <h3 class="font-bold text-lg">{@render title?.()}</h3>
+        {@render children?.()}
     </div>
     {#if closeWhenClickedOutside}
     <form method="dialog" class="daisy-modal-backdrop">
-        <button on:click={() => dispatcher('dialog-closed', 'click_outside')}>close</button>
+        <button onclick={() => dispatcher('dialog-closed', 'click_outside')}>close</button>
     </form>
     {/if}
   </dialog>
