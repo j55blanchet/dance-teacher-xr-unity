@@ -12,8 +12,8 @@ importers:
         specifier: ^0.30.1
         version: 0.30.1
       '@iconify/json':
-        specifier: ^2.2.295
-        version: 2.2.295
+        specifier: ^2.2.297
+        version: 2.2.297
       '@iconify/svelte':
         specifier: ^4.2.0
         version: 4.2.0(svelte@5.18.0)
@@ -551,8 +551,8 @@ packages:
     resolution: {integrity: sha512-c7hNEllBlenFTHBky65mhq8WD2kbN9Q6gk0bTk8lSBvc554jpXSkST1iePudpt7+A/AQvuHs9EMqjHDXMY1lrA==}
     engines: {node: '>=18.18'}
 
-  '@iconify/json@2.2.295':
-    resolution: {integrity: sha512-VXR+Qn1G+yicPW71zxHEmNcCLVCTdqpfmwBS4Qc4ELnuXRb1a7lYLoZJKGs9MnjdWEj1VWJdKim4v9fCJin4JA==}
+  '@iconify/json@2.2.297':
+    resolution: {integrity: sha512-Mu7m+R8xH0EQxkZ9Zq9ZqT7twennzG2E9BojDiWEwoKialJpHB99Aj+jKdRvlEkwDE7RuHxvf0fHdamhPXZ8uw==}
 
   '@iconify/svelte@4.2.0':
     resolution: {integrity: sha512-fEl0T7SAPonK7xk6xUlRPDmFDZVDe2Z7ZstlqeDS/sS8ve2uyU+Qa8rTWbIqzZJlRvONkK5kVXiUf9nIc+6OOQ==}
@@ -819,6 +819,7 @@ packages:
 
   '@supabase/auth-helpers-shared@0.7.0':
     resolution: {integrity: sha512-FBFf2ei2R7QC+B/5wWkthMha8Ca2bWHAndN+syfuEUUfufv4mLcAgBCcgNg5nJR8L0gZfyuaxgubtOc9aW3Cpg==}
+    deprecated: This package is now deprecated - please use the @supabase/ssr package instead.
     peerDependencies:
       '@supabase/supabase-js': ^2.39.8
 
@@ -2194,8 +2195,8 @@ packages:
   pathe@1.1.2:
     resolution: {integrity: sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ==}
 
-  pathe@2.0.1:
-    resolution: {integrity: sha512-6jpjMpOth5S9ITVu5clZ7NOgHNsv5vRQdheL9ztp2vZmM6fRbLvyua1tiBIL4lk8SAe3ARzeXEly6siXCjDHDw==}
+  pathe@2.0.2:
+    resolution: {integrity: sha512-15Ztpk+nov8DR524R4BF7uEuzESgzUEAV4Ah7CUMNGXdE5ELuvxElxGXndBl32vMSsWa1jpNf22Z+Er3sKwq+w==}
 
   pathval@2.0.0:
     resolution: {integrity: sha512-vE7JKRyES09KiunauX7nd2Q9/L7lhok4smP9RZTDeD4MVs72Dp2qNFVz39Nz5a0FVEW0BJR6C0DYrq6unoziZA==}
@@ -3188,7 +3189,7 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.1': {}
 
-  '@iconify/json@2.2.295':
+  '@iconify/json@2.2.297':
     dependencies:
       '@iconify/types': 2.0.0
       pathe: 1.1.2
@@ -4781,7 +4782,7 @@ snapshots:
   mlly@1.7.4:
     dependencies:
       acorn: 8.14.0
-      pathe: 2.0.1
+      pathe: 2.0.2
       pkg-types: 1.3.1
       ufo: 1.5.4
 
@@ -4922,7 +4923,7 @@ snapshots:
 
   pathe@1.1.2: {}
 
-  pathe@2.0.1: {}
+  pathe@2.0.2: {}
 
   pathval@2.0.0: {}
 
@@ -4942,7 +4943,7 @@ snapshots:
     dependencies:
       confbox: 0.1.8
       mlly: 1.7.4
-      pathe: 2.0.1
+      pathe: 2.0.2
 
   plotly.js-dist-min@2.35.3: {}
 
