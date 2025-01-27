@@ -20,7 +20,7 @@
 		"@iconify/svelte": "^4.2.0",
 		"@iconify/tailwind": "^1.2.0",
 		"@langchain/core": "^0.3.30",
-		"@langchain/openai": "^0.3.17",
+		"@langchain/openai": "^0.4.2",
 		"@mediapipe/tasks-vision": "^0.10.14",
 		"@supabase/auth-helpers-sveltekit": "^0.13.0",
 		"@supabase/auth-ui-shared": "^0.1.8",
