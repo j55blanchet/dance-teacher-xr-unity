@@ -16,7 +16,7 @@
 	},
 	"devDependencies": {
 		"@anthropic-ai/sdk": "^0.30.1",
-		"@iconify/json": "^2.2.295",
+		"@iconify/json": "^2.2.304",
 		"@iconify/svelte": "^4.2.0",
 		"@iconify/tailwind": "^1.2.0",
 		"@langchain/core": "^0.3.30",
