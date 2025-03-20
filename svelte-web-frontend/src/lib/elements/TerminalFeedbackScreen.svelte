@@ -159,8 +159,8 @@ import StarIcon from 'virtual:icons/mdi/star';
             <Dialog open={showingLLMOutput}
                 on:dialog-closed={() => showingLLMOutput = false}>
                 {#snippet title()}
-                                        <span >LLM Data</span>
-                                    {/snippet}
+                    <span >LLM Data</span>
+                {/snippet}
                 {#if feedback?.debug?.llmInput}
                     <h3>Input</h3>
                     <pre>{JSON.stringify(feedback?.debug?.llmInput, undefined, 2)}</pre>
@@ -176,8 +176,8 @@ import StarIcon from 'virtual:icons/mdi/star';
             <Dialog open={showingTerminalFeedbackJson}
                 on:dialog-closed={() => showingTerminalFeedbackJson = false}>
                 {#snippet title()}
-                                        <span >TerminalFeedback JSON</span>
-                                    {/snippet}
+                    <span >TerminalFeedback JSON</span>
+                {/snippet}
                 <pre>{JSON.stringify(feedback, undefined, 2)}</pre>
             </Dialog>
             {/if}
@@ -259,8 +259,8 @@ pre {
     white-space: pre-wrap;
 }
 
-.reviewPageWrapper {
-    width: 80vw;
-    height: calc(80vh - 2rem);
-}
+// .reviewPageWrapper {
+//     width: 80vw;
+//     height: calc(80vh - 2rem);
+// }
 </style>

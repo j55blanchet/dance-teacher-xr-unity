@@ -66,5 +66,12 @@
 	"overrides": {
 		"uri-js": "npm:uri-js-replace"
 	},
-	"type": "module"
+	"type": "module",
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@parcel/watcher",
+			"esbuild",
+			"supabase"
+		]
+	}
 }
