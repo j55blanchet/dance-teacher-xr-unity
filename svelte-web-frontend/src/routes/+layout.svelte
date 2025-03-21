@@ -1,71 +1,55 @@
 <script lang="ts">
-	import "../app.pcss";
+	import { run } from 'svelte/legacy';
+
+	import '../app.pcss';
 	import { tick, onMount, setContext } from 'svelte';
 	import { webcamStream } from '$lib/webcam/streams';
 	import NavBar, { navbarProps } from '$lib/elements/NavBar.svelte';
 	import './styles.scss';
 	import SettingsPage from '$lib/pages/SettingsPage.svelte';
 	import CloseButton from '$lib/elements/CloseButton.svelte';
-	import { invalidate } from '$app/navigation'
+	import { invalidate } from '$app/navigation';
 	import { waitSecs } from '$lib/utils/async';
-	import Dialog from "$lib/elements/Dialog.svelte";
-	import { navigating } from "$app/stores";
-	import { debugMode } from "$lib/model/settings";
-	import type { User } from "@supabase/supabase-js";
+	import Dialog from '$lib/elements/Dialog.svelte';
+	import { navigating } from '$app/stores';
+	import { debugMode } from '$lib/model/settings';
+	import type { User } from '@supabase/supabase-js';
 
-
-	let showingSettings = false;
+	let showingSettings = $state(false);
 	async function toggleSettings(setValue?: boolean) {
 		showingSettings = !showingSettings;
 		showingSettings = setValue ?? showingSettings;
 	}
 
-	export let data
+	let { data, children } = $props();
+	let { session, supabase } = $derived(data);
 
-	let { supabase, session } = data
-	$: ({ supabase, session } = data)
-
-	let user: User | null = null;
-
-	setContext('supabase', supabase);
-
-	onMount(() => {
-		const { data } = supabase.auth.onAuthStateChange((event, _session) => {
-			if (_session?.expires_at !== session?.expires_at) {
-				invalidate('supabase:auth')
-			}
-			supabase.auth.getUser().then(userResp => {
-				user = userResp.data.user;
-			});
-		})
-
-		return () => data.subscription.unsubscribe()
+	// Setting client as context is a convenient way to give non-route Svelve elements
+	// access to the Supabase client -- otherwise, we'd need to make this properties of every
+	// page element that needs it and pass from the route .svelte files.
+	// svelte-ignore state_referenced_locally
+	setContext('supabase', supabase);  // necessary to have access to the client 
+										   // as the child components load (otherwise would be null 
+										   // on first tick)
+	$effect(() => {
+		setContext('supabase', supabase);
 	})
 
-	// let showNavigationOverlay = false;
-	// let navigationOverlayTimeout: number | undefined = undefined;
-	// $: {
-	// 	if ($navigating && !navigationOverlayTimeout) {
-	// 		setTimeout(() => {
-	// 			navigationOverlayTimeout = undefined;
-	// 			if ($navigating) {
-	// 				showNavigationOverlay = true;
-	// 			}
-	// 		}, 500);
-	// 	}
-	// }
-	// $: if (!$navigating) {
-	// 	showNavigationOverlay = false;
-	// 	if (navigationOverlayTimeout !== undefined) {
-	// 		clearTimeout(navigationOverlayTimeout);
-	// 		navigationOverlayTimeout = undefined;
-	// 	}
-	// }
+	onMount(() => {
+		const { data } = supabase.auth.onAuthStateChange((_, newSession) => {
+			if (newSession?.expires_at !== session?.expires_at) {
+				invalidate('supabase:auth');
+			}
+		});
+
+		return () => data.subscription.unsubscribe();
+	});
+
 </script>
 
-<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings}/>
-<div class="app-content" class:noNavBar={$navbarProps.collapsed} >
-	<slot />
+<NavBar on:settingsButtonClicked={() => toggleSettings()} settingsActive={showingSettings} />
+<div class="app-content" class:noNavBar={$navbarProps.collapsed}>
+	{@render children?.()}
 </div>
 
 <!-- <div class="inset-4 flex items-center justify-center" 
@@ -79,16 +63,18 @@
 		</div>
 	</div>
 </div> -->
-<Dialog bind:open={showingSettings} 
-	modal={true} 
-	showCloseButton={true} closeWhenClickedOutside={true}
-	on:dialog-closed={() => showingSettings = false}>
-	<span slot="title">Settings</span>
-	<SettingsPage 
-		user={user ?? null} 
-		on:navigate={() => toggleSettings(false)}/>
+<Dialog
+	bind:open={showingSettings}
+	modal={true}
+	showCloseButton={true}
+	closeWhenClickedOutside={true}
+	on:dialog-closed={() => (showingSettings = false)}
+>
+	{#snippet title()}
+		<span>Settings</span>
+	{/snippet}
+	<SettingsPage user={data.user ?? null} on:navigate={() => toggleSettings(false)} />
 </Dialog>
-
 
 <style lang="scss">
 	.app-content {

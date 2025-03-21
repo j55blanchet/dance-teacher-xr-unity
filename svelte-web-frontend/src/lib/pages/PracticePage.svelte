@@ -82,11 +82,6 @@ let isDoingSomeSortOfFeedback = $derived(
         || (skeletonDrawingEnabled && interfaceSettings.userVideo.visibility === 'visible' && interfaceSettings.userVideo.skeleton === 'user')
 );
 
-let hasVisibleReferenceVideo: boolean = $derived(interfaceSettings.referenceVideo.visibility === 'visible');
-
-let hasUserWebcamVisible: boolean = $derived(interfaceSettings.userVideo.visibility === 'visible' ||
-    isDoingSomeSortOfFeedback && state === 'waitWebcam');
-
 const dispatch = createEventDispatcher<{
     stateChanged: PracticePageState;
     'continue-clicked': undefined;
@@ -95,10 +90,15 @@ const dispatch = createEventDispatcher<{
 
 let fitVideoToFlexbox = true;
 
-let state: PracticePageState = $state(INITIAL_STATE); 
+let hasVisibleReferenceVideo: boolean = $derived(interfaceSettings.referenceVideo.visibility === 'visible');
 
-let isPlayingOrCountdown: boolean = $derived(state === "playing" || state === "countdown");
-let isShowingFeedback: boolean = $derived(state === 'feedback');
+let pageState: PracticePageState = $state(INITIAL_STATE); 
+
+let hasUserWebcamVisible: boolean = $derived(interfaceSettings.userVideo.visibility === 'visible' ||
+    isDoingSomeSortOfFeedback && pageState=== 'waitWebcam');
+
+let isPlayingOrCountdown: boolean = $derived(pageState=== "playing" || pageState=== "countdown");
+let isShowingFeedback: boolean = $derived(pageState=== 'feedback');
 let feedbackDialogOpen: boolean = $state(false);
 let isMounted = false;
 
@@ -108,8 +108,8 @@ let countdown = $state(-1);
 let countdownActive = $state(false);
 
 let clickAudioElement: HTMLAudioElement;
-let virtualMirrorElement: VirtualMirror = $state();
-let videoWithSkeleton: PlayableVideoWithSkeleton = $state();
+let virtualMirrorElement: VirtualMirror | undefined = $state();
+let videoWithSkeleton: PlayableVideoWithSkeleton | undefined = $state();
 let videoCurrentTime: number = $state(0);
 let videoPlaybackSpeed: number = $state(1);
 let videoDuration: number = $state(0);
@@ -119,7 +119,7 @@ let danceSrc: string = $state('');
 let poseEstimationEnabled: boolean = $derived(
     pageActive 
         && isDoingSomeSortOfFeedback 
-        &&  (countdownActive || !isVideoPausedBinding || state==="paused")
+        &&  (countdownActive || !isVideoPausedBinding || pageState==="paused")
 );
 
 let containingDanceTreeLeafNodes = $derived.by(() => {
@@ -186,7 +186,7 @@ function unPauseVideo() {
     unpauseVideoTimeout = null;
     currentPlaybackEndtime = practiceStep?.endTime ?? videoDuration;
     isVideoPausedBinding = false;
-    state = "playing";
+    pageState= "playing";
 }
 
 async function getFeedback(perfSummary: FrontendPerformanceSummary | null, recordedTrack:  FrontendEvaluationTrack | null) {
@@ -296,10 +296,14 @@ async function playClickSound(silent: boolean = false) {
 let mediaElementsHaveBeenActivated = false;
 
 async function startCountdown() {
+    if (!videoWithSkeleton) {
+        console.warn('startCountdown: videoWithSkeleton not ready');
+        return;
+    }
     if (countdownActive) return;
     
     isVideoPausedBinding = true;
-    state = "countdown";
+    pageState= "countdown";
     countdownActive = true;
 
     // Safari / webkit disallows media elements from auto-playing without user interaction. We
@@ -328,7 +332,7 @@ async function startCountdown() {
     videoPlaybackSpeed = effectivePlaybackSpeed;
 
     if (!mediaElementsHaveBeenActivated) {
-        state = 'waitStartUserInteraction';
+        pageState= 'waitStartUserInteraction';
         countdownActive = false;
         return;
     }
@@ -337,7 +341,7 @@ async function startCountdown() {
     await tick();
     await waitSecs(beatDuration);
 
-    state = "countdown";
+    pageState= "countdown";
     countdownActive = true;
     await waitSecs(beatDuration);
 
@@ -362,7 +366,7 @@ async function startCountdown() {
     if (!isMounted) return
 
     trialId = generateUUIDv4();
-    state = "playing";
+    pageState= "playing";
     
     countdown = -1;
 
@@ -412,13 +416,17 @@ export async function reset(start: boolean = false) {
     if(!virtualMirrorElement) {
         await tick();
     }
+    if (!virtualMirrorElement) {
+        console.warn('Virtual mirror element not ready during reset() call');
+        return;
+    }
 
     terminalFeedback = null;
     feedbackDialogOpen = false;
     mainContinueButton?.focus();
     trialId = null;
     currentActivityStepIndex = 0;
-    state = "waitWebcam";
+    pageState= "waitWebcam";
     lastEvaluationResult = null;
     isVideoPausedBinding = true;
     videoRecording = undefined;
@@ -446,7 +454,7 @@ export async function reset(start: boolean = false) {
     if (ref3dPosesPromise) { referenceDancePoses3D = await ref3dPosesPromise; }
     await Promise.all(promises);
 
-    state = "waitStart";
+    pageState= "waitStart";
 
     evaluator = getFrontendDanceEvaluator(
         referenceDancePoses2D!,
@@ -465,12 +473,12 @@ export async function reset(start: boolean = false) {
 
     await waitSecs(beatDuration);
 
-    // state = 'waitStartUserInteraction';
+    // pageState= 'waitStartUserInteraction';
     // showStartCountdownDialog = true;
     if (start ?? false) {
         startCountdown();
     } else {
-        state = 'waitStartUserInteraction';
+        pageState= 'waitStartUserInteraction';
     }
 }
 
@@ -478,7 +486,7 @@ export async function reset(start: boolean = false) {
 let poseEstimationCorrespondances: Map<number, {
     videoTimeSecs: number;
     actualTimeInMs: number;
-    pageState: typeof state;
+    pageState: PracticePageState;
 }> = new Map();
 let lastPoseEstimationVideoTime: number = -1;
 let lastPoseEstimationSentTimestamp: Date = new Date();
@@ -493,7 +501,7 @@ function poseEstimationFrameSent(e: any) {
     poseEstimationCorrespondances.set(e.detail.frameId, {
         videoTimeSecs: videoCurrentTime,
         actualTimeInMs: Date.now(),
-        pageState: state,
+        pageState: pageState,
     });
     lastPoseEstimationVideoTime = videoCurrentTime;
 }
@@ -582,12 +590,16 @@ let toggleSkeletonInvervel: null | number = null;
 // }, 1000);
 
 onMount(() => {
+    if (!virtualMirrorElement) {
+        console.warn('Virtual mirror element not ready during onMount() call');
+    }
+
     // Prepare pose estimation, so that it'll be ready 
     // when we need it, as opposed to creating the model
     // after the video starts playing.
     clickAudioElement = new Audio(metronomeClickSoundSrc);
     videoCurrentTime = practiceStep?.startTime ?? 0;
-    poseEstimationReady = virtualMirrorElement.setupPoseEstimation();
+    poseEstimationReady = virtualMirrorElement?.setupPoseEstimation() ?? Promise.reject("Virtual mirror is undefined");
     reset();
     isMounted = true;
 
@@ -615,7 +627,7 @@ function onContinueClicked() {
 // this is the effect that keeeps doing to infinite depth
 // Auto-pause the video when the practice activity is over
 $effect(() => {
-    if (state === "feedback" || state === "paused"){
+    if (pageState=== "feedback" || pageState=== "paused"){
         return;
     }
 
@@ -627,7 +639,7 @@ $effect(() => {
 
         if (currentPlaybackEndtime >= (practiceStep?.endTime ?? videoDuration)) {
             console.log("Practice activity is over");
-            state = "feedback";
+            pageState= "feedback";
             
             terminalFeedback = null;
             performanceSummary = null;
@@ -662,7 +674,7 @@ $effect(() => {
         }
         else {
             console.log("Reached a pause point in the middle of the practice activity");
-            state = "paused"
+            pageState= "paused"
             if (unpauseVideoTimeout === null) {
                 unpauseVideoTimeout = window.setTimeout(unPauseVideo, 1000 * $debugPauseDurationSecs);
             }
@@ -671,8 +683,8 @@ $effect(() => {
 });
 
 $effect(() => {
-    console.log("PracticePage state", state);
-    dispatch('stateChanged', state);
+    console.log("PracticePage state", pageState);
+    dispatch('stateChanged', pageState);
 });
 
 $effect(() => {
@@ -786,18 +798,18 @@ $effect(() => {
                 <button 
                     
                     class="daisy-btn" 
-                    class:daisy-btn-primary={state === 'waitStartUserInteraction'}
-                    disabled={countdownActive || state === "waitWebcam"} 
+                    class:daisy-btn-primary={pageState=== 'waitStartUserInteraction'}
+                    disabled={countdownActive || pageState=== "waitWebcam"} 
                     bind:this={mainContinueButton}
                     onclick={() => reset(true)}
                 >
-                    {#if state === 'waitStartUserInteraction'}
+                    {#if pageState=== 'waitStartUserInteraction'}
                         Start Countdown
-                    {:else if state === 'feedback'}
+                    {:else if pageState=== 'feedback'}
                         Do Again
-                    {:else if state === "playing"}
+                    {:else if pageState=== "playing"}
                         Restart
-                    {:else if state === "waitWebcam"}
+                    {:else if pageState=== "waitWebcam"}
                         Waiting for webcam
                     {:else}
                         <span class="daisy-loading daisy-loading-spinner"></span>
@@ -807,8 +819,8 @@ $effect(() => {
             <div class="right space-x-4">
                 <div class="daisy-dropdown  daisy-dropdown-top daisy-dropdown-end"
                     class:daisy-dropdown-open={feedbackDialogOpen}
-                    class:hidden={state !== "feedback"}>
-                    <button class="daisy-btn daisy-btn-neutral" role="button" tabindex="0" onclick={() => {
+                    class:hidden={pageState!== "feedback"}>
+                    <button class="daisy-btn daisy-btn-neutral" tabindex="0" onclick={() => {
                         feedbackDialogOpen = !feedbackDialogOpen;
                         // unfocus the dialog
                         if (!feedbackDialogOpen) {
@@ -829,7 +841,6 @@ $effect(() => {
                             <TerminalFeedbackScreen 
                                 feedback={terminalFeedback}
                                 performanceSummary={performanceSummary ?? undefined}
-                                on:continue-clicked={() => dispatch('continue-clicked')}
                             />
 
                             <div id="terminalfeedback-plots">
@@ -868,9 +879,9 @@ $effect(() => {
     <Dialog 
         open={showingPerformanceReviewPage && videoRecording !== undefined} 
         on:dialog-closed={() => showingPerformanceReviewPage = false }>
-        <div slot="title">
+        {#snippet title()}
             <span>Performance Review</span>
-        </div>
+        {/snippet}
         <div class="reviewPageWrapper">
             {#if videoRecording !== undefined}
             <PerformanceReviewPage 
@@ -902,7 +913,7 @@ $effect(() => {
     max-height: calc(100% - 94px - 1rem);
 }
 .mirror {  grid-area: mirror;  }
-.feedback { grid-area: feedback; overflow: hidden;}
+// .feedback { grid-area: feedback; overflow: hidden;}
 
 .practicePage {
     overflow: hidden;
@@ -956,33 +967,33 @@ $effect(() => {
     }
 }
 
-.countdown {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-}
+// .countdown {
+//     position: absolute;
+//     top: 0;
+//     left: 0;
+//     right: 0;
+//     bottom: 0;
+//     display: flex;
+//     align-items: center;
+//     justify-content: center;
+//     pointer-events: none;
+// }
 
-.count {
-    width: 4rem;
-    height: 4rem;
-    text-align: center;
-    font-size: 4rem;
-    font-weight: bold;
-    color: white;
-    background-color: rgba(0, 0, 0, 0.2);
-    //  add background blur
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+// .count {
+//     width: 4rem;
+//     height: 4rem;
+//     text-align: center;
+//     font-size: 4rem;
+//     font-weight: bold;
+//     color: white;
+//     background-color: rgba(0, 0, 0, 0.2);
+//     //  add background blur
+//     backdrop-filter: blur(5px);
+//     -webkit-backdrop-filter: blur(5px);
 
-    padding: 3rem;
-    border-radius: 50%;
-}
+//     padding: 3rem;
+//     border-radius: 50%;
+// }
 
 .hidden {
     position: absolute !important; 

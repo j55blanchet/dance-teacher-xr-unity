@@ -122,6 +122,10 @@ export function getAllNodes(node: DanceTreeNode): DanceTreeNode[] {
 }
 
 export function getDanceVideoSrc(supabase: SupabaseClient, dance: Dance): string {
+    if (!dance?.clipPath) {
+        return "null";
+    }
+
     const { data } = supabase.storage
         .from('sourcevideos')
         .getPublicUrl(dance.clipPath);
@@ -129,12 +133,19 @@ export function getDanceVideoSrc(supabase: SupabaseClient, dance: Dance): string
 }
 
 export function getHolisticDataSrc(supabase: SupabaseClient, dance: Dance): string {
+    if (!dance?.clipRelativeStem) {
+        return "null";
+    }
     const { data } = supabase.storage
         .from('holisticdata')
         .getPublicUrl(`${dance.clipRelativeStem}.holisticdata.csv`);
     return data.publicUrl;
 }
 export function get2DPoseDataSrc(supabase: SupabaseClient, dance: Dance): string {
+    if (!dance?.clipRelativeStem) {
+        return "null";
+    }
+
     const { data } = supabase.storage
         .from('pose2ddata')
         .getPublicUrl(`${dance.clipRelativeStem}.pose2d.csv`);
@@ -142,13 +153,18 @@ export function get2DPoseDataSrc(supabase: SupabaseClient, dance: Dance): string
 }
 
 export function getThumbnailUrl(supabase: SupabaseClient, dance: Dance): string {
+    if (!dance?.thumbnailSrc) {
+        return "null";
+    }
+
     const { data } = supabase.storage
         .from('thumbnails')
         .getPublicUrl(dance.thumbnailSrc);
+
     return data.publicUrl;
 }
 
-/**
+/*
  * Constrain a value to a given range
  * @param val Value to constrain
  * @param min Minimum value
@@ -252,7 +268,8 @@ async function loadPoseInformation<T extends Pose2DPixelLandmarks | Pose3DLandma
  */
 export async function load2DPoseInformation(supabase: SupabaseClient, dance: Dance): Promise<PoseReferenceData<Pose2DPixelLandmarks>> {
     const pose2dCsvPath = get2DPoseDataSrc(supabase, dance);
-    return await loadPoseInformation(pose2dCsvPath, dance.fps, GetPixelLandmarksFromPose2DRow);
+    const poseInfo = await loadPoseInformation(pose2dCsvPath, dance.fps, GetPixelLandmarksFromPose2DRow);
+    return poseInfo;
 }
 
 /**
@@ -268,7 +285,7 @@ export async function load3DPoseInformation(supabase: SupabaseClient, dance: Dan
     return await loadPoseInformation(pose3dCsvPath, dance.fps, GetPixelLandmarksFromPose3DRow) as PoseReferenceData<Pose3DLandmarkFrame>;
 }
 
-function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) {
+function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) : Pose2DPixelLandmarks | null {
     if (!pose2drow) return null;
 
     return PoseLandmarkKeysUpperSnakeCase.map((key) => {
@@ -281,7 +298,7 @@ function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) {
     });
 }
 
-function GetPixelLandmarksFromPose3DRow(pose3drow: Record<string, number>) {
+function GetPixelLandmarksFromPose3DRow(pose3drow: Record<string, number>): Pose3DLandmarkFrame | null {
     if (!pose3drow) return null;
     
     return PoseLandmarkKeysUpperSnakeCase.map((key) => {
@@ -289,7 +306,7 @@ function GetPixelLandmarksFromPose3DRow(pose3drow: Record<string, number>) {
             x: pose3drow[`${key}_x`],
             y: pose3drow[`${key}_y`],
             z: pose3drow[`${key}_z`],
-            vis: pose3drow[`${key}_vis`]
+            visibility: pose3drow[`${key}_vis`]
         }
     });
 }

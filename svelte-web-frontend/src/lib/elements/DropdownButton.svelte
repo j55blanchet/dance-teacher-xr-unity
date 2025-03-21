@@ -1,10 +1,24 @@
 <script lang="ts">
 
-export let position: 'top' | 'down' | 'left' | 'right' = 'down';
-export let alignment: 'start' | 'end' = 'start';
-export let btnClass: string = '';
-export let menuOpen = false;
-export let dismissWhenNotFocused = true;
+    interface Props {
+        position?: 'top' | 'down' | 'left' | 'right';
+        alignment?: 'start' | 'end';
+        btnClass?: string;
+        menuOpen?: boolean;
+        dismissWhenNotFocused?: boolean;
+        buttonTitle?: import('svelte').Snippet;
+        children?: import('svelte').Snippet;
+    }
+
+    let {
+        position = 'down',
+        alignment = 'start',
+        btnClass = '',
+        menuOpen = false,
+        dismissWhenNotFocused = true,
+        buttonTitle,
+        children
+    }: Props = $props();
 </script>
 
 {#if dismissWhenNotFocused}
@@ -13,19 +27,19 @@ export let dismissWhenNotFocused = true;
     class:daisy-dropdown-open={menuOpen}>
 
     <div tabindex="0" role="button" class={`daisy-btn ${btnClass}`}>
-        <slot name="buttonTitle"></slot>
+        {@render buttonTitle?.()}
     </div>
     <div class="daisy-dropdown-content">
-        <slot></slot>
+        {@render children?.()}
     </div>
 </div>
 {:else}
 <details class={`daisy-dropdown daisy-dropdown-${position}`}>
     <summary class={`btn daisy-btn ${btnClass}`}>
-        <slot name="buttonTitle"></slot>
+        {@render buttonTitle?.()}
     </summary>
     <div class="daisy-dropdown-content">
-        <slot></slot>
+        {@render children?.()}
     </div>
 </details>
 {/if}

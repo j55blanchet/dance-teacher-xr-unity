@@ -1,12 +1,12 @@
 // src/routes/+layout.server.ts
+import type { LayoutServerLoad } from './$types'
 
-
-// Make the session object available to the client
-export const load = async ({ locals: { getSession, supabase } }) => {
-
-    const session = await getSession();
+export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, cookies }) => {
+    const { session, user } = await safeGetSession()
 
     return {
         session,
+        user,
+        cookies: cookies.getAll(),
     }
 }
