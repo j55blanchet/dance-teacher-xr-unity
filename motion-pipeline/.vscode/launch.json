@@ -289,6 +289,17 @@
             "request": "launch",
             "cwd": "${workspaceFolder}/adhoc_analysis/",
             "module": "chatgpt-test.test",
+        },
+        {
+            "name": "Extract Poses from Videos",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/motion_extraction/scripts/getposes.py",
+            "console": "integratedTerminal",
+            "args": [
+                "H:\\Shared drives\\Human Motion Lab\\2025-CHI-2D-Dance-TikTok-Teaching\\UserVideos\\AzureBlobFiles\\user-study-2-segmented-take3-beataligned-spedup",
+                "H:\\Shared drives\\Human Motion Lab\\2025-CHI-2D-Dance-TikTok-Teaching\\UserVideos\\AzureBlobFiles\\user-study-2-segmented-take3-beataligned-spedup-poses"
+            ]
         }
     ]
 }
