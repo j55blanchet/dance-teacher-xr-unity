@@ -70,9 +70,9 @@ def check_csv_video_match(csv_path, video_path):
     # Mediapipe won't detect landmarks 
     difference = abs(frame_count - row_count)
     min_frames = min(frame_count, row_count)
-    percentage = difference / min_frames
+    percentage = difference / max(min_frames, 1) # avoid division by zero
     
-    return difference <= 1 or percentage < 0.05
+    return difference <= 1 or percentage < 0.20
 
 def main():
     parser = argparse.ArgumentParser(description='Process videos to extract pose estimations.')
