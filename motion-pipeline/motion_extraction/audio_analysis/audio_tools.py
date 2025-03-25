@@ -1,7 +1,7 @@
 import librosa
 import numpy as np
 import typing as t
-import moviepy.editor as mpe
+import moviepy as mp
 from pathlib import Path
 import dataclasses as dc
 import dataclasses_json as dcj
@@ -114,7 +114,7 @@ def save_audio_from_video(video_path: Path, output_audio_path: Path, as_mono: bo
     output_audio_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Use MoviePy to extract the audio track from the video file
-    with mpe.VideoFileClip(str(video_path)) as video_clip:
+    with mp.VideoFileClip(str(video_path)) as video_clip:
         audio_clip = video_clip.audio
         ffmpeg_params = []
 
@@ -142,7 +142,7 @@ def load_audio(path: Path, as_mono: bool = False) -> t.Tuple[np.ndarray, float]:
     audio_array, sample_rate = None, None # type: ignore
     if path.suffix in ('.mp4', '.avi', '.mov'):
         # Load the video file
-        video = mpe.VideoFileClip(str(path))
+        video = mp.VideoFileClip(str(path))
 
         if video.audio == None:
             raise Exception('No audio found in video file.')
