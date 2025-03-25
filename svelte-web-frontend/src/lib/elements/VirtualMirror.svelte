@@ -1,8 +1,7 @@
 <script lang="ts">
     import { poseEstimation__interFrameIdleTimeMs } from '$lib/model/settings';
-	import { PoseLandmarkKeys, type Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
-	// import { PoseEstimationWorker } from '$lib/pose-estimation.worker?worker';
-    import PoseEstimationWorker, { worker, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/pose-estimation.worker';
+	import { PoseLandmarkKeys, type Pose3DLandmarkFrame, PostMessages as PoseEstimationMessages, ResponseMessages as PoseEsimationResponses } from '$lib/webcam/mediapipe-utils';
+	import PoseEstimationWorker from '$lib/webcam/pose-estimation.worker?worker';
     import type { DrawingUtils, PoseLandmarker, NormalizedLandmark, PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 	import { onMount, tick, createEventDispatcher } from 'svelte';
     import { webcamStream } from '../webcam/streams';
@@ -21,8 +20,8 @@
 
     export let poseEstimationCheckFunction: () => boolean = () => true;
 
-    // let poseEstimationWorker: Worker | null = null;
-    let poseEstimationWorker: PoseEstimationWorker | null = null;
+    let poseEstimationWorker: Worker; //null;
+    // let poseEstimationWorker: PoseEstimationWorker | null = null;
 
     export let customDrawFn: null | ((ctx: CanvasRenderingContext2D, userPose: null | NormalizedLandmark[]) => void) = null;
 
@@ -30,6 +29,8 @@
     // let poseEstimationStartedPriming = false;
     let resolvePoseEstimationPrimed: (() => void) | undefined;
     export let poseEstimationPrimedPromise = new Promise<void>((res) => resolvePoseEstimationPrimed = res);
+    let resolvePoseEstimationReady: (() => void) | undefined;
+    let poseEstimationReadyPromise = new Promise<void>((res) => resolvePoseEstimationReady = res);
 
     let webcamConnected = false;
     let videoElement: HTMLVideoElement | undefined = undefined;
@@ -92,14 +93,15 @@
     }
 
     export function setupPoseEstimation() {
-        poseEstimationWorker = worker;
-
-		// poseEstimationWorker = new Worker(
-        //     new URL('$lib/pose-estimation.worker.ts', import.meta.url),
-        //     // { type: 'module' }
-        // );
+        // poseEstimationWorker = worker;
+		poseEstimationWorker = new Worker(new URL('$lib/webcam/pose-estimation.worker.ts', import.meta.url));
 
         poseEstimationWorker.onmessage = (msg: any) => {
+            if (!msg.data.type) {
+                console.error("Got message from PoseEstim worker without type", msg);
+                return;
+            }
+
             if (msg.data.type === PoseEsimationResponses.poseEstimation) {
 
                 lastFrameReceivedTime = new Date().getTime();
@@ -147,12 +149,12 @@
         };
 
         // Send reset message
-        worker.postMessage({
+        poseEstimationWorker.postMessage({
             type: PoseEstimationMessages.reset,
             frameId: new Date().getTime(),
         });
 
-        return poseEstimationWorker.ready;
+        return Promise.resolve(); // poseEstimationWorker.ready;
     }
 
     /**

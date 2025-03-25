@@ -599,7 +599,7 @@ onMount(() => {
     // after the video starts playing.
     clickAudioElement = new Audio(metronomeClickSoundSrc);
     videoCurrentTime = practiceStep?.startTime ?? 0;
-    poseEstimationReady = virtualMirrorElement?.setupPoseEstimation() ?? Promise.reject("Virtual mirror is undefined");
+    poseEstimationReady = virtualMirrorElement?.setupPoseEstimation() ?? Promise.reject("Virtual mirror is undefined or setupPoseEstimation returned a null promise");
     reset();
     isMounted = true;
 

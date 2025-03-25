@@ -19,7 +19,7 @@ const DEFAULT_SETTINGS = {
    summaryFeedback_skeleton3d_goodPerformanceThreshold: 0.9,
    evaluation_summarizeSubsections: 'allnodes' as const,
    metric__3dskeletonsimilarity__badJointStdDeviationThreshold: 1.5,
-   poseEstimation__interFrameIdleTimeMs: 50,
+   poseEstimation__interFrameIdleTimeMs: -1,
    danceVideoVolume: 0.5,
 
    practiceActivities__playbackSpeed: 0.5,
