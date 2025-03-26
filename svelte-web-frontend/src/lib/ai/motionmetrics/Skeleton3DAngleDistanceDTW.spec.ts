@@ -1,48 +1,85 @@
 import { describe, it } from "vitest";
-import { loadPoses, Study, STUDY_1_POSES_FOLDER } from "./PoseDataTestFile";
+import { loadPoses, loadTikTokClipPoses, OtherPoseSource, Study, type StudySegmentData, type DanceName, type SegmentInfo } from "./PoseDataTestFile";
 
-describe('Skeleton3DAngleDistanceDTW', () => {
+describe('Skeleton3DAngleDistanceDTW', {}, async () => {
 
- 
+    const tiktokClipPoses = await loadTikTokClipPoses();
+    function getReferenceClip(segmentInfo: SegmentInfo) {
+        return tiktokClipPoses.get(segmentInfo.danceName)?.[segmentInfo.clipNumber];
+    }
 
-    it('can compute metric for a single pose file', {}, async ({ expect }) => {
+    it('can load the tiktok pose files', {}, async ({ expect }) => {
+        const allposesgenerator = await loadPoses(OtherPoseSource.TikTokClips);
+        const allposes = await fromAsync(allposesgenerator);
+        expect(allposes).not.toBe(null);
+        expect(allposes).toHaveLength(20); // there are 20 clip files
+        expect(allposes?.[0]?.poses).not.toBe(null);
 
-        let iterations = 0;
-        const allPoses = await loadPoses(STUDY_1_POSES_FOLDER, Study.Study1);
-        for await (const poseData of takeAsnc(allPoses, 1)) {
-            console.log(poseData);
-            expect(poseData).not.toBe(null);
-            expect(poseData?.length).toBeGreaterThan(0);
-            expect(poseData?.[0]).not.toBe(null);
-            const firstRow = poseData?.[0];
-            expect(firstRow).toHaveProperty("pixelPose");
-            expect(firstRow).toHaveProperty("worldPose");
-            expect(firstRow?.pixelPose).toHaveLength(33);
-            expect(firstRow?.worldPose).toHaveLength(33);
+        expect(tiktokClipPoses).not.toBe(null);
+        expect(tiktokClipPoses.size).toBe(4); // there are 4 different tt clips
+    });
 
-            expect(firstRow?.pixelPose[0]).toHaveProperty("x");
-            expect(firstRow?.pixelPose[0]).toHaveProperty("y");
-            expect(firstRow?.pixelPose[0]).toHaveProperty("dist_from_camera");
-            expect(firstRow?.pixelPose[0]).toHaveProperty("visibility");
+    describe('pose file loading', async () => {
 
-            expect(firstRow?.worldPose[0]).toHaveProperty("x");
-            expect(firstRow?.worldPose[0]).toHaveProperty("y");
-            expect(firstRow?.worldPose[0]).toHaveProperty("z");
-            expect(firstRow?.worldPose[0]).toHaveProperty("visibility");
-            iterations++;
-        }
+        const allPoses = await loadPoses(Study.Study1);
 
-        expect(iterations).toBeGreaterThan(0);
+        it('can compute metric for a single pose file', {}, async ({ expect }) => {
+
+            let iterations = 0;
+            for await (const poseData of takeAsnc(allPoses, 1)) {
+
+                expect(poseData?.poses).not.toBe(null);
+                expect(poseData.poses?.length).toBeGreaterThan(0);
+                expect(poseData.poses?.[0]).not.toBe(null);
+                const firstRow = poseData.poses?.[0];
+                expect(firstRow).toHaveProperty("pixelPose");
+                expect(firstRow).toHaveProperty("worldPose");
+                expect(firstRow?.pixelPose).toHaveLength(33);
+                expect(firstRow?.worldPose).toHaveLength(33);
+
+                expect(firstRow?.pixelPose[0]).toHaveProperty("x");
+                expect(firstRow?.pixelPose[0]).toHaveProperty("y");
+                expect(firstRow?.pixelPose[0]).toHaveProperty("dist_from_camera");
+                expect(firstRow?.pixelPose[0]).toHaveProperty("visibility");
+
+                expect(firstRow?.worldPose[0]).toHaveProperty("x");
+                expect(firstRow?.worldPose[0]).toHaveProperty("y");
+                expect(firstRow?.worldPose[0]).toHaveProperty("z");
+                expect(firstRow?.worldPose[0]).toHaveProperty("visibility");
+                iterations++;
+            }
+            expect(iterations).toBe(1);
+        });
+
+        it('can match a user pose file to one of the tiktok clips', {}, async ({ expect }) => {
+            let data = takeAsnc(allPoses, 1);
+            let userPoseData = await data.next();
+            expect(userPoseData.value).not.toBe(null);
+            expect(userPoseData.value?.poses).not.toBe(null);
+
+            if (!userPoseData.value?.poses) return;
+            const poseData = userPoseData.value as StudySegmentData;
+            const referenceClip = getReferenceClip(poseData.segmentInfo);
+            expect(referenceClip).not.toBe(null);
+        });
     });
 });
 
 async function* takeAsnc<T>(
     iterable: AsyncIterable<T>,
     n: number
-  ): AsyncGenerator<T, void, unknown> {
+): AsyncGenerator<T, void, unknown> {
     let count = 0;
     for await (const item of iterable) {
-      if (count++ >= n) break;
-      yield item;
+        if (count++ >= n) break;
+        yield item;
     }
-  }
+}
+
+async function fromAsync<T>(asyncIterable: AsyncIterable<T>) {
+    const result: T[] = [];
+    for await (const item of asyncIterable) {
+        result.push(item);
+    }
+    return result;
+};
