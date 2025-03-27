@@ -19,6 +19,10 @@ data/*
 !data/urdf
 !data/summary
 !data/db.csv
+!data/study-poses
+data/study-poses/*
+!data/study-poses/tiktok-clip-poses
+# !data/study-poses/user-study-2-segmented-take3-beataligned-spedup-poses
 
 # Distribution / packaging
 .Python

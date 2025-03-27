@@ -4,27 +4,34 @@ import Papa from 'papaparse';
 import { readFile, readdir } from 'node:fs/promises';
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type { ValueOf } from '$lib/data/dances-store';
+import { dances, loadPoseInformation, GetPixelLandmarksFromPose2DRow, GetPixelLandmarksFromPose3DRow, type Dance } from '$lib/data/dances-store';
 
-export const STUDY_1_POSES_FOLDER = "../motion-pipeline/data/study-poses/user-study-1-segmented-poses/";
-export const STUDY_2_POSES_FOLDER = "../motion-pipeline/data/study-poses/user-study-2-segmented-poses-take3-beataligned-spedup-poses/";
+export const STUDY_1_SEGMENTED_POSES_FOLDER = "../motion-pipeline/data/study-poses/user-study-1-segmented-poses/";
+export const STUDY_2_SEGMENTED_POSES_FOLDER = "../motion-pipeline/data/study-poses/user-study-2-segmented-poses-take3-beataligned-spedup-poses/";
+export const STUDY_2_WHOLE_POSES_FOLDER = "src/lib/ai/motionmetrics/testdata/study-poses/study2-whole/";
 export const TIKTOK_CLIPS_POSES_FOLDER = "../motion-pipeline/data/study-poses/tiktok-clip-poses/";
+export const TIKTOK_WHOLE_POSES_FOLDER_2D = "static/bundle/pose2d_data/";
+export const TIKTOK_WHOLE_POSES_FOLDER_3D_HOLISTIC = "static/bundle/holistic_data/";
 
 export const LandmarkNames = ['NOSE', 'LEFT_EYE_INNER', 'LEFT_EYE', 'LEFT_EYE_OUTER', 'RIGHT_EYE_INNER', 'RIGHT_EYE', 'RIGHT_EYE_OUTER', 'LEFT_EAR', 'RIGHT_EAR', 'MOUTH_LEFT', 'MOUTH_RIGHT', 'LEFT_SHOULDER', 'RIGHT_SHOULDER', 'LEFT_ELBOW', 'RIGHT_ELBOW', 'LEFT_WRIST', 'RIGHT_WRIST', 'LEFT_PINKY', 'RIGHT_PINKY', 'LEFT_INDEX', 'RIGHT_INDEX', 'LEFT_THUMB', 'RIGHT_THUMB', 'LEFT_HIP', 'RIGHT_HIP', 'LEFT_KNEE', 'RIGHT_KNEE', 'LEFT_ANKLE', 'RIGHT_ANKLE', 'LEFT_HEEL', 'RIGHT_HEEL', 'LEFT_FOOT_INDEX', 'RIGHT_FOOT_INDEX'];
 
 export enum Study {
-    Study1 = "study1",
-    Study2 = "study2",
+    Study1Segmented = "study1",
+    Study2Segmented = "study2",
+    Study2Whole = "study2whole",
 }
 
 export enum OtherPoseSource {
     TikTokClips = "tiktokclips",
+    // TiktokWhole uses the loading mechanism from dances-store.ts
+    // TiktokWhole = "tiktokwhole",
 }
 
 function isStudy(poseSource: Study | OtherPoseSource): poseSource is Study {
-    return poseSource === Study.Study1 || poseSource === Study.Study2;
+    return Object.values(Study).includes(poseSource as Study);
 }
 function isOtherPoseSource(poseSource: Study | OtherPoseSource): poseSource is OtherPoseSource {
-    return poseSource === OtherPoseSource.TikTokClips;
+    return Object.values(OtherPoseSource).includes(poseSource as OtherPoseSource);
 }
 
 export const TiktokClipIdToName = Object.freeze({
@@ -59,6 +66,12 @@ export type TiktokDanceClipData = {
     segmentInfo: TikTokClipInfo,
 };
 
+export type TiktokDanceWholeData = {
+    danceName: DanceName,
+    poses: PoseFrame[],
+    dance: Dance,
+};
+
 export type StudySegmentData = {
     poses: PoseFrame[],
     segmentInfo: SegmentInfo,
@@ -70,14 +83,16 @@ export type PoseFrame = {
 };
 
 function getSegmentInfo(filename: string, study: Study): SegmentInfo | null {
-    const targetPartCount = study === Study.Study1 ? 5 : 4;
-    const conditionSeparator = study === Study.Study1 ? "--" : "-";
+    const targetPartCount = study === Study.Study1Segmented ? 
+        5 : 
+        4; // study 2, study2 segmented
+    const conditionSeparator = study === Study.Study1Segmented ? "--" : "-";
 
     let fileparts = filename.split("_").filter((s) => s.length > 0);
     if (fileparts.length !== targetPartCount) return null;
 
     let study1phase = undefined;
-    if (study === Study.Study1) {
+    if (study === Study.Study1Segmented) {
         // extract the study 1 phase
         study1phase = fileparts.splice(1, 1)[0];
     }
@@ -94,7 +109,10 @@ function getSegmentInfo(filename: string, study: Study): SegmentInfo | null {
     const canonicalResult = canonicalizeDanceName(rawDanceName);
 
     if (!canonicalResult) return null;
-    if (Number.isNaN(clipNumber)) return null;
+    if ([Study.Study1Segmented, Study.Study2Segmented].includes(study) &&
+        Number.isNaN(clipNumber)) {
+            return null;
+    }
 
     const [danceId, danceName] = canonicalResult;
     return {
@@ -201,14 +219,26 @@ function convertCsvRow(row: Record<string, number>): PoseFrame {
     }
 }
 
+function getPoseFolder(poseSource: Study | OtherPoseSource) {
+    switch(poseSource) {
+        case Study.Study1Segmented:
+            return STUDY_1_SEGMENTED_POSES_FOLDER;
+        case Study.Study2Segmented:
+            return STUDY_2_SEGMENTED_POSES_FOLDER;
+        case Study.Study2Whole:
+            return STUDY_2_WHOLE_POSES_FOLDER;
+        case OtherPoseSource.TikTokClips:
+            return TIKTOK_CLIPS_POSES_FOLDER;
+    }
+    throw new Error("Invalid pose source");
+}
+
 /**
  * Generates all pose files in a folder
  */
 export async function* loadPoses<T extends Study | OtherPoseSource>(poseSource: T): 
     AsyncGenerator<StudySegmentData | TiktokDanceClipData> {
-    const folder = poseSource === Study.Study1 ? STUDY_1_POSES_FOLDER :
-        poseSource === Study.Study2 ? STUDY_2_POSES_FOLDER :
-            TIKTOK_CLIPS_POSES_FOLDER;
+    const folder = getPoseFolder(poseSource);
 
     // List all files in the folder
     const files = await readdir(folder);
@@ -217,7 +247,7 @@ export async function* loadPoses<T extends Study | OtherPoseSource>(poseSource: 
 
         const segmentInfo = getClipInfo(file, poseSource);
 
-        if (segmentInfo == null) continue;
+        if (segmentInfo == null) continue; // skip invalidly named files
         const fullpath = `${folder}/${file}`;
 
         const data = await readFile(fullpath, 'utf-8');
@@ -260,4 +290,53 @@ export async function loadTikTokClipPoses() {
     }
 
     return clips;
+}
+
+function cononicalizeClipName(clipName: string): DanceName | undefined {
+    const allDances = Object.keys(TiktokClipNameToId) as DanceName[];
+    for (const dance of allDances) {
+        if (clipName.includes(dance)) return dance;
+
+        // special case: pajama party is spelled without a space in dances.json
+        if (clipName.includes("pajamaparty")) return "pajama-party";
+    }
+    return undefined;
+}
+
+export async function loadTiktokWholePoses() {
+
+    // const poseMap = new ();
+
+    const studyDancesRequests = dances
+        .filter(dance => cononicalizeClipName(dance.clipName))
+        .map((dance) => {
+            const danceName = cononicalizeClipName(dance.clipName) as DanceName;
+            const poses2Durl = `${TIKTOK_WHOLE_POSES_FOLDER_2D}${dance.clipRelativeStem}.pose2d.csv`;
+            const poses3Durl = `${TIKTOK_WHOLE_POSES_FOLDER_3D_HOLISTIC}${dance.clipRelativeStem}.holisticdata.csv`;
+            const useFetch = false; // have loadPoseInformation use the node fs.
+
+            return {
+                danceName,
+                dance,
+                poses2Dpromise: loadPoseInformation(poses2Durl, dance.fps, useFetch, GetPixelLandmarksFromPose2DRow),
+                poses3Dpromose: loadPoseInformation(poses3Durl, dance.fps, useFetch, GetPixelLandmarksFromPose3DRow),
+            };
+        });
+    
+        const studyDances = await Promise.all(studyDancesRequests.map(async (request) => {
+            const [poses2D, poses3D] = await Promise.all([request.poses2Dpromise, request.poses3Dpromose]);
+            const poseFrame: PoseFrame[] = poses2D.poses.map((pose2D, i) => ({
+                pixelPose: pose2D,
+                worldPose: poses3D.poses[i],
+            }));
+            return {
+                danceName: request.danceName,
+                dance: request.dance,
+                poses: poseFrame,
+            }as TiktokDanceWholeData;
+        }));
+
+
+    const poseMap = new Map(studyDances.map((danceData) => [danceData.danceName, danceData]));
+    return poseMap;
 }

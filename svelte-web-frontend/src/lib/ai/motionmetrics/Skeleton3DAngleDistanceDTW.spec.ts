@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import { loadPoses, loadTikTokClipPoses, OtherPoseSource, Study, type StudySegmentData, type DanceName, type SegmentInfo } from "./PoseDataTestFile";
+import { loadPoses, loadTikTokClipPoses, loadTiktokWholePoses, OtherPoseSource, Study, type StudySegmentData, type DanceName, type SegmentInfo } from "./PoseDataTestFile";
 
 describe('Skeleton3DAngleDistanceDTW', {}, async () => {
 
@@ -7,8 +7,9 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
     function getReferenceClip(segmentInfo: SegmentInfo) {
         return tiktokClipPoses.get(segmentInfo.danceName)?.[segmentInfo.clipNumber];
     }
+    const tiktokWholePoses = await loadTiktokWholePoses();
 
-    it('can load the tiktok pose files', {}, async ({ expect }) => {
+    it.concurrent('can load the tiktok clip pose files', {}, async ({ expect }) => {
         const allposesgenerator = await loadPoses(OtherPoseSource.TikTokClips);
         const allposes = await fromAsync(allposesgenerator);
         expect(allposes).not.toBe(null);
@@ -19,11 +20,16 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
         expect(tiktokClipPoses.size).toBe(4); // there are 4 different tt clips
     });
 
-    describe('pose file loading', async () => {
+    it.concurrent('can load the tiktok whole pose files', {}, ({ expect}) => {
+        expect(tiktokWholePoses).not.toBe(null)
+        expect(tiktokWholePoses.size).toBe(4); // there are 4 different tt clips
+    });
 
-        const allPoses = await loadPoses(Study.Study1);
+    describe.concurrent('pose file loading', async () => {
 
-        it('can compute metric for a single pose file', {}, async ({ expect }) => {
+        const allPoses = await loadPoses(Study.Study1Segmented);
+
+        it.concurrent('can compute metric for a single pose file', {}, async ({ expect }) => {
 
             let iterations = 0;
             for await (const poseData of takeAsnc(allPoses, 1)) {
@@ -51,7 +57,7 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
             expect(iterations).toBe(1);
         });
 
-        it('can match a user pose file to one of the tiktok clips', {}, async ({ expect }) => {
+        it.concurrent('can match a user pose file to one of the tiktok clips', {}, async ({ expect }) => {
             let data = takeAsnc(allPoses, 1);
             let userPoseData = await data.next();
             expect(userPoseData.value).not.toBe(null);

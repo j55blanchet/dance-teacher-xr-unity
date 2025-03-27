@@ -6,6 +6,7 @@ import { PoseLandmarkKeysUpperSnakeCase, type Pose2DPixelLandmarks, type Pose3DL
 import dancesData from '$lib/data/bundle/dances.json';
 import danceTreeData from '$lib/data/bundle/dancetrees.json';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { browser } from '$app/environment';
 
 export type Dance = typeof dancesData[number];
 export type DanceTreeDict = typeof danceTreeData;
@@ -189,7 +190,7 @@ export class PoseReferenceData<T extends Pose2DPixelLandmarks | Pose3DLandmarkFr
     constructor(
         private fps: number, 
         private frameIndices: number[],
-        private poses: T[]
+        public poses: T[]
     ) {
     }
 
@@ -236,9 +237,17 @@ export class PoseReferenceData<T extends Pose2DPixelLandmarks | Pose3DLandmarkFr
     }
 }
 
-async function loadPoseInformation<T extends Pose2DPixelLandmarks | Pose3DLandmarkFrame>(csvpath: string, fps: number, rowToPose: (row: Record<string, number>) => T | null) {
-    const response = await fetch(csvpath);
-    const text = await response.text();
+export async function loadPoseInformation<T extends Pose2DPixelLandmarks | Pose3DLandmarkFrame>(csvpath: string, fps: number, useFetch: boolean, rowToPose: (row: Record<string, number>) => T | null) {
+    let text: string = "";
+    if (!useFetch) {
+        // use nodefs/promises in tests
+        const fs = require('fs').promises;
+        text = await fs.readFile(csvpath, 'utf-8');        
+    } else {
+        const response = await fetch(csvpath);
+        text = await response.text();
+    }
+    
     const data: ParseResult<Record<string, never>> = await new Promise((res, rej) => {       
         Papa.parse(text, {
             header: true,
@@ -268,7 +277,8 @@ async function loadPoseInformation<T extends Pose2DPixelLandmarks | Pose3DLandma
  */
 export async function load2DPoseInformation(supabase: SupabaseClient, dance: Dance): Promise<PoseReferenceData<Pose2DPixelLandmarks>> {
     const pose2dCsvPath = get2DPoseDataSrc(supabase, dance);
-    const poseInfo = await loadPoseInformation(pose2dCsvPath, dance.fps, GetPixelLandmarksFromPose2DRow);
+    const useFetch = true; // use fetch, as we're in the browser
+    const poseInfo = await loadPoseInformation(pose2dCsvPath, dance.fps, useFetch, GetPixelLandmarksFromPose2DRow);
     return poseInfo;
 }
 
@@ -282,10 +292,11 @@ export async function load2DPoseInformation(supabase: SupabaseClient, dance: Dan
  */
 export async function load3DPoseInformation(supabase: SupabaseClient, dance: Dance): Promise<PoseReferenceData<Pose3DLandmarkFrame>> {
     const pose3dCsvPath = getHolisticDataSrc(supabase, dance);
-    return await loadPoseInformation(pose3dCsvPath, dance.fps, GetPixelLandmarksFromPose3DRow) as PoseReferenceData<Pose3DLandmarkFrame>;
+    const useFetch = true; // use fetch, as we're in the browser
+    return await loadPoseInformation(pose3dCsvPath, dance.fps, useFetch, GetPixelLandmarksFromPose3DRow) as PoseReferenceData<Pose3DLandmarkFrame>;
 }
 
-function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) : Pose2DPixelLandmarks | null {
+export function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) : Pose2DPixelLandmarks | null {
     if (!pose2drow) return null;
 
     return PoseLandmarkKeysUpperSnakeCase.map((key) => {
@@ -298,7 +309,7 @@ function GetPixelLandmarksFromPose2DRow(pose2drow: Record<string, number>) : Pos
     });
 }
 
-function GetPixelLandmarksFromPose3DRow(pose3drow: Record<string, number>): Pose3DLandmarkFrame | null {
+export function GetPixelLandmarksFromPose3DRow(pose3drow: Record<string, number>): Pose3DLandmarkFrame | null {
     if (!pose3drow) return null;
     
     return PoseLandmarkKeysUpperSnakeCase.map((key) => {
