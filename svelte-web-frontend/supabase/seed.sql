@@ -155,7 +155,7 @@ INSERT INTO "auth"."refresh_tokens" ("instance_id", "id", "token", "user_id", "r
 --
 
 INSERT INTO "public"."profiles" ("id", "updated_at", "username", "full_name", "avatar_url") VALUES
-	('ec04f95d-1aea-4d8c-b98d-d476718f2a42', '2023-10-20 14:17:23.412+00', 'j55blanchet', 'Julien Blanchet', NULL);
+	('ec04f95d-1aea-4d8c-b98d-d476718f2a42', '2023-10-20 14:17:23.412+00', 'j55blanchet', 'Jules Blanchet', NULL);
 
 
 --

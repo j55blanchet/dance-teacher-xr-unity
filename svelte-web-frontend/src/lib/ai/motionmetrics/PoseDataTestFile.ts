@@ -2,6 +2,7 @@ import study1CsvUrl from './testdata/user1-seg-ratings.csv?url';
 import study2CsvUrl from './testdata/user2-seg-ratings.csv?url';
 import Papa from 'papaparse';
 import { readFile, readdir } from 'node:fs/promises';
+import path from 'path';
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from '$lib/webcam/mediapipe-utils';
 import type { ValueOf } from '$lib/data/dances-store';
 import { dances, loadPoseInformation, GetPixelLandmarksFromPose2DRow, GetPixelLandmarksFromPose3DRow, type Dance } from '$lib/data/dances-store';
@@ -220,15 +221,15 @@ function convertCsvRow(row: Record<string, number>): PoseFrame {
 }
 
 function getPoseFolder(poseSource: Study | OtherPoseSource) {
-    switch(poseSource) {
+    switch (poseSource) {
         case Study.Study1Segmented:
-            return STUDY_1_SEGMENTED_POSES_FOLDER;
+            return path.resolve(STUDY_1_SEGMENTED_POSES_FOLDER);
         case Study.Study2Segmented:
-            return STUDY_2_SEGMENTED_POSES_FOLDER;
+            return path.resolve(STUDY_2_SEGMENTED_POSES_FOLDER);
         case Study.Study2Whole:
-            return STUDY_2_WHOLE_POSES_FOLDER;
+            return path.resolve(STUDY_2_WHOLE_POSES_FOLDER);
         case OtherPoseSource.TikTokClips:
-            return TIKTOK_CLIPS_POSES_FOLDER;
+            return path.resolve(TIKTOK_CLIPS_POSES_FOLDER);
     }
     throw new Error("Invalid pose source");
 }

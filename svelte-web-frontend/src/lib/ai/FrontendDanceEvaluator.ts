@@ -4,7 +4,7 @@ import type { PoseReferenceData } from "$lib/data/dances-store";
 import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from "$lib/webcam/mediapipe-utils";
 import UserDanceEvaluator from "./UserDanceEvaluator";
 import type { PerformanceEvaluationTrack } from "./UserEvaluationTrackRecorder";
-// import Julien2DSkeletonSimilarityMetric from "./motionmetrics/Julien2DSkeletonSimilarityMetric";
+// import Jules2DSkeletonSimilarityMetric from "./motionmetrics/Jules2DSkeletonSimilarityMetric";
 import Qijia2DSkeletonSimilarityMetric from "./motionmetrics/Qijia2DSkeletonSimilarityMetric";
 import Skeleton3dVectorAngleSimilarityMetric from "./motionmetrics/Skeleton3dVectorAngleSimilarityMetric";
 import BasicInfoSummaryMetric from "./motionmetrics/BasicInfoSummaryMetric";
@@ -16,7 +16,7 @@ import Skeleton3DAngleDistanceDTW from "./motionmetrics/Skeleton3DAngleDistanceD
 
 export const FrontendLiveMetrics = Object.freeze({
     qijia2DSkeletonSimilarity: new Qijia2DSkeletonSimilarityMetric(),
-    // julien2DSkeletonSimilarity: new Julien2DSkeletonSimilarityMetric(),
+    // jules2DSkeletonSimilarity: new Jules2DSkeletonSimilarityMetric(),
     skeleton3DAngleSimilarity: new Skeleton3dVectorAngleSimilarityMetric(),
 });
 

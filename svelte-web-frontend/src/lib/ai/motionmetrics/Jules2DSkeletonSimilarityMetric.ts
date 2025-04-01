@@ -8,13 +8,13 @@ const MinVectorMagnitudeForReliableAngleDetermination = 50;
 const TargetVectorMagnitudeForReliableAngleDetermination = 100;
 
 /**
- * Compute the dissimilarity between two poses using the Julien method.
+ * Compute the dissimilarity between two poses using the Jules method.
  * This method calculates the dissimilarity based on angle and magnitude of comparison vectors.
  * @param refLandmarks - Reference landmarks (expert)
  * @param userLandmarks - User landmarks (learner)
  * @returns Object containing the dissimilarity score and information by vector
  */
-function computeSkeleton2DDissimilarityJulienMethod(
+function computeSkeleton2DDissimilarityJulesMethod(
     refLandmarks: Readonly<Pose2DPixelLandmarks>,
     userLandmarks: Readonly<Pose2DPixelLandmarks>
 ) {
@@ -88,19 +88,19 @@ function computeSkeleton2DDissimilarityJulienMethod(
     };
 }
 
-type JulienMetricSingleFrameOutput = ReturnType<typeof computeSkeleton2DDissimilarityJulienMethod>;
+type JulesMetricSingleFrameOutput = ReturnType<typeof computeSkeleton2DDissimilarityJulesMethod>;
 
-type JulienMetricSummaryOutput = {
+type JulesMetricSummaryOutput = {
     minPossibleScore: number;
     maxPossibleScore: number;
     overallScore: number;
     vectorByVectorScore: Record<string, number>;
 }
 
-type JulienMetricFormattedSummaryOutput = ReturnType<Julien2DSkeletonSimilarityMetric["formatSummary"]>;
+type JulesMetricFormattedSummaryOutput = ReturnType<Jules2DSkeletonSimilarityMetric["formatSummary"]>;
 
 /**
- * Metric that computes the similarity between two poses using the Julien method.
+ * Metric that computes the similarity between two poses using the Jules method.
  * This method calculates the dissimilarity based on angle and magnitude of comparison vectors, and 
  * weighs which one to used based on whether the 2D vector is sufficiently long to be reliably
  * compared by angle.
@@ -108,13 +108,13 @@ type JulienMetricFormattedSummaryOutput = ReturnType<Julien2DSkeletonSimilarityM
  * @param userLandmarks - User landmarks (learner)
  * @returns Object containing the dissimilarity score and information by vector
  */
-export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulienMetricSingleFrameOutput, JulienMetricSummaryOutput, JulienMetricFormattedSummaryOutput> {
+export default class Jules2DSkeletonSimilarityMetric implements LiveEvaluationMetric<JulesMetricSingleFrameOutput, JulesMetricSummaryOutput, JulesMetricFormattedSummaryOutput> {
     
-    computeMetric(_history: Readonly<TrackHistory>, _metricHistory: Readonly<JulienMetricSingleFrameOutput[]>, _videoFrameTimeInSecs: Readonly<number>, _actualTimesInMs: number, user2dPose: Readonly<Pose2DPixelLandmarks>, _user3dPose: Readonly<Pose3DLandmarkFrame>, ref2dPose: Readonly<Pose2DPixelLandmarks>, _ref3dPose: Readonly<Pose3DLandmarkFrame>): JulienMetricSingleFrameOutput {
-        return computeSkeleton2DDissimilarityJulienMethod(ref2dPose, user2dPose)
+    computeMetric(_history: Readonly<TrackHistory>, _metricHistory: Readonly<JulesMetricSingleFrameOutput[]>, _videoFrameTimeInSecs: Readonly<number>, _actualTimesInMs: number, user2dPose: Readonly<Pose2DPixelLandmarks>, _user3dPose: Readonly<Pose3DLandmarkFrame>, ref2dPose: Readonly<Pose2DPixelLandmarks>, _ref3dPose: Readonly<Pose3DLandmarkFrame>): JulesMetricSingleFrameOutput {
+        return computeSkeleton2DDissimilarityJulesMethod(ref2dPose, user2dPose)
     }
 
-    summarizeMetric(_history: Readonly<TrackHistory>, metricHistory: Readonly<JulienMetricSingleFrameOutput[]>): JulienMetricSummaryOutput {
+    summarizeMetric(_history: Readonly<TrackHistory>, metricHistory: Readonly<JulesMetricSingleFrameOutput[]>): JulesMetricSummaryOutput {
         
         const overallScore = GetArithmeticMean(metricHistory
             .map(m => m.overallScore)
@@ -140,7 +140,7 @@ export default class Julien2DSkeletonSimilarityMetric implements LiveEvaluationM
         }
     }
 
-    formatSummary(summary: Readonly<JulienMetricSummaryOutput>) {
+    formatSummary(summary: Readonly<JulesMetricSummaryOutput>) {
         return {
             "overall": summary.overallScore,
             ...summary.vectorByVectorScore,
