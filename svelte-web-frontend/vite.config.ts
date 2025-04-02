@@ -13,7 +13,7 @@ export default defineConfig({
 		})
 	],
 	worker: {
-		// format: 'es',
+		format: 'es',
 	},
 	test: {
 		coverage: {
