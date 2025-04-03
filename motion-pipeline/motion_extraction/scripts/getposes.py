@@ -2,26 +2,34 @@ import argparse
 import os
 from pathlib import Path
 import mediapipe as mp
+from mediapipe.tasks.python import vision
 import cv2
 import csv
 import itertools as it
 from functools import reduce
+import time
 
 flat_map = lambda f, xs: reduce(lambda a, b: a + b, map(f, xs))
 get_props = lambda lm: [lm.x, lm.y, lm.z, lm.visibility]
 map_props = lambda lms: flat_map(get_props, lms)
 
-def process_video(input_path, output_path):
-    mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose()
+
+def process_video(pose_landmarker, input_path, output_path):
+
+    start_time = time.time_ns()
+
     cap = cv2.VideoCapture(str(input_path))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
     POSE_LANDMARKS = list(mp.solutions.pose.PoseLandmark)
     PROPS = ['x', 'y', 'z', 'visibility']
+    
+    
     with open(output_path, 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         
         csvwriter.writerow(
-            ['frame', 'is_valid'] + \
+            ['frame', 'timestamp', 'is_valid'] + \
             [f'{lm.name}_{prop}_2d' for lm in POSE_LANDMARKS for prop in PROPS] + \
             [f'{lm.name}_{prop}_3d' for lm in POSE_LANDMARKS for prop in PROPS])
         frame_idx = 0
@@ -30,19 +38,25 @@ def process_video(input_path, output_path):
             if not ret:
                 # End of video reached
                 break
-
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = pose.process(frame_rgb)
+            
+            timestamp = fps * frame_idx
+            timestamp_ns = int(timestamp * 1e9)
+            # per https://github.com/google-ai-edge/mediapipe/issues/5265,
+            # the metal implementaiton only supports image formats with an alpha channel
+            frame_rgba = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGBA, data=frame_rgba)            
+            results = pose_landmarker.detect_for_video(mp_image, timestamp_ns)
             if not results.pose_landmarks or not results.pose_world_landmarks:
                 csvwriter.writerow(
-                    [frame_idx, False] +
+                    [frame_idx, timestamp, False] +
                     [None] * (len(POSE_LANDMARKS) * len(PROPS) * 2)
                 )
             if results.pose_landmarks and results.pose_world_landmarks:
+                PERSON_ID = 0 # only one person in the video
                 csvwriter.writerow(
-                    [frame_idx, True] + 
-                    map_props(results.pose_landmarks.landmark) +
-                    map_props(results.pose_world_landmarks.landmark)
+                    [frame_idx, timestamp, True] + 
+                    map_props(results.pose_landmarks[PERSON_ID]) +
+                    map_props(results.pose_world_landmarks[PERSON_ID])
                 )
 
                 # for idx, (landmark_2d, landmark_3d) in enumerate(zip(results.pose_landmarks.landmark, results.pose_world_landmarks.landmark)):
@@ -53,6 +67,9 @@ def process_video(input_path, output_path):
                 #     ])
             frame_idx += 1
     cap.release()
+    end_time = time.time_ns()
+    elapsed_time = (end_time - start_time) / 1e9
+    print(f'\tProcessed {frame_idx} frames in {elapsed_time:.2f} seconds ({frame_idx / elapsed_time:.2f} fps)')
 
 def check_csv_video_match(csv_path, video_path):
     cap = cv2.VideoCapture(str(video_path))
@@ -91,6 +108,29 @@ def main():
     num_files = len(file_list)
     num_files_digits = len(str(num_files))
 
+    
+    BaseOptions = mp.tasks.BaseOptions
+    PoseLandmarker = mp.tasks.vision.PoseLandmarker
+    PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
+    VisionRunningMode = mp.tasks.vision.RunningMode
+    # model is located at same directory as this script
+    model_path = os.path.join(os.path.dirname(__file__), 'pose_landmarker_heavy.task')
+    
+    landmarker_delegate = mp.tasks.BaseOptions.Delegate.GPU
+    # on windows, set the delegate to CPU
+    if os.name == 'nt':
+        landmarker_delegate = mp.tasks.BaseOptions.Delegate.CPU
+
+    options = PoseLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=model_path,
+                                 delegate=landmarker_delegate
+        ),
+        running_mode=VisionRunningMode.VIDEO,
+    )
+
+    # Disable non-fatal logging from the glog system
+    os.environ['GLOG_minloglevel'] = '3'
+
     for file_i, relative_path in enumerate(relative_paths):
         input_path = input_dir / relative_path
         output_path = output_dir / relative_path.with_suffix('.pose.csv')
@@ -104,9 +144,12 @@ def main():
                 print(f'overwriting (mismatch)')
         else:
             print(f'creating         ')
-            
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        process_video(input_path, output_path)
+
+        print("\t", end='') # indent the mediapipe output (for better formatted logs)
+
+        with PoseLandmarker.create_from_options(options) as pose:    
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            process_video(pose, input_path, output_path)
 
 if __name__ == '__main__':
     main()

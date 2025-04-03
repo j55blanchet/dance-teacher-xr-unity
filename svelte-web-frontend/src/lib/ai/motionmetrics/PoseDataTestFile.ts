@@ -7,8 +7,8 @@ import type { Pose2DPixelLandmarks, Pose3DLandmarkFrame } from '$lib/webcam/medi
 import type { ValueOf } from '$lib/data/dances-store';
 import { dances, loadPoseInformation, GetPixelLandmarksFromPose2DRow, GetPixelLandmarksFromPose3DRow, type Dance } from '$lib/data/dances-store';
 
-export const STUDY_1_SEGMENTED_POSES_FOLDER = "../motion-pipeline/data/study-poses/user-study-1-segmented-poses/";
-export const STUDY_2_SEGMENTED_POSES_FOLDER = "../motion-pipeline/data/study-poses/user-study-2-segmented-poses-take3-beataligned-spedup-poses/";
+export const STUDY_1_SEGMENTED_POSES_FOLDER = "../motion-pipeline/data/study-poses/study1-poses-segmented/";
+export const STUDY_2_SEGMENTED_POSES_FOLDER = "../motion-pipeline/data/study-poses/study2-poses-segmented/";
 export const STUDY_2_WHOLE_POSES_FOLDER = "src/lib/ai/motionmetrics/testdata/study-poses/study2-whole/";
 export const TIKTOK_CLIPS_POSES_FOLDER = "../motion-pipeline/data/study-poses/tiktok-clip-poses/";
 export const TIKTOK_WHOLE_POSES_FOLDER_2D = "static/bundle/pose2d_data/";
@@ -55,6 +55,7 @@ export type SegmentInfo = {
     condition: string;
     clipNumber: number;
     study1phase?: string;
+    performanceSpeed: number;
 }
 export type TikTokClipInfo = {
     danceName: DanceName;
@@ -84,16 +85,17 @@ export type PoseFrame = {
 };
 
 function getSegmentInfo(filename: string, study: Study): SegmentInfo | null {
-    const targetPartCount = study === Study.Study1Segmented ? 
+    const isStudy1 = [Study.Study1Segmented].includes(study);
+    const targetPartCount = isStudy1 ? 
         5 : 
         4; // study 2, study2 segmented
-    const conditionSeparator = study === Study.Study1Segmented ? "--" : "-";
+    const conditionSeparator = isStudy1 ? "--" : "-";
 
     let fileparts = filename.split("_").filter((s) => s.length > 0);
     if (fileparts.length !== targetPartCount) return null;
 
     let study1phase = undefined;
-    if (study === Study.Study1Segmented) {
+    if (isStudy1) {
         // extract the study 1 phase
         study1phase = fileparts.splice(1, 1)[0];
     }
@@ -124,6 +126,7 @@ function getSegmentInfo(filename: string, study: Study): SegmentInfo | null {
         condition,
         clipNumber,
         study1phase,
+        performanceSpeed: isStudy1 ? 1.0 : 0.5, // study 1 videos were recorded at full speed, study 2 at half speed
     } as SegmentInfo;
 }
 
@@ -237,7 +240,7 @@ function getPoseFolder(poseSource: Study | OtherPoseSource) {
 /**
  * Generates all pose files in a folder
  */
-export async function* loadPoses<T extends Study | OtherPoseSource>(poseSource: T): 
+export async function* loadPoses<T extends Study | OtherPoseSource>(poseSource: T, filter?: (clipInfo: SegmentInfo | TikTokClipInfo) => boolean): 
     AsyncGenerator<StudySegmentData | TiktokDanceClipData> {
     const folder = getPoseFolder(poseSource);
 
@@ -247,8 +250,11 @@ export async function* loadPoses<T extends Study | OtherPoseSource>(poseSource: 
     for (const file of files) {
 
         const segmentInfo = getClipInfo(file, poseSource);
-
         if (segmentInfo == null) continue; // skip invalidly named files
+
+        if (filter && !filter(segmentInfo)) 
+            continue; // skip invalidly named files
+
         const fullpath = `${folder}/${file}`;
 
         const data = await readFile(fullpath, 'utf-8');

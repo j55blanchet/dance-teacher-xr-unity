@@ -1,7 +1,98 @@
 import { describe, it } from "vitest";
+import { readFile, writeFile } from "fs/promises";
 import { loadPoses, loadTikTokClipPoses, loadTiktokWholePoses, OtherPoseSource, Study, type StudySegmentData, type DanceName, type SegmentInfo, type TiktokDanceClipData } from "./PoseDataTestFile";
 import Skeleton3DAngleDistanceDTW from "./Skeleton3DAngleDistanceDTW";
-import type { TrackHistory } from "./MotionMetric";
+import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
+import type { Dance } from "$lib/data/dances-store";
+import Papa from "papaparse";
+import Qijia2DSkeletonSimilarityMetric from "./Qijia2DSkeletonSimilarityMetric";
+import TemporalAlignmentMetric from "./TemporalAlignmentMetric";
+import Jules2DSkeletonSimilarityMetric from "./Jules2DSkeletonSimilarityMetric";
+import KinematicErrorMetric from "./KinematicErrorMetric";
+import { runLiveEvaluationMetricOnTestTrack, type TestTrack } from "./testdata/metricTestingUtils";
+import Skeleton3dVectorAngleSimilarityMetric from "./Skeleton3dVectorAngleSimilarityMetric";
+
+type Study1RatingsRaw = {
+    "seg id": string; // segment id, formatted as "<userID>_<clipNumber>"
+    "Rater H": number; // first rater (out of 3)
+    "Rater L": number; // second rater (out of 3)
+    "Rater T": number; // third rater (out of 3)
+    Note: string; // note
+}
+type Study1RatingsProcessed = {
+    row_id: number;
+    userId: number;
+    clipNumber: number;
+    ratings: number[];
+    meanRatingPercentage: number;
+}
+
+async function loadStudy1RatingsCsv(filepath: string): Promise<Study1RatingsProcessed[]> {
+    const file = await readFile(filepath, { encoding: "utf-8" });
+    const data = await (new Promise((resolve, reject) => {
+        Papa.parse(file, {
+            header: true,
+            dynamicTyping: true,
+            complete: (results) => {
+                resolve(results.data.filter((row: any) => (row["seg id"] && row["Rater T"])) as unknown as Study1RatingsRaw[]);
+            },
+            error: (error: Error) => {
+                reject(error);
+            }
+        });
+    }) as Promise<Study1RatingsRaw[]>);
+
+    
+    const processedData = data.map((row: Study1RatingsRaw, i) => {
+        if (!row["seg id"]) {
+            throw new Error(`Row ${i} is missing seg id in ${filepath}`);
+        }
+        const [userId, clipNumber] = row["seg id"].split("_").map(Number);
+        const ratings = [row["Rater H"], row["Rater L"], row["Rater T"]].map(Number);
+        const meanRatingPercentage = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+        return { row_id: i, userId, clipNumber, ratings, meanRatingPercentage } as Study1RatingsProcessed;
+    });
+    return processedData.filter((row) => row.userId !== 0 && !isNaN(row.meanRatingPercentage));
+}
+
+/**
+ * Load the user study 1 segment ratings from the csv files
+ * @returns a map of dance names to a map of user IDs to a map of clip numbers to ratings
+ * @example
+ * ```
+ * const allRatings = await loadUserStudy1SegRatings();
+ * const user42Ratings = allRatings.get("mad-at-disney")?.get(42);
+ * const clip1Ratings = user42Ratings?.[1];
+ * const meanRating = clip1Ratings?.meanRatingPercentage;
+ * 
+ * # or, in a single line
+ * const meanRating = (await loadUserStudy1SegRatings()).get("mad-at-disney")?.get(42)?.[1]?.meanRatingPercentage;
+ * ```
+ */
+async function loadUserStudy1SegRatings() {
+    const filepaths: Record<DanceName, string> = {
+        "mad-at-disney": "src/lib/ai/motionmetrics/testdata/user1_seg_ratings--mad-at-disney.csv",
+        "last-christmas": "src/lib/ai/motionmetrics/testdata/user1_seg_ratings--last-christmas.csv",
+        "pajama-party": "src/lib/ai/motionmetrics/testdata/user1_seg_ratings--pajama-party.csv",
+        "bartender": "",
+    }
+    // load all the csv files
+    // access a clip's ratings with allRatings.get(danceName)?.get(userID)?.[clipNumber]
+    const allRatings = new Map<DanceName, Map<number, Study1RatingsProcessed[]>>();
+    for (const danceName in filepaths) {
+        const filepath = filepaths[danceName as DanceName];
+        if (!filepath) continue;
+        const ratings = await loadStudy1RatingsCsv(filepath);
+        const danceRatings = new Map<number, Study1RatingsProcessed[]>();
+        ratings.forEach((rating) => {
+            const userRatings = danceRatings.get(rating.userId) || [];
+            userRatings.push(rating);
+            danceRatings.set(rating.userId, userRatings);
+        });
+        allRatings.set(danceName as DanceName, danceRatings);
+    }
+    return allRatings;
+}
 
 describe('Skeleton3DAngleDistanceDTW', {}, async () => {
 
@@ -78,31 +169,140 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
             console.log(formatSummary);
         });
     });
+
+    
+    it.concurrent('study 1 dtw processing', {
+        timeout: 1000 * 60 * 5, // 5 minutes
+    }, async ({ expect }) => {
+        const allPoses = await loadPoses(Study.Study1Segmented, (clipInfo) => {
+            const studyInfo = clipInfo as SegmentInfo;
+            return studyInfo.study1phase == "performance"; // skip slowed down clips
+        });
+        const allRatings = await loadUserStudy1SegRatings();
+        const n = 1000; // number of clips to process
+
+        //  process a clip, returning the formatted summary
+        function processClip(poseData: StudySegmentData) {
+            const referenceClip = getReferenceClip(poseData.segmentInfo);
+            if (!referenceClip) return undefined;
+
+            // const summary = runDTWMetricOnClips(poseData, referenceClip);
+            const summary = runNonDTWMetricsOnClips(poseData, referenceClip);
+            return summary;
+        }
+
+        // map each item in allPoses generator to a new object with the formatted summary
+        // without holding them all in memory at the same time
+        async function* processClips() {
+            for await (const poseData of takeAsnc(allPoses, n)) {
+                const segmentData = poseData as StudySegmentData;
+                const summary = processClip(segmentData);
+                const ratingsReceived = allRatings.get(segmentData.segmentInfo.danceName)?.get(segmentData.segmentInfo.userId)?.[segmentData.segmentInfo.clipNumber];
+                const ratingsFallback = {
+                    userId: segmentData.segmentInfo.userId,
+                    clipNumber: poseData.segmentInfo.clipNumber,
+                    ratings: [],
+                    meanRatingPercentage: -1,
+                }
+                const ratings = ratingsReceived ?? ratingsFallback;
+                yield { 
+                    ...segmentData.segmentInfo, 
+                    ...summary,
+                    userId: ratings.userId,
+                    humanRating: ratings.meanRatingPercentage / 3, // scale from 0-3 to 0-1
+                };
+            }
+        }
+
+        const processedClips = await fromAsync(processClips());
+        expect(processedClips).not.toBe(null);
+        expect(processedClips?.length).toBeGreaterThan(0);
+
+        // write csv
+        const csv = Papa.unparse(processedClips);
+        await writeFile("artifacts/Skeleton3DAngleDistanceDTW_Study1.csv", csv, {
+            encoding: "utf-8",
+        });
+    });
 });
 
 function createTrackHistoryForClips(userPoseData: StudySegmentData, referenceClip: TiktokDanceClipData) {
 
     const fps = 30;
+    const shortestClipLength = Math.min(userPoseData.poses.length, referenceClip.poses.length);
     const trackHistory: TrackHistory = {
-        videoFrameTimesInSecs: referenceClip.poses.map((_, i) => i / fps),
-        actualTimesInMs: referenceClip.poses.map((_, i) => i / fps),
-        ref3DFrameHistory: referenceClip.poses.map((pose) => pose.worldPose),
-        ref2DFrameHistory: referenceClip.poses.map((pose) => pose.pixelPose),
-        user3DFrameHistory: userPoseData.poses.map((pose) => pose.worldPose),
-        user2DFrameHistory: referenceClip.poses.map((pose) => pose.pixelPose),
+        videoFrameTimesInSecs: referenceClip.poses.map((_, i) => i / fps).slice(0, shortestClipLength),
+        actualTimesInMs: referenceClip.poses.map((_, i) => i / (userPoseData.segmentInfo.performanceSpeed * fps)).slice(0, shortestClipLength),
+        ref3DFrameHistory: referenceClip.poses.map((pose) => pose.worldPose).slice(0, shortestClipLength),
+        ref2DFrameHistory: referenceClip.poses.map((pose) => pose.pixelPose).slice(0, shortestClipLength),
+        user3DFrameHistory: userPoseData.poses.map((pose) => pose.worldPose).slice(0, shortestClipLength),
+        user2DFrameHistory: referenceClip.poses.map((pose) => pose.pixelPose).slice(0, shortestClipLength),
     };
 
     return trackHistory;
 }
 
-function runDTWMetricOnClips(userPoseData: StudySegmentData, referenceClip: TiktokDanceClipData) {
+function runDTWMetricOnClips(userData: StudySegmentData, referenceClip: TiktokDanceClipData) {
     const metric = new Skeleton3DAngleDistanceDTW();
-    const trackHistory = createTrackHistoryForClips(userPoseData, referenceClip);
+    const trackHistory = createTrackHistoryForClips(userData, referenceClip);
     const summary = metric.summarizeMetric(trackHistory)
     const formattedSummary = metric.formatSummary(summary);
     return formattedSummary;
     // const result = metric.compute(userPoseData, referenceClip);
     // return result;
+}
+
+function runNonDTWMetricsOnClips(userData: StudySegmentData, referenceClip: TiktokDanceClipData) {
+    const metricsLive = {
+        qijia2D: new Qijia2DSkeletonSimilarityMetric(),
+        jules2D: new Jules2DSkeletonSimilarityMetric(),
+        vectorAngle3D: new Skeleton3dVectorAngleSimilarityMetric()
+    }
+    const metricsSummary = {
+        temporalAlignment: new TemporalAlignmentMetric(),
+        KinematicErrorMetric: new KinematicErrorMetric(),
+    }
+
+    
+    const fps = 30
+    const shortestClipLength = Math.min(userData.poses.length, referenceClip.poses.length);
+    const testTrack: TestTrack = {
+        id: `${userData.segmentInfo.userId}_${userData.segmentInfo.clipNumber}`,
+        danceRelativeStem: userData.segmentInfo.danceName,
+        segmentDescription: userData.segmentInfo.clipNumber.toString(),
+        creationDate: "",
+        trackDescription: userData.segmentInfo.danceName,
+        videoFrameTimesInSecs: referenceClip.poses.map((_, i) => i / fps).slice(0, shortestClipLength),
+        actualTimesInMs: referenceClip.poses.map((_, i) => i / (fps * userData.segmentInfo.performanceSpeed)).slice(0, shortestClipLength),
+        ref2dPoses: referenceClip.poses.map((pose) => pose.pixelPose).slice(0, shortestClipLength),
+        ref3dPoses: referenceClip.poses.map((pose) => pose.worldPose).slice(0, shortestClipLength),
+        user2dPoses: userData.poses.map((pose) => pose.pixelPose).slice(0, shortestClipLength),
+        user3dPoses: userData.poses.map((pose) => pose.worldPose).slice(0, shortestClipLength),
+    }
+    const trackHistory = createTrackHistoryForClips(userData, referenceClip);
+
+    const qijia2dOutput = runLiveEvaluationMetricOnTestTrack(metricsLive.qijia2D, testTrack);
+    const jules2dOutput = runLiveEvaluationMetricOnTestTrack(metricsLive.jules2D, testTrack);
+    const vectorAngle3DOutput = runLiveEvaluationMetricOnTestTrack(metricsLive.vectorAngle3D, testTrack);
+    const temporalAlignmentOutput = metricsSummary.temporalAlignment.summarizeMetric(trackHistory);
+    // const kinematicErrorOutput = metricsSummary.KinematicErrorMetric.summarizeMetric(trackHistory);
+
+    const formattedSummaries = {
+        qijia2dOutput: metricsLive.qijia2D.formatSummary(qijia2dOutput.summary),
+        jules2dOutput: metricsLive.jules2D.formatSummary(jules2dOutput.summary),
+        temporalAlignmentOutput: metricsSummary.temporalAlignment.formatSummary(temporalAlignmentOutput),
+        // kinematicErrorOutput: metricsSummary.KinematicErrorMetric.formatSummary(kinematicErrorOutput),
+    }
+
+    // create an object flattening the formattedSummaries, with the keys prepended with the metric name
+    const flattenedSummaries = {
+        qijia2d: qijia2dOutput.summary.overallScore / 5, // scale from 0-5 to 0-1
+        jules2d: jules2dOutput.summary.overallScore,     // already scaled 0-1
+        temporalAlignmentSecs: temporalAlignmentOutput.temporalOffsetSecs,
+        vectorAngle3D: vectorAngle3DOutput.summary.overallScore
+        // kinematicError: kinematicErrorOutput.summary2D.,
+    }
+    return flattenedSummaries;
 }
 
 async function* takeAsnc<T>(
