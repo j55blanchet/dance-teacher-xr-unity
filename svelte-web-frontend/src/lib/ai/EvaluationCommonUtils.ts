@@ -63,8 +63,13 @@ export function GetVectorPNormAverage(v: number[], pnorm = 2) {
     return GetVectorPNorm(v, pnorm) / Math.pow(v.length, 1 / pnorm) 
 }
 
-export function GetHarmonicMean(v: number[]) {
-    return v.length / v.reduce((sum, val) => sum + 1 / val, 0)
+export function GetHarmonicMean(v: number[], weights?: number[]) {
+    if (weights) {
+        if (weights.length !== v.length) throw new Error("weights and v must have the same length");
+        const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+        return totalWeight / v.reduce((sum, val, index) => sum + (weights[index] / val), 0);
+    }
+    return v.length / v.reduce((sum, val) => sum + 1 / val, 0);
 }
 export function GetGeometricMean(v: number[]) {
     return Math.pow(v.reduce((prod, val) => prod * val, 1), 1 / v.length)

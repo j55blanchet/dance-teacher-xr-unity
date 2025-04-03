@@ -4,8 +4,9 @@ import { BodyInnerAnglesComparisons, getInnerAngleFromFrame, GetHarmonicMean, ge
 import type { LiveEvaluationMetric, SummaryMetric, TrackHistory } from "./MotionMetric";
 
 import { DynamicTimeWarping } from "./DynamicTimeWarping";
-import { computeSkeleton3DVectorAngleSimilarity } from "./Skeleton3dVectorAngleSimilarityMetric";
+import { compute3dAngleSimilarity, computeSkeleton3DVectorAngleSimilarity } from "./Skeleton3dVectorAngleSimilarityMetric";
 import type { Data } from "plotly.js-dist-min";
+import { browser } from "$app/environment";
 
 let Plotly: typeof import("plotly.js-dist-min");
 
@@ -16,22 +17,70 @@ type Angle3D_DtwMetricSummaryOutput = ReturnType<Skeleton3DAngleDistanceDTW["sum
 
 type Angle3D_DtwMetricSummaryFormattedOutput = ReturnType<Skeleton3DAngleDistanceDTW["formatSummary"]>;
 
+function getInvalid3DFrames(frames: Pose3DLandmarkFrame[]) {
+    return frames.map((frame, i) => {
+        const valid = 
+            frame !== undefined && 
+            frame.length == 33 && 
+            frame[0].x !== null &&
+            frame[0].x !== undefined;
+
+        return {
+            i,
+            valid
+        }
+    }).filter((frame) => frame.valid === false)
+    .map((frame) => frame.i);
+}
+
+function filterFrameHistories(_history: TrackHistory) {
+    
+    const invalidUserFrames = getInvalid3DFrames(_history.user3DFrameHistory);
+    const invalidRefFrames = getInvalid3DFrames(_history.ref3DFrameHistory);
+    const invalidFrames = new Set([...invalidUserFrames, ...invalidRefFrames]);
+
+    const invalidPercent = invalidFrames.size / _history.user3DFrameHistory.length;
+    if (invalidFrames.size > 0) {
+        console.warn(`\tSome frames are invalid (${(invalidPercent * 100).toFixed(0)}%, count=${invalidFrames.size}). This may affect the accuracy of the metric.`);
+    }
+    if (invalidPercent > 0.1) {
+        console.warn("More than 10% of frames are invalid. This may affect the accuracy of the metric.");
+    } 
+
+    return {
+        user3DFrameHistory: _history.user3DFrameHistory.filter((frame, i) => !invalidFrames.has(i)),
+        ref3DFrameHistory: _history.ref3DFrameHistory.filter((frame, i) => !invalidFrames.has(i)),
+    }
+}
+
 export default class Skeleton3DAngleDistanceDTW implements SummaryMetric<Angle3D_DtwMetricSummaryOutput, Angle3D_DtwMetricSummaryFormattedOutput> {
     
 
     summarizeMetric(_history: TrackHistory) {
         
+        const { user3DFrameHistory: filteredUser3DFrameHistory, ref3DFrameHistory: filteredRef3DFrameHistory } = filterFrameHistories(_history);
+
         const dtw = new DynamicTimeWarping<Pose3DLandmarkFrame, Pose3DLandmarkFrame>(
-            _history.user3DFrameHistory, _history.ref3DFrameHistory,
+            filteredUser3DFrameHistory, filteredRef3DFrameHistory,
             (a, b) => {
-                return 1 - computeSkeleton3DVectorAngleSimilarity(a, b).overallScore;
+                const overallScore = computeSkeleton3DVectorAngleSimilarity(a, b).overallScore;
+                // negate the score to make it a distance. 
+                if (overallScore === undefined || isNaN(overallScore)) {
+                    return Infinity
+                }
+                return  Math.abs(1 - overallScore); 
             }
         );
         const createDtwForJoint = (key: keyof typeof BodyInnerAnglesComparisons) => {
             return new DynamicTimeWarping<Pose3DLandmarkFrame, Pose3DLandmarkFrame>(
-                _history.user3DFrameHistory, _history.ref3DFrameHistory,
+                filteredUser3DFrameHistory, filteredRef3DFrameHistory,
                 (a, b) => {
-                    return computeSkeleton3DVectorAngleSimilarity(a, b).individualScores[key].diffDegrees;
+                    
+                    const similarityOutput = compute3dAngleSimilarity(a, b, BodyInnerAnglesComparisons[key]);
+                    if (similarityOutput === undefined || isNaN(similarityOutput.score)) {
+                        return Infinity
+                    }
+                    return Math.abs(1 - similarityOutput.score);
                 }
             );
         };

@@ -24,78 +24,68 @@ export class DynamicTimeWarping<T1, T2> {
     }
 
     getDistance() {
-        if ( this.distance !== undefined ) {
+        if (this.distance !== undefined) {
             return this.distance;
         }
-        this.matrix = [];
-        for ( var i = 0; i < this.ser1.length; i++ ) {
-            this.matrix[ i ] = [];
-            for ( var j = 0; j < this.ser2.length; j++ ) {
-                var cost = Infinity;
-                if ( i > 0 ) {
-                    cost = Math.min( cost, this.matrix[ i - 1 ][ j ] );
-                    if ( j > 0 ) {
-                        cost = Math.min( cost, this.matrix[ i - 1 ][ j - 1 ] );
-                        cost = Math.min( cost, this.matrix[ i ][ j - 1 ] );
-                    }
-                } else {
-                    if ( j > 0 ) {
-                        cost = Math.min( cost, this.matrix[ i ][ j - 1 ] );
-                    } else {
-                        cost = 0;
-                    }
+        const m = this.ser1.length;
+        const n = this.ser2.length;
+        type Cell = { i: number; j: number; cost: number };
+        const key = (i: number, j: number) => `${i},${j}`;
+        const queue: Cell[] = [];
+        const costMap = new Map<string, number>();
+        const predecessor = new Map<string, [number, number]>();
+
+        // initialize with starting cell
+        const startCost = this.distFunc(this.ser1[0], this.ser2[0]);
+        queue.push({ i: 0, j: 0, cost: startCost });
+        costMap.set(key(0, 0), startCost);
+
+        while (queue.length) {
+            // simple priority queue: sort by cost and get smallest
+            queue.sort((a, b) => a.cost - b.cost);
+            const current = queue.shift()!;
+            const { i, j, cost } = current;
+            if (i === m - 1 && j === n - 1) {
+                this.distance = cost;
+                // reconstruct path from (0,0) to (m-1,n-1)
+                const path: [number, number][] = [];
+                let curKey = key(i, j);
+                path.push([i, j]); // Add the final cell (m-1, n-1) to the path
+                while (curKey !== key(0, 0)) {
+                    const [pi, pj] = predecessor.get(curKey)!;
+                    path.push([pi, pj]);
+                    curKey = key(pi, pj);
                 }
-                this.matrix[ i ][ j ] = cost + this.distFunc( this.ser1[ i ], this.ser2[ j ] );
+                path.reverse();
+                this.path = path;
+                return this.distance;
+            }
+            // Explore neighbors: diagonal (preferred), right, down
+            const neighbors: [number, number][] = [
+                [i + 1, j + 1],
+                [i + 1, j],
+                [i, j + 1],
+            ];
+            for (const [ni, nj] of neighbors) {
+                if (ni >= m || nj >= n) continue;
+                const neighborKey = key(ni, nj);
+                const newCost = cost + this.distFunc(this.ser1[ni], this.ser2[nj]);
+                if (!costMap.has(neighborKey) || newCost < costMap.get(neighborKey)!) {
+                    costMap.set(neighborKey, newCost);
+                    predecessor.set(neighborKey, [i, j]);
+                    queue.push({ i: ni, j: nj, cost: newCost });
+                }
             }
         }
-
-        return this.matrix[ this.ser1.length - 1 ][ this.ser2.length - 1 ];
-    };
-
+        return Infinity;
+    }
 
     getPath() {
-        if ( this.path !== undefined ) {
+        if (this.path !== undefined) {
             return this.path;
         }
-        if ( this.matrix === undefined ) {
-            this.getDistance();
-        }
-        const matrix = this.matrix!;
-        var i = this.ser1.length - 1;
-        var j = this.ser2.length - 1;
-        this.path = [ [ i, j ] ];
-        while ( i > 0 || j > 0 ) {
-            if ( i > 0 ) {
-                if ( j > 0 ) {
-                    if ( matrix[ i - 1 ][ j ] < matrix[ i - 1 ][ j - 1 ] ) {
-                        if ( matrix[ i - 1 ][ j ] < matrix[ i ][ j - 1 ] ) {
-                            this.path.push( [ i - 1, j ] );
-                            i--;
-                        } else {
-                            this.path.push( [ i, j - 1 ] );
-                            j--;
-                        }
-                    } else {
-                        if ( matrix[ i - 1 ][ j - 1 ] < matrix[ i ][ j - 1 ] ) {
-                            this.path.push( [ i - 1, j - 1 ] );
-                            i--;
-                            j--;
-                        } else {
-                            this.path.push( [ i, j - 1 ] );
-                            j--;
-                        }
-                    }
-                } else {
-                    this.path.push( [ i - 1, j ] );
-                    i--;
-                }
-            } else {
-                this.path.push( [ i, j - 1 ] );
-                j--;
-            }
-        }
-        this.path = this.path.reverse();
-
-        return this.path;
-    };
+        // Force calculation (this will also set the path)
+        this.getDistance();
+        return this.path!;
+    }
 }

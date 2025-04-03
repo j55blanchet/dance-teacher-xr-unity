@@ -179,7 +179,8 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
             return studyInfo.study1phase == "performance"; // skip slowed down clips
         });
         const allRatings = await loadUserStudy1SegRatings();
-        const n = 1000; // number of clips to process
+        const n = Infinity; // number of clips to process (i.e. all of them)
+
 
         //  process a clip, returning the formatted summary
         function processClip(poseData: StudySegmentData) {
@@ -194,8 +195,11 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
         // map each item in allPoses generator to a new object with the formatted summary
         // without holding them all in memory at the same time
         async function* processClips() {
+            let i = 0
             for await (const poseData of takeAsnc(allPoses, n)) {
+                i++;
                 const segmentData = poseData as StudySegmentData;
+                console.log(`Processing clip ${i} ${segmentData.segmentInfo.userId}_${segmentData.segmentInfo.danceName}_${segmentData.segmentInfo.clipNumber}...`);
                 const summary = processClip(segmentData);
                 const ratingsReceived = allRatings.get(segmentData.segmentInfo.danceName)?.get(segmentData.segmentInfo.userId)?.[segmentData.segmentInfo.clipNumber];
                 const ratingsFallback = {
@@ -207,9 +211,13 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
                 const ratings = ratingsReceived ?? ratingsFallback;
                 yield { 
                     ...segmentData.segmentInfo, 
+                    frameCount: segmentData.poses.length,
                     ...summary,
                     userId: ratings.userId,
                     humanRating: ratings.meanRatingPercentage / 3, // scale from 0-3 to 0-1
+                    rating1: ratings.ratings.at(0),
+                    rating2: ratings.ratings.at(1),
+                    rating3: ratings.ratings.at(2),
                 };
             }
         }
@@ -220,7 +228,7 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
 
         // write csv
         const csv = Papa.unparse(processedClips);
-        await writeFile("artifacts/Skeleton3DAngleDistanceDTW_Study1.csv", csv, {
+        await writeFile("artifacts/study1-usersegments-metrics-2.csv", csv, {
             encoding: "utf-8",
         });
     });
@@ -260,10 +268,9 @@ function runNonDTWMetricsOnClips(userData: StudySegmentData, referenceClip: Tikt
     }
     const metricsSummary = {
         temporalAlignment: new TemporalAlignmentMetric(),
-        KinematicErrorMetric: new KinematicErrorMetric(),
+        angle3dDTW: new Skeleton3DAngleDistanceDTW()
     }
 
-    
     const fps = 30
     const shortestClipLength = Math.min(userData.poses.length, referenceClip.poses.length);
     const testTrack: TestTrack = {
@@ -285,22 +292,17 @@ function runNonDTWMetricsOnClips(userData: StudySegmentData, referenceClip: Tikt
     const jules2dOutput = runLiveEvaluationMetricOnTestTrack(metricsLive.jules2D, testTrack);
     const vectorAngle3DOutput = runLiveEvaluationMetricOnTestTrack(metricsLive.vectorAngle3D, testTrack);
     const temporalAlignmentOutput = metricsSummary.temporalAlignment.summarizeMetric(trackHistory);
-    // const kinematicErrorOutput = metricsSummary.KinematicErrorMetric.summarizeMetric(trackHistory);
+    const angle3dDTWOutput = metricsSummary.angle3dDTW.summarizeMetric(trackHistory);
 
-    const formattedSummaries = {
-        qijia2dOutput: metricsLive.qijia2D.formatSummary(qijia2dOutput.summary),
-        jules2dOutput: metricsLive.jules2D.formatSummary(jules2dOutput.summary),
-        temporalAlignmentOutput: metricsSummary.temporalAlignment.formatSummary(temporalAlignmentOutput),
-        // kinematicErrorOutput: metricsSummary.KinematicErrorMetric.formatSummary(kinematicErrorOutput),
-    }
 
     // create an object flattening the formattedSummaries, with the keys prepended with the metric name
     const flattenedSummaries = {
         qijia2d: qijia2dOutput.summary.overallScore / 5, // scale from 0-5 to 0-1
         jules2d: jules2dOutput.summary.overallScore,     // already scaled 0-1
+        vectorAngle3D: vectorAngle3DOutput.summary.overallScore,
         temporalAlignmentSecs: temporalAlignmentOutput.temporalOffsetSecs,
-        vectorAngle3D: vectorAngle3DOutput.summary.overallScore
-        // kinematicError: kinematicErrorOutput.summary2D.,
+        "angle3D DTW Distance": angle3dDTWOutput.dtwDistance,
+        "angle3D warpingFactor": angle3dDTWOutput.warpingFactor,
     }
     return flattenedSummaries;
 }

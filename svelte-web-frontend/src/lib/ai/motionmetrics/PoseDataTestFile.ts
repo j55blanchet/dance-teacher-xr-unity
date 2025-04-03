@@ -51,6 +51,7 @@ export type SegmentInfo = {
     userId: number;
     danceName: DanceName;
     danceId: DanceId;
+    studyName: string;
     workflowId: string;
     condition: string;
     clipNumber: number;
@@ -122,6 +123,7 @@ function getSegmentInfo(filename: string, study: Study): SegmentInfo | null {
         userId,
         danceName,
         danceId,
+        studyName: isStudy1 ? "study1" : "study2",
         workflowId,
         condition,
         clipNumber,

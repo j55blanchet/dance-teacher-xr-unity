@@ -6,17 +6,36 @@ import type { LiveEvaluationMetric, TrackHistory } from "./MotionMetric";
 type AngleComparisonKey = keyof typeof BodyInnerAnglesComparisons;
 type AngleComparisonValue = ValueOf<typeof BodyInnerAnglesComparisons>;
 
-function compute3dAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame, comparison: AngleComparisonValue) {
+const comparisonWeights: Record<AngleComparisonKey, number> = {
+    "left-shoulder-pitch": 1,
+    "left-shoudler-yaw": 1,
+    "left-elbow-bend": 2,
+    "neck-shoulderline-angle": 1,
+    "right-shoulder-pitch": 1,
+    "right-shoulder-yaw": 1,
+    "right-elbow-bend": 2
+};
+
+export function compute3dAngleSimilarity(refLandmarks: Pose3DLandmarkFrame, userLandmarks: Pose3DLandmarkFrame, comparison: AngleComparisonValue) {
     const userInnerAngle = getInnerAngleFromFrame(userLandmarks, comparison.vec1, comparison.vec2);
     const refInnerAngle = getInnerAngleFromFrame(refLandmarks, comparison.vec1, comparison.vec2);
     const angleDiff = Math.abs(userInnerAngle - refInnerAngle);
+
+    // get the angle difference as a percentage of the range of motion
     const scaledAngleDiff = angleDiff / comparison.rangeOfMotion;
+    const rawScore = 1 - scaledAngleDiff;
+
+    // clamp the score to be between 0 and 1,
+    // as it's possible for the user to bend beyond the expected range of motion
+    const score = Math.max(0, Math.min(1, rawScore));
+
     return { 
         user: userInnerAngle, 
         ref: refInnerAngle, 
         diff: angleDiff,
         diffDegrees: angleDiff * 180 / Math.PI,
-        score: (1 - scaledAngleDiff)
+        rawScore,
+        score: Math.max(0, Math.min(1, rawScore))
     };
 }
 
@@ -37,7 +56,11 @@ export function computeSkeleton3DVectorAngleSimilarity(refLandmarks: Pose3DLandm
         })
     ) as Record<AngleComparisonKey, ReturnType<typeof compute3dAngleSimilarity>>;
 
-    const meanScore = GetHarmonicMean(Object.values(results).map((r) => r.score));
+    
+    const scores = Object.values(results).map((res) => res.score);
+    const weights = Object.keys(results).map((key) => comparisonWeights[key as AngleComparisonKey]);
+
+    const meanScore = GetHarmonicMean(Object.values(scores), weights);
 
     return {
         overallScore: meanScore,
