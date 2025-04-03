@@ -50,6 +50,8 @@ function filterFrameHistories(_history: TrackHistory) {
     return {
         user3DFrameHistory: _history.user3DFrameHistory.filter((frame, i) => !invalidFrames.has(i)),
         ref3DFrameHistory: _history.ref3DFrameHistory.filter((frame, i) => !invalidFrames.has(i)),
+        invalidFramesCount: invalidFrames.size,
+        invalidPercent: invalidPercent,
     }
 }
 
@@ -58,7 +60,12 @@ export default class Skeleton3DAngleDistanceDTW implements SummaryMetric<Angle3D
 
     summarizeMetric(_history: TrackHistory) {
         
-        const { user3DFrameHistory: filteredUser3DFrameHistory, ref3DFrameHistory: filteredRef3DFrameHistory } = filterFrameHistories(_history);
+        const { 
+            user3DFrameHistory: filteredUser3DFrameHistory, 
+            ref3DFrameHistory: filteredRef3DFrameHistory,
+            invalidFramesCount,
+            invalidPercent
+        } = filterFrameHistories(_history);
 
         const dtw = new DynamicTimeWarping<Pose3DLandmarkFrame, Pose3DLandmarkFrame>(
             filteredUser3DFrameHistory, filteredRef3DFrameHistory,
@@ -132,8 +139,16 @@ export default class Skeleton3DAngleDistanceDTW implements SummaryMetric<Angle3D
             }),
             jointByJointPaths: dtw_by_joint.map((dtw) => {
                 return dtw.getPath();
-            })
-        }
+            }),
+            jointByJointWarpingFactors: dtw_by_joint.map((dtw) => {
+                const pathLength = dtw.getPath().length;
+                const refLength = _history.ref3DFrameHistory.length;
+                const userLength = _history.user3DFrameHistory.length;
+                return (pathLength - Math.min(refLength, userLength)) / Math.max(refLength, userLength);
+            }),
+            invalidFramesCount: invalidFramesCount,
+            invalidPercent: invalidPercent,
+        };
     }
 
     formatSummary(summary: Angle3D_DtwMetricSummaryOutput) {

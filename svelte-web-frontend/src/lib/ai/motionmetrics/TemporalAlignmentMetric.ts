@@ -126,8 +126,8 @@ export default class TemporalAlignmentMetric implements SummaryMetric<TemporalAl
             throw new Error("Impact envelope calculation failed: not enough frames to calculate impact envelope");
         }
 
-        const userImpactEnvelope = calculateImpactEnvelope(history.user3DFrameHistory, debugFilepathRoot + "user_impact_envelope/");
-        const referenceImpactEnvelope = calculateImpactEnvelope(history.ref3DFrameHistory, debugFilepathRoot + "ref_impact_envelope/");
+        const userImpactEnvelope = calculateImpactEnvelope(history.user3DFrameHistory, debugFilepathRoot ? debugFilepathRoot + "user_impact_envelope/" : undefined);
+        const referenceImpactEnvelope = calculateImpactEnvelope(history.ref3DFrameHistory, debugFilepathRoot ? debugFilepathRoot + "ref_impact_envelope/" : undefined);
 
         function saveTimeSeriesToCSV(data: number[][], filePath: string) {
             if (!debugFilepathRoot) return;
@@ -137,7 +137,9 @@ export default class TemporalAlignmentMetric implements SummaryMetric<TemporalAl
             writeFileSync(filePath, csvContent, 'utf8');
         }
 
-        saveTimeSeriesToCSV([userImpactEnvelope, userImpactEnvelope], debugFilepathRoot + 'impact_envelopes.csv');
+        if (debugFilepathRoot) {
+            saveTimeSeriesToCSV([userImpactEnvelope, userImpactEnvelope], debugFilepathRoot + 'impact_envelopes.csv');
+        }
 
         // create a array of weights corresponding to a gaussian distribution
         // with a mean at the center of the impact envelope and a standard deviation of 1/2 

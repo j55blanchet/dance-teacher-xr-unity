@@ -104,7 +104,10 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
 
     it.concurrent('can load the tiktok clip pose files', {}, async ({ expect }) => {
         const allposesgenerator = await loadPoses(OtherPoseSource.TikTokClips);
-        const allposes = await fromAsync(allposesgenerator);
+        const allposes = await fromAsync(allposesgenerator, (poseData, i) => {
+            console.log(`[${i}] Generating pose data for clip`, poseData.segmentInfo.danceName, poseData.segmentInfo.clipNumber);
+        });
+        
         expect(allposes).not.toBe(null);
         expect(allposes).toHaveLength(20); // there are 20 clip files
         expect(allposes?.[0]?.poses).not.toBe(null);
@@ -172,7 +175,7 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
 
     
     it.concurrent('study 1 dtw processing', {
-        timeout: 1000 * 60 * 5, // 5 minutes
+        timeout: 1000 * 60 * 25, // 25 minutes
     }, async ({ expect }) => {
         const allPoses = await loadPoses(Study.Study1Segmented, (clipInfo) => {
             const studyInfo = clipInfo as SegmentInfo;
@@ -199,16 +202,18 @@ describe('Skeleton3DAngleDistanceDTW', {}, async () => {
             for await (const poseData of takeAsnc(allPoses, n)) {
                 i++;
                 const segmentData = poseData as StudySegmentData;
+                const ratings = allRatings.get(segmentData.segmentInfo.danceName)?.get(segmentData.segmentInfo.userId)?.[segmentData.segmentInfo.clipNumber];
+
                 console.log(`Processing clip ${i} ${segmentData.segmentInfo.userId}_${segmentData.segmentInfo.danceName}_${segmentData.segmentInfo.clipNumber}...`);
-                const summary = processClip(segmentData);
-                const ratingsReceived = allRatings.get(segmentData.segmentInfo.danceName)?.get(segmentData.segmentInfo.userId)?.[segmentData.segmentInfo.clipNumber];
-                const ratingsFallback = {
-                    userId: segmentData.segmentInfo.userId,
-                    clipNumber: poseData.segmentInfo.clipNumber,
-                    ratings: [],
-                    meanRatingPercentage: -1,
+
+                // we're only using 
+                if (!ratings) {
+                    console.log(`\tNo ratings found for ${segmentData.segmentInfo.userId}_${segmentData.segmentInfo.danceName}_${segmentData.segmentInfo.clipNumber}`);
+                    continue;
                 }
-                const ratings = ratingsReceived ?? ratingsFallback;
+                
+                const summary = processClip(segmentData);
+
                 yield { 
                     ...segmentData.segmentInfo, 
                     frameCount: segmentData.poses.length,
@@ -268,9 +273,11 @@ function runNonDTWMetricsOnClips(userData: StudySegmentData, referenceClip: Tikt
     }
     const metricsSummary = {
         temporalAlignment: new TemporalAlignmentMetric(),
-        angle3dDTW: new Skeleton3DAngleDistanceDTW()
+        angle3dDTW: new Skeleton3DAngleDistanceDTW(),
+        kinematicError: new KinematicErrorMetric(),
     }
 
+    
     const fps = 30
     const shortestClipLength = Math.min(userData.poses.length, referenceClip.poses.length);
     const testTrack: TestTrack = {
@@ -293,16 +300,25 @@ function runNonDTWMetricsOnClips(userData: StudySegmentData, referenceClip: Tikt
     const vectorAngle3DOutput = runLiveEvaluationMetricOnTestTrack(metricsLive.vectorAngle3D, testTrack);
     const temporalAlignmentOutput = metricsSummary.temporalAlignment.summarizeMetric(trackHistory);
     const angle3dDTWOutput = metricsSummary.angle3dDTW.summarizeMetric(trackHistory);
-
+    const kinematicErrorOutput = metricsSummary.kinematicError.summarizeMetric(trackHistory);
 
     // create an object flattening the formattedSummaries, with the keys prepended with the metric name
     const flattenedSummaries = {
+        invalidFrameCout: angle3dDTWOutput.invalidFramesCount,
+        invalidPercent: angle3dDTWOutput.invalidPercent,
         qijia2d: qijia2dOutput.summary.overallScore / 5, // scale from 0-5 to 0-1
         jules2d: jules2dOutput.summary.overallScore,     // already scaled 0-1
         vectorAngle3D: vectorAngle3DOutput.summary.overallScore,
         temporalAlignmentSecs: temporalAlignmentOutput.temporalOffsetSecs,
         "angle3D DTW Distance": angle3dDTWOutput.dtwDistance,
+        "angle3D DTW Dist Avg.": angle3dDTWOutput.dtwDistance / angle3dDTWOutput.dtwPath.length,
         "angle3D warpingFactor": angle3dDTWOutput.warpingFactor,
+        "velocity 3d MAE": kinematicErrorOutput.summary3D.velsMAE,
+        "accel 3d MAE": kinematicErrorOutput.summary3D.accsMAE,
+        "jerk 3d MAE": kinematicErrorOutput.summary3D.jerksMAE,
+        "velocity 2d MAE": kinematicErrorOutput.summary2D.velsMAE,
+        "accel 2d MAE": kinematicErrorOutput.summary2D.accsMAE,
+        "jerk 2d MAE": kinematicErrorOutput.summary2D.jerksMAE,
     }
     return flattenedSummaries;
 }
@@ -318,10 +334,13 @@ async function* takeAsnc<T>(
     }
 }
 
-async function fromAsync<T>(asyncIterable: AsyncIterable<T>) {
+async function fromAsync<T>(asyncIterable: AsyncIterable<T>, printFn?: (item: T, i: number) => void): Promise<T[]> {
     const result: T[] = [];
+    let i = 0;
     for await (const item of asyncIterable) {
         result.push(item);
+        printFn?.(item, i);
+        i++;
     }
     return result;
 };
