@@ -6,6 +6,6 @@ pytransform3d ~=3.14
 moviepy ~= 2.1
 librosa ~=0.11.0
 pydub ~=0.25.1
-psutil~=7.0
+psutil~=7.1
 dataclasses-json~=0.6.7
 tqdm >= 4.66.2
